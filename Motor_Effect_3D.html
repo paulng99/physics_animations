@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Experiment 6a: The Motor Effect</title>
+    <title>3D 實驗 6a：馬達效應與電流方向</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -13,16 +13,9 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Chosen Palette: "Modern Laboratory" -->
-    <!-- 
-         Background: Neutral-100
-         Primary: Blue-700
-         Accent: Amber-400
-    -->
-
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', "Microsoft JhengHei", sans-serif;
             background-color: #f5f5f5;
             color: #171717;
         }
@@ -46,7 +39,6 @@
             margin-right: auto;
         }
 
-        /* Custom Slider Styling */
         .range-slider {
             -webkit-appearance: none;
             width: 100%;
@@ -68,14 +60,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
     </style>
-    
-    <!-- Visualization & Content Choices:
-         1. 3D Simulation: Three.js (WebGL). Goal: Immersive spatial understanding. Justification: User requested 3D for better visualization of field lines and motion.
-         2. Continuous Slider: -10A to +10A. Goal: Show polarity and magnitude. Justification: Directly maps current direction to Lorentz force direction.
-         3. Force Chart: Chart.js. Goal: Quantitative tracking. 
-         
-         CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
-    -->
 </head>
 <body class="antialiased">
 
@@ -86,111 +70,105 @@
                 <span class="text-xl font-bold">PhysLab<span class="text-blue-600">3D</span></span>
             </div>
             <div class="text-xs font-semibold text-neutral-500 uppercase tracking-widest hidden md:block">
-                Motor Effect Simulation
+                馬達效應互動實驗室
             </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 py-8 space-y-8">
         
-        <!-- Header -->
+        <!-- 標題與簡介 -->
         <section class="bg-white p-8 rounded-2xl shadow-sm border border-neutral-200">
-            <h1 class="text-3xl font-bold mb-4">Interactive 3D Motor Effect</h1>
+            <h1 class="text-3xl font-bold mb-4">互動式 3D 馬達效應</h1>
             <p class="text-neutral-600 max-w-3xl">
-                Observe the interaction between a magnetic field and a current-carrying conductor in 3D. 
-                Drag the simulation to rotate the camera. Adjust the current and magnet orientation to see 
-                Fleming's Left-Hand Rule in action.
+                觀察磁場與載流導體之間的相互作用。調整電流大小與磁極方向，觀察<strong>電流方向（黃色箭頭）</strong>如何與磁場共同決定導體的運動方向。
             </p>
         </section>
 
-        <!-- Main Workspace -->
+        <!-- 主要工作區 -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <!-- Controls Sidebar -->
+            <!-- 控制面板 -->
             <div class="space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-neutral-200 space-y-8">
                     <div>
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-bold text-neutral-800">Variable Controls</h3>
-                            <button id="reset-sim" class="text-xs text-blue-600 font-bold hover:underline">Reset</button>
+                            <h3 class="font-bold text-neutral-800">實驗變數控制</h3>
+                            <button id="reset-sim" class="text-xs text-blue-600 font-bold hover:underline">重設</button>
                         </div>
 
-                        <!-- Current Slider -->
+                        <!-- 電流滑桿 -->
                         <div class="space-y-3">
                             <div class="flex justify-between text-sm">
-                                <label class="font-medium text-neutral-600">Current (I)</label>
+                                <label class="font-medium text-neutral-600">電流 (I)</label>
                                 <span id="current-val-display" class="font-mono font-bold text-blue-600">0.0 A</span>
                             </div>
                             <input type="range" id="current-slider" min="-10" max="10" step="0.1" value="0" class="range-slider">
                             <div class="flex justify-between text-[10px] text-neutral-400 font-bold uppercase">
-                                <span>Reversed</span>
-                                <span>Off</span>
-                                <span>Forward</span>
+                                <span>反向</span>
+                                <span>關閉</span>
+                                <span>正向</span>
                             </div>
                         </div>
                     </div>
 
                     <div>
-                        <h3 class="text-sm font-bold text-neutral-400 uppercase tracking-tighter mb-4">Magnet Orientation</h3>
+                        <h3 class="text-sm font-bold text-neutral-400 uppercase tracking-tighter mb-4">磁極方向</h3>
                         <button id="flip-magnets" class="w-full py-3 bg-neutral-100 hover:bg-neutral-200 rounded-xl font-bold text-sm transition-colors flex items-center justify-center space-x-2">
-                            <span>Flip Magnetic Poles</span>
+                            <span>反轉磁鐵極性</span>
                         </button>
-                        <p id="pole-status" class="text-[10px] text-center mt-2 font-bold text-blue-600">NORTH TOP / SOUTH BOTTOM</p>
+                        <p id="pole-status" class="text-[10px] text-center mt-2 font-bold text-blue-600">北極在上 / 南極在下</p>
                     </div>
 
                     <div class="pt-6 border-t border-neutral-100">
                         <div id="vector-info" class="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                            <h4 class="text-xs font-bold text-blue-800 uppercase mb-2">Live Vector Analysis</h4>
+                            <h4 class="text-xs font-bold text-blue-800 uppercase mb-2">向量分析</h4>
                             <div class="space-y-1 text-xs">
-                                <div class="flex justify-between"><span>Field (B):</span> <span id="vec-b" class="font-bold">Downwards</span></div>
-                                <div class="flex justify-between"><span>Current (I):</span> <span id="vec-i" class="font-bold">None</span></div>
-                                <div class="flex justify-between"><span>Force (F):</span> <span id="vec-f" class="font-bold text-amber-600">Stationary</span></div>
+                                <div class="flex justify-between"><span>磁場 (B):</span> <span id="vec-b" class="font-bold">向下</span></div>
+                                <div class="flex justify-between"><span>電流 (I):</span> <span id="vec-i" class="font-bold">無</span></div>
+                                <div class="flex justify-between"><span>受力 (F):</span> <span id="vec-f" class="font-bold text-amber-600">靜止</span></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Math Summary -->
+                <!-- 物理公式 -->
                 <div class="bg-slate-900 p-6 rounded-2xl shadow-xl text-white">
-                    <h3 class="text-sm font-bold text-slate-400 mb-2 uppercase">The Physics</h3>
+                    <h3 class="text-sm font-bold text-slate-400 mb-2 uppercase">物理原理</h3>
                     <p class="text-2xl font-serif italic mb-2">F = BIl</p>
                     <p class="text-xs text-slate-400 leading-relaxed">
-                        The force is maximum when the conductor is perpendicular to the field. If you reverse the current ($I$) or the field ($B$), the force direction flips.
+                        當導體與磁場垂直時受力最大。利用佛萊明左手定則：食指指向磁場 (B)，中指指向電流 (I)，大拇指即為受力方向 (F)。
                     </p>
                 </div>
             </div>
 
-            <!-- 3D Scene -->
+            <!-- 3D 畫布 -->
             <div class="lg:col-span-2 space-y-4">
                 <div id="three-container"></div>
                 <div class="flex justify-between items-center px-2">
                     <div class="flex space-x-4">
                         <div class="flex items-center space-x-1">
                             <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                            <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">North Pole</span>
+                            <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">北極 (N)</span>
                         </div>
                         <div class="flex items-center space-x-1">
                             <div class="w-3 h-3 rounded-full bg-blue-600"></div>
-                            <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">South Pole</span>
+                            <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">南極 (S)</span>
                         </div>
                         <div class="flex items-center space-x-1">
                             <div class="w-3 h-3 rounded-full bg-amber-400"></div>
-                            <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Conductor</span>
+                            <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">導體與電流方向</span>
                         </div>
                     </div>
-                    <div class="text-[10px] font-bold text-neutral-400 uppercase">Drag to Rotate • Scroll to Zoom</div>
+                    <div class="text-[10px] font-bold text-neutral-400 uppercase">拖曳旋轉 • 滾輪縮放</div>
                 </div>
             </div>
         </div>
 
-        <!-- Section 2: Force Dynamics Chart -->
+        <!-- 圖表 -->
         <section class="bg-white p-8 rounded-2xl shadow-sm border border-neutral-200">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold">Force Magnitude Graph</h2>
-                    <p class="text-neutral-500 text-sm">Visualizing the linear relationship between Current ($I$) and Force ($F$).</p>
-                </div>
-            </div>
+            <h2 class="text-2xl font-bold mb-2">電流與受力關係圖</h2>
+            <p class="text-neutral-500 text-sm mb-8">觀察電流大小如何線性影響受力數值。</p>
             <div class="chart-container">
                 <canvas id="forceChart"></canvas>
             </div>
@@ -199,17 +177,17 @@
     </main>
 
     <script>
-        // --- CONFIGURATION & STATE ---
+        // --- 狀態管理 ---
         const state = {
             current: 0,
-            polesFlipped: false, // false: N top, S bottom
+            polesFlipped: false,
             riderX: 0,
-            fieldStrength: 2.0, // Constant for now
-            length: 1.0 // Constant for now
+            fieldStrength: 2.0,
+            length: 1.0
         };
 
-        // --- THREE.JS SETUP ---
-        let scene, camera, renderer, rider, magnetTop, magnetBottom, arrows = [];
+        // --- THREE.JS 初始化 ---
+        let scene, camera, renderer, rider, magnetTop, magnetBottom, currentArrowsGroup;
         const container = document.getElementById('three-container');
 
         function initThree() {
@@ -217,7 +195,7 @@
             scene.background = new THREE.Color(0xf1f5f9);
 
             camera = new THREE.PerspectiveCamera(45, container.offsetWidth / container.offsetHeight, 0.1, 1000);
-            camera.position.set(10, 8, 15);
+            camera.position.set(12, 10, 15);
             camera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -225,91 +203,67 @@
             renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
 
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(10, 20, 10);
-            directionalLight.castShadow = true;
-            scene.add(directionalLight);
+            // 燈光
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+            sun.position.set(10, 20, 10);
+            sun.castShadow = true;
+            scene.add(sun);
 
-            // Materials
+            // 材質
             const matSteel = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.2, metalness: 0.8 });
-            const matCopper = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.3, metalness: 0.6 }); // Amber-400
+            const matCopper = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3, metalness: 0.6 });
             const matNorth = new THREE.MeshStandardMaterial({ color: 0xef4444 });
             const matSouth = new THREE.MeshStandardMaterial({ color: 0x2563eb });
 
-            // Rails
-            const railGeom = new THREE.BoxGeometry(15, 0.2, 0.2);
-            const rail1 = new THREE.Mesh(railGeom, matSteel);
-            rail1.position.z = -2;
-            rail1.receiveShadow = true;
-            scene.add(rail1);
+            // 軌道
+            const railGeom = new THREE.BoxGeometry(16, 0.2, 0.2);
+            const r1 = new THREE.Mesh(railGeom, matSteel);
+            r1.position.z = -2.5;
+            scene.add(r1);
+            const r2 = new THREE.Mesh(railGeom, matSteel);
+            r2.position.z = 2.5;
+            scene.add(r2);
 
-            const rail2 = new THREE.Mesh(railGeom, matSteel);
-            rail2.position.z = 2;
-            rail2.receiveShadow = true;
-            scene.add(rail2);
-
-            // Magnets
-            const magnetGeom = new THREE.BoxGeometry(4, 2, 6);
-            magnetTop = new THREE.Mesh(magnetGeom, matNorth);
-            magnetTop.position.y = 4;
+            // 磁鐵
+            const magGeom = new THREE.BoxGeometry(5, 2.5, 7);
+            magnetTop = new THREE.Mesh(magGeom, matNorth);
+            magnetTop.position.y = 4.5;
             scene.add(magnetTop);
 
-            magnetBottom = new THREE.Mesh(magnetGeom, matSouth);
-            magnetBottom.position.y = -4;
+            magnetBottom = new THREE.Mesh(magGeom, matSouth);
+            magnetBottom.position.y = -4.5;
             scene.add(magnetBottom);
 
-            // Rider (The Conductor)
-            const riderGeom = new THREE.CylinderGeometry(0.25, 0.25, 6, 16);
-            rider = new THREE.Mesh(riderGeom, matCopper);
-            rider.rotation.x = Math.PI / 2;
-            rider.castShadow = true;
-            scene.add(rider);
-
-            // Field Line Helpers (Dots)
-            for(let i = -1.5; i <= 1.5; i += 0.75) {
-                for(let j = -2; j <= 2; j += 1) {
-                    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshBasicMaterial({color: 0x94a3b8, transparent: true, opacity: 0.3}));
-                    dot.position.set(i, 0, j);
-                    scene.add(dot);
-                }
+            // 載流導體 (Rider)
+            const riderContainer = new THREE.Group();
+            const riderGeom = new THREE.CylinderGeometry(0.3, 0.3, 7, 16);
+            const riderMesh = new THREE.Mesh(riderGeom, matCopper);
+            riderMesh.rotation.x = Math.PI / 2;
+            riderMesh.castShadow = true;
+            riderContainer.add(riderMesh);
+            
+            // 電流方向箭頭群組
+            currentArrowsGroup = new THREE.Group();
+            for(let i = 0; i < 3; i++) {
+                const arrowGeom = new THREE.ConeGeometry(0.2, 0.5, 8);
+                const arrowMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 }); // Amber-400
+                const arrow = new THREE.Mesh(arrowGeom, arrowMat);
+                // 讓箭頭貼合在圓柱體表面或上方
+                arrow.position.z = (i - 1) * 2;
+                arrow.position.y = 0.5;
+                arrow.rotation.x = Math.PI / 2;
+                currentArrowsGroup.add(arrow);
             }
+            riderContainer.add(currentArrowsGroup);
+            
+            rider = riderContainer;
+            scene.add(rider);
 
             animate();
         }
 
-        // --- INTERACTION LOGIC ---
-        let isMouseDown = false;
-        let mouseX = 0, mouseY = 0;
-
-        container.addEventListener('mousedown', (e) => { isMouseDown = true; });
-        window.addEventListener('mouseup', () => { isMouseDown = false; });
-        window.addEventListener('mousemove', (e) => {
-            if (!isMouseDown) return;
-            const deltaX = e.movementX || 0;
-            const deltaY = e.movementY || 0;
-            
-            // Orbital Rotation
-            const rotSpeed = 0.005;
-            const offset = camera.position.clone().sub(new THREE.Vector3(0,0,0));
-            const radius = offset.length();
-            
-            let theta = Math.atan2(offset.x, offset.z);
-            let phi = Math.acos(Math.max(-1, Math.min(1, offset.y / radius)));
-
-            theta -= deltaX * rotSpeed;
-            phi -= deltaY * rotSpeed;
-            phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi));
-
-            camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
-            camera.position.y = radius * Math.cos(phi);
-            camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
-            camera.lookAt(0, 0, 0);
-        });
-
-        // Current Slider
+        // --- 互動與動畫 ---
         const slider = document.getElementById('current-slider');
         const display = document.getElementById('current-val-display');
         const vecI = document.getElementById('vec-i');
@@ -319,77 +273,92 @@
         slider.addEventListener('input', (e) => {
             state.current = parseFloat(e.target.value);
             display.textContent = `${state.current.toFixed(1)} A`;
-            updateVectorAnalysis();
-            updateChart();
+            updateLogic();
         });
 
-        // Magnet Flip
-        const flipBtn = document.getElementById('flip-magnets');
-        const poleStatus = document.getElementById('pole-status');
-        flipBtn.addEventListener('click', () => {
+        document.getElementById('flip-magnets').addEventListener('click', () => {
             state.polesFlipped = !state.polesFlipped;
-            
-            // Visual Swap
             if (state.polesFlipped) {
-                magnetTop.material.color.setHex(0x2563eb); // Blue
-                magnetBottom.material.color.setHex(0xef4444); // Red
-                poleStatus.textContent = "SOUTH TOP / NORTH BOTTOM";
-                vecB.textContent = "Upwards";
+                magnetTop.material.color.setHex(0x2563eb);
+                magnetBottom.material.color.setHex(0xef4444);
+                document.getElementById('pole-status').textContent = "南極在上 / 北極在下";
+                vecB.textContent = "向上";
             } else {
-                magnetTop.material.color.setHex(0xef4444); // Red
-                magnetBottom.material.color.setHex(0x2563eb); // Blue
-                poleStatus.textContent = "NORTH TOP / SOUTH BOTTOM";
-                vecB.textContent = "Downwards";
+                magnetTop.material.color.setHex(0xef4444);
+                magnetBottom.material.color.setHex(0x2563eb);
+                document.getElementById('pole-status').textContent = "北極在上 / 南極在下";
+                vecB.textContent = "向下";
             }
-            updateVectorAnalysis();
-            updateChart();
+            updateLogic();
         });
 
-        function updateVectorAnalysis() {
-            // I direction
-            if (state.current > 0) vecI.textContent = "Towards Front";
-            else if (state.current < 0) vecI.textContent = "Towards Back";
-            else vecI.textContent = "None";
+        function updateLogic() {
+            // 更新向量文字
+            if (state.current > 0) vecI.textContent = "向前 (+Z)";
+            else if (state.current < 0) vecI.textContent = "向後 (-Z)";
+            else vecI.textContent = "無";
 
-            // F direction (Fleming's Rule)
-            // Field is Down (Normal) or Up (Flipped)
-            // Current is Front (+) or Back (-)
-            const fieldDir = state.polesFlipped ? 1 : -1; // 1 up, -1 down
+            const fieldDir = state.polesFlipped ? 1 : -1;
             const currentDir = state.current > 0 ? 1 : (state.current < 0 ? -1 : 0);
-            
-            // Force Direction (Lorentz): F = I x B
-            // In our coordinate system: 
-            // I is along Z axis (+Z is front)
-            // B is along Y axis (+Y is up)
-            // Z x Y = -X. 
-            // So if I is positive (+Z) and B is negative (-Y), force is - (+Z) x (-Y) = +X (Right)
             const forceDir = currentDir * -fieldDir;
 
-            if (forceDir > 0) vecF.textContent = "Rightward (Forward)";
-            else if (forceDir < 0) vecF.textContent = "Leftward (Backward)";
-            else vecF.textContent = "Stationary";
+            if (forceDir > 0) vecF.textContent = "向右 (正向)";
+            else if (forceDir < 0) vecF.textContent = "向左 (反向)";
+            else vecF.textContent = "靜止";
+
+            updateChart();
         }
 
-        // --- CHARTING ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 1. 更新位移 (運動模擬)
+            const fieldDir = state.polesFlipped ? 1 : -1;
+            const targetX = state.current * -fieldDir * 0.6;
+            state.riderX += (targetX - state.riderX) * 0.1;
+            rider.position.x = state.riderX;
+
+            // 2. 更新電流箭頭方向與動畫
+            if (Math.abs(state.current) < 0.1) {
+                currentArrowsGroup.visible = false;
+            } else {
+                currentArrowsGroup.visible = true;
+                const flowDir = state.current > 0 ? 1 : -1;
+                currentArrowsGroup.children.forEach((arrow, idx) => {
+                    // 旋轉箭頭指向
+                    arrow.rotation.x = flowDir > 0 ? Math.PI / 2 : -Math.PI / 2;
+                    
+                    // 流動動畫 (沿著 Z 軸移動)
+                    arrow.position.z += 0.05 * flowDir * (Math.abs(state.current) / 5);
+                    
+                    // 循環邊界
+                    if (arrow.position.z > 3) arrow.position.z = -3;
+                    if (arrow.position.z < -3) arrow.position.z = 3;
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- 圖表邏輯 ---
         const ctx = document.getElementById('forceChart').getContext('2d');
         const forceChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: Array.from({length: 21}, (_, i) => i - 10),
                 datasets: [{
-                    label: 'Force (N) vs Current (A)',
-                    data: Array.from({length: 21}, (_, i) => (i - 10) * state.fieldStrength * state.length),
+                    label: '受力 (N)',
+                    data: Array.from({length: 21}, (_, i) => (i - 10) * state.fieldStrength),
                     borderColor: '#2563eb',
                     backgroundColor: 'rgba(37, 99, 235, 0.1)',
                     fill: true,
                     tension: 0,
                     pointRadius: 0
                 }, {
-                    label: 'Live Data Point',
+                    label: '當前狀態',
                     data: [{x: 0, y: 0}],
                     backgroundColor: '#fbbf24',
                     pointRadius: 8,
-                    pointHoverRadius: 10,
                     showLine: false
                 }]
             },
@@ -397,8 +366,8 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { type: 'linear', title: { display: true, text: 'Current (Amperes)' } },
-                    y: { title: { display: true, text: 'Force (Newtons)' } }
+                    x: { type: 'linear', title: { display: true, text: '電流 (A)' } },
+                    y: { title: { display: true, text: '受力 (N)' } }
                 }
             }
         });
@@ -406,31 +375,31 @@
         function updateChart() {
             const fieldVal = state.polesFlipped ? -state.fieldStrength : state.fieldStrength;
             const forceVal = state.current * fieldVal * state.length;
-            
-            // Update the Slope
-            forceChart.data.datasets[0].data = Array.from({length: 21}, (_, i) => (i - 10) * fieldVal * state.length);
-            // Update the point
+            forceChart.data.datasets[0].data = Array.from({length: 21}, (_, i) => (i - 10) * fieldVal);
             forceChart.data.datasets[1].data = [{x: state.current, y: forceVal}];
             forceChart.update('none');
         }
 
-        // --- ANIMATION LOOP ---
-        function animate() {
-            requestAnimationFrame(animate);
+        // --- 相機控制與視窗縮放 ---
+        let isMouseDown = false;
+        container.addEventListener('mousedown', () => isMouseDown = true);
+        window.addEventListener('mouseup', () => isMouseDown = false);
+        window.addEventListener('mousemove', (e) => {
+            if (!isMouseDown) return;
+            const rotSpeed = 0.005;
+            const offset = camera.position.clone();
+            const radius = offset.length();
+            let theta = Math.atan2(offset.x, offset.z);
+            let phi = Math.acos(Math.max(-1, Math.min(1, offset.y / radius)));
+            theta -= e.movementX * rotSpeed;
+            phi -= e.movementY * rotSpeed;
+            phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi));
+            camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
+            camera.position.y = radius * Math.cos(phi);
+            camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
+            camera.lookAt(0, 0, 0);
+        });
 
-            // Update Rider Position
-            // F = BIl. We simulate motion based on force.
-            const fieldDir = state.polesFlipped ? 1 : -1;
-            const targetX = state.current * -fieldDir * 0.5; // Scale for visual effect
-            
-            // Smooth lerp to position
-            state.riderX += (targetX - state.riderX) * 0.1;
-            rider.position.x = state.riderX;
-
-            renderer.render(scene, camera);
-        }
-
-        // Resize handling
         window.addEventListener('resize', () => {
             camera.aspect = container.offsetWidth / container.offsetHeight;
             camera.updateProjectionMatrix();
@@ -443,8 +412,7 @@
             slider.value = 0;
             state.current = 0;
             display.textContent = "0.0 A";
-            updateVectorAnalysis();
-            updateChart();
+            updateLogic();
         };
 
     </script>
