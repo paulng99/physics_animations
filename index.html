@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Physics Animations</title>
+  <meta name="description" content="Interactive physics animations and classroom tools." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { color-scheme: light; }
+    .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); }
+    .hero-glow { box-shadow: 0 30px 80px rgba(59, 130, 246, 0.15); }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+  <header class="max-w-6xl mx-auto px-6 pt-10 pb-6">
+    <nav class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-bold">Φ</span>
+        <div>
+          <div class="font-semibold text-lg">Physics Animations</div>
+          <div class="text-sm text-slate-500">Interactive demos for learning</div>
+        </div>
+      </div>
+      <a href="https://github.com/paulng99/physics_animations" class="text-sm font-medium text-slate-600 hover:text-blue-600">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 pb-16">
+    <section class="glass hero-glow rounded-3xl p-8 md:p-12 border border-white/60">
+      <div class="grid md:grid-cols-2 gap-10 items-center">
+        <div>
+          <p class="text-blue-600 font-semibold">Physics • Visualized</p>
+          <h1 class="text-3xl md:text-4xl font-bold mt-2 leading-tight">
+            Beautiful, interactive simulations for the classroom and beyond.
+          </h1>
+          <p class="mt-4 text-slate-600">
+            Explore core ideas through hands-on sliders, animations, and instant visual feedback. Built for students, teachers, and curious minds.
+          </p>
+          <div class="mt-6 flex flex-wrap gap-3">
+            <a href="#experiments" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700">Browse Experiments</a>
+            <a href="Youngs_Double-Slit_Experiment.html" class="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:border-blue-200">Open Double-Slit</a>
+          </div>
+        </div>
+        <div class="grid gap-4">
+          <div class="rounded-2xl bg-white p-4 border border-slate-200">
+            <div class="text-sm text-slate-500">Featured concept</div>
+            <div class="text-xl font-semibold mt-1">Interference & Wave Optics</div>
+            <p class="text-sm text-slate-600 mt-2">Visualize how wavelength, slit separation, and distance affect fringes.</p>
+          </div>
+          <div class="rounded-2xl bg-slate-900 text-white p-4">
+            <div class="text-sm text-slate-300">Built for teaching</div>
+            <div class="text-xl font-semibold mt-1">Classroom-ready tools</div>
+            <p class="text-sm text-slate-300 mt-2">Includes printable layouts and drag-and-drop planners.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="experiments" class="mt-12">
+      <div class="flex items-end justify-between flex-wrap gap-4">
+        <div>
+          <h2 class="text-2xl font-bold">Experiments & Tools</h2>
+          <p class="text-slate-600">Choose a simulation to launch.</p>
+        </div>
+      </div>
+
+      <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <a href="Youngs_Double-Slit_Experiment.html" class="group rounded-2xl bg-white border border-slate-200 p-5 hover:border-blue-300 hover:shadow-lg transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-wide text-blue-600 font-semibold">Optics</span>
+            <span class="text-xs text-slate-400">Interactive</span>
+          </div>
+          <h3 class="text-lg font-semibold mt-3">Young's Double-Slit</h3>
+          <p class="text-sm text-slate-600 mt-2">Change $\lambda$, $a$, and $D$ to see fringe spacing update live.</p>
+          <div class="mt-4 text-sm font-medium text-blue-600 group-hover:translate-x-1 transition">Open →</div>
+        </a>
+
+        <a href="seating_plan.html" class="group rounded-2xl bg-white border border-slate-200 p-5 hover:border-blue-300 hover:shadow-lg transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-wide text-emerald-600 font-semibold">Classroom</span>
+            <span class="text-xs text-slate-400">Planner</span>
+          </div>
+          <h3 class="text-lg font-semibold mt-3">Physics Lab Seating Planner</h3>
+          <p class="text-sm text-slate-600 mt-2">Drag, drop, and balance seating with printable layouts.</p>
+          <div class="mt-4 text-sm font-medium text-emerald-600 group-hover:translate-x-1 transition">Open →</div>
+        </a>
+
+        <div class="rounded-2xl bg-slate-50 border border-dashed border-slate-300 p-5">
+          <div class="text-xs uppercase tracking-wide text-slate-500 font-semibold">Coming soon</div>
+          <h3 class="text-lg font-semibold mt-3">More experiments</h3>
+          <p class="text-sm text-slate-600 mt-2">Add new pages to this repository and they will appear here.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-12 grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl bg-white border border-slate-200 p-5">
+        <h3 class="font-semibold">Fast to load</h3>
+        <p class="text-sm text-slate-600 mt-2">Pure HTML, CSS, and JS with CDN-based styling.</p>
+      </div>
+      <div class="rounded-2xl bg-white border border-slate-200 p-5">
+        <h3 class="font-semibold">Mobile friendly</h3>
+        <p class="text-sm text-slate-600 mt-2">Responsive layouts for phones, tablets, and projectors.</p>
+      </div>
+      <div class="rounded-2xl bg-white border border-slate-200 p-5">
+        <h3 class="font-semibold">Teacher ready</h3>
+        <p class="text-sm text-slate-600 mt-2">Great for demos, worksheets, and lab discussions.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-200">
+    <div class="max-w-6xl mx-auto px-6 py-8 text-sm text-slate-500 flex flex-wrap items-center justify-between gap-3">
+      <span>© 2026 Physics Animations</span>
+      <span>Built for GitHub Pages</span>
+    </div>
+  </footer>
+</body>
+</html>
