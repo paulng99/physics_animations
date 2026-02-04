@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Young's Double-Slit Experiment</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add MathJax configuration and script -->
+    <script>
+        MathJax = {
+          tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']]
+          },
+          svg: {
+            fontCache: 'global'
+          }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script"></script>
+    <style>
+        /* Use Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for sliders */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #d1d5db; /* gray-300 */
+            outline: none;
+            opacity: 0.9;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6; /* blue-500 */
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6; /* blue-500 */
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Add transition for smooth animation */
+        #slit-1, #slit-2 {
+            transition: top 0.1s linear;
+        }
+        #distance-line {
+            transition: flex-grow 0.1s linear;
+        }
+
+        /* Loading spinner */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6; /* blue-500 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-4xl bg-white rounded-lg shadow-xl p-6 md:p-8 space-y-8">
+        
+        <!-- Title -->
+        <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-800">
+            Young's Double-Slit Experiment
+        </h1>
+
+        <!-- Schematic Diagram -->
+        <div class="space-y-4">
+            <h2 class="text-xl font-semibold text-gray-700">Apparatus Schematic</h2>
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <!-- Laser -->
+                <div class="flex flex-col items-center space-y-2">
+                    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.001l-2.387.478a2 2 0 00-1.022.547m-2.285 2.285a2 2 0 00-.547 1.022l-.477 2.387a6 6 0 00.001 3.86l.478 2.387a2 2 0 00.547 1.022m6.285-14.57a2 2 0 001.022.547l2.387.477a6 6 0 003.86-.001l2.387-.478a2 2 0 001.022-.547m-2.285-2.285a2 2 0 00.547-1.022l.477-2.387a6 6 0 00-.001-3.86l-.478-2.387a2 2 0 00-.547-1.022m-6.285 14.57a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.001l-2.387.478a2 2 0 00-1.022.547m2.285 2.285a2 2 0 00-.547 1.022l-.477 2.387a6 6 0 00.001 3.86l.478 2.387a2 2 0 00.547 1.022m6.285-14.571L12 12m0 0l-3.429 3.429"></path></svg>
+                    <span class="text-sm font-medium text-gray-600">Laser</span>
+                </div>
+                
+                <!-- Beam -->
+                <div id="laser-beam" class="flex-1 h-1.5 mx-4 rounded" style="background-color: #ef4444;"></div>
+                
+                <!-- Slits -->
+                <div class="flex flex-col items-center space-y-2">
+                    <!-- Slit icon with dynamic slits -->
+                    <div class="w-2 h-16 bg-gray-800 rounded-full relative">
+                        <div id="slit-1" class="absolute left-1/2 w-0.5 h-2 bg-white transform -translate-x-1/2" style="top: 33.33%;"></div>
+                        <div id="slit-2" class="absolute left-1/2 w-0.5 h-2 bg-white transform -translate-x-1/2" style="top: 66.67%;"></div>
+                    </div>
+                    <span class="text-sm font-medium text-gray-600 whitespace-nowrap">Slits ($a$)</span>
+                    <span id="a-label" class="text-xs font-bold text-blue-600">0.40 mm</span>
+                </div>
+                
+                <!-- Distance D -->
+                <!-- This div will now grow/shrink based on the slider -->
+                <div id="distance-line" class="flex-1 h-px bg-gray-300 border-0 border-t-2 border-dashed border-gray-400 mx-4 relative">
+                    <span class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white px-1 text-sm font-medium text-gray-600 whitespace-nowrap">
+                        Distance ($D$)
+                    </span>
+                    <span id="D-label" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-white px-1 text-xs font-bold text-blue-600">
+                        1.40 m
+                    </span>
+                </div>
+                
+                <!-- Screen -->
+                <div class="flex flex-col items-center space-y-2">
+                    <div class="w-2 h-24 bg-gray-300 rounded"></div>
+                    <span class="text-sm font-medium text-gray-600">Screen</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Controls -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Wavelength (λ) -->
+            <div>
+                <label for="lambda-slider" class="flex justify-between text-sm font-medium text-gray-700">
+                    <span class="whitespace-nowrap">Wavelength ($\lambda$)</span>
+                    <span id="lambda-value" class="font-bold text-blue-600">650 nm</span>
+                </label>
+                <input type="range" id="lambda-slider" min="400" max="700" value="650" class="mt-2">
+            </div>
+            
+            <!-- Slit Separation (a) -->
+            <div>
+                <label for="a-slider" class="flex justify-between text-sm font-medium text-gray-700">
+                    <span class="whitespace-nowrap">Slit Separation ($a$)</span>
+                    <span id="a-value" class="font-bold text-blue-600">0.40 mm</span>
+                </label>
+                <input type="range" id="a-slider" min="0.1" max="1.0" value="0.4" step="0.01" class="mt-2">
+            </div>
+            
+            <!-- Screen Distance (D) -->
+            <div>
+                <label for="D-slider" class="flex justify-between text-sm font-medium text-gray-700">
+                    <span class="whitespace-nowrap">Screen Distance ($D$)</span>
+                    <span id="D-value" class="font-bold text-blue-600">1.40 m</span>
+                </label>
+                <input type="range" id="D-slider" min="1.0" max="3.0" value="1.4" step="0.01" class="mt-2">
+            </div>
+        </div>
+
+        <!-- Result: Interference Pattern -->
+        <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-xl font-semibold text-gray-700">Interference Pattern on Screen</h2>
+                <div class="mt-2 sm:mt-0 bg-blue-100 text-blue-800 rounded-lg px-4 py-2 text-center">
+                    <span class="text-sm font-medium whitespace-nowrap">Fringe Separation ($\Delta y$): </span>
+                    <span id="delta-y-value" class="text-lg font-bold">2.28 mm</span>
+                </div>
+            </div>
+            
+            <!-- Pattern Visualization -->
+            <div class="w-full h-20 rounded-lg overflow-hidden border border-gray-300 bg-black flex items-center justify-center">
+                <div id="pattern" class="w-full h-full" style="background: repeating-linear-gradient(90deg, rgb(239, 68, 68) 0px, black 114.1px, black 114.1px, rgb(239, 68, 68) 228.2px); background-size: 228.2px 100%;">
+                </div>
+            </div>
+            <div class="text-xs text-gray-500 text-center">
+                (Center of pattern)
+            </div>
+        </div>
+        
+        <!-- Explanation -->
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
+            <div>
+                <p class="text-sm text-gray-600">
+                    The separation between the bright fringes (dots) is given by the formula:
+                </p>
+                <strong class="text-gray-800 text-base block text-center my-2">
+                    $\Delta y = \frac{\lambda D}{a}$
+                </strong>
+                <p class="text-sm text-gray-600 mt-2">
+                    Try answering question (a)(i) from your sheet: How can you increase the average separation ($\Delta y$)?
+                </p>
+                <ol class="list-decimal list-inside text-sm text-gray-600 space-y-1 mt-2">
+                    <li><strong class="text-blue-600 whitespace-nowrap">Increase Wavelength ($\lambda$):</strong> Move the $\lambda$ slider to the right (towards red).</li>
+                    <li><strong class="text-blue-600 whitespace-nowrap">Increase Screen Distance ($D$):</strong> Move the $D$ slider to the right.</li>
+                    <li><strong class="text-blue-600 whitespace-nowrap">Decrease Slit Separation ($a$):</strong> Move the $a$ slider to the left.</li>
+                </ol>
+            </div>
+
+            <!-- Gemini API Feature -->
+            <div class="border-t border-gray-200 pt-4">
+                <button id="explain-button" class="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5A.75.75 0 0110 3zM10 6a.75.75 0 01.75.75v7.5a.75.75 0 01-1.5 0v-7.5A.75.75 0 0110 6zM10 15.25a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75zM10 18.25a.75.75 0 000 1.5.75.75 0 000-1.5z" clip-rule="evenodd" style="display: none;"/> <!-- Base path, hidden -->
+                        <path d="M9.879 3.25c.398 0 .75.325.75.75v.5a.75.75 0 01-1.5 0v-.5c0-.425.352-.75.75-.75zm0 13.5c.414 0 .75.336.75.75v.5a.75.75 0 01-1.5 0v-.5c0-.414.336-.75.75-.75z" />
+                        <path d="M10 18.25a.75.75 0 000 1.5.75.75 0 000-1.5z" />
+                        <path fill-rule="evenodd" d="M10 6.625c.398 0 .75.325.75.75v5.375a.75.75 0 01-1.5 0V7.375c0-.425.352-.75.75-.75z" clip-rule="evenodd" />
+                        <path d="M12.24 4.51c.14-.175.31-.33.49-.46a.75.75 0 01.94 1.16c-.16.12-.31.26-.45.41a.75.75 0 01-1.16-.94.75.75 0 01.18-.17zM7.76 4.51c-.14-.175-.31-.33-.49-.46a.75.75 0 00-.94 1.16c.16.12.31.26.45.41a.75.75 0 001.16-.94.75.75 0 00-.18-.17z" />
+                        <path d="M14.22 6.53c.2.06.4.09.6.09a.75.75 0 00.18-1.48c-.21 0-.42.03-.62.1a.75.75 0 00.78 1.36.75.75 0 00-.94-.07zM5.78 6.53c-.2.06-.4.09-.6.09a.75.75 0 01-.18-1.48c.21 0 .42.03.62.1a.75.75 0 01-.78 1.36.75.75 0 01.94-.07z" />
+                        <path d="M15.19 8.78a.75.75 0 00.53.53c.2.06.4.09.6.09a.75.75 0 00.18-1.48c-.21 0-.42.03-.62.1a.75.75 0 00.07.94.75.75 0 00.24-.18zM4.81 8.78a.75.75 0 01-.53.53c-.2.06-.4.09-.6.09a.75.75 0 01-.18-1.48c.21 0 .42.03.62.1a.75.75 0 01-.07.94.75.75 0 01-.24-.18z" />
+                    </svg>
+                    ✨ Explain This Concept
+                </button>
+                <div id="gemini-loading" class="hidden flex items-center justify-center mt-4">
+                    <div class="spinner"></div>
+                    <span class="ml-2 text-sm text-gray-500">Generating explanation...</span>
+                </div>
+                <div id="gemini-explanation" class="hidden mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-gray-700 prose prose-sm">
+                    <!-- Gemini's explanation will be injected here -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Get all DOM elements
+        const lambdaSlider = document.getElementById('lambda-slider');
+        const aSlider = document.getElementById('a-slider');
+        const DSlider = document.getElementById('D-slider');
+        
+        const lambdaValue = document.getElementById('lambda-value');
+        const aValue = document.getElementById('a-value');
+        const DValue = document.getElementById('D-value');
+        
+        const aLabel = document.getElementById('a-label');
+        const DLabel = document.getElementById('D-label');
+        
+        const deltaYValue = document.getElementById('delta-y-value');
+        const pattern = document.getElementById('pattern');
+        const laserBeam = document.getElementById('laser-beam');
+        
+        // Get elements for animation
+        const slit1 = document.getElementById('slit-1');
+        const slit2 = document.getElementById('slit-2');
+        const distanceLine = document.getElementById('distance-line');
+
+        // Get Gemini elements
+        const explainButton = document.getElementById('explain-button');
+        const geminiLoading = document.getElementById('gemini-loading');
+        const geminiExplanation = document.getElementById('gemini-explanation');
+
+        // --- Gemini API Function ---
+
+        /**
+         * Calls the Gemini API with exponential backoff.
+         * @param {string} userQuery The prompt to send to the model.
+         * @param {number} maxRetries Maximum number of retries.
+         */
+        async function callGeminiAPI(userQuery, maxRetries = 3) {
+            const apiKey = ""; // API key will be automatically provided by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const systemPrompt = "You are a friendly and encouraging physics tutor. Explain concepts clearly and concisely, as if to a high school student. Use simple terms and analogies where possible. Do not use markdown for formatting, just plain text with paragraphs.";
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            let attempt = 0;
+            let delay = 1000; // Start with 1 second delay
+
+            while (attempt < maxRetries) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const candidate = result.candidates?.[0];
+
+                    if (candidate && candidate.content?.parts?.[0]?.text) {
+                        return candidate.content.parts[0].text;
+                    } else {
+                        throw new Error("Invalid response structure from API.");
+                    }
+
+                } catch (error) {
+                    console.error(`Attempt ${attempt + 1} failed:`, error.message);
+                    attempt++;
+                    if (attempt >= maxRetries) {
+                        throw error; // Throw the last error after max retries
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // Exponential backoff
+                }
+            }
+        }
+
+        /**
+         * Event handler for the "Explain This Concept" button.
+         */
+        async function handleExplainClick() {
+            explainButton.disabled = true;
+            geminiLoading.classList.remove('hidden');
+            geminiExplanation.classList.add('hidden');
+            geminiExplanation.textContent = ''; // Clear previous content
+
+            const prompt = `Please explain the double-slit experiment. Based on the formula Δy = (λ * D) / a, describe in simple terms how increasing the wavelength (λ), increasing the screen distance (D), and decreasing the slit separation (a) each affect the fringe separation (Δy).`;
+
+            try {
+                const explanation = await callGeminiAPI(prompt);
+                // Simple text formatting: replace newlines with <br> tags
+                geminiExplanation.innerHTML = explanation.replace(/\n/g, '<br>');
+                geminiExplanation.classList.remove('hidden');
+            } catch (error) {
+                console.error("Failed to get explanation from Gemini:", error);
+                geminiExplanation.textContent = "Sorry, I couldn't generate an explanation at this time. Please try again later.";
+                geminiExplanation.classList.remove('hidden');
+            } finally {
+                geminiLoading.classList.add('hidden');
+                explainButton.disabled = false;
+            }
+        }
+
+        // --- End Gemini API ---
+
+        // Function to convert wavelength (nm) to an RGB color
+        function wavelengthToHex(lambda) {
+            lambda = parseFloat(lambda);
+            let R, G, B;
+            if (lambda >= 400 && lambda < 440) {
+                R = -(lambda - 440) / (440 - 400);
+                G = 0.0;
+                B = 1.0;
+            } else if (lambda >= 440 && lambda < 490) {
+                R = 0.0;
+                G = (lambda - 440) / (490 - 440);
+                B = 1.0;
+            } else if (lambda >= 490 && lambda < 510) {
+                R = 0.0;
+                G = 1.0;
+                B = -(lambda - 510) / (510 - 490);
+            } else if (lambda >= 510 && lambda < 580) {
+                R = (lambda - 510) / (580 - 510);
+                G = 1.0;
+                B = 0.0;
+            } else if (lambda >= 580 && lambda < 645) {
+                R = 1.0;
+                G = -(lambda - 645) / (645 - 580);
+                B = 0.0;
+            } else if (lambda >= 645 && lambda <= 700) {
+                R = 1.0;
+                G = 0.0;
+                B = 0.0;
+            } else {
+                R = 0.0;
+                G = 0.0;
+                B = 0.0;
+            }
+            
+            // Intensity falloff for shorter wavelengths
+            let factor = 1.0;
+            if (lambda >= 400 && lambda < 420) {
+                factor = 0.3 + 0.7 * (lambda - 400) / (420 - 400);
+            } else if (lambda >= 645 && lambda < 700) {
+                factor = 0.3 + 0.7 * (700 - lambda) / (700 - 645);
+            }
+
+            R = Math.round(255 * R * factor);
+            G = Math.round(255 * G * factor);
+            B = Math.round(255 * B * factor);
+            
+            return `rgb(${R}, ${G}, ${B})`;
+        }
+
+        // Main update function
+        function updateExperiment() {
+            // Get values from sliders
+            const lambda_nm = parseFloat(lambdaSlider.value); // in nm
+            const a_mm = parseFloat(aSlider.value);           // in mm
+            const D_m = parseFloat(DSlider.value);            // in m
+
+            // Convert all to base units (meters) for calculation
+            const lambda_m = lambda_nm * 1e-9;
+            const a_m = a_mm * 1e-3;
+
+            // Calculate fringe separation (Δy)
+            const deltaY_m = (lambda_m * D_m) / a_m;
+            
+            // Convert result to mm for display
+            const deltaY_mm = deltaY_m * 1e3;
+
+            // Update text labels
+            lambdaValue.textContent = `${lambda_nm.toFixed(0)} nm`;
+            aValue.textContent = `${a_mm.toFixed(2)} mm`;
+            DValue.textContent = `${D_m.toFixed(2)} m`;
+            
+            aLabel.textContent = `${a_mm.toFixed(2)} mm`;
+            DLabel.textContent = `${D_m.toFixed(2)} m`;
+
+            deltaYValue.textContent = `${deltaY_mm.toFixed(2)} mm`;
+
+            // Update Visuals
+            const color = wavelengthToHex(lambda_nm);
+            laserBeam.style.backgroundColor = color;
+            
+            // --- SCHEMATIC ANIMATION ---
+            
+            // Animate Slit Separation (a)
+            // We map the range of 'a' (0.1mm to 1.0mm) to a visual separation percentage
+            const visualSeparationPct = 10 + ((a_mm - 0.1) / (1.0 - 0.1)) * 30; // Maps 0.1-1.0 to 10-40
+            
+            // Calculate slit height as a percentage of its container to center it
+            const slitHalfHeightPct = ( (0.5 / 4) * 100 ) / 2; // 6.25% (0.5rem / 4rem) / 2
+
+            // Set top position, subtracting half slit height to center vertically
+            const verticalCenter = 52; // Adjusted from 50
+            slit1.style.top = (verticalCenter - visualSeparationPct / 2 - slitHalfHeightPct) + '%';
+            slit2.style.top = (verticalCenter + visualSeparationPct / 2 - slitHalfHeightPct) + '%';
+
+            // Animate Screen Distance (D)
+            const flexGrowValue = D_m / 1.0; // Simple 1-to-1 mapping with the base value
+            distanceLine.style.flexGrow = flexGrowValue;
+            
+            // --- END SCHEMATIC ANIMATION ---
+
+            // Update pattern
+            const screenDisplay_mm = 40; // The visual pattern represents 40mm width
+            const patternWidth_px = pattern.clientWidth;
+            
+            if (patternWidth_px === 0) return;
+
+            const mm_per_px = screenDisplay_mm / patternWidth_px;
+            const fringeWidth_px = deltaY_mm / mm_per_px;
+            const brightWidth_px = fringeWidth_px / 2;
+            const fullCycle_px = fringeWidth_px;
+
+            pattern.style.background = `repeating-linear-gradient(90deg, 
+                ${color} 0px, 
+                black ${brightWidth_px}px, 
+                black ${fullCycle_px}px
+            )`;
+            
+            pattern.style.backgroundSize = `${fullCycle_px}px 100%`;
+
+            // Retype all MathJax expressions after update
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        // Add event listeners
+        lambdaSlider.addEventListener('input', updateExperiment);
+        aSlider.addEventListener('input', updateExperiment);
+        DSlider.addEventListener('input', updateExperiment);
+        explainButton.addEventListener('click', handleExplainClick);
+
+        // Initial call to set everything up
+        window.addEventListener('load', () => {
+             lambdaSlider.value = 650;
+             aSlider.value = 0.455;
+             DSlider.value = 1.40;
+             
+             updateExperiment();
+
+             // Typeset math after initial update
+             if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        });
+
+        // Re-run on resize to get correct pixel widths
+        window.addEventListener('resize', updateExperiment);
+
+    </script>
+</body>
+</html>
