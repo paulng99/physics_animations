@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Lab Seating Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; }
+            #app-container { max-width: 100%; padding: 0; }
+        }
+        .seat-card { transition: all 0.2s; }
+        .seat-card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .dragging { opacity: 0.5; transform: scale(0.95); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
+
+    <div id="app-container" class="max-w-7xl mx-auto p-4">
+        
+        <!-- HEADER -->
+        <header class="bg-indigo-600 text-white p-6 rounded-lg shadow-lg mb-6 flex justify-between items-center no-print">
+            <div>
+                <h1 class="text-2xl font-bold flex items-center gap-3">
+                    <i class="fa-solid fa-flask"></i>
+                    Physics Lab Seating Planner
+                </h1>
+                <p class="opacity-90 text-sm mt-1">
+                    12 Tables (3x4) • Smart Balancing • Drag & Drop
+                </p>
+            </div>
+            <button onclick="window.print()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded flex items-center gap-2 transition">
+                <i class="fa-solid fa-print"></i> Print
+            </button>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- SIDEBAR (Inputs) -->
+            <div class="lg:col-span-4 space-y-6 no-print">
+                
+                <!-- ADD FORM CONTAINER -->
+                <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                    
+                    <!-- TABS -->
+                    <div class="flex border-b mb-4">
+                        <button id="tabSingle" onclick="switchTab('single')" class="flex-1 pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm transition-colors">
+                            Single Entry
+                        </button>
+                        <button id="tabBulk" onclick="switchTab('bulk')" class="flex-1 pb-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-indigo-600 transition-colors">
+                            Bulk Import
+                        </button>
+                    </div>
+
+                    <!-- SINGLE FORM -->
+                    <div id="formSingle">
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <input type="text" id="inName" placeholder="Name" class="border p-2 rounded text-sm outline-indigo-500">
+                            <input type="number" id="inClassNo" placeholder="Class No." class="border p-2 rounded text-sm outline-indigo-500">
+                            <input type="number" id="inMark" placeholder="Mark (0-100)" class="border p-2 rounded text-sm outline-indigo-500">
+                            <select id="inPref" class="border p-2 rounded text-sm outline-indigo-500">
+                                <option value="none">No Row Pref</option>
+                                <option value="front">Front Row (Tables 1-3)</option>
+                                <option value="back">Back Row (Tables 10-12)</option>
+                            </select>
+                        </div>
+                        <button onclick="addStudent()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded transition flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Add Student
+                        </button>
+                    </div>
+
+                    <!-- BULK FORM -->
+                    <div id="formBulk" class="hidden">
+                        <div class="bg-blue-50 p-2 rounded text-xs text-blue-800 mb-2 border border-blue-100">
+                            <strong>Format per line (Tab Separated):</strong><br>
+                            ClassNumber &nbsp;&nbsp;&nbsp; Name &nbsp;&nbsp;&nbsp; Mark<br>
+                            <span class="text-blue-600 opacity-70 italic">(Best for copy-paste from Excel)</span>
+                        </div>
+                        <textarea id="inBulk" rows="6" class="w-full border p-2 rounded text-sm outline-indigo-500 font-mono whitespace-pre" placeholder="1	Alice	85&#10;2	Bob	62&#10;3	Charlie	45"></textarea>
+                        <button onclick="bulkImport()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded transition flex justify-center items-center gap-2 mt-3">
+                            <i class="fa-solid fa-file-import"></i> Import Students
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CONTROLS -->
+                <div class="flex gap-2">
+                    <button onclick="generatePlan()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded shadow font-semibold flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-rotate"></i> Generate Plan
+                    </button>
+                    <button onclick="loadDemoData()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 rounded font-medium" title="Load Sample Data">
+                        Demo
+                    </button>
+                    <button onclick="clearAll()" class="bg-red-100 hover:bg-red-200 text-red-600 px-4 rounded" title="Clear All">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+
+                <!-- STUDENT LIST -->
+                <div class="bg-white p-4 rounded-lg shadow border border-gray-200 h-[500px] overflow-y-auto flex flex-col">
+                    <div class="flex justify-between items-center mb-2 border-b pb-2 sticky top-0 bg-white z-10">
+                        <h3 class="font-bold text-gray-700">Class List <span id="studentCount" class="text-xs bg-gray-200 px-2 rounded-full ml-1">0</span></h3>
+                    </div>
+                    <div id="studentList" class="space-y-2 flex-1">
+                        <!-- JS will populate this -->
+                        <p class="text-center text-gray-400 italic mt-10">No students added.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAIN CONTENT (Lab Layout) -->
+            <div class="lg:col-span-8">
+                
+                <!-- Warnings Area -->
+                <div id="warningArea" class="hidden bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg mb-6">
+                    <h3 class="font-bold flex items-center gap-2 mb-1">
+                        <i class="fa-solid fa-circle-exclamation"></i> Constraint Conflicts
+                    </h3>
+                    <ul id="warningList" class="list-disc pl-5 text-sm"></ul>
+                </div>
+
+                <!-- Lab Grid -->
+                <div class="bg-slate-200 p-8 rounded-xl border-4 border-slate-300 relative min-h-[600px]">
+                    
+                    <!-- Markers: Upside Down View -->
+                    <div class="absolute top-4 left-0 right-0 text-center text-slate-400 text-xs font-bold tracking-widest uppercase">
+                        Back of Lab (Rows 10-12)
+                    </div>
+
+                    <!-- Tables Container -->
+                    <div id="labGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 py-12">
+                        <!-- JS will populate tables here -->
+                    </div>
+
+                    <!-- Teacher Marker (Front) at Bottom -->
+                    <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 bg-slate-800 text-white px-8 py-2 rounded-t-lg shadow-lg font-bold uppercase tracking-wider text-sm z-10 border-b-4 border-slate-900">
+                        Teacher's Desk (Front)
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="mt-8 flex flex-wrap gap-4 text-sm text-gray-600 bg-white p-4 rounded shadow-sm justify-center no-print">
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-green-600 rounded-full"></span> High Score (80+)</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-blue-600 rounded-full"></span> Mid Score (60-79)</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-yellow-600 rounded-full"></span> Low Score (40-59)</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-red-600 rounded-full"></span> Critical (&lt;40)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- STATE ---
+        let students = [];
+        let tables = Array.from({ length: 12 }, () => []); // 12 Tables
+        let draggedStudentId = null;
+        let draggedFromTable = null;
+
+        // --- MOCK DATA ---
+        const NAMES = [
+            "Alice", "Bob", "Charlie", "David", "Eva", "Frank", "Grace", "Henry", "Ivy", "Jack", 
+            "Kevin", "Lily", "Mike", "Nina", "Oscar", "Paul", "Quinn", "Rose", "Steve", "Tina", 
+            "Uma", "Victor", "Wendy", "Xander", "Yara", "Zack", "Ben", "Sara", "Tom", "Jerry",
+            "Anna", "Elsa", "Bruce", "Clark", "Diana", "Barry", "Hal", "Arthur", "Peter", "Mary"
+        ];
+
+        function loadDemoData() {
+            students = Array.from({ length: 40 }, (_, i) => ({
+                id: `s-${Date.now()}-${i}`,
+                name: NAMES[i % NAMES.length] + (i >= NAMES.length ? ` ${i}` : ''),
+                classNo: i + 1,
+                mark: Math.floor(Math.random() * 60) + 40, // 40-99
+                preference: Math.random() > 0.8 ? (Math.random() > 0.5 ? 'front' : 'back') : 'none',
+                partnerId: null,
+                avoidId: null
+            }));
+            
+            // Clear tables logic
+            tables = Array.from({ length: 12 }, () => []);
+            renderStudentList();
+            renderTables();
+            updateWarnings([]);
+        }
+
+        function clearAll() {
+            if(confirm("Clear all students and seating plan?")) {
+                students = [];
+                tables = Array.from({ length: 12 }, () => []);
+                renderStudentList();
+                renderTables();
+                updateWarnings([]);
+            }
+        }
+
+        // --- TAB SWITCHING ---
+        function switchTab(tab) {
+            const formSingle = document.getElementById('formSingle');
+            const formBulk = document.getElementById('formBulk');
+            const tabSingle = document.getElementById('tabSingle');
+            const tabBulk = document.getElementById('tabBulk');
+
+            if (tab === 'single') {
+                formSingle.classList.remove('hidden');
+                formBulk.classList.add('hidden');
+                // Style: Active
+                tabSingle.className = "flex-1 pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm transition-colors";
+                tabBulk.className = "flex-1 pb-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-indigo-600 transition-colors";
+            } else {
+                formSingle.classList.add('hidden');
+                formBulk.classList.remove('hidden');
+                // Style: Active
+                tabSingle.className = "flex-1 pb-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-indigo-600 transition-colors";
+                tabBulk.className = "flex-1 pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm transition-colors";
+            }
+        }
+
+        // --- UTILS ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- STUDENT MANAGEMENT ---
+        function addStudent() {
+            const name = document.getElementById('inName').value;
+            const classNo = document.getElementById('inClassNo').value;
+            const mark = document.getElementById('inMark').value;
+            const pref = document.getElementById('inPref').value;
+
+            if (!name || !mark) {
+                alert("Name and Mark are required");
+                return;
+            }
+
+            const newStudent = {
+                id: `s-${Date.now()}`,
+                name: name,
+                classNo: classNo || (students.length + 1),
+                mark: parseInt(mark),
+                preference: pref,
+                partnerId: null,
+                avoidId: null
+            };
+
+            students.push(newStudent);
+            
+            // Reset form
+            document.getElementById('inName').value = '';
+            document.getElementById('inClassNo').value = '';
+            document.getElementById('inMark').value = '';
+            document.getElementById('inPref').value = 'none';
+
+            renderStudentList();
+        }
+
+        function bulkImport() {
+            const text = document.getElementById('inBulk').value;
+            if (!text.trim()) return;
+
+            const lines = text.split('\n');
+            let count = 0;
+
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                
+                // Expect: ClassNo [TAB] Name [TAB] Mark
+                const parts = line.split('\t').map(p => p.trim());
+                
+                if (parts.length >= 3) {
+                    const classNo = parts[0];
+                    const name = parts[1];
+                    const mark = parseInt(parts[2]);
+
+                    if (name && !isNaN(mark)) {
+                        const newStudent = {
+                            id: `s-${Date.now()}-${Math.random().toString(36).substr(2,9)}`, 
+                            name: name,
+                            classNo: classNo,
+                            mark: mark,
+                            preference: 'none',
+                            partnerId: null,
+                            avoidId: null
+                        };
+                        students.push(newStudent);
+                        count++;
+                    }
+                }
+            });
+
+            if (count > 0) {
+                document.getElementById('inBulk').value = '';
+                renderStudentList();
+                alert(`Successfully imported ${count} students.`);
+                switchTab('single'); 
+            } else {
+                alert("No valid lines found. Format: ClassNo [TAB] Name [TAB] Mark");
+            }
+        }
+
+        function deleteStudent(id) {
+            students = students.filter(s => s.id !== id);
+            tables = tables.map(t => t.filter(s => s.id !== id));
+            renderStudentList();
+            renderTables(); 
+        }
+
+        function updateConstraint(id, field, value) {
+            const student = students.find(s => s.id === id);
+            if (student) {
+                student[field] = value === 'none' ? null : value;
+                renderStudentList(); 
+                renderTables(); 
+            }
+        }
+
+        // --- RENDERING ---
+        function getMarkColorClass(mark) {
+            if (mark >= 80) return 'text-green-600 font-bold';
+            if (mark >= 60) return 'text-blue-600';
+            if (mark >= 40) return 'text-yellow-600';
+            return 'text-red-600 font-bold';
+        }
+
+        function renderStudentList() {
+            const listEl = document.getElementById('studentList');
+            document.getElementById('studentCount').innerText = students.length;
+            
+            if (students.length === 0) {
+                listEl.innerHTML = '<p class="text-center text-gray-400 italic mt-10">No students added.</p>';
+                return;
+            }
+
+            listEl.innerHTML = students.map(s => {
+                const otherOptions = students
+                    .filter(other => other.id !== s.id)
+                    .map(o => `<option value="${o.id}">${o.name}</option>`)
+                    .join('');
+
+                return `
+                <div class="border rounded p-3 text-sm bg-gray-50 relative group hover:bg-white transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="font-bold text-gray-800">#${s.classNo} ${s.name}</span>
+                            <div class="flex gap-2 mt-1">
+                                <span class="text-xs font-mono px-1 rounded bg-gray-200 ${getMarkColorClass(s.mark)}">${s.mark}%</span>
+                                ${s.preference !== 'none' ? 
+                                    `<span class="text-xs bg-indigo-100 text-indigo-800 px-1 rounded capitalize">
+                                        <i class="fa-solid ${s.preference === 'front' ? 'fa-arrow-up' : 'fa-arrow-down'}"></i> ${s.preference}
+                                    </span>` : ''}
+                            </div>
+                        </div>
+                        <button onclick="deleteStudent('${s.id}')" class="text-gray-400 hover:text-red-500">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
+                        <div>
+                            <label class="text-[10px] text-gray-500 uppercase font-bold">Partner</label>
+                            <select onchange="updateConstraint('${s.id}', 'partnerId', this.value)" class="w-full text-xs border rounded p-1 bg-white">
+                                <option value="none">None</option>
+                                ${students.map(o => o.id !== s.id ? `<option value="${o.id}" ${s.partnerId === o.id ? 'selected' : ''}>${o.name}</option>` : '').join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 uppercase font-bold">Avoid</label>
+                            <select onchange="updateConstraint('${s.id}', 'avoidId', this.value)" class="w-full text-xs border rounded p-1 bg-white">
+                                <option value="none">None</option>
+                                ${students.map(o => o.id !== s.id ? `<option value="${o.id}" ${s.avoidId === o.id ? 'selected' : ''}>${o.name}</option>` : '').join('')}
+                            </select>
+                        </div>
+                    </div>
+                    ${s.partnerId ? `<div class="text-xs text-green-600 mt-1"><i class="fa-solid fa-link"></i> w/ ${students.find(x=>x.id===s.partnerId)?.name || '?'}</div>` : ''}
+                    ${s.avoidId ? `<div class="text-xs text-red-600 mt-1"><i class="fa-solid fa-ban"></i> not ${students.find(x=>x.id===s.avoidId)?.name || '?'}</div>` : ''}
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderTables() {
+            const gridEl = document.getElementById('labGrid');
+            
+            const warnings = validateConstraints();
+            updateWarnings(warnings);
+
+            // UPSIDE DOWN ORDER
+            const order = [
+                9, 10, 11,
+                6, 7, 8,
+                3, 4, 5,
+                0, 1, 2
+            ];
+
+            gridEl.innerHTML = order.map(index => {
+                const tableStudents = tables[index];
+                const avgMark = tableStudents.length > 0 
+                    ? Math.round(tableStudents.reduce((a, b) => a + b.mark, 0) / tableStudents.length) 
+                    : 0;
+                
+                const isFront = index < 3;
+                const isBack = index >= 9;
+                const rowLabel = isFront ? '<span class="text-[10px] bg-blue-100 text-blue-700 px-1 rounded">Front</span>' : 
+                               (isBack ? '<span class="text-[10px] bg-orange-100 text-orange-700 px-1 rounded">Back</span>' : '');
+
+                let seatsHtml = '';
+                // Fill 4 slots
+                for (let i = 0; i < 4; i++) {
+                    if (i < tableStudents.length) {
+                        const s = tableStudents[i];
+                        seatsHtml += `
+                            <div 
+                                draggable="true"
+                                ondragstart="handleDragStart(event, '${s.id}', ${index})"
+                                class="seat-card bg-white border border-gray-200 p-2 rounded shadow-sm cursor-move relative overflow-hidden"
+                            >
+                                <div class="text-xs font-bold truncate text-gray-800">${s.name}</div>
+                                <div class="text-xs ${getMarkColorClass(s.mark)}">${s.mark}%</div>
+                                <div class="flex gap-1 mt-1 justify-center">
+                                    ${s.partnerId ? '<span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>' : ''}
+                                    ${s.avoidId ? '<span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>' : ''}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        seatsHtml += `
+                            <div class="border border-dashed border-gray-300 rounded bg-gray-50 flex items-center justify-center h-[50px]">
+                                <span class="text-xs text-gray-300">Empty</span>
+                            </div>
+                        `;
+                    }
+                }
+
+                return `
+                    <div 
+                        ondragover="handleDragOver(event)" 
+                        ondrop="handleDrop(event, ${index})"
+                        class="relative bg-white rounded-xl shadow transition-all border-2 ${tableStudents.length === 0 ? 'border-dashed border-slate-300 bg-slate-50' : 'border-transparent hover:border-indigo-300'}"
+                    >
+                        <!-- Table Header -->
+                        <div class="bg-slate-100 p-2 rounded-t-xl border-b flex justify-between items-center">
+                            <span class="font-bold text-slate-600 text-sm">Table ${index + 1}</span>
+                            <div class="flex gap-1 items-center">
+                                ${rowLabel}
+                                ${tableStudents.length > 0 ? `<span class="text-xs bg-slate-200 px-1 rounded font-mono">Avg: ${avgMark}</span>` : ''}
+                            </div>
+                        </div>
+                        <!-- Seats -->
+                        <div class="p-2 grid grid-cols-2 gap-2 min-h-[120px]">
+                            ${seatsHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateWarnings(warnings) {
+            const area = document.getElementById('warningArea');
+            const list = document.getElementById('warningList');
+            if (warnings.length > 0) {
+                area.classList.remove('hidden');
+                list.innerHTML = warnings.map(w => `<li>${w}</li>`).join('');
+            } else {
+                area.classList.add('hidden');
+            }
+        }
+
+        // --- ALGORITHM ---
+        function generatePlan() {
+            if (students.length === 0) return;
+
+            // 1. Randomize initial pool to ensure diversity in tie-breaking
+            let pool = shuffleArray([...students]);
+            let newTables = Array.from({ length: 12 }, () => []);
+            
+            // Sort by mark desc (high to low) for balancing, but equal marks are now random due to shuffle above
+            pool.sort((a, b) => b.mark - a.mark);
+
+            const frontTables = [0, 1, 2];
+            const backTables = [9, 10, 11];
+            const middleTables = [3, 4, 5, 6, 7, 8];
+            const allTables = [...Array(12).keys()];
+
+            const addToTable = (student, tIdx) => {
+                if (newTables[tIdx].length >= 4) return false;
+                newTables[tIdx].push(student);
+                return true;
+            };
+
+            // Partner logic
+            const handledIds = new Set();
+            const pairs = [];
+            pool.forEach(s => {
+                if (handledIds.has(s.id)) return;
+                if (s.partnerId) {
+                    const partner = pool.find(p => p.id === s.partnerId);
+                    if (partner && !handledIds.has(partner.id)) {
+                        pairs.push([s, partner]);
+                        handledIds.add(s.id);
+                        handledIds.add(partner.id);
+                    }
+                }
+            });
+            pool = pool.filter(s => !handledIds.has(s.id));
+
+            // Pairs Distribution - Shuffle to randomize placement
+            shuffleArray(pairs);
+            pairs.forEach(pair => {
+                const [p1, p2] = pair;
+                let targetIndices = allTables;
+                if (p1.preference === 'front' || p2.preference === 'front') targetIndices = frontTables;
+                else if (p1.preference === 'back' || p2.preference === 'back') targetIndices = backTables;
+
+                // Sort targets by emptiness
+                targetIndices.sort((a, b) => newTables[a].length - newTables[b].length);
+
+                let placed = false;
+                for (let idx of targetIndices) {
+                    if (newTables[idx].length <= 2) {
+                        newTables[idx].push(p1, p2);
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    for (let idx of allTables) {
+                        if (newTables[idx].length <= 2) {
+                            newTables[idx].push(p1, p2);
+                            break;
+                        }
+                    }
+                }
+            });
+
+            // Row Preferences - Shuffle
+            const frontPref = shuffleArray(pool.filter(s => s.preference === 'front'));
+            const backPref = shuffleArray(pool.filter(s => s.preference === 'back'));
+            const noPref = pool.filter(s => s.preference === 'none'); // Already sorted by mark/shuffled
+
+            frontPref.forEach(s => {
+                if (!frontTables.some(t => addToTable(s, t))) {
+                    middleTables.some(t => addToTable(s, t));
+                }
+            });
+
+            backPref.forEach(s => {
+                if (!backTables.some(t => addToTable(s, t))) {
+                    [...middleTables].reverse().some(t => addToTable(s, t));
+                }
+            });
+
+            // Balance Remaining (noPref)
+            // noPref is already sorted by Mark Descending (High -> Low)
+            
+            noPref.forEach(s => {
+                let valid = allTables.filter(i => newTables[i].length < 4);
+                
+                // Randomize valid tables list BEFORE sorting to break ties randomly
+                shuffleArray(valid);
+
+                // Sort logic: Least crowded, then lowest average
+                valid.sort((a, b) => {
+                    const lenDiff = newTables[a].length - newTables[b].length;
+                    if (lenDiff !== 0) return lenDiff;
+                    
+                    const avgA = newTables[a].length ? (newTables[a].reduce((acc,x)=>acc+x.mark,0)/newTables[a].length) : 0;
+                    const avgB = newTables[b].length ? (newTables[b].reduce((acc,x)=>acc+x.mark,0)/newTables[b].length) : 0;
+                    return avgA - avgB; 
+                });
+
+                if (valid.length > 0) {
+                    newTables[valid[0]].push(s);
+                }
+            });
+
+            tables = newTables;
+            renderTables();
+        }
+
+        function validateConstraints() {
+            const warnings = [];
+            tables.forEach((table, tIdx) => {
+                table.forEach(s => {
+                    // Avoid
+                    if (s.avoidId) {
+                        const enemy = table.find(m => m.id === s.avoidId);
+                        if (enemy) warnings.push(`Table ${tIdx+1}: ${s.name} sitting with ${enemy.name} (Should Avoid)`);
+                    }
+                    // Row Pref
+                    if (s.preference === 'front' && tIdx > 2) warnings.push(`${s.name} prefers Front but is at Table ${tIdx+1}`);
+                    if (s.preference === 'back' && tIdx < 9) warnings.push(`${s.name} prefers Back but is at Table ${tIdx+1}`);
+                    // Partner Missing
+                    if (s.partnerId) {
+                        const partner = students.find(x => x.id === s.partnerId);
+                        if (partner) {
+                            const partnerAtTable = table.find(x => x.id === s.partnerId);
+                            if (!partnerAtTable) warnings.push(`${s.name} separated from partner ${partner.name}`);
+                        }
+                    }
+                });
+            });
+            return warnings;
+        }
+
+        // --- DRAG AND DROP ---
+        function handleDragStart(e, studentId, tableIndex) {
+            draggedStudentId = studentId;
+            draggedFromTable = tableIndex;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); 
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDrop(e, targetTableIndex) {
+            e.preventDefault();
+            
+            if (!draggedStudentId) return;
+
+            let student = null;
+            if (draggedFromTable !== -1) {
+                student = tables[draggedFromTable].find(s => s.id === draggedStudentId);
+            }
+
+            if (!student) return;
+
+            if (tables[targetTableIndex].length >= 4 && draggedFromTable !== targetTableIndex) {
+                alert("Table is full (Max 4)");
+                return;
+            }
+
+            if (draggedFromTable !== targetTableIndex) {
+                tables[draggedFromTable] = tables[draggedFromTable].filter(s => s.id !== draggedStudentId);
+                tables[targetTableIndex].push(student);
+                renderTables();
+            }
+            
+            draggedStudentId = null;
+            draggedFromTable = null;
+        }
+
+        // Init
+        renderStudentList();
+    </script>
+</body>
+</html>
