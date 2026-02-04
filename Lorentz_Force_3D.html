@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnetic Force on Conductor Simulation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f0f0; }
+        #canvas-container { width: 100vw; height: 100vh; display: block; position: absolute; top: 0; left: 0; z-index: 0; }
+        
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 380px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            max-height: 90vh;
+            overflow-y: auto;
+            backdrop-filter: blur(5px);
+            border: 1px solid #e0e0e0;
+            z-index: 10;
+        }
+
+        h1 { margin-top: 0; font-size: 1.4rem; color: #333; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
+        h2 { font-size: 1.1rem; color: #555; margin-top: 20px; margin-bottom: 5px; }
+        p, li { font-size: 0.95rem; line-height: 1.5; color: #444; margin-bottom: 10px; }
+        
+        .equation {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #3b82f6;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 1.1rem;
+            text-align: center;
+            margin: 10px 0;
+            font-style: italic;
+        }
+
+        .highlight { color: #d32f2f; font-weight: bold; }
+        .vector-ref { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; }
+        
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #2563eb; }
+        
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .answer-box {
+            background-color: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .correct { color: #2e7d32; font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+    <div id="ui-panel">
+        <h1>Lorentz Force Simulation</h1>
+        
+        <div id="explanation-content">
+            <p>Interactive visualization of the magnetic force on a current-carrying rod placed on inclined rails.</p>
+            
+            <h2>Vector Legend</h2>
+            <ul style="list-style: none; padding-left: 0;">
+                <li><span class="vector-ref" style="background: red;"></span> <strong>Force (F)</strong>: The resulting Lorentz force.</li>
+                <li><span class="vector-ref" style="background: blue;"></span> <strong>Current (I)</strong>: Direction of conventional current.</li>
+                <li><span class="vector-ref" style="background: orange;"></span> <strong>Magnetic Field (B)</strong>: External vertical field.</li>
+            </ul>
+
+            <h2>Physics Principle</h2>
+            <p>The magnetic force is defined by the cross product:</p>
+            <div class="equation">F = I (L &times; B)</div>
+            <p>Adjust the parameters below to see how the force vector changes direction and magnitude.</p>
+
+            <button onclick="snapToObserverView()">Switch to Side View (2D)</button>
+            <button onclick="resetCamera()" style="background:#6c757d; margin-top:5px;">Reset 3D View</button>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div id="controls-hint">Left Click: Rotate | Right Click: Pan | Scroll: Zoom</div>
+
+    <script>
+        // --- 1. Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+        scene.fog = new THREE.Fog(0xf0f0f0, 20, 100);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        // Resize Listener (CRITICAL FIX)
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // --- 2. Objects ---
+
+        // State variables
+        const state = {
+            angle: 30, // degrees
+            currentDirection: 1, // 1: Q->P (Into screen in side view), -1: P->Q
+            bFieldDirection: -1, // -1: Down, 1: Up
+            rodPosition: 0,
+            showVectors: true
+        };
+
+        const materials = {
+            rail: new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.6, roughness: 0.4 }),
+            rod: new THREE.MeshStandardMaterial({ color: 0xffaa00, metalness: 0.3, roughness: 0.2 }),
+            battery: new THREE.MeshBasicMaterial({ color: 0x333333 }),
+            wire: new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }),
+            arrowForce: 0xff0000,
+            arrowB: 0xffaa00,
+            arrowI: 0x0000ff
+        };
+
+        // Groups
+        const assemblyGroup = new THREE.Group();
+        scene.add(assemblyGroup);
+
+        const inclineGroup = new THREE.Group();
+        assemblyGroup.add(inclineGroup);
+
+        // Rails
+        const railLength = 12;
+        const railSep = 4;
+        const railGeo = new THREE.BoxGeometry(0.2, 0.2, railLength);
+        
+        const leftRail = new THREE.Mesh(railGeo, materials.rail);
+        leftRail.position.set(0, 0, -railSep/2);
+        inclineGroup.add(leftRail);
+
+        const rightRail = new THREE.Mesh(railGeo, materials.rail);
+        rightRail.position.set(0, 0, railSep/2);
+        inclineGroup.add(rightRail);
+
+        // Rod
+        const rodGeo = new THREE.CylinderGeometry(0.3, 0.3, railSep + 1, 32);
+        const rod = new THREE.Mesh(rodGeo, materials.rod);
+        rod.rotation.x = Math.PI / 2;
+        rod.position.set(0, 0.3, 0); 
+        inclineGroup.add(rod);
+
+        // Ground Plane (Reference)
+        const gridHelper = new THREE.GridHelper(30, 30, 0xcccccc, 0xe5e5e5);
+        scene.add(gridHelper);
+
+        // Labels / Text (Simple Sprites)
+        function makeTextSprite(message, fontsize=24) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.font = "Bold " + fontsize + "px Arial";
+            const metrics = ctx.measureText(message);
+            const width = metrics.width;
+            
+            canvas.width = width + 20;
+            canvas.height = fontsize + 20;
+            
+            ctx.font = "Bold " + fontsize + "px Arial";
+            ctx.fillStyle = "rgba(0,0,0,0)";
+            ctx.fillRect(0,0,canvas.width, canvas.height);
+            ctx.fillStyle = "black";
+            ctx.fillText(message, 10, fontsize);
+            
+            const texture = new THREE.Texture(canvas);
+            texture.needsUpdate = true;
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.scale.set(canvas.width/20, canvas.height/20, 1);
+            return sprite;
+        }
+
+        const lblQ = makeTextSprite("Q");
+        const lblP = makeTextSprite("P");
+        inclineGroup.add(lblQ);
+        inclineGroup.add(lblP);
+
+        // Magnetic Field Arrows (Grid)
+        const bFieldGroup = new THREE.Group();
+        scene.add(bFieldGroup);
+        
+        function updateBField() {
+            while(bFieldGroup.children.length > 0){ 
+                bFieldGroup.remove(bFieldGroup.children[0]); 
+            }
+            
+            const arrowLen = 2;
+            const color = 0xffaa00; // Orange
+            const dir = new THREE.Vector3(0, state.bFieldDirection, 0);
+            
+            for(let x = -5; x <= 5; x+=3) {
+                for(let z = -5; z <= 5; z+=3) {
+                    const origin = new THREE.Vector3(x, 5, z);
+                    const arrow = new THREE.ArrowHelper(dir, origin, arrowLen, color, 0.5, 0.3);
+                    bFieldGroup.add(arrow);
+                }
+            }
+        }
+
+        // Vectors on the Rod
+        const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 3, 0xff0000, 0.8, 0.5);
+        const currentArrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0,0), 3, 0x0000ff, 0.8, 0.5);
+        scene.add(forceArrow);
+        scene.add(currentArrow);
+
+        // Battery schematic (Visual only)
+        const wireGroup = new THREE.Group();
+        inclineGroup.add(wireGroup);
+        
+        function updateWires() {
+            while(wireGroup.children.length > 0) wireGroup.remove(wireGroup.children[0]);
+            
+            const topX = -railLength/2;
+            const zL = -railSep/2; // Left Rail
+            const zR = railSep/2;  // Right Rail
+            
+            // Battery box
+            const battGeo = new THREE.BoxGeometry(1, 0.5, 0.5);
+            const batt = new THREE.Mesh(battGeo, materials.battery);
+            batt.position.set(topX - 1, 0, 0); // Behind the rails
+            wireGroup.add(batt);
+            
+            // Wires
+            const points = [];
+            points.push(new THREE.Vector3(topX, 0, zL)); // Top Left Rail
+            points.push(new THREE.Vector3(topX - 1, 0, zL)); // Out
+            points.push(new THREE.Vector3(topX - 1, 0, -0.6)); // To Battery +
+            
+            points.push(new THREE.Vector3(topX - 1, 0, 0.6)); // From Battery -
+            points.push(new THREE.Vector3(topX - 1, 0, zR)); 
+            points.push(new THREE.Vector3(topX, 0, zR)); // Top Right Rail
+            
+            const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(lineGeo, materials.wire);
+            wireGroup.add(line);
+            
+            // Battery Polarity Sign
+            const plus = makeTextSprite("+", 20);
+            const minus = makeTextSprite("-", 20);
+            
+            if (state.currentDirection === 1) {
+                plus.position.set(topX - 1, 0.5, zL);
+                minus.position.set(topX - 1, 0.5, zR);
+            } else {
+                plus.position.set(topX - 1, 0.5, zR);
+                minus.position.set(topX - 1, 0.5, zL);
+            }
+            wireGroup.add(plus);
+            wireGroup.add(minus);
+        }
+
+        // --- 3. Physics & Updates ---
+
+        function updatePhysics() {
+            // 1. Update Incline Angle
+            const rad = THREE.MathUtils.degToRad(state.angle);
+            inclineGroup.rotation.z = rad; 
+            
+            // 2. Position Rod
+            const rodWorldPos = new THREE.Vector3();
+            rod.getWorldPosition(rodWorldPos);
+            
+            // 3. Update B Field
+            updateBField();
+            
+            // 4. Calculate Vectors
+            // Current Vector I
+            let dirI = new THREE.Vector3(0, 0, 1); // Q to P (World +Z)
+            if (state.currentDirection === -1) dirI.set(0, 0, -1);
+            
+            // Magnetic Field B
+            let dirB = new THREE.Vector3(0, -1, 0); // Down
+            if (state.bFieldDirection === 1) dirB.set(0, 1, 0);
+            
+            // Force F = I x B
+            let dirF = new THREE.Vector3().crossVectors(dirI, dirB);
+            
+            // Update Arrow Helpers
+            forceArrow.position.copy(rodWorldPos);
+            forceArrow.setDirection(dirF);
+            forceArrow.setLength(5);
+            
+            currentArrow.position.copy(rodWorldPos);
+            currentArrow.position.z -= 0.5 * state.currentDirection; // Offset
+            currentArrow.setDirection(dirI);
+            
+            // Labels position
+            lblQ.position.set(0, 0.5, -railSep/2 - 0.5);
+            lblP.position.set(0, 0.5, railSep/2 + 0.5);
+            
+            updateWires();
+        }
+
+        // --- 4. Animation Loop ---
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePhysics();
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+
+        // --- 5. Interactions ---
+
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let sphereCoords = { radius: 25, theta: Math.PI/4, phi: Math.PI/4 }; 
+
+        function updateCamera() {
+            camera.position.x = sphereCoords.radius * Math.sin(sphereCoords.theta) * Math.cos(sphereCoords.phi);
+            camera.position.z = sphereCoords.radius * Math.sin(sphereCoords.theta) * Math.sin(sphereCoords.phi);
+            camera.position.y = sphereCoords.radius * Math.cos(sphereCoords.theta);
+            camera.lookAt(0, 0, 0);
+        }
+        // Initialize camera
+        updateCamera();
+
+        container.addEventListener('mousedown', (e) => { 
+            isDragging = true;
+            previousMousePosition = { x: e.offsetX, y: e.offsetY }; // FIX: Reset pos to prevent jump
+        });
+        
+        container.addEventListener('mouseup', (e) => { isDragging = false; });
+        
+        container.addEventListener('mousemove', (e) => {
+            if(isDragging) {
+                const deltaX = e.offsetX - previousMousePosition.x;
+                const deltaY = e.offsetY - previousMousePosition.y;
+
+                sphereCoords.phi -= deltaX * 0.01;
+                sphereCoords.theta -= deltaY * 0.01;
+                
+                // Clamp theta to prevent flipping
+                sphereCoords.theta = Math.max(0.1, Math.min(Math.PI - 0.1, sphereCoords.theta));
+
+                updateCamera();
+            }
+            previousMousePosition = { x: e.offsetX, y: e.offsetY };
+        });
+        
+        container.addEventListener('wheel', (e) => {
+            sphereCoords.radius += e.deltaY * 0.05;
+            sphereCoords.radius = Math.max(5, Math.min(50, sphereCoords.radius));
+            updateCamera();
+        });
+
+        // UI Functions
+        window.snapToObserverView = function() {
+            // Animate or snap to specific view
+            sphereCoords.phi = Math.PI / 2; 
+            sphereCoords.theta = Math.PI / 2; // Horizontal
+            sphereCoords.radius = 25;
+            updateCamera();
+        }
+
+        window.resetCamera = function() {
+            sphereCoords = { radius: 25, theta: Math.PI/3, phi: Math.PI/4 };
+            updateCamera();
+        }
+        
+        // Add GUI
+        const gui = new dat.GUI({ autoPlace: false });
+        document.getElementById('ui-panel').appendChild(gui.domElement);
+        gui.domElement.style.position = 'static';
+        gui.domElement.style.marginTop = '20px';
+        gui.domElement.style.width = '100%';
+
+        gui.add(state, 'angle', 0, 60).name('Incline Angle').step(1);
+        gui.add(state, 'currentDirection', { 'Q to P (Into Screen)': 1, 'P to Q (Out of Screen)': -1 }).name('Current Dir');
+        gui.add(state, 'bFieldDirection', { 'Down': -1, 'Up': 1 }).name('B Field Dir');
+
+    </script>
+</body>
+</html>
