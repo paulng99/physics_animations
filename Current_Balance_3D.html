@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Current Balance Simulation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+        #canvas-container { width: 100vw; height: 100vh; display: block; }
+        .ui-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            pointer-events: auto;
+            z-index: 10;
+            border: 1px solid #e2e8f0;
+        }
+        .label-value { font-weight: 700; color: #1d4ed8; font-variant-numeric: tabular-nums; }
+        input[type=range] {
+            accent-color: #2563eb;
+        }
+        /* Modal Animation */
+        #modal-explain { transition: opacity 0.2s ease-in-out; }
+        #modal-explain.hidden { opacity: 0; pointer-events: none; display: flex; visibility: hidden;} 
+        #modal-explain:not(.hidden) { opacity: 1; pointer-events: auto; visibility: visible;}
+    </style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<!-- Control Panel -->
+<div class="ui-panel">
+    <h2 class="text-xl font-bold mb-4 text-slate-800 border-b pb-2">Apparatus Controls</h2>
+    
+    <div class="mb-5">
+        <div class="flex justify-between mb-1">
+            <label class="text-sm font-semibold text-slate-600">Current (I)</label>
+            <span id="val-current" class="label-value">1.0 A</span>
+        </div>
+        <input type="range" id="slider-current" min="-5" max="5" step="0.1" value="1.0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+    </div>
+
+    <div class="mb-5">
+        <div class="flex justify-between mb-1">
+            <label class="text-sm font-semibold text-slate-600">Magnetic Field (B)</label>
+            <span id="val-bfield" class="label-value">0.5 T</span>
+        </div>
+        <input type="range" id="slider-bfield" min="0" max="2.0" step="0.1" value="0.5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+    </div>
+
+    <div class="mb-6">
+        <div class="flex justify-between mb-1">
+            <label class="text-sm font-semibold text-slate-600">Active Length (L)</label>
+            <span id="val-length" class="label-value">2.0 cm</span>
+        </div>
+        <input type="range" id="slider-length" min="1.0" max="8.0" step="0.1" value="2.0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+    </div>
+
+    <div class="bg-slate-900 rounded-xl p-4 text-white shadow-inner">
+        <div class="text-[10px] uppercase tracking-wider text-slate-400 mb-1 font-bold text-center">Electronic Balance</div>
+        <div class="text-2xl font-mono text-green-400 text-center" id="balance-display">0.000 g</div>
+        
+        <div class="mt-4 pt-3 border-t border-slate-700">
+            <div class="flex justify-between text-xs text-slate-300 mb-1">
+                <span>Lorentz Force</span>
+                <span id="force-val" class="text-blue-300 font-bold">0.0100 N</span>
+            </div>
+        </div>
+    </div>
+
+    <button id="btn-explain" class="mt-4 w-full py-2 bg-slate-100 hover:bg-slate-200 text-blue-700 border border-blue-200 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        How it works?
+    </button>
+</div>
+
+<!-- Explanation Modal -->
+<div id="modal-explain" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl relative animate-fade-in-up">
+        <button id="btn-close-explain" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        
+        <h3 class="text-2xl font-bold text-slate-800 mb-2">Physics Principles</h3>
+        <p class="text-slate-500 text-sm mb-6">Understanding the Current Balance Experiment</p>
+        
+        <div class="space-y-6 text-slate-600 text-sm">
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <h4 class="font-bold text-blue-800 flex items-center gap-2">
+                    1. The Lorentz Force Formula
+                </h4>
+                <div class="mt-3 text-center">
+                    <span class="font-mono text-lg bg-white px-4 py-2 rounded shadow-sm border border-blue-100 font-bold text-slate-800">F = B × I × L</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-4 text-xs">
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-400"></span> <strong>F</strong>: Magnetic Force (N)</div>
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-400"></span> <strong>B</strong>: Field Strength (Tesla)</div>
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-400"></span> <strong>I</strong>: Current (Amps)</div>
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-400"></span> <strong>L</strong>: Active Length (m)</div>
+                </div>
+            </div>
+            
+            <div class="pl-2 border-l-4 border-slate-200">
+                <h4 class="font-bold text-slate-800 mb-2">2. Interpreting the Result</h4>
+                <p class="mb-2">The wire frame acts as a center-pivot <strong>lever</strong>.</p>
+                <ul class="space-y-2">
+                    <li class="flex gap-2">
+                        <span class="text-green-500 font-bold">↑</span>
+                        <span>If Magnetic Force pushes the wire end <strong>UP</strong>...</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="text-red-500 font-bold">↓</span>
+                        <span>...the lever pushes the balance end <strong>DOWN</strong>.</span>
+                    </li>
+                </ul>
+                <div class="mt-3 text-xs bg-slate-100 p-3 rounded text-center font-mono">
+                    Balance Reading (g) = (Force / 9.81) × 1000
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-6 text-center">
+            <button id="btn-close-bottom" class="px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-semibold">
+                Back to Simulation
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let scene, camera, renderer, frame, activeSegment, endSegment, pInsulator, forceArrow, plate;
+    let northPole, southPole, yoke, rail1, rail2;
+    let current = 1.0, bField = 0.5, wireLength = 2.0;
+    
+    const GRAVITY_CONST = 9.81;
+
+    function init() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf1f5f9);
+
+        camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(15, 12, 15);
+        camera.lookAt(0, 0, 0);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.6);
+        sun.position.set(10, 20, 10);
+        sun.castShadow = true;
+        scene.add(sun);
+
+        // Floor
+        const table = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: 0xe2e8f0 }));
+        table.rotation.x = -Math.PI / 2;
+        table.position.y = -3;
+        table.receiveShadow = true;
+        scene.add(table);
+        
+        const grid = new THREE.GridHelper(30, 30, 0xcbd5e1, 0xe2e8f0);
+        grid.position.y = -2.99;
+        scene.add(grid);
+
+        // 1. Balance
+        const balance = new THREE.Group();
+        balance.add(new THREE.Mesh(new THREE.BoxGeometry(4, 1.2, 5), new THREE.MeshStandardMaterial({ color: 0x334155 })));
+        plate = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.2, 32), new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.5 }));
+        plate.position.y = 0.7;
+        balance.add(plate);
+        balance.position.set(6, -2.4, 0);
+        scene.add(balance);
+
+        // 2. Pivot
+        const pivotMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
+        const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3, 0.5), pivotMat);
+        p1.position.set(0, -1.5, 2);
+        scene.add(p1);
+        const p2 = p1.clone();
+        p2.position.z = -2;
+        scene.add(p2);
+
+        // 3. Magnets
+        const magGroup = new THREE.Group();
+        northPole = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+        southPole = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), new THREE.MeshStandardMaterial({ color: 0x3b82f6 }));
+        yoke = new THREE.Mesh(new THREE.BoxGeometry(2, 0.4, 4), new THREE.MeshStandardMaterial({ color: 0x64748b }));
+        
+        northPole.position.set(-6, -1, 1.5);
+        southPole.position.set(-6, -1, -1.5);
+        yoke.position.set(-6, -2.2, 0);
+        
+        magGroup.add(northPole, southPole, yoke);
+        scene.add(magGroup);
+
+        // 4. Wire Frame
+        frame = new THREE.Group();
+        const wireMat = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.8 });
+        const radius = 0.06;
+
+        rail1 = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 12, 8), wireMat);
+        rail1.rotation.z = Math.PI / 2;
+        rail1.position.z = 1.5;
+        frame.add(rail1);
+
+        rail2 = rail1.clone();
+        rail2.position.z = -1.5;
+        frame.add(rail2);
+
+        activeSegment = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 3, 8), wireMat);
+        activeSegment.rotation.x = Math.PI / 2;
+        activeSegment.position.set(-6, 0, 0);
+        frame.add(activeSegment);
+
+        endSegment = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 3, 8), wireMat);
+        endSegment.rotation.x = Math.PI / 2;
+        endSegment.position.set(6, 0, 0);
+        frame.add(endSegment);
+
+        pInsulator = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1, 16), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+        pInsulator.rotation.x = Math.PI / 2;
+        pInsulator.position.set(6, 0, 0);
+        frame.add(pInsulator);
+
+        scene.add(frame);
+
+        forceArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-6, 0, 0), 1, 0xef4444);
+        scene.add(forceArrow);
+
+        setupControls();
+        setupModal();
+        animate();
+    }
+
+    function setupControls() {
+        const update = () => {
+            current = parseFloat(document.getElementById('slider-current').value);
+            bField = parseFloat(document.getElementById('slider-bfield').value);
+            wireLength = parseFloat(document.getElementById('slider-length').value);
+            
+            document.getElementById('val-current').innerText = `${current.toFixed(1)} A`;
+            document.getElementById('val-bfield').innerText = `${bField.toFixed(1)} T`;
+            document.getElementById('val-length').innerText = `${wireLength.toFixed(1)} cm`;
+            updatePhysics();
+        };
+        ['slider-current', 'slider-bfield', 'slider-length'].forEach(id => document.getElementById(id).oninput = update);
+        update();
+    }
+    
+    function setupModal() {
+        const modal = document.getElementById('modal-explain');
+        const openBtn = document.getElementById('btn-explain');
+        const closeBtns = [document.getElementById('btn-close-explain'), document.getElementById('btn-close-bottom')];
+        
+        const open = () => modal.classList.remove('hidden');
+        const close = () => modal.classList.add('hidden');
+        
+        openBtn.onclick = open;
+        closeBtns.forEach(btn => btn.onclick = close);
+    }
+
+    function updatePhysics() {
+        const L_meters = wireLength / 100;
+        const force = bField * current * L_meters;
+        document.getElementById('force-val').innerText = `${Math.abs(force).toFixed(4)} N`;
+        
+        frame.rotation.z = force * 3.0;
+
+        // Force Arrow
+        forceArrow.visible = Math.abs(force) > 0.0005;
+        if (forceArrow.visible) {
+            forceArrow.setDirection(new THREE.Vector3(0, force > 0 ? 1 : -1, 0));
+            forceArrow.setLength(Math.abs(force) * 200, 0.4, 0.2);
+        }
+
+        // Balance Logic
+        const forceAtP = -force;
+        let reading = 0;
+        if (forceAtP > 0) {
+            reading = (forceAtP / GRAVITY_CONST) * 1000;
+            plate.position.y = 0.7 - Math.min(0.1, forceAtP * 2);
+        } else {
+            plate.position.y = 0.7;
+        }
+        document.getElementById('balance-display').innerText = `${reading.toFixed(3)} g`;
+
+        // DYNAMIC SCALING: Wire and Magnets
+        const scale = wireLength / 2.0; 
+        
+        // Scale wire segments
+        activeSegment.scale.y = scale;
+        endSegment.scale.y = scale;
+        
+        // Adjust rail separation
+        const offset = 0.75 * scale;
+        rail1.position.z = offset;
+        rail2.position.z = -offset;
+        activeSegment.position.z = 0;
+        endSegment.position.z = 0;
+        pInsulator.position.z = 0;
+
+        // Scale magnets to match
+        northPole.scale.z = scale;
+        southPole.scale.z = scale;
+        yoke.scale.z = scale;
+        
+        // Position magnets relative to wire separation
+        northPole.position.z = offset + 0.5 * scale;
+        southPole.position.z = -offset - 0.5 * scale;
+        yoke.scale.z = (offset * 2 + 1) / 4; 
+    }
+
+    let isMouseDown = false, mouseX = 0, mouseY = 0;
+    window.addEventListener('mousedown', (e) => { 
+        if(e.target.tagName !== 'INPUT' && !e.target.closest('#modal-explain') && !e.target.closest('#btn-explain')) { 
+            isMouseDown = true; mouseX = e.clientX; mouseY = e.clientY; 
+        }
+    });
+    window.addEventListener('mouseup', () => isMouseDown = false);
+    window.addEventListener('mousemove', (e) => {
+        if (!isMouseDown) return;
+        const dX = e.clientX - mouseX, dY = e.clientY - mouseY;
+        const r = Math.sqrt(camera.position.x**2 + camera.position.z**2);
+        const phi = Math.atan2(camera.position.z, camera.position.x) + dX * 0.01;
+        camera.position.x = r * Math.cos(phi);
+        camera.position.z = r * Math.sin(phi);
+        camera.position.y = Math.max(1, Math.min(25, camera.position.y + dY * 0.05));
+        camera.lookAt(0, 0, 0);
+        mouseX = e.clientX; mouseY = e.clientY;
+    });
+
+    function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+    window.onload = init;
+</script>
+</body>
+</html>
