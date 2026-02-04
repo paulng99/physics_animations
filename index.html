@@ -46,7 +46,7 @@
             Explore core ideas through hands-on sliders, animations, and instant visual feedback. Built for students, teachers, and curious minds.
           </p>
           <div class="mt-6 flex flex-wrap gap-3">
-            <a href="#experiments" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700">Browse Experiments</a>
+            <a href="#experiments" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700">Browse Topics</a>
             <a href="Youngs_Double-Slit_Experiment.html" class="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:border-blue-200">Open Double-Slit</a>
           </div>
         </div>
@@ -68,41 +68,78 @@
     <section id="experiments" class="mt-12">
       <div class="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h2 class="text-2xl font-bold">Experiments & Tools</h2>
-          <p class="text-slate-600">Choose a simulation to launch.</p>
+          <h2 class="text-2xl font-bold">Physics Topics</h2>
+          <p class="text-slate-600">Explore simulations organized by topic.</p>
         </div>
       </div>
 
-      <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <a href="Youngs_Double-Slit_Experiment.html" class="group rounded-2xl bg-white border border-slate-200 p-5 hover:border-blue-300 hover:shadow-lg transition">
-          <div class="flex items-center justify-between">
-            <span class="text-xs uppercase tracking-wide text-blue-600 font-semibold">Optics</span>
-            <span class="text-xs text-slate-400">Interactive</span>
+      <!-- Optics Section -->
+      <div class="mt-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+            <span class="text-xl">🔬</span>
           </div>
-          <h3 class="text-lg font-semibold mt-3">Young's Double-Slit</h3>
-          <p class="text-sm text-slate-600 mt-2">Change $\lambda$, $a$, and $D$ to see fringe spacing update live.</p>
-          <div class="mt-4 text-sm font-medium text-blue-600 group-hover:translate-x-1 transition">Open →</div>
-        </a>
+          <div>
+            <h3 class="text-xl font-bold text-slate-800">Optics (光學)</h3>
+            <p class="text-sm text-slate-600">Wave interference and light phenomena</p>
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <a href="Youngs_Double-Slit_Experiment.html" class="group rounded-xl bg-white border border-slate-200 p-4 hover:border-blue-300 hover:shadow-lg transition">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs uppercase tracking-wide text-blue-600 font-semibold">Interactive</span>
+            </div>
+            <h4 class="text-base font-semibold">Young's Double-Slit Experiment</h4>
+            <p class="text-xs text-slate-600 mt-1">Interference patterns • Wavelength • Fringe spacing</p>
+            <div class="mt-3 text-sm font-medium text-blue-600 group-hover:translate-x-1 transition">Open →</div>
+          </a>
+        </div>
+      </div>
 
-        <a href="Ball_and_String_Simulator.html" class="group rounded-2xl bg-white border border-slate-200 p-5 hover:border-blue-300 hover:shadow-lg transition">
-          <div class="flex items-center justify-between">
-            <span class="text-xs uppercase tracking-wide text-amber-600 font-semibold">Mechanics</span>
-            <span class="text-xs text-slate-400">Interactive</span>
+      <!-- Mechanics Section -->
+      <div class="mt-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+            <span class="text-xl">⚙️</span>
           </div>
-          <h3 class="text-lg font-semibold mt-3">Ball & String Simulator</h3>
-          <p class="text-sm text-slate-600 mt-2">Explore circular motion, centripetal force, and tangential velocity.</p>
-          <div class="mt-4 text-sm font-medium text-amber-600 group-hover:translate-x-1 transition">Open →</div>
-        </a>
+          <div>
+            <h3 class="text-xl font-bold text-slate-800">Mechanics (力學)</h3>
+            <p class="text-sm text-slate-600">Motion, forces, and circular dynamics</p>
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <a href="Ball_and_String_Simulator.html" class="group rounded-xl bg-white border border-slate-200 p-4 hover:border-amber-300 hover:shadow-lg transition">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs uppercase tracking-wide text-amber-600 font-semibold">Interactive</span>
+            </div>
+            <h4 class="text-base font-semibold">Ball & String Simulator</h4>
+            <p class="text-xs text-slate-600 mt-1">Circular motion • Centripetal force • Tangential velocity</p>
+            <div class="mt-3 text-sm font-medium text-amber-600 group-hover:translate-x-1 transition">Open →</div>
+          </a>
+        </div>
+      </div>
 
-        <a href="seating_plan.html" class="group rounded-2xl bg-white border border-slate-200 p-5 hover:border-blue-300 hover:shadow-lg transition">
-          <div class="flex items-center justify-between">
-            <span class="text-xs uppercase tracking-wide text-emerald-600 font-semibold">Classroom</span>
-            <span class="text-xs text-slate-400">Planner</span>
+      <!-- Classroom Tools Section -->
+      <div class="mt-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+            <span class="text-xl">🎓</span>
           </div>
-          <h3 class="text-lg font-semibold mt-3">Physics Lab Seating Planner</h3>
-          <p class="text-sm text-slate-600 mt-2">Drag, drop, and balance seating with printable layouts.</p>
-          <div class="mt-4 text-sm font-medium text-emerald-600 group-hover:translate-x-1 transition">Open →</div>
-        </a>
+          <div>
+            <h3 class="text-xl font-bold text-slate-800">Classroom Tools (課堂工具)</h3>
+            <p class="text-sm text-slate-600">Teaching aids and organizational tools</p>
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <a href="seating_plan.html" class="group rounded-xl bg-white border border-slate-200 p-4 hover:border-emerald-300 hover:shadow-lg transition">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs uppercase tracking-wide text-emerald-600 font-semibold">Planner</span>
+            </div>
+            <h4 class="text-base font-semibold">Physics Lab Seating Planner</h4>
+            <p class="text-xs text-slate-600 mt-1">Drag & drop • Smart balancing • Printable layouts</p>
+            <div class="mt-3 text-sm font-medium text-emerald-600 group-hover:translate-x-1 transition">Open →</div>
+          </a>
+        </div>
       </div>
     </section>
 
