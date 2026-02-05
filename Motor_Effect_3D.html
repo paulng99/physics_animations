@@ -66,11 +66,24 @@
     <nav class="bg-white border-b border-neutral-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div class="flex items-center space-x-2">
+                <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </a>
                 <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold">3D</div>
                 <span class="text-xl font-bold">PhysLab<span class="text-blue-600">3D</span></span>
             </div>
-            <div class="text-xs font-semibold text-neutral-500 uppercase tracking-widest hidden md:block">
-                馬達效應互動實驗室
+            <div class="flex items-center gap-4">
+                <div class="text-xs font-semibold text-neutral-500 uppercase tracking-widest hidden md:block" data-i18n="nav.subtitle">
+                    馬達效應互動實驗室
+                </div>
+                <!-- Language Switcher -->
+                <div class="flex gap-2">
+                    <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
+                    <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="cn">简</button>
+                    <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
+                </div>
             </div>
         </div>
     </nav>
@@ -443,6 +456,165 @@
             updateSimulationState();
         };
 
+        // Language Translation System
+        const translations = {
+            en: {
+                'nav.subtitle': 'Motor Effect Interactive Lab',
+                'title': 'Interactive 3D Motor Effect (with Magnetic Field Direction)',
+                'description': 'Observe the interaction between magnetic field and current-carrying conductor. Now you can clearly see the <strong>blue magnetic field arrows (B)</strong> and <strong>yellow current arrows (I)</strong>. According to Fleming\'s left-hand rule, the perpendicular plane of both determines the direction of force (F) on the conductor.',
+                'controls.title': 'Experiment Variable Control',
+                'controls.reset': 'Reset',
+                'controls.current': 'Current (I)',
+                'controls.reverse': 'Reverse (-10A)',
+                'controls.off': 'Off (0A)',
+                'controls.forward': 'Forward (+10A)',
+                'controls.magnets': 'Magnetic Poles & Field (B)',
+                'controls.flip': 'Reverse Magnetic Field Direction',
+                'controls.pole.down': 'North Pole on Top / South Pole on Bottom (B Downward)',
+                'controls.pole.up': 'South Pole on Top / North Pole on Bottom (B Upward)',
+                'vector.title': 'Vector Analysis',
+                'vector.b': 'Magnetic Field (B):',
+                'vector.i': 'Current (I):',
+                'vector.f': 'Force (F):',
+                'vector.b.down': 'Downward (N → S)',
+                'vector.b.up': 'Upward (N → S)',
+                'vector.i.none': 'None',
+                'vector.i.forward': 'Forward (+Z)',
+                'vector.i.backward': 'Backward (-Z)',
+                'vector.f.static': 'Static',
+                'vector.f.right': 'Right (X Axis Positive)',
+                'vector.f.left': 'Left (X Axis Negative)',
+                'physics.title': 'Physics Principle',
+                'physics.formula': 'F = BIl',
+                'physics.desc': 'Index Finger: Magnetic Field (B)<br>Middle Finger: Current (I)<br>Thumb: Force (F)<br>Magnetic field direction always points from North Pole (red) to South Pole (blue).',
+                'legend.north': 'North Pole (N)',
+                'legend.south': 'South Pole (S)',
+                'legend.current': 'Current (I)',
+                'legend.field': 'Magnetic Field (B)',
+                'legend.hint': 'Drag to Rotate • Scroll to Zoom',
+                'chart.title': 'Experimental Data Observation'
+            },
+            zh: {
+                'nav.subtitle': '馬達效應互動實驗室',
+                'title': '互動式 3D 馬達效應 (含磁場方向)',
+                'description': '觀察磁場與載流導體之間的相互作用。現在你可以清楚看到<strong>藍色磁場箭頭（B）</strong>與<strong>黃色電流箭頭（I）</strong>。根據佛萊明左手定則，兩者垂直的平面將決定導體受力（F）的方向。',
+                'controls.title': '實驗變數控制',
+                'controls.reset': '重設',
+                'controls.current': '電流 (I)',
+                'controls.reverse': '反向 (-10A)',
+                'controls.off': '關閉 (0A)',
+                'controls.forward': '正向 (+10A)',
+                'controls.magnets': '磁極與磁場 (B)',
+                'controls.flip': '反轉磁場方向',
+                'controls.pole.down': '北極在上 / 南極在下 (B 向下)',
+                'controls.pole.up': '南極在上 / 北極在下 (B 向上)',
+                'vector.title': '向量分析',
+                'vector.b': '磁場 (B):',
+                'vector.i': '電流 (I):',
+                'vector.f': '受力 (F):',
+                'vector.b.down': '向下 (N → S)',
+                'vector.b.up': '向上 (N → S)',
+                'vector.i.none': '無',
+                'vector.i.forward': '向前 (+Z)',
+                'vector.i.backward': '向後 (-Z)',
+                'vector.f.static': '靜止',
+                'vector.f.right': '向右 (X 軸正向)',
+                'vector.f.left': '向左 (X 軸反向)',
+                'physics.title': '物理原理',
+                'physics.formula': 'F = BIl',
+                'physics.desc': '食指：磁場 (B)<br>中指：電流 (I)<br>拇指：受力 (F)<br>磁場方向始終由北極（紅色）指向南極（藍色）。',
+                'legend.north': '北極 (N)',
+                'legend.south': '南極 (S)',
+                'legend.current': '電流 (I)',
+                'legend.field': '磁場 (B)',
+                'legend.hint': '拖曳旋轉 • 滾輪縮放',
+                'chart.title': '實驗數據觀測'
+            },
+            cn: {
+                'nav.subtitle': '马达效应互动实验室',
+                'title': '互动式 3D 马达效应 (含磁场方向)',
+                'description': '观察磁场与载流导体之间的相互作用。现在你可以清楚看到<strong>蓝色磁场箭头（B）</strong>与<strong>黄色电流箭头（I）</strong>。根据佛莱明左手定则，两者垂直的平面将决定导体受力（F）的方向。',
+                'controls.title': '实验变数控制',
+                'controls.reset': '重设',
+                'controls.current': '电流 (I)',
+                'controls.reverse': '反向 (-10A)',
+                'controls.off': '关闭 (0A)',
+                'controls.forward': '正向 (+10A)',
+                'controls.magnets': '磁极与磁场 (B)',
+                'controls.flip': '反转磁场方向',
+                'controls.pole.down': '北极在上 / 南极在下 (B 向下)',
+                'controls.pole.up': '南极在上 / 北极在下 (B 向上)',
+                'vector.title': '向量分析',
+                'vector.b': '磁场 (B):',
+                'vector.i': '电流 (I):',
+                'vector.f': '受力 (F):',
+                'vector.b.down': '向下 (N → S)',
+                'vector.b.up': '向上 (N → S)',
+                'vector.i.none': '无',
+                'vector.i.forward': '向前 (+Z)',
+                'vector.i.backward': '向后 (-Z)',
+                'vector.f.static': '静止',
+                'vector.f.right': '向右 (X 轴正向)',
+                'vector.f.left': '向左 (X 轴反向)',
+                'physics.title': '物理原理',
+                'physics.formula': 'F = BIl',
+                'physics.desc': '食指：磁场 (B)<br>中指：电流 (I)<br>拇指：受力 (F)<br>磁场方向始终由北极（红色）指向南极（蓝色）。',
+                'legend.north': '北极 (N)',
+                'legend.south': '南极 (S)',
+                'legend.current': '电流 (I)',
+                'legend.field': '磁场 (B)',
+                'legend.hint': '拖曳旋转 • 滚轮缩放',
+                'chart.title': '实验数据观测'
+            }
+        };
+
+        let currentLang = localStorage.getItem('preferred_language') || 'en';
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('preferred_language', lang);
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    if (key.includes('.desc')) {
+                        el.innerHTML = translations[lang][key];
+                    } else {
+                        el.textContent = translations[lang][key];
+                    }
+                }
+            });
+            
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.getAttribute('data-lang') === lang) {
+                    btn.classList.add('bg-blue-600', 'text-white');
+                    btn.classList.remove('text-slate-600');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('text-slate-600');
+                }
+            });
+            
+            document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setLanguage(currentLang);
+        });
+
     </script>
 </body>
 </html>
+</body>
+</html>        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('preferred_language', lang);
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    if (key.includes('.desc')) {
+                        el.innerHTML = translations[lang][key];
+                    } else {
+                        el.textContent = translations[lang][key];
+                    }
+                }

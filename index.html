@@ -26,11 +26,19 @@
       <div class="flex items-center gap-3">
         <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-bold">Φ</span>
         <div>
-          <div class="font-semibold text-lg">Physics Animations</div>
-          <div class="text-sm text-slate-500">Interactive demos for learning</div>
+          <div class="font-semibold text-lg" data-i18n="site.title">Physics Animations</div>
+          <div class="text-sm text-slate-500" data-i18n="site.subtitle">Interactive demos for learning</div>
         </div>
       </div>
-      <a href="https://github.com/paulng99/physics_animations" class="text-sm font-medium text-slate-600 hover:text-blue-600">GitHub</a>
+      <div class="flex items-center gap-4">
+        <!-- Language Switcher -->
+        <div class="flex gap-2">
+          <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
+          <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="cn">简</button>
+          <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
+        </div>
+        <a href="https://github.com/paulng99/physics_animations" class="text-sm font-medium text-slate-600 hover:text-blue-600">GitHub</a>
+      </div>
     </nav>
   </header>
 
@@ -38,16 +46,16 @@
     <section class="glass hero-glow rounded-3xl p-8 md:p-12 border border-white/60">
       <div class="grid md:grid-cols-2 gap-10 items-center">
         <div>
-          <p class="text-blue-600 font-semibold">Physics • Visualized</p>
-          <h1 class="text-3xl md:text-4xl font-bold mt-2 leading-tight">
+          <p class="text-blue-600 font-semibold" data-i18n="hero.tagline">Physics • Visualized</p>
+          <h1 class="text-3xl md:text-4xl font-bold mt-2 leading-tight" data-i18n="hero.title">
             Beautiful, interactive simulations for the classroom and beyond.
           </h1>
-          <p class="mt-4 text-slate-600">
+          <p class="mt-4 text-slate-600" data-i18n="hero.description">
             Explore core ideas through hands-on sliders, animations, and instant visual feedback. Built for students, teachers, and curious minds.
           </p>
           <div class="mt-6 flex flex-wrap gap-3">
-            <a href="#experiments" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700">Browse Topics</a>
-            <a href="Youngs_Double-Slit_Experiment.html" class="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:border-blue-200">Open Double-Slit</a>
+            <a href="#experiments" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700" data-i18n="hero.browse">Browse Topics</a>
+            <a href="Youngs_Double-Slit_Experiment.html" class="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:border-blue-200" data-i18n="hero.demo">Open Double-Slit</a>
           </div>
         </div>
         <div class="grid gap-4">
@@ -231,6 +239,68 @@
     function closeFeedbackForm() {
       document.getElementById('feedbackModal').classList.add('hidden');
     }
+
+    // Language Translation System
+    const translations = {
+      en: {
+        'site.title': 'Physics Animations',
+        'site.subtitle': 'Interactive demos for learning',
+        'hero.tagline': 'Physics • Visualized',
+        'hero.title': 'Beautiful, interactive simulations for the classroom and beyond.',
+        'hero.description': 'Explore core ideas through hands-on sliders, animations, and instant visual feedback. Built for students, teachers, and curious minds.',
+        'hero.browse': 'Browse Topics',
+        'hero.demo': 'Open Double-Slit'
+      },
+      zh: {
+        'site.title': '物理動畫',
+        'site.subtitle': '互動學習演示',
+        'hero.tagline': '物理 • 可視化',
+        'hero.title': '美觀、互動的模擬，適用於課堂及更多場景。',
+        'hero.description': '通過實踐滑桿、動畫和即時視覺反饋探索核心概念。專為學生、教師和好奇的心靈打造。',
+        'hero.browse': '瀏覽主題',
+        'hero.demo': '打開雙縫實驗'
+      },
+      cn: {
+        'site.title': '物理动画',
+        'site.subtitle': '互动学习演示',
+        'hero.tagline': '物理 • 可视化',
+        'hero.title': '美观、互动的模拟，适用于课堂及更多场景。',
+        'hero.description': '通过实践滑杆、动画和即时视觉反馈探索核心概念。专为学生、教师和好奇的心灵打造。',
+        'hero.browse': '浏览主题',
+        'hero.demo': '打开双缝实验'
+      }
+    };
+
+    let currentLang = localStorage.getItem('preferred_language') || 'en';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('preferred_language', lang);
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+          el.textContent = translations[lang][key];
+        }
+      });
+      
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        if (btn.getAttribute('data-lang') === lang) {
+          btn.classList.add('bg-blue-600', 'text-white');
+          btn.classList.remove('text-slate-600');
+        } else {
+          btn.classList.remove('bg-blue-600', 'text-white');
+          btn.classList.add('text-slate-600');
+        }
+      });
+      
+      document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setLanguage(currentLang);
+    });
+
     async function submitFeedback(e) {
       e.preventDefault();
       const form = e.target;
