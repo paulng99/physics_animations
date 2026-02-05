@@ -28,6 +28,8 @@
       gtag('config', 'G-RJQ61GJDVS');
     </script>
     <style>
+        :root { color-scheme: light; }
+        .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); }
         /* Use Inter font */
         body {
             font-family: 'Inter', sans-serif;
@@ -88,27 +90,39 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+    
+    <!-- Header -->
+    <header class="max-w-6xl mx-auto px-6 pt-6 pb-4">
+        <nav class="flex items-center justify-between">
+            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+            </a>
+            
+            <!-- Language Switcher -->
+            <div class="flex gap-2">
+                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
+                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="cn">简</button>
+                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
+            </div>
+        </nav>
+    </header>
 
-    <div class="w-full max-w-4xl bg-white rounded-lg shadow-xl p-6 md:p-8 space-y-8">
+    <div class="w-full max-w-4xl mx-auto px-6 pb-16">
+        <div class="glass rounded-3xl p-6 md:p-8 border border-white/60 space-y-8">
         
-        <!-- Back Button -->
-        <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 transition">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            <span class="font-medium">Back to Home</span>
-        </a>
-
         <!-- Title -->
-        <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-800">
+        <h1 class="text-2xl md:text-3xl font-bold text-center text-slate-800" data-i18n="title">
             Young's Double-Slit Experiment
         </h1>
 
         <!-- Schematic Diagram -->
         <div class="space-y-4">
-            <h2 class="text-xl font-semibold text-gray-700">Apparatus Schematic</h2>
-            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h2 class="text-xl font-semibold text-slate-700" data-i18n="schematic.title">Apparatus Schematic</h2>
+            <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
                 <!-- Laser -->
                 <div class="flex flex-col items-center space-y-2">
                     <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.001l-2.387.478a2 2 0 00-1.022.547m-2.285 2.285a2 2 0 00-.547 1.022l-.477 2.387a6 6 0 00.001 3.86l.478 2.387a2 2 0 00.547 1.022m6.285-14.57a2 2 0 001.022.547l2.387.477a6 6 0 003.86-.001l2.387-.478a2 2 0 001.022-.547m-2.285-2.285a2 2 0 00.547-1.022l.477-2.387a6 6 0 00-.001-3.86l-.478-2.387a2 2 0 00-.547-1.022m-6.285 14.57a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.001l-2.387.478a2 2 0 00-1.022.547m2.285 2.285a2 2 0 00-.547 1.022l-.477 2.387a6 6 0 00.001 3.86l.478 2.387a2 2 0 00.547 1.022m6.285-14.571L12 12m0 0l-3.429 3.429"></path></svg>
@@ -541,6 +555,118 @@
             }
         }
 
+    </script>
+
+    <!-- Language Translation System -->
+    <script>
+        const translations = {
+            en: {
+                'nav.back': 'Back to Home',
+                'title': "Young's Double-Slit Experiment",
+                'schematic.title': 'Apparatus Schematic',
+                'controls.wavelength': 'Wavelength',
+                'controls.slit': 'Slit Separation',
+                'controls.distance': 'Screen Distance',
+                'pattern.title': 'Interference Pattern on Screen',
+                'pattern.fringe': 'Fringe Separation',
+                'explanation.text': 'The separation between the bright fringes (dots) is given by the formula:',
+                'explanation.question': 'Try answering question (a)(i) from your sheet: How can you increase the average separation',
+                'explanation.increase1': 'Increase Wavelength',
+                'explanation.increase2': 'Increase Screen Distance',
+                'explanation.decrease': 'Decrease Slit Separation',
+                'button.explain': '✨ Explain This Concept',
+                'button.feedback': '📝 Send Feedback',
+                'feedback.title': 'Send Us Your Feedback',
+                'feedback.email': 'Your email',
+                'feedback.message': 'Your feedback or suggestions...',
+                'feedback.send': 'Send',
+                'feedback.cancel': 'Cancel',
+                'feedback.thanks': 'Thank you for your feedback!',
+                'feedback.error': 'Error sending feedback. Please try again.'
+            },
+            zh: {
+                'nav.back': '返回首頁',
+                'title': '楊氏雙狹縫實驗',
+                'schematic.title': '實驗裝置示意圖',
+                'controls.wavelength': '波長',
+                'controls.slit': '狹縫間距',
+                'controls.distance': '屏幕距離',
+                'pattern.title': '屏幕上的干涉圖樣',
+                'pattern.fringe': '條紋間距',
+                'explanation.text': '明條紋之間的間距由以下公式給出：',
+                'explanation.question': '試回答工作紙問題 (a)(i)：如何增加平均間距',
+                'explanation.increase1': '增加波長',
+                'explanation.increase2': '增加屏幕距離',
+                'explanation.decrease': '減少狹縫間距',
+                'button.explain': '✨ 解釋此概念',
+                'button.feedback': '📝 發送反饋',
+                'feedback.title': '發送您的反饋',
+                'feedback.email': '您的電子郵件',
+                'feedback.message': '您的反饋或建議...',
+                'feedback.send': '發送',
+                'feedback.cancel': '取消',
+                'feedback.thanks': '感謝您的反饋！',
+                'feedback.error': '發送反饋時出錯。請重試。'
+            },
+            cn: {
+                'nav.back': '返回首页',
+                'title': '杨氏双缝实验',
+                'schematic.title': '实验装置示意图',
+                'controls.wavelength': '波长',
+                'controls.slit': '狭缝间距',
+                'controls.distance': '屏幕距离',
+                'pattern.title': '屏幕上的干涉图样',
+                'pattern.fringe': '条纹间距',
+                'explanation.text': '明条纹之间的间距由以下公式给出：',
+                'explanation.question': '试回答工作纸问题 (a)(i)：如何增加平均间距',
+                'explanation.increase1': '增加波长',
+                'explanation.increase2': '增加屏幕距离',
+                'explanation.decrease': '减少狭缝间距',
+                'button.explain': '✨ 解释此概念',
+                'button.feedback': '📝 发送反馈',
+                'feedback.title': '发送您的反馈',
+                'feedback.email': '您的电子邮件',
+                'feedback.message': '您的反馈或建议...',
+                'feedback.send': '发送',
+                'feedback.cancel': '取消',
+                'feedback.thanks': '感谢您的反馈！',
+                'feedback.error': '发送反馈时出错。请重试。'
+            }
+        };
+
+        let currentLang = localStorage.getItem('preferred_language') || 'en';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('preferred_language', lang);
+            
+            // Update all elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+            
+            // Update language buttons
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.getAttribute('data-lang') === lang) {
+                    btn.classList.add('bg-blue-600', 'text-white');
+                    btn.classList.remove('text-slate-600');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('text-slate-600');
+                }
+            });
+            
+            // Update document language
+            document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+        }
+
+        // Initialize language on page load
+        window.addEventListener('load', () => {
+            setLanguage(currentLang);
+        });
     </script>
 
     <!-- Feedback Modal -->
