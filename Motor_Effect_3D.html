@@ -94,7 +94,7 @@
         <section class="bg-white p-8 rounded-2xl shadow-sm border border-neutral-200">
             <h1 class="text-3xl font-bold mb-4">互動式 3D 馬達效應 (含磁場方向)</h1>
             <p class="text-neutral-600 max-w-3xl">
-                觀察磁場與載流導體之間的相互作用。現在你可以清楚看到<strong>藍色磁場箭頭（B）</strong>與<strong>黃色電流箭頭（I）</strong>。根據佛萊明左手定則，兩者垂直的平面將決定導體受力（F）的方向。
+                觀察磁場與載流導體之間的相互作用。現在你可以清楚看到<strong>橙色磁場箭頭（B）</strong>與<strong>綠色電流箭頭（I）</strong>。根據佛萊明左手定則，兩者垂直的平面將決定導體受力（F）的方向。
             </p>
         </section>
 
@@ -114,9 +114,9 @@
                         <div class="space-y-3">
                             <div class="flex justify-between text-sm">
                                 <label class="font-medium text-neutral-600">電流 (I)</label>
-                                <span id="current-val-display" class="font-mono font-bold text-blue-600">0.0 A</span>
+                                <span id="current-val-display" class="font-mono font-bold text-green-600">0.0 A</span>
                             </div>
-                            <input type="range" id="current-slider" min="-10" max="10" step="0.1" value="0" class="range-slider">
+                            <input type="range" id="current-slider" min="-10" max="10" step="0.1" value="0" class="range-slider accent-green-600">
                             <div class="flex justify-between text-[10px] text-neutral-400 font-bold uppercase">
                                 <span>反向 (-10A)</span>
                                 <span>關閉 (0A)</span>
@@ -130,16 +130,16 @@
                         <button id="flip-magnets" class="w-full py-3 bg-neutral-100 hover:bg-neutral-200 rounded-xl font-bold text-sm transition-colors flex items-center justify-center space-x-2">
                             <span>反轉磁場方向</span>
                         </button>
-                        <p id="pole-status" class="text-[10px] text-center mt-2 font-bold text-blue-600">北極在上 / 南極在下 (B 向下)</p>
+                        <p id="pole-status" class="text-[10px] text-center mt-2 font-bold text-amber-600">北極在上 / 南極在下 (B 向下)</p>
                     </div>
 
                     <div class="pt-6 border-t border-neutral-100">
                         <div id="vector-info" class="p-4 bg-blue-50 rounded-xl border border-blue-100">
                             <h4 class="text-xs font-bold text-blue-800 uppercase mb-2">向量分析</h4>
                             <div class="space-y-1 text-xs">
-                                <div class="flex justify-between"><span>磁場 (B):</span> <span id="vec-b" class="font-bold">向下 (N → S)</span></div>
-                                <div class="flex justify-between"><span>電流 (I):</span> <span id="vec-i" class="font-bold">無</span></div>
-                                <div class="flex justify-between"><span>受力 (F):</span> <span id="vec-f" class="font-bold text-amber-600">靜止</span></div>
+                                <div class="flex justify-between"><span>磁場 (B):</span> <span id="vec-b" class="font-bold text-amber-600">向下 (N → S)</span></div>
+                                <div class="flex justify-between"><span>電流 (I):</span> <span id="vec-i" class="font-bold text-green-600">無</span></div>
+                                <div class="flex justify-between"><span>受力 (F):</span> <span id="vec-f" class="font-bold text-red-600">靜止</span></div>
                             </div>
                         </div>
                     </div>
@@ -169,11 +169,11 @@
                             <span class="text-[10px] font-bold text-neutral-500 uppercase">南極 (S)</span>
                         </div>
                         <div class="flex items-center space-x-1">
-                            <div class="w-3 h-3 rounded-full bg-amber-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-600"></div>
                             <span class="text-[10px] font-bold text-neutral-500 uppercase">電流 (I)</span>
                         </div>
                         <div class="flex items-center space-x-1">
-                            <div class="w-3 h-1 bg-sky-500"></div>
+                            <div class="w-3 h-1 bg-amber-600"></div>
                             <span class="text-[10px] font-bold text-neutral-500 uppercase">磁場 (B)</span>
                         </div>
                     </div>
@@ -253,7 +253,7 @@
 
             // 磁場方向箭頭 (B)
             fieldArrowsGroup = new THREE.Group();
-            const arrowColor = 0x0ea5e9; // Sky-500
+            const arrowColor = 0xd97706; // Amber-600
             for(let x = -1.5; x <= 1.5; x += 1.5) {
                 for(let z = -3; z <= 3; z += 1.5) {
                     const arrowHelper = new THREE.ArrowHelper(
@@ -281,8 +281,8 @@
             currentArrowsGroup = new THREE.Group();
             for(let i = 0; i < 4; i++) {
                 const arrowGroup = new THREE.Group();
-                const cone = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.6, 12), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
-                const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.4, 8), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
+                const cone = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.6, 12), new THREE.MeshBasicMaterial({ color: 0x16a34a })); // Green-600
+                const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.4, 8), new THREE.MeshBasicMaterial({ color: 0x16a34a })); // Green-600
                 stem.position.y = -0.4;
                 arrowGroup.add(cone, stem);
                 arrowGroup.position.z = (i - 1.5) * 1.8;
@@ -389,15 +389,15 @@
                 datasets: [{
                     label: '受力 F (相對單位)',
                     data: Array.from({length: 41}, (_, i) => ((i - 20) / 2) * state.fieldStrength),
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderColor: '#dc2626', // Red-600
+                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
                     fill: true,
                     tension: 0,
                     pointRadius: 0
                 }, {
                     label: '當前點',
                     data: [{x: 0, y: 0}],
-                    backgroundColor: '#fbbf24',
+                    backgroundColor: '#16a34a', // Green-600
                     pointRadius: 9,
                     showLine: false
                 }]

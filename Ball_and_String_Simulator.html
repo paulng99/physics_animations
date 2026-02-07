@@ -144,10 +144,10 @@
 
         <div class="mt-4 p-4 bg-slate-100 rounded-lg shadow-inner text-slate-700">
             <p class="text-sm">
-                <strong>Blue Arrow:</strong> Centripetal Force (tension in the string)
+                <strong><span class="text-red-600">Red Arrow</span>:</strong> Centripetal Force (tension in the string)
             </p>
             <p class="text-sm">
-                <strong>Green Arrow:</strong> Tangential Velocity (direction of motion)
+                <strong><span class="text-green-600">Green Arrow</span>:</strong> Tangential Velocity (direction of motion)
             </p>
             <p class="text-sm mt-2">
                 Watch how the ball continues to move in the direction of the **green arrow** (tangential velocity) at the exact moment of release!
@@ -329,8 +329,8 @@
                 if (!isReleased) {
                     const arrowScale = 0.5 * ballRadius; 
 
-                    // Centripetal Force (Blue)
-                    drawArrow(currentBallX, currentBallY, center.x, center.y, '#3b82f6');
+                    // Centripetal Force (Red)
+                    drawArrow(currentBallX, currentBallY, center.x, center.y, '#dc2626');
 
                     // Tangential Velocity (Green)
                     const vx = -radius * angularVelocity * Math.sin(angle);
@@ -579,7 +579,7 @@
                 'button.release': 'Release Ball!',
                 'button.reset': 'Reset',
                 'button.explain': '✨ Explain the Physics',
-                'info.blue': 'Blue Arrow:',
+                'info.blue': 'Red Arrow:',
                 'info.blue.desc': 'Centripetal Force (tension in the string)',
                 'info.green': 'Green Arrow:',
                 'info.green.desc': 'Tangential Velocity (direction of motion)',
@@ -596,7 +596,7 @@
                 'button.release': '放開球！',
                 'button.reset': '重設',
                 'button.explain': '✨ 解釋物理原理',
-                'info.blue': '藍色箭頭：',
+                'info.blue': '紅色箭頭：',
                 'info.blue.desc': '向心力（繩子張力）',
                 'info.green': '綠色箭頭：',
                 'info.green.desc': '切線速度（運動方向）',
@@ -613,7 +613,7 @@
                 'button.release': '放开球！',
                 'button.reset': '重设',
                 'button.explain': '✨ 解释物理原理',
-                'info.blue': '蓝色箭头：',
+                'info.blue': '红色箭头：',
                 'info.blue.desc': '向心力（绳子张力）',
                 'info.green': '绿色箭头：',
                 'info.green.desc': '切线速度（运动方向）',

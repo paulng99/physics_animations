@@ -6,62 +6,49 @@
     <title>3D Current Balance Simulation</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
-        #canvas-container { width: 100vw; height: 100vh; display: block; }
-        .ui-panel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 320px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            pointer-events: auto;
-            z-index: 10;
-            border: 1px solid #e2e8f0;
-        }
-        .label-value { font-weight: 700; color: #1d4ed8; font-variant-numeric: tabular-nums; }
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom slider styles for better consistency */
         input[type=range] {
-            accent-color: #2563eb;
+            -webkit-appearance: none; 
+            background: transparent; 
         }
-        /* Modal Animation */
-        #modal-explain { transition: opacity 0.2s ease-in-out; }
-        #modal-explain.hidden { opacity: 0; pointer-events: none; display: flex; visibility: hidden;} 
-        #modal-explain:not(.hidden) { opacity: 1; pointer-events: auto; visibility: visible;}
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+        }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 overflow-hidden">
 
-<div id="canvas-container"></div>
+<div id="canvas-container" class="w-screen h-screen block"></div>
 
 <!-- Control Panel -->
-<div class="ui-panel">
-    <h2 class="text-xl font-bold mb-4 text-slate-800 border-b pb-2">Apparatus Controls</h2>
+<div class="absolute top-5 right-5 w-80 bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20 z-10">
+    <h2 class="text-xl font-bold mb-4 text-slate-800 border-b border-slate-200 pb-2">Apparatus Controls</h2>
     
     <div class="mb-5">
         <div class="flex justify-between mb-1">
             <label class="text-sm font-semibold text-slate-600">Current (I)</label>
-            <span id="val-current" class="label-value">1.0 A</span>
+            <span id="val-current" class="text-green-600 font-bold tabular-nums">1.0 A</span>
         </div>
-        <input type="range" id="slider-current" min="-5" max="5" step="0.1" value="1.0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+        <input type="range" id="slider-current" min="-5" max="5" step="0.1" value="1.0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-green-600">
     </div>
 
     <div class="mb-5">
         <div class="flex justify-between mb-1">
             <label class="text-sm font-semibold text-slate-600">Magnetic Field (B)</label>
-            <span id="val-bfield" class="label-value">0.5 T</span>
+            <span id="val-bfield" class="text-amber-600 font-bold tabular-nums">0.5 T</span>
         </div>
-        <input type="range" id="slider-bfield" min="0" max="2.0" step="0.1" value="0.5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+        <input type="range" id="slider-bfield" min="0" max="2.0" step="0.1" value="0.5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-600">
     </div>
 
     <div class="mb-6">
         <div class="flex justify-between mb-1">
             <label class="text-sm font-semibold text-slate-600">Active Length (L)</label>
-            <span id="val-length" class="label-value">2.0 cm</span>
+            <span id="val-length" class="text-slate-600 font-bold tabular-nums">2.0 cm</span>
         </div>
-        <input type="range" id="slider-length" min="1.0" max="8.0" step="0.1" value="2.0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+        <input type="range" id="slider-length" min="1.0" max="8.0" step="0.1" value="2.0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600">
     </div>
 
     <div class="bg-slate-900 rounded-xl p-4 text-white shadow-inner">
@@ -71,12 +58,12 @@
         <div class="mt-4 pt-3 border-t border-slate-700">
             <div class="flex justify-between text-xs text-slate-300 mb-1">
                 <span>Lorentz Force</span>
-                <span id="force-val" class="text-blue-300 font-bold">0.0100 N</span>
+                <span id="force-val" class="text-red-400 font-bold">0.0100 N</span>
             </div>
         </div>
     </div>
 
-    <button id="btn-explain" class="mt-4 w-full py-2 bg-slate-100 hover:bg-slate-200 text-blue-700 border border-blue-200 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2">
+    <button id="btn-explain" class="mt-4 w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -85,9 +72,9 @@
 </div>
 
 <!-- Explanation Modal -->
-<div id="modal-explain" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl relative animate-fade-in-up">
-        <button id="btn-close-explain" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+<div id="modal-explain" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-200">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl relative">
+        <button id="btn-close-explain" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -97,42 +84,42 @@
         <p class="text-slate-500 text-sm mb-6">Understanding the Current Balance Experiment</p>
         
         <div class="space-y-6 text-slate-600 text-sm">
-            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+            <div class="bg-blue-50 p-5 rounded-xl border border-blue-100">
                 <h4 class="font-bold text-blue-800 flex items-center gap-2">
                     1. The Lorentz Force Formula
                 </h4>
                 <div class="mt-3 text-center">
-                    <span class="font-mono text-lg bg-white px-4 py-2 rounded shadow-sm border border-blue-100 font-bold text-slate-800">F = B × I × L</span>
+                    <span class="font-mono text-lg bg-white px-4 py-2 rounded-lg shadow-sm border border-blue-100 font-bold text-slate-800">F = B × I × L</span>
                 </div>
-                <div class="grid grid-cols-2 gap-2 mt-4 text-xs">
-                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-400"></span> <strong>F</strong>: Magnetic Force (N)</div>
-                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-400"></span> <strong>B</strong>: Field Strength (Tesla)</div>
-                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-400"></span> <strong>I</strong>: Current (Amps)</div>
-                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-400"></span> <strong>L</strong>: Active Length (m)</div>
+                <div class="grid grid-cols-2 gap-3 mt-4 text-xs">
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-600"></span> <strong>F</strong>: Magnetic Force (N)</div>
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-600"></span> <strong>B</strong>: Field Strength (Tesla)</div>
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-600"></span> <strong>I</strong>: Current (Amps)</div>
+                    <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-600"></span> <strong>L</strong>: Active Length (m)</div>
                 </div>
             </div>
             
-            <div class="pl-2 border-l-4 border-slate-200">
+            <div class="pl-4 border-l-4 border-slate-200">
                 <h4 class="font-bold text-slate-800 mb-2">2. Interpreting the Result</h4>
                 <p class="mb-2">The wire frame acts as a center-pivot <strong>lever</strong>.</p>
                 <ul class="space-y-2">
                     <li class="flex gap-2">
-                        <span class="text-green-500 font-bold">↑</span>
+                        <span class="text-green-600 font-bold">↑</span>
                         <span>If Magnetic Force pushes the wire end <strong>UP</strong>...</span>
                     </li>
                     <li class="flex gap-2">
-                        <span class="text-red-500 font-bold">↓</span>
+                        <span class="text-red-600 font-bold">↓</span>
                         <span>...the lever pushes the balance end <strong>DOWN</strong>.</span>
                     </li>
                 </ul>
-                <div class="mt-3 text-xs bg-slate-100 p-3 rounded text-center font-mono">
+                <div class="mt-3 text-xs bg-slate-100 p-3 rounded-lg text-center font-mono text-slate-600">
                     Balance Reading (g) = (Force / 9.81) × 1000
                 </div>
             </div>
         </div>
         
         <div class="mt-6 text-center">
-            <button id="btn-close-bottom" class="px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-semibold">
+            <button id="btn-close-bottom" class="px-6 py-2.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-colors text-sm font-semibold">
                 Back to Simulation
             </button>
         </div>
@@ -148,7 +135,7 @@
 
     function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf1f5f9);
+        scene.background = new THREE.Color(0xf8fafc); // Slate-50
 
         camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(15, 12, 15);
@@ -166,7 +153,7 @@
         scene.add(sun);
 
         // Floor
-        const table = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: 0xe2e8f0 }));
+        const table = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: 0xe2e8f0 })); // Slate-200
         table.rotation.x = -Math.PI / 2;
         table.position.y = -3;
         table.receiveShadow = true;
@@ -196,8 +183,8 @@
 
         // 3. Magnets
         const magGroup = new THREE.Group();
-        northPole = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-        southPole = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), new THREE.MeshStandardMaterial({ color: 0x3b82f6 }));
+        northPole = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), new THREE.MeshStandardMaterial({ color: 0xdc2626 })); // Red-600
+        southPole = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), new THREE.MeshStandardMaterial({ color: 0x2563eb })); // Blue-600
         yoke = new THREE.Mesh(new THREE.BoxGeometry(2, 0.4, 4), new THREE.MeshStandardMaterial({ color: 0x64748b }));
         
         northPole.position.set(-6, -1, 1.5);
@@ -209,7 +196,7 @@
 
         // 4. Wire Frame
         frame = new THREE.Group();
-        const wireMat = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.8 });
+        const wireMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.8 }); // Amber-600 (Copperish)
         const radius = 0.06;
 
         rail1 = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 12, 8), wireMat);
@@ -238,7 +225,7 @@
 
         scene.add(frame);
 
-        forceArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-6, 0, 0), 1, 0xef4444);
+        forceArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-6, 0, 0), 1, 0xdc2626); // Red-600
         scene.add(forceArrow);
 
         setupControls();
