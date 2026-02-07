@@ -1,0 +1,82 @@
+# Physics Animations Project Rules
+
+## Project Philosophy
+- **Single-File Architecture**: Each simulation is a standalone HTML file containing all necessary logic (JS) and styles (Tailwind classes).
+- **No Build Step**: The project is designed to run directly in the browser. Do not introduce Webpack, Vite, or other bundlers for individual files.
+- **Mobile-First**: All designs must be responsive and optimized for mobile devices first, then scale up to desktop.
+- **Educational Focus**: Clarity of physics visualization takes precedence. Use standard semantic colors.
+
+## Tech Stack
+- **Core**: HTML5, Vanilla JavaScript (ES6+).
+- **Styling**: Tailwind CSS (v3.x via CDN).
+- **Graphics**:
+  - **2D**: HTML5 Canvas API.
+  - **3D**: Three.js (r128 via CDN).
+- **UI Controls**: dat.gui (via CDN) for parameter tuning.
+- **Fonts**: Google Fonts (Inter).
+- **Icons**: Heroicons (SVG) or similar lightweight SVGs.
+
+## Coding Conventions
+
+### HTML Structure
+- **DocType**: `<!DOCTYPE html>`
+- **Head**:
+  - Meta tags for viewport (`width=device-width, initial-scale=1.0`).
+  - Tailwind CDN script.
+  - Google Fonts (`Inter`).
+  - Three.js/dat.gui CDNs (if needed).
+  - `DESIGN_SYSTEM.md` compliance.
+- **Body**:
+  - Semantic HTML tags (`<header>`, `<main>`, `<footer>` where appropriate).
+  - Canvas container (usually absolute positioned or flex-grow).
+  - UI Overlay (absolute positioned over canvas).
+- **Scripts**:
+  - Place `<script>` tags at the end of `<body>`.
+  - Use modular functions (`init()`, `animate()`, `onWindowResize()`).
+
+### MathJax (LaTeX)
+- **Inline Style**: Always add the following CSS rule to ensure inline math symbols align correctly without breaking layout:
+  ```css
+  mjx-container { display: inline-block !important; }
+  ```
+
+### Internationalization (I18n)
+- **Attribute**: Use `data-i18n="key"` on all text elements.
+- **Storage**: Maintain a `const translations = { en: {...}, zh: {...}, cn: {...} };` object.
+- **Functionality**: Implement a `updateLanguage(lang)` function that updates `innerText` based on `data-i18n` keys.
+
+## Design System Compliance
+**Strictly follow `DESIGN_SYSTEM.md`.**
+
+### Color Palette
+- **Primary**: Blue (`bg-blue-600`, `text-blue-600`).
+- **Background**: Slate/White gradients (`bg-slate-50`).
+- **Surface**: White (`bg-white`) or Glass (`bg-white/80 backdrop-blur`).
+
+### Physics Semantic Colors (CRITICAL)
+- **Force (F)**: Red (`#DC2626` / `text-red-600`).
+- **Velocity (v) / Current (I)**: Green (`#16A34A` / `text-green-600`).
+- **Acceleration (a)**: Purple (`#9333EA` / `text-purple-600`).
+- **Magnetic Field (B)**: Amber (`#D97706` / `text-amber-600`).
+- **Displacement**: Slate (`#475569` / `text-slate-600`).
+
+### UI Components
+- **Buttons**: Rounded-xl, prominent hover states (`hover:-translate-y-0.5`).
+- **Cards**: Glassmorphism preferred for overlays.
+- **Inputs**: Tailwind forms plugin style or custom rounded-lg borders.
+
+## Workflow
+1.  **New Simulation**:
+    - Duplicate an existing template (e.g., `Ball_and_String_Simulator.html`).
+    - Update title, meta tags, and unique logic.
+    - Ensure all CDN links are valid.
+2.  **Navigation**:
+    - Add the new file to `index.html` under the appropriate category.
+3.  **Testing**:
+    - Verify responsiveness on mobile/tablet/desktop.
+    - Check color contrast and semantic accuracy.
+    - Test language switching.
+
+## Documentation
+- Add clear comments explaining complex physics formulas.
+- Update `DESIGN_SYSTEM.md` if new standard UI patterns are introduced.

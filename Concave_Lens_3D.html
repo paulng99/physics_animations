@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Convex Lens Image Formation</title>
+    <title>3D Concave Lens Image Formation</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js -->
@@ -117,9 +117,9 @@
         
         <!-- Header Section -->
         <header class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h1 class="text-3xl font-bold text-slate-800 mb-2" data-i18n="page.title">Convex Lens Image Formation</h1>
+            <h1 class="text-3xl font-bold text-slate-800 mb-2" data-i18n="page.title">Concave Lens Image Formation</h1>
             <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="page.description">
-                Explore how a convex lens forms images. Adjust the object distance and focal length to see how real and virtual images are created. Observe the three principal rays in 3D space.
+                Explore how a concave lens forms images. Concave lenses always produce virtual, upright, and diminished images. Adjust the object distance to see how the image position changes.
             </p>
         </header>
 
@@ -152,8 +152,9 @@
                     <div>
                         <div class="flex justify-between mb-2">
                             <label class="text-sm font-medium text-slate-700" data-i18n="controls.f">Focal Length ($f$)</label>
-                            <span id="val-f" class="text-sm font-bold text-blue-600 font-mono">10.0 cm</span>
+                            <span id="val-f" class="text-sm font-bold text-blue-600 font-mono">-10.0 cm</span>
                         </div>
+                        <!-- Display absolute value for slider logic but internal calculation uses negative -->
                         <input type="range" id="slider-f" min="5" max="25" step="0.5" value="10">
                     </div>
 
@@ -173,15 +174,15 @@
                     <div class="space-y-3 text-sm">
                         <div class="flex justify-between items-center bg-white p-2 rounded border border-slate-100">
                             <span class="text-slate-500" data-i18n="data.v">Image Dist. ($v$)</span>
-                            <span id="data-v" class="font-bold font-mono text-slate-800">20.00 cm</span>
+                            <span id="data-v" class="font-bold font-mono text-slate-800">-6.67 cm</span>
                         </div>
                         <div class="flex justify-between items-center bg-white p-2 rounded border border-slate-100">
                             <span class="text-slate-500" data-i18n="data.m">Magnification ($m$)</span>
-                            <span id="data-m" class="font-bold font-mono text-slate-800">-1.00</span>
+                            <span id="data-m" class="font-bold font-mono text-slate-800">0.33</span>
                         </div>
                         <div class="flex justify-between items-center bg-white p-2 rounded border border-slate-100">
                             <span class="text-slate-500" data-i18n="data.type">Type</span>
-                            <span id="data-type" class="font-bold text-emerald-600">Real, Inverted</span>
+                            <span id="data-type" class="font-bold text-violet-600">Virtual, Erect</span>
                         </div>
                     </div>
                 </div>
@@ -196,7 +197,7 @@
                         $$ m = -\frac{v}{u} $$
                     </div>
                     <p class="text-xs text-slate-400 text-center mt-4" data-i18n="physics.note">
-                        Sign Convention: Real is positive (Cartesian).
+                        For Concave Lens: $f$ is negative.
                     </p>
                 </div>
 
@@ -294,7 +295,7 @@
         // --- State Management ---
         const state = {
             u: 20, // Object distance
-            f: 10, // Focal length
+            f: -10, // Focal length (negative for concave)
             h: 5   // Object height
         };
 
@@ -342,34 +343,70 @@
             axisLine = new THREE.Line(axisGeom, axisMat);
             scene.add(axisLine);
 
-            // Lens (Crystal Clear Glass)
-            const lensGeom = new THREE.SphereGeometry(10, 64, 64);
-            lensGeom.scale(0.2, 1, 1); 
-            // Better glass material
-            const lensMat = new THREE.MeshPhysicalMaterial({
+            // Lens (Concave Shape)
+            // Concave lens is thinner in middle.
+            // We can approximate with a cylinder minus spheres or just a cylinder for schematic, 
+            // but let's try to make it look concave using CSG or custom geometry? 
+            // Simple visual hack: Two sphere geometries subtracted? 
+            // For now, let's use a Cylinder with a custom shape or just a simple disk that represents the lens plane,
+            // visually represented as "Concave" ( ) shape.
+            // Actually, a Torus looks like a thick rim, which is what a concave lens is.
+            // Inner part is thin.
+            
+            const lensGroup = new THREE.Group();
+            
+            // Rim (Thick)
+            const rimGeom = new THREE.CylinderGeometry(10, 10, 2, 32, 1, true);
+            const glassMat = new THREE.MeshPhysicalMaterial({
                 color: 0xffffff,
                 metalness: 0,
                 roughness: 0,
-                transmission: 0.95, // High transmission for glass
-                thickness: 2, // Physical thickness
+                transmission: 0.95,
+                thickness: 2,
                 transparent: true,
                 opacity: 0.3,
                 side: THREE.DoubleSide,
-                ior: 1.5, // Refractive index of glass
-                clearcoat: 1,
-                clearcoatRoughness: 0
+                ior: 1.5,
+                clearcoat: 1
             });
-            lensMesh = new THREE.Mesh(lensGeom, lensMat);
-            lensMesh.rotation.z = Math.PI / 2;
-            lensMesh.scale.set(1, 0.15, 1);
-            scene.add(lensMesh);
+            const rim = new THREE.Mesh(rimGeom, glassMat);
+            rim.rotation.x = Math.PI / 2; // Cylinder along Z? No, Cylinder is along Y default. 
+            // We want axis along X. Lens lies in YZ plane.
+            // Cylinder Y axis. Rotate Z 90 deg.
+            rim.rotation.z = Math.PI / 2;
+            // lensGroup.add(rim);
+
+            // Let's use a simple Cylinder that is thin in middle? 
+            // Visualizing Concave lens: ) (
+            // We can use a RingGeometry and scale it? 
+            // Let's just use a Cylinder and rely on the ray diagram to show it's concave.
+            // Or use a Tube geometry?
             
-            // Add lens rim for visibility
-            const rimGeom = new THREE.TorusGeometry(10, 0.1, 16, 100);
-            const rimMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.5 });
-            const rim = new THREE.Mesh(rimGeom, rimMat);
-            rim.rotation.y = Math.PI / 2;
-            scene.add(rim);
+            // Visual Representation: ) (
+            // Left curve: Part of sphere. Right curve: Part of sphere.
+            // Sphere at -R, radius R. Sphere at +R, radius R.
+            // Intersection is... nothing.
+            // Union is nothing.
+            // Concave lens is Rectangle minus Spheres.
+            // Let's stick to a simple thin cylinder for the "Lens Plane" 
+            // and add a visual icon or just the glass material.
+            // To make it look distinct from Convex: 
+            // Convex was bulging. Concave should be flat or indented.
+            // Let's use a Cylinder with opacity.
+            
+            const cylGeom = new THREE.CylinderGeometry(10, 10, 0.5, 32);
+            const cyl = new THREE.Mesh(cylGeom, glassMat);
+            cyl.rotation.z = Math.PI / 2;
+            lensGroup.add(cyl);
+            
+            // Add "Rim" to show it's thick at edges
+            const outerRimGeom = new THREE.TorusGeometry(10, 0.5, 16, 100);
+            const outerRim = new THREE.Mesh(outerRimGeom, new THREE.MeshBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.5 }));
+            outerRim.rotation.y = Math.PI / 2;
+            lensGroup.add(outerRim);
+
+            scene.add(lensGroup);
+            lensMesh = lensGroup;
 
             // Object Arrow (Blue)
             objectArrow = createArrow(0x2563eb);
@@ -386,10 +423,7 @@
 
             // Helper Geometries for Rays
             arrowHeadGeom = new THREE.ConeGeometry(0.3, 0.6, 8);
-            arrowHeadGeom.rotateX(Math.PI / 2); // Point along Z initially, needed for lookAt/Quat? No, Cone points Y. Rotate to Z? 
-            // Default cone points up (Y). 
-            // We want it to point along the line.
-            // We'll handle rotation in placement.
+            arrowHeadGeom.rotateX(Math.PI / 2);
 
             // Focal Points & Markers
             fPointsGroup = new THREE.Group();
@@ -495,37 +529,32 @@
 
         function updateSimulation() {
             const u = state.u;
-            const f = state.f;
+            const f = state.f; // This is negative for Concave
             const h = state.h;
 
             // Physics Calculation
-            let v, m, isVirtual;
+            // 1/v = 1/f - 1/u
+            // v = (u*f) / (u-f)
+            // For Concave: f < 0, u > 0.
+            // u - f = u - (-val) = u + val > 0.
+            // u * f = negative.
+            // So v is always negative (Virtual, same side as object).
             
-            if (Math.abs(u - f) < 0.1) {
-                v = 1000; m = 1000; isVirtual = false;
-            } else {
-                v = (u * f) / (u - f);
-                m = -v / u;
-                isVirtual = v < 0; // Virtual if on same side (negative v in this convention?)
-                // Wait, standard convention:
-                // 1/v - 1/u = 1/f (Cartesian: Light moves +x. Object at -u. u is negative coordinate? No, u is distance.)
-                // Let's stick to: Object at -u. Light -> +x.
-                // 1/v + 1/u = 1/f is for Real is Positive.
-                // If object is real (u>0), image v>0 is Real (Right side). v<0 is Virtual (Left side).
-            }
+            let v = (u * f) / (u - f);
+            let m = -v / u; // Magnification
+            // Since v is negative and u is positive, m is positive (Erect).
+            // Since |v| < |u| (because 1/v = 1/f - 1/u, |1/v| > |1/u|), m < 1 (Diminished).
+
+            let isVirtual = v < 0; 
 
             // Update UI Data
-            document.getElementById('data-v').textContent = (Math.abs(v) > 500) ? "Infinity" : `${v.toFixed(2)} cm`;
-            document.getElementById('data-m').textContent = (Math.abs(m) > 500) ? "Infinity" : `${Math.abs(m).toFixed(2)}`;
+            document.getElementById('data-v').textContent = `${v.toFixed(2)} cm`;
+            document.getElementById('data-m').textContent = `${Math.abs(m).toFixed(2)}`;
             
-            let typeText = "";
-            if (Math.abs(v) > 500) typeText = "At Infinity";
-            else if (isVirtual) typeText = "Virtual, Erect";
-            else typeText = "Real, Inverted";
-            
+            let typeText = "Virtual, Erect";
             const typeEl = document.getElementById('data-type');
             typeEl.textContent = typeText;
-            typeEl.className = `font-bold ${isVirtual ? 'text-violet-600' : 'text-emerald-600'}`;
+            typeEl.className = `font-bold text-violet-600`;
 
             // --- 3D Updates ---
 
@@ -534,64 +563,44 @@
             updateArrowScale(objectArrow, h);
 
             // 2. Position Image
-            if (Math.abs(v) > 200) {
-                imageArrow.visible = false;
-            } else {
-                imageArrow.visible = true;
-                imageArrow.position.set(v, 0, 0);
-                
-                const h_prime = h * m;
-                const absH = Math.abs(h_prime);
-                updateArrowScale(imageArrow, absH);
-                
-                if (h_prime < 0) {
-                    imageArrow.rotation.z = Math.PI; 
-                    imageArrow.position.y = 0; 
-                } else {
-                    imageArrow.rotation.z = 0;
-                }
+            imageArrow.visible = true;
+            imageArrow.position.set(v, 0, 0); // v is negative, so on left side
+            
+            const h_prime = h * m;
+            const absH = Math.abs(h_prime);
+            updateArrowScale(imageArrow, absH);
+            
+            // Image is always erect for concave lens
+            imageArrow.rotation.z = 0;
 
-                imageArrow.children.forEach(mesh => {
-                    if (mesh.name === 'hitbox') return;
-                    
-                    if (isVirtual) {
-                        mesh.material.alphaMap = dashedTexture;
-                        mesh.material.transparent = true;
-                        mesh.material.opacity = 1.0; // Alpha map controls opacity
-                        mesh.material.side = THREE.DoubleSide; // Show inside of rings
-                        mesh.material.needsUpdate = true;
-                    } else {
-                        mesh.material.alphaMap = null;
-                        mesh.material.transparent = false;
-                        mesh.material.opacity = 1.0;
-                        mesh.material.side = THREE.FrontSide;
-                        mesh.material.needsUpdate = true;
-                    }
-                    // Emissive for visibility if needed?
-                    // mesh.material.emissive = isVirtual ? new THREE.Color(0x220000) : new THREE.Color(0x000000);
-                });
-            }
+            imageArrow.children.forEach(mesh => {
+                if (mesh.name === 'hitbox') return;
+                
+                // Always virtual
+                mesh.material.alphaMap = dashedTexture;
+                mesh.material.transparent = true;
+                mesh.material.opacity = 1.0; 
+                mesh.material.side = THREE.DoubleSide; 
+                mesh.material.needsUpdate = true;
+            });
 
             // 3. Focal Points & Markers
-            updateFocalPoints(f);
+            // f is negative. Markers at +/- |f|
+            updateFocalPoints(Math.abs(f));
 
             // 4. Dimension Lines
             updateDimensionLines(u, v);
 
             // 5. Draw Rays
-            drawRays(u, h, f, v, h * m);
+            drawRays(u, h, f, v, h_prime);
         }
 
         function updateArrowScale(arrowGroup, height) {
-            // Default arrow height is ~2 units.
-            // We want total height = height units.
             const scale = height / 2;
             arrowGroup.scale.set(1, scale, 1);
-            // Hitbox needs to scale inversely in X/Z to remain clickable? No, just scale uniform Y.
         }
 
-        function updateFocalPoints(f) {
-            // Clear existing
+        function updateFocalPoints(f_abs) {
             while(fPointsGroup.children.length > 0) fPointsGroup.remove(fPointsGroup.children[0]);
             while(labelsGroup.children.length > 0) labelsGroup.remove(labelsGroup.children[0]);
 
@@ -599,10 +608,10 @@
             const fGeom = new THREE.SphereGeometry(0.3, 16, 16);
 
             const positions = [
-                { x: -f, label: "F" },
-                { x: f, label: "F" },
-                { x: -2*f, label: "2F" },
-                { x: 2*f, label: "2F" }
+                { x: -f_abs, label: "F" },
+                { x: f_abs, label: "F" },
+                { x: -2*f_abs, label: "2F" },
+                { x: 2*f_abs, label: "2F" }
             ];
 
             positions.forEach(pos => {
@@ -620,17 +629,13 @@
             while(dimensionsGroup.children.length > 0) dimensionsGroup.remove(dimensionsGroup.children[0]);
 
             const lineMat = new THREE.LineBasicMaterial({ color: 0x64748b });
-            const arrowColor = 0x64748b;
-
-            // Helper to draw dim line
+            
             function drawDim(start, end, labelText, yOffset) {
-                // Line
                 const pts = [new THREE.Vector3(start, yOffset, 0), new THREE.Vector3(end, yOffset, 0)];
                 const geom = new THREE.BufferGeometry().setFromPoints(pts);
                 const line = new THREE.Line(geom, lineMat);
                 dimensionsGroup.add(line);
 
-                // End ticks
                 const tickH = 0.5;
                 const tick1 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
                     new THREE.Vector3(start, yOffset - tickH, 0), new THREE.Vector3(start, yOffset + tickH, 0)
@@ -641,17 +646,15 @@
                 dimensionsGroup.add(tick1);
                 dimensionsGroup.add(tick2);
 
-                // Label
                 const label = createTextSprite(labelText, "#64748b");
                 label.position.set((start + end) / 2, yOffset - 1, 0);
-                label.scale.set(3, 1.5, 1); // Make small text
+                label.scale.set(3, 1.5, 1); 
                 dimensionsGroup.add(label);
             }
 
-            // Object Distance (0 to -u)
             drawDim(0, -u, `u = ${u}cm`, -5);
-
-            // Image Distance (0 to v)
+            
+            // v is negative, so it's on the left (0 to v)
             if (Math.abs(v) < 200) {
                 drawDim(0, v, `v = ${Math.abs(v).toFixed(1)}cm`, -7);
             }
@@ -668,7 +671,11 @@
             const imgTop = new THREE.Vector3(v, h_prime, 0);
             const lensHit1 = new THREE.Vector3(0, h, 0);
             const lensCenter = new THREE.Vector3(0, 0, 0);
-
+            
+            // For Concave: f is negative (Left side)
+            // But Parallel Ray diverges *as if coming from* Focal Point on the same side (Left F).
+            const fLeft = new THREE.Vector3(f, 0, 0); // f is -10
+            
             // Helper to add segment with arrow
             function addSegment(p1, p2, material, addArrow=true) {
                 const geom = new THREE.BufferGeometry().setFromPoints([p1, p2]);
@@ -679,47 +686,34 @@
                 if (addArrow) {
                     const dir = new THREE.Vector3().subVectors(p2, p1).normalize();
                     const len = p1.distanceTo(p2);
-                    if (len > 2) { // Only if long enough
+                    if (len > 2) { 
                         const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), new THREE.MeshBasicMaterial({ color: rayColor }));
-                        arrow.position.copy(p1).add(dir.multiplyScalar(len / 2)); // Midpoint
-                        // Cone points +Y by default. Rotate to align with dir.
-                        // Quaternion from +Y to dir.
+                        arrow.position.copy(p1).add(dir.multiplyScalar(len / 2)); 
                         arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
                         raysGroup.add(arrow);
                     }
                 }
             }
 
-            // Ray 1: Parallel -> Lens -> F -> Image
+            // Ray 1: Parallel to Axis -> Lens -> Diverges (appears to come from F_left)
             addSegment(objTop, lensHit1, rayMat);
-            // From lens through F(right)
-            const fRight = new THREE.Vector3(f, 0, 0);
-            const dir1 = new THREE.Vector3().subVectors(fRight, lensHit1).normalize();
             
-            if (v > 0) { // Real
-                addSegment(lensHit1, imgTop, rayMat);
-                // Extend slightly past image
-                const ext = imgTop.clone().add(dir1.multiplyScalar(10));
-                addSegment(imgTop, ext, rayMat, false);
-            } else { // Virtual
-                // Ray diverges to right
-                const farPoint = lensHit1.clone().add(dir1.multiplyScalar(50));
-                addSegment(lensHit1, farPoint, rayMat);
-                // Trace back
-                addSegment(lensHit1, imgTop, dashMat, false);
-            }
+            // Diverging path
+            // Direction: From F_left through LensHit1 and outwards
+            const dir1 = new THREE.Vector3().subVectors(lensHit1, fLeft).normalize();
+            const farPoint1 = lensHit1.clone().add(dir1.multiplyScalar(50));
+            addSegment(lensHit1, farPoint1, rayMat);
+            
+            // Virtual trace back to F_left (and Image Top)
+            // Draw dashed from LensHit1 back to F_left (which passes through ImageTop)
+            addSegment(fLeft, lensHit1, dashMat, false);
 
-            // Ray 2: Center (Undeviated)
+            // Ray 2: Through Center -> Undeviated
             const dir2 = new THREE.Vector3().subVectors(lensCenter, objTop).normalize();
-            if (v > 0) {
-                addSegment(objTop, imgTop, rayMat); // Just draw full line
-                const ext = imgTop.clone().add(dir2.multiplyScalar(10));
-                addSegment(imgTop, ext, rayMat, false);
-            } else {
-                const farPoint = objTop.clone().add(dir2.multiplyScalar(60));
-                addSegment(objTop, farPoint, rayMat);
-                // Trace back not needed as it overlaps
-            }
+            const farPoint2 = objTop.clone().add(dir2.multiplyScalar(60));
+            addSegment(objTop, farPoint2, rayMat);
+            // No virtual trace needed as it overlaps, but for consistency:
+            // addSegment(objTop, lensCenter, dashMat, false); 
         }
 
         function animate() {
@@ -742,17 +736,12 @@
 
             raycaster.setFromCamera(mouse, camera);
             
-            // Check intersection with Object Arrow
-            const intersects = raycaster.intersectObject(objectArrow, true); // recursive
+            const intersects = raycaster.intersectObject(objectArrow, true); 
             
             if (intersects.length > 0) {
                 isDraggingObject = true;
                 container.classList.add('dragging');
-                // Disable camera controls (orbit)
-                // In this simple implementation, camera controls are separate manually implemented.
-                // We just need to stop them from updating in mousemove if dragging object.
             } else {
-                // Camera Drag Start
                 isCameraDrag = true;
                 startCamX = e.clientX;
                 startCamY = e.clientY;
@@ -769,17 +758,14 @@
                 const intersect = new THREE.Vector3();
                 raycaster.ray.intersectPlane(plane, intersect);
 
-                // Object is on negative X axis. 
-                // intersect.x is the position. We want u = -intersect.x
                 let newU = -intersect.x;
-                newU = Math.max(5, Math.min(40, newU)); // Clamp
+                newU = Math.max(5, Math.min(40, newU)); 
                 
                 state.u = newU;
                 document.getElementById('slider-u').value = newU;
                 document.getElementById('val-u').textContent = newU.toFixed(1) + " cm";
                 updateSimulation();
             } else if (isCameraDrag) {
-                // Camera Rotate Logic
                 const deltaX = (e.clientX - startCamX) * 0.005;
                 const deltaY = (e.clientY - startCamY) * 0.005;
                 startCamX = e.clientX;
@@ -809,7 +795,8 @@
             updateSimulation();
         });
         document.getElementById('slider-f').addEventListener('input', (e) => {
-            state.f = parseFloat(e.target.value);
+            // Slider value is positive magnitude, state.f is negative
+            state.f = -parseFloat(e.target.value);
             document.getElementById('val-f').textContent = state.f.toFixed(1) + " cm";
             updateSimulation();
         });
@@ -820,12 +807,12 @@
         });
 
         document.getElementById('reset-sim').addEventListener('click', () => {
-            state.u = 20; state.f = 10; state.h = 5;
+            state.u = 20; state.f = -10; state.h = 5;
             document.getElementById('slider-u').value = 20;
             document.getElementById('slider-f').value = 10;
             document.getElementById('slider-h').value = 5;
             document.getElementById('val-u').textContent = "20.0 cm";
-            document.getElementById('val-f').textContent = "10.0 cm";
+            document.getElementById('val-f').textContent = "-10.0 cm";
             document.getElementById('val-h').textContent = "5.0 cm";
             updateSimulation();
         });
@@ -833,14 +820,8 @@
         // Camera Vars
         let isCameraDrag = false;
         let startCamX, startCamY;
-        let theta = Math.atan2(20, 40);
-        let radius = Math.sqrt(20*20 + 15*15 + 40*40); // Matches initial pos(0, 10, 50) roughly? No, let's sync.
-        // Initial pos (0, 10, 50) -> x=0, y=10, z=50.
-        // theta = atan2(0, 50) = 0.
-        // radius = sqrt(0+100+2500) = sqrt(2600) ~ 51.
-        // phi = acos(10/51).
-        radius = 51;
-        theta = 0;
+        let radius = 51;
+        let theta = 0;
         let phi = Math.acos(10/51);
 
         // Zoom
@@ -858,12 +839,8 @@
         initThree();
 
         // --- Gemini API & Feedback ---
-        // (Keeping existing logic for brevity, assuming it works)
         async function callGeminiAPI(userQuery) {
-             const apiKey = ""; 
-             // ... (Same as before)
-             // Mock for now
-             return new Promise(resolve => setTimeout(() => resolve("<b>AI Explanation:</b><br>The object is at " + state.u + "cm. The image is real and inverted."), 1000));
+             return new Promise(resolve => setTimeout(() => resolve("<b>AI Explanation:</b><br>For a concave lens, the image is always virtual, erect, and diminished, regardless of the object position."), 1000));
         }
         
         document.getElementById('explain-button').addEventListener('click', async () => {
@@ -885,8 +862,8 @@
         const translations = {
             en: {
                 'nav.back': 'Back to Home',
-                'page.title': 'Convex Lens Image Formation',
-                'page.description': 'Explore how a convex lens forms images. Adjust the object distance and focal length to see how real and virtual images are created. Observe the three principal rays in 3D space.',
+                'page.title': 'Concave Lens Image Formation',
+                'page.description': 'Explore how a concave lens forms images. Concave lenses always produce virtual, upright, and diminished images. Adjust the object distance to see how the image position changes.',
                 'controls.title': 'Variables',
                 'controls.reset': 'Reset',
                 'controls.u': 'Object Distance ($u$)',
@@ -897,7 +874,7 @@
                 'data.m': 'Magnification ($m$)',
                 'data.type': 'Type',
                 'physics.title': 'Lens Formula',
-                'physics.note': 'Sign Convention: Real is positive (Cartesian).',
+                'physics.note': 'For Concave Lens: $f$ is negative.',
                 'legend.object': 'Object',
                 'legend.image': 'Image',
                 'legend.rays': 'Light Rays',
@@ -914,8 +891,8 @@
             },
             zh: {
                 'nav.back': '返回首頁',
-                'page.title': '凸透鏡成像模擬',
-                'page.description': '探索凸透鏡如何形成影像。調整物距和焦距，觀察實像與虛像的產生。在 3D 空間中觀察三條主要光線。',
+                'page.title': '凹透鏡成像模擬',
+                'page.description': '探索凹透鏡如何形成影像。凹透鏡總是產生虛像、正立和縮小的影像。調整物距以觀察影像位置的變化。',
                 'controls.title': '變數控制',
                 'controls.reset': '重設',
                 'controls.u': '物距 ($u$)',
@@ -926,7 +903,7 @@
                 'data.m': '放大倍率 ($m$)',
                 'data.type': '性質',
                 'physics.title': '透鏡公式',
-                'physics.note': '符號約定：實像為正（笛卡爾坐標）。',
+                'physics.note': '凹透鏡：$f$ 為負值。',
                 'legend.object': '物體',
                 'legend.image': '影像',
                 'legend.rays': '光線',
@@ -943,8 +920,8 @@
             },
             cn: {
                 'nav.back': '返回首页',
-                'page.title': '凸透镜成像模拟',
-                'page.description': '探索凸透镜如何形成影像。调整物距和焦距，观察实像与虚像的产生。在 3D 空间中观察三条主要光线。',
+                'page.title': '凹透镜成像模拟',
+                'page.description': '探索凹透镜如何形成影像。凹透镜总是产生虚像、正立和缩小的影像。调整物距以观察影像位置的变化。',
                 'controls.title': '变数控制',
                 'controls.reset': '重设',
                 'controls.u': '物距 ($u$)',
@@ -955,7 +932,7 @@
                 'data.m': '放大倍率 ($m$)',
                 'data.type': '性质',
                 'physics.title': '透镜公式',
-                'physics.note': '符号约定：实像为正（笛卡尔坐标）。',
+                'physics.note': '凹透镜：$f$ 为负值。',
                 'legend.object': '物体',
                 'legend.image': '影像',
                 'legend.rays': '光线',
