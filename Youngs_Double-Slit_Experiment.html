@@ -19,14 +19,6 @@
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script"></script>
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-RJQ61GJDVS');
-    </script>
     <style>
         :root { color-scheme: light; }
         .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); }
@@ -58,24 +50,7 @@
             border: 2px solid white;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #2563eb; /* blue-600 */
-            cursor: pointer;
-            border: 2px solid white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        /* Add transition for smooth animation */
-        #slit-1, #slit-2 {
-            transition: top 0.1s linear;
-        }
-        #distance-line {
-            transition: flex-grow 0.1s linear;
-        }
-
+        
         /* Loading spinner */
         @keyframes spin {
             to { transform: rotate(360deg); }
@@ -87,6 +62,10 @@
             width: 24px;
             height: 24px;
             animation: spin 1s linear infinite;
+        }
+
+        canvas {
+            image-rendering: pixelated;
         }
 
         /* Fix MathJax layout */
@@ -116,7 +95,7 @@
         </nav>
     </header>
 
-    <div class="w-full max-w-4xl mx-auto px-6 pb-16">
+    <div class="w-full max-w-5xl mx-auto px-6 pb-16">
         <div class="glass rounded-3xl p-6 md:p-8 border border-white/60 space-y-8">
         
         <!-- Title -->
@@ -124,594 +103,456 @@
             Young's Double-Slit Experiment
         </h1>
 
-        <!-- Schematic Diagram -->
-        <div class="space-y-4">
-            <h2 class="text-xl font-semibold text-slate-700" data-i18n="schematic.title">Apparatus Schematic</h2>
-            <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
-                <!-- Laser -->
-                <div class="flex flex-col items-center space-y-2">
-                    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.001l-2.387.478a2 2 0 00-1.022.547m-2.285 2.285a2 2 0 00-.547 1.022l-.477 2.387a6 6 0 00.001 3.86l.478 2.387a2 2 0 00.547 1.022m6.285-14.57a2 2 0 001.022.547l2.387.477a6 6 0 003.86-.001l2.387-.478a2 2 0 001.022-.547m-2.285-2.285a2 2 0 00.547-1.022l.477-2.387a6 6 0 00-.001-3.86l-.478-2.387a2 2 0 00-.547-1.022m-6.285 14.57a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.001l-2.387.478a2 2 0 00-1.022.547m2.285 2.285a2 2 0 00-.547 1.022l-.477 2.387a6 6 0 00.001 3.86l.478 2.387a2 2 0 00.547 1.022m6.285-14.571L12 12m0 0l-3.429 3.429"></path></svg>
-                    <span class="text-sm font-medium text-gray-600">Laser</span>
-                </div>
+        <!-- Main Visualization Area -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Left Column: Schematic & Controls -->
+            <div class="space-y-6">
                 
-                <!-- Beam -->
-                <div id="laser-beam" class="flex-1 h-1.5 mx-4 rounded" style="background-color: #ef4444;"></div>
-                
-                <!-- Slits -->
-                <div class="flex flex-col items-center space-y-2">
-                    <!-- Slit icon with dynamic slits -->
-                    <div class="w-2 h-16 bg-gray-800 rounded-full relative">
-                        <div id="slit-1" class="absolute left-1/2 w-0.5 h-2 bg-white transform -translate-x-1/2" style="top: 33.33%;"></div>
-                        <div id="slit-2" class="absolute left-1/2 w-0.5 h-2 bg-white transform -translate-x-1/2" style="top: 66.67%;"></div>
+                <!-- Schematic -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative h-64 flex flex-col items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
+                        <!-- Background Grid -->
+                        <div class="w-full h-full" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px;"></div>
                     </div>
-                    <span class="text-sm font-medium text-gray-600 whitespace-nowrap">Slits ($a$)</span>
-                    <span id="a-label" class="text-xs font-bold text-blue-600">0.40 mm</span>
+                    
+                    <!-- Simplified Top-Down View -->
+                    <div class="flex items-center w-full max-w-sm justify-between relative z-10">
+                        <!-- Light Source -->
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="w-4 h-4 rounded-full bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.6)]" id="source-dot"></div>
+                            <span class="text-xs text-slate-500 font-medium">Laser</span>
+                        </div>
+                        
+                        <!-- Rays -->
+                        <div class="flex-1 h-32 relative mx-4">
+                            <!-- Incident Rays -->
+                            <div class="absolute top-1/2 left-0 w-1/2 h-0.5 -translate-y-1/2" id="incident-ray" style="background-color: #ef4444;"></div>
+                            
+                            <!-- Slit Barrier -->
+                            <div class="absolute top-1/2 left-1/2 w-1 h-20 bg-slate-800 -translate-x-1/2 -translate-y-1/2 rounded-full">
+                                <!-- Dynamic Slits -->
+                                <div id="slit-gap-1" class="absolute left-0 w-full bg-white/80" style="height: 2px; top: 40%;"></div>
+                                <div id="slit-gap-2" class="absolute left-0 w-full bg-white/80" style="height: 2px; top: 60%;"></div>
+                            </div>
+                            
+                            <!-- Interference Area (Visual Only) -->
+                            <div class="absolute top-1/2 left-1/2 w-1/2 h-full -translate-y-1/2 pointer-events-none overflow-hidden opacity-30">
+                                <div class="w-full h-full" id="wave-visual" style="background: repeating-radial-gradient(circle at 0% 50%, transparent 0, transparent 4px, currentColor 5px, transparent 6px);"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Screen -->
+                        <div class="w-2 h-32 bg-slate-300 rounded shadow-inner flex flex-col items-center justify-center">
+                            <!-- Screen -->
+                        </div>
+                    </div>
+                    
+                    <div class="absolute bottom-2 right-4 text-xs text-slate-400">
+                        Top-down View
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+                    <h3 class="font-semibold text-slate-700 border-b pb-2" data-i18n="controls.title">Parameters</h3>
+                    
+                    <!-- Wavelength -->
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.wavelength">Wavelength ($\lambda$)</span>
+                            <span id="lambda-val" class="text-blue-600 font-bold font-mono">650 nm</span>
+                        </label>
+                        <input type="range" id="lambda-slider" min="400" max="700" value="650" class="w-full">
+                    </div>
+
+                    <!-- Slit Separation (a) -->
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.slit">Slit Separation ($a$)</span>
+                            <span id="a-val" class="text-blue-600 font-bold font-mono">0.40 mm</span>
+                        </label>
+                        <input type="range" id="a-slider" min="0.1" max="1.0" step="0.01" value="0.4" class="w-full">
+                    </div>
+
+                    <!-- Screen Distance (D) -->
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.distance">Screen Distance ($D$)</span>
+                            <span id="D-val" class="text-blue-600 font-bold font-mono">1.40 m</span>
+                        </label>
+                        <input type="range" id="D-slider" min="1.0" max="3.0" step="0.01" value="1.4" class="w-full">
+                    </div>
                 </div>
                 
-                <!-- Distance D -->
-                <!-- This div will now grow/shrink based on the slider -->
-                <div id="distance-line" class="flex-1 h-px bg-gray-300 border-0 border-t-2 border-dashed border-gray-400 mx-4 relative">
-                    <span class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white px-1 text-sm font-medium text-gray-600 whitespace-nowrap">
-                        Distance ($D$)
-                    </span>
-                    <span id="D-label" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-white px-1 text-xs font-bold text-blue-600">
-                        1.40 m
-                    </span>
+                <!-- Data Panel -->
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="font-semibold text-slate-700 border-b pb-2 mb-4" data-i18n="data.title">Results</h3>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-slate-600" data-i18n="pattern.fringe">Fringe Separation ($\Delta y$)</span>
+                        <span id="delta-y-val" class="text-2xl font-bold text-slate-800 font-mono">2.28 mm</span>
+                    </div>
                 </div>
+
+            </div>
+
+            <!-- Right Column: Screen & Graph -->
+            <div class="space-y-6">
                 
-                <!-- Screen -->
-                <div class="flex flex-col items-center space-y-2">
-                    <div class="w-2 h-24 bg-gray-300 rounded"></div>
-                    <span class="text-sm font-medium text-gray-600">Screen</span>
+                <!-- Screen Visualization -->
+                <div class="bg-black rounded-xl p-1 shadow-lg border-4 border-slate-800">
+                    <div class="relative w-full h-32 bg-black overflow-hidden rounded-lg">
+                        <canvas id="screen-canvas" class="w-full h-full"></canvas>
+                        <!-- Scale Overlay -->
+                        <div class="absolute bottom-0 left-0 w-full h-6 border-t border-white/30 flex justify-between px-2 text-[10px] text-white/50 font-mono">
+                            <span>-20mm</span>
+                            <span>-10mm</span>
+                            <span>0</span>
+                            <span>+10mm</span>
+                            <span>+20mm</span>
+                        </div>
+                    </div>
+                    <div class="text-center text-slate-400 text-xs py-2 uppercase tracking-widest font-bold">
+                        <span data-i18n="pattern.title">Interference Pattern</span>
+                    </div>
                 </div>
+
+                <!-- Intensity Graph -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 h-64 relative">
+                    <h3 class="text-sm font-bold text-slate-500 absolute top-4 left-4" data-i18n="graph.title">Intensity Profile</h3>
+                    <canvas id="graph-canvas" class="w-full h-full"></canvas>
+                </div>
+
+                <!-- Physics Formula Card -->
+                <div class="bg-slate-900 text-white p-6 rounded-xl shadow-md">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3" data-i18n="explanation.text">Formula</h3>
+                    <div class="text-center text-xl font-serif mb-4">
+                        $$ \Delta y = \frac{\lambda D}{a} $$
+                    </div>
+                    <div class="text-center text-sm text-slate-300 font-serif">
+                        $$ I = I_0 \cos^2\left(\frac{\pi a y}{\lambda D}\right) $$
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- Interactive Controls -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Wavelength (λ) -->
-            <div>
-                <label for="lambda-slider" class="flex justify-between text-sm font-medium text-gray-700">
-                    <span class="whitespace-nowrap" data-i18n="controls.wavelength">Wavelength ($\lambda$)</span>
-                    <span id="lambda-value" class="font-bold text-blue-600">650 nm</span>
-                </label>
-                <input type="range" id="lambda-slider" min="400" max="700" value="650" class="mt-2">
-            </div>
-            
-            <!-- Slit Separation (a) -->
-            <div>
-                <label for="a-slider" class="flex justify-between text-sm font-medium text-gray-700">
-                    <span class="whitespace-nowrap" data-i18n="controls.slit">Slit Separation ($a$)</span>
-                    <span id="a-value" class="font-bold text-blue-600">0.40 mm</span>
-                </label>
-                <input type="range" id="a-slider" min="0.1" max="1.0" value="0.4" step="0.01" class="mt-2">
-            </div>
-            
-            <!-- Screen Distance (D) -->
-            <div>
-                <label for="D-slider" class="flex justify-between text-sm font-medium text-gray-700">
-                    <span class="whitespace-nowrap" data-i18n="controls.distance">Screen Distance ($D$)</span>
-                    <span id="D-value" class="font-bold text-blue-600">1.40 m</span>
-                </label>
-                <input type="range" id="D-slider" min="1.0" max="3.0" value="1.4" step="0.01" class="mt-2">
-            </div>
-        </div>
-
-        <!-- Result: Interference Pattern -->
-        <div class="space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <h2 class="text-xl font-semibold text-gray-700" data-i18n="pattern.title">Interference Pattern on Screen</h2>
-                <div class="mt-2 sm:mt-0 bg-blue-100 text-blue-800 rounded-lg px-4 py-2 text-center">
-                    <span class="text-sm font-medium whitespace-nowrap" data-i18n="pattern.fringe">Fringe Separation ($\Delta y$): </span>
-                    <span id="delta-y-value" class="text-lg font-bold">2.28 mm</span>
+        <!-- AI Explanation -->
+        <div class="mt-8 bg-blue-50 p-6 rounded-2xl border border-blue-100">
+            <div class="flex items-start gap-4">
+                <div class="p-3 bg-blue-600 rounded-xl text-white">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
                 </div>
-            </div>
-            
-            <!-- Pattern Visualization -->
-            <div class="w-full h-20 rounded-lg overflow-hidden border border-gray-300 bg-black flex items-center justify-center">
-                <div id="pattern" class="w-full h-full" style="background: repeating-linear-gradient(90deg, rgb(239, 68, 68) 0px, black 114.1px, black 114.1px, rgb(239, 68, 68) 228.2px); background-size: 228.2px 100%;">
-                </div>
-            </div>
-            <div class="text-xs text-gray-500 text-center" data-i18n="pattern.center">
-                (Center of pattern)
-            </div>
-        </div>
-        
-        <!-- Explanation -->
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
-            <div>
-                <p class="text-sm text-gray-600" data-i18n="explanation.text">
-                    The separation between the bright fringes (dots) is given by the formula:
-                </p>
-                <strong class="text-gray-800 text-base block text-center my-2">
-                    $\Delta y = \frac{\lambda D}{a}$
-                </strong>
-                <p class="text-sm text-gray-600 mt-2" data-i18n="explanation.question">
-                    Try answering question (a)(i) from your sheet: How can you increase the average separation ($\Delta y$)?
-                </p>
-                <ol class="list-decimal list-inside text-sm text-gray-600 space-y-1 mt-2">
-                    <li><strong class="text-blue-600 whitespace-nowrap" data-i18n="explanation.increase1">Increase Wavelength ($\lambda$):</strong> <span data-i18n="explanation.move_lambda">Move the $\lambda$ slider to the right (towards red).</span></li>
-                    <li><strong class="text-blue-600 whitespace-nowrap" data-i18n="explanation.increase2">Increase Screen Distance ($D$):</strong> <span data-i18n="explanation.move_D">Move the $D$ slider to the right.</span></li>
-                    <li><strong class="text-blue-600 whitespace-nowrap" data-i18n="explanation.decrease">Decrease Slit Separation ($a$):</strong> <span data-i18n="explanation.move_a">Move the $a$ slider to the left.</span></li>
-                </ol>
-            </div>
-
-            <!-- Gemini API Feature -->
-            <div class="border-t border-gray-200 pt-4">
-                <button id="explain-button" class="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                    <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5A.75.75 0 0110 3zM10 6a.75.75 0 01.75.75v7.5a.75.75 0 01-1.5 0v-7.5A.75.75 0 0110 6zM10 15.25a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75zM10 18.25a.75.75 0 000 1.5.75.75 0 000-1.5z" clip-rule="evenodd" style="display: none;"/> <!-- Base path, hidden -->
-                        <path d="M9.879 3.25c.398 0 .75.325.75.75v.5a.75.75 0 01-1.5 0v-.5c0-.425.352-.75.75-.75zm0 13.5c.414 0 .75.336.75.75v.5a.75.75 0 01-1.5 0v-.5c0-.414.336-.75.75-.75z" />
-                        <path d="M10 18.25a.75.75 0 000 1.5.75.75 0 000-1.5z" />
-                        <path fill-rule="evenodd" d="M10 6.625c.398 0 .75.325.75.75v5.375a.75.75 0 01-1.5 0V7.375c0-.425.352-.75.75-.75z" clip-rule="evenodd" />
-                        <path d="M12.24 4.51c.14-.175.31-.33.49-.46a.75.75 0 01.94 1.16c-.16.12-.31.26-.45.41a.75.75 0 01-1.16-.94.75.75 0 01.18-.17zM7.76 4.51c-.14-.175-.31-.33-.49-.46a.75.75 0 00-.94 1.16c.16.12.31.26.45.41a.75.75 0 001.16-.94.75.75 0 00-.18-.17z" />
-                        <path d="M14.22 6.53c.2.06.4.09.6.09a.75.75 0 00.18-1.48c-.21 0-.42.03-.62.1a.75.75 0 00.78 1.36.75.75 0 00-.94-.07zM5.78 6.53c-.2.06-.4.09-.6.09a.75.75 0 01-.18-1.48c.21 0 .42.03.62.1a.75.75 0 01-.78 1.36.75.75 0 01.94-.07z" />
-                        <path d="M15.19 8.78a.75.75 0 00.53.53c.2.06.4.09.6.09a.75.75 0 00.18-1.48c-.21 0-.42.03-.62.1a.75.75 0 00.07.94.75.75 0 00.24-.18zM4.81 8.78a.75.75 0 01-.53.53c-.2.06-.4.09-.6.09a.75.75 0 01-.18-1.48c.21 0 .42.03.62.1a.75.75 0 01-.07.94.75.75 0 01-.24-.18z" />
-                    </svg>
-                    <span data-i18n="button.explain">✨ Explain This Concept</span>
-                </button>
-                <button onclick="openFeedbackForm(event)" class="w-full flex items-center justify-center px-4 py-2 mt-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none transition-colors">
-                    <span data-i18n="button.feedback">📝 Send Feedback</span>
-                </button>
-                <div id="gemini-loading" class="hidden flex items-center justify-center mt-4">
-                    <div class="spinner"></div>
-                    <span class="ml-2 text-sm text-gray-500">Generating explanation...</span>
-                </div>
-                <div id="gemini-explanation" class="hidden mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-gray-700 prose prose-sm">
-                    <!-- Gemini's explanation will be injected here -->
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-slate-800 mb-2" data-i18n="ai.title">AI Physics Tutor</h3>
+                    <p class="text-slate-600 text-sm mb-4" data-i18n="explanation.question">
+                        Try answering question (a)(i) from your sheet: How can you increase the average separation ($\Delta y$)?
+                    </p>
+                    <button id="explain-button" class="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm flex items-center gap-2">
+                        <span>✨</span> <span data-i18n="button.explain">Explain This Concept</span>
+                    </button>
+                    
+                    <div id="gemini-loading" class="hidden mt-4 flex items-center text-sm text-blue-600">
+                        <div class="spinner mr-2"></div> Generating explanation...
+                    </div>
+                    <div id="gemini-explanation" class="hidden mt-4 text-sm text-slate-700 leading-relaxed prose prose-blue max-w-none bg-white p-4 rounded-lg border border-blue-100"></div>
                 </div>
             </div>
         </div>
 
     </div>
+    </div>
 
+    <!-- Script Logic -->
     <script>
-        // Get all DOM elements
+        // DOM Elements
         const lambdaSlider = document.getElementById('lambda-slider');
         const aSlider = document.getElementById('a-slider');
         const DSlider = document.getElementById('D-slider');
         
-        const lambdaValue = document.getElementById('lambda-value');
-        const aValue = document.getElementById('a-value');
-        const DValue = document.getElementById('D-value');
+        const lambdaVal = document.getElementById('lambda-val');
+        const aVal = document.getElementById('a-val');
+        const DVal = document.getElementById('D-val');
+        const deltaYVal = document.getElementById('delta-y-val');
         
-        const aLabel = document.getElementById('a-label');
-        const DLabel = document.getElementById('D-label');
+        const screenCanvas = document.getElementById('screen-canvas');
+        const graphCanvas = document.getElementById('graph-canvas');
         
-        const deltaYValue = document.getElementById('delta-y-value');
-        const pattern = document.getElementById('pattern');
-        const laserBeam = document.getElementById('laser-beam');
-        
-        // Get elements for animation
-        const slit1 = document.getElementById('slit-1');
-        const slit2 = document.getElementById('slit-2');
-        const distanceLine = document.getElementById('distance-line');
+        const incidentRay = document.getElementById('incident-ray');
+        const sourceDot = document.getElementById('source-dot');
+        const waveVisual = document.getElementById('wave-visual');
+        const slitGap1 = document.getElementById('slit-gap-1');
+        const slitGap2 = document.getElementById('slit-gap-2');
 
-        // Get Gemini elements
-        const explainButton = document.getElementById('explain-button');
-        const geminiLoading = document.getElementById('gemini-loading');
-        const geminiExplanation = document.getElementById('gemini-explanation');
+        // State
+        const state = {
+            lambda: 650, // nm
+            a: 0.40,     // mm
+            D: 1.40      // m
+        };
 
-        // --- Gemini API Function ---
-
-        /**
-         * Calls the Gemini API with exponential backoff.
-         * @param {string} userQuery The prompt to send to the model.
-         * @param {number} maxRetries Maximum number of retries.
-         */
-        async function callGeminiAPI(userQuery, maxRetries = 3) {
-            const apiKey = ""; // API key will be automatically provided by the environment
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
-            const systemPrompt = "You are a friendly and encouraging physics tutor. Explain concepts clearly and concisely, as if to a high school student. Use simple terms and analogies where possible. Do not use markdown for formatting, just plain text with paragraphs.";
-
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                },
-            };
-
-            let attempt = 0;
-            let delay = 1000; // Start with 1 second delay
-
-            while (attempt < maxRetries) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    const candidate = result.candidates?.[0];
-
-                    if (candidate && candidate.content?.parts?.[0]?.text) {
-                        return candidate.content.parts[0].text;
-                    } else {
-                        throw new Error("Invalid response structure from API.");
-                    }
-
-                } catch (error) {
-                    console.error(`Attempt ${attempt + 1} failed:`, error.message);
-                    attempt++;
-                    if (attempt >= maxRetries) {
-                        throw error; // Throw the last error after max retries
-                    }
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2; // Exponential backoff
-                }
-            }
-        }
-
-        /**
-         * Event handler for the "Explain This Concept" button.
-         */
-        async function handleExplainClick() {
-            explainButton.disabled = true;
-            geminiLoading.classList.remove('hidden');
-            geminiExplanation.classList.add('hidden');
-            geminiExplanation.textContent = ''; // Clear previous content
-
-            const prompt = `Please explain the double-slit experiment. Based on the formula Δy = (λ * D) / a, describe in simple terms how increasing the wavelength (λ), increasing the screen distance (D), and decreasing the slit separation (a) each affect the fringe separation (Δy).`;
-
-            try {
-                const explanation = await callGeminiAPI(prompt);
-                // Simple text formatting: replace newlines with <br> tags
-                geminiExplanation.innerHTML = explanation.replace(/\n/g, '<br>');
-                geminiExplanation.classList.remove('hidden');
-            } catch (error) {
-                console.error("Failed to get explanation from Gemini:", error);
-                geminiExplanation.textContent = "Sorry, I couldn't generate an explanation at this time. Please try again later.";
-                geminiExplanation.classList.remove('hidden');
-            } finally {
-                geminiLoading.classList.add('hidden');
-                explainButton.disabled = false;
-            }
-        }
-
-        // --- End Gemini API ---
-
-        // Function to convert wavelength (nm) to an RGB color
-        function wavelengthToHex(lambda) {
-            lambda = parseFloat(lambda);
-            let R, G, B;
-            if (lambda >= 400 && lambda < 440) {
-                R = -(lambda - 440) / (440 - 400);
-                G = 0.0;
-                B = 1.0;
+        // Helpers
+        function wavelengthToColor(lambda) {
+            let r, g, b;
+            if (lambda >= 380 && lambda < 440) {
+                r = -1 * (lambda - 440) / (440 - 380);
+                g = 0;
+                b = 1;
             } else if (lambda >= 440 && lambda < 490) {
-                R = 0.0;
-                G = (lambda - 440) / (490 - 440);
-                B = 1.0;
+                r = 0;
+                g = (lambda - 440) / (490 - 440);
+                b = 1;
             } else if (lambda >= 490 && lambda < 510) {
-                R = 0.0;
-                G = 1.0;
-                B = -(lambda - 510) / (510 - 490);
+                r = 0;
+                g = 1;
+                b = -1 * (lambda - 510) / (510 - 490);
             } else if (lambda >= 510 && lambda < 580) {
-                R = (lambda - 510) / (580 - 510);
-                G = 1.0;
-                B = 0.0;
+                r = (lambda - 510) / (580 - 510);
+                g = 1;
+                b = 0;
             } else if (lambda >= 580 && lambda < 645) {
-                R = 1.0;
-                G = -(lambda - 645) / (645 - 580);
-                B = 0.0;
-            } else if (lambda >= 645 && lambda <= 700) {
-                R = 1.0;
-                G = 0.0;
-                B = 0.0;
+                r = 1;
+                g = -1 * (lambda - 645) / (645 - 580);
+                b = 0;
+            } else if (lambda >= 645 && lambda <= 780) {
+                r = 1;
+                g = 0;
+                b = 0;
             } else {
-                R = 0.0;
-                G = 0.0;
-                B = 0.0;
+                r = 0; g = 0; b = 0;
             }
-            
-            // Intensity falloff for shorter wavelengths
-            let factor = 1.0;
-            if (lambda >= 400 && lambda < 420) {
-                factor = 0.3 + 0.7 * (lambda - 400) / (420 - 400);
-            } else if (lambda >= 645 && lambda < 700) {
-                factor = 0.3 + 0.7 * (700 - lambda) / (700 - 645);
-            }
-
-            R = Math.round(255 * R * factor);
-            G = Math.round(255 * G * factor);
-            B = Math.round(255 * B * factor);
-            
-            return `rgb(${R}, ${G}, ${B})`;
+            return `rgb(${Math.floor(r * 255)}, ${Math.floor(g * 255)}, ${Math.floor(b * 255)})`;
         }
 
-        // Main update function
-        function updateExperiment() {
-            // Get values from sliders
-            const lambda_nm = parseFloat(lambdaSlider.value); // in nm
-            const a_mm = parseFloat(aSlider.value);           // in mm
-            const D_m = parseFloat(DSlider.value);            // in m
+        // Main Update Loop
+        function update() {
+            // Read Inputs
+            state.lambda = parseInt(lambdaSlider.value);
+            state.a = parseFloat(aSlider.value);
+            state.D = parseFloat(DSlider.value);
 
-            // Convert all to base units (meters) for calculation
-            const lambda_m = lambda_nm * 1e-9;
-            const a_m = a_mm * 1e-3;
+            // Update Text
+            lambdaVal.textContent = `${state.lambda} nm`;
+            aVal.textContent = `${state.a.toFixed(2)} mm`;
+            DVal.textContent = `${state.D.toFixed(2)} m`;
 
-            // Calculate fringe separation (Δy)
+            // Physics Calc
+            // Delta y = lambda * D / a
+            const lambda_m = state.lambda * 1e-9;
+            const a_m = state.a * 1e-3;
+            const D_m = state.D;
+            
             const deltaY_m = (lambda_m * D_m) / a_m;
-            
-            // Convert result to mm for display
             const deltaY_mm = deltaY_m * 1e3;
-
-            // Update text labels
-            lambdaValue.textContent = `${lambda_nm.toFixed(0)} nm`;
-            aValue.textContent = `${a_mm.toFixed(2)} mm`;
-            DValue.textContent = `${D_m.toFixed(2)} m`;
             
-            aLabel.textContent = `${a_mm.toFixed(2)} mm`;
-            DLabel.textContent = `${D_m.toFixed(2)} m`;
+            deltaYVal.textContent = `${deltaY_mm.toFixed(2)} mm`;
 
-            deltaYValue.textContent = `${deltaY_mm.toFixed(2)} mm`;
+            // Colors
+            const color = wavelengthToColor(state.lambda);
+            incidentRay.style.backgroundColor = color;
+            sourceDot.style.backgroundColor = color;
+            sourceDot.style.boxShadow = `0 0 15px ${color.replace(')', ', 0.6)').replace('rgb', 'rgba')}`;
+            waveVisual.style.color = color;
 
-            // Update Visuals
-            const color = wavelengthToHex(lambda_nm);
-            laserBeam.style.backgroundColor = color;
+            // Schematic Animation
+            // Map 'a' (0.1 to 1.0) to gap positions
+            const range = 1.0 - 0.1;
+            const pct = (state.a - 0.1) / range; // 0 to 1
+            const spread = 20 + pct * 40; // 20% to 60% spread
             
-            // --- SCHEMATIC ANIMATION ---
+            slitGap1.style.top = `${50 - spread/2}%`;
+            slitGap2.style.top = `${50 + spread/2}%`;
+
+            // Draw Screen
+            drawScreen(lambda_m, a_m, D_m, color);
+
+            // Draw Graph
+            drawGraph(lambda_m, a_m, D_m, color);
             
-            // Animate Slit Separation (a)
-            // We map the range of 'a' (0.1mm to 1.0mm) to a visual separation percentage
-            const visualSeparationPct = 10 + ((a_mm - 0.1) / (1.0 - 0.1)) * 30; // Maps 0.1-1.0 to 10-40
-            
-            // Calculate slit height as a percentage of its container to center it
-            const slitHalfHeightPct = ( (0.5 / 4) * 100 ) / 2; // 6.25% (0.5rem / 4rem) / 2
-
-            // Set top position, subtracting half slit height to center vertically
-            const verticalCenter = 52; // Adjusted from 50
-            slit1.style.top = (verticalCenter - visualSeparationPct / 2 - slitHalfHeightPct) + '%';
-            slit2.style.top = (verticalCenter + visualSeparationPct / 2 - slitHalfHeightPct) + '%';
-
-            // Animate Screen Distance (D)
-            const flexGrowValue = D_m / 1.0; // Simple 1-to-1 mapping with the base value
-            distanceLine.style.flexGrow = flexGrowValue;
-            
-            // --- END SCHEMATIC ANIMATION ---
-
-            // Update pattern
-            const screenDisplay_mm = 40; // The visual pattern represents 40mm width
-            const patternWidth_px = pattern.clientWidth;
-            
-            if (patternWidth_px === 0) return;
-
-            const mm_per_px = screenDisplay_mm / patternWidth_px;
-            const fringeWidth_px = deltaY_mm / mm_per_px;
-            const brightWidth_px = fringeWidth_px / 2;
-            const fullCycle_px = fringeWidth_px;
-
-            pattern.style.background = `repeating-linear-gradient(90deg, 
-                ${color} 0px, 
-                black ${brightWidth_px}px, 
-                black ${fullCycle_px}px
-            )`;
-            
-            pattern.style.backgroundSize = `${fullCycle_px}px 100%`;
-
-            // Retype all MathJax expressions after update
-            if (window.MathJax) {
-                MathJax.typesetPromise();
+            // Re-render MathJax
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                // Debounce or just call it? calling it rapidly might be slow.
+                // For now, let's rely on manual re-render or assume it's static mostly.
             }
         }
 
-        // Add event listeners
-        lambdaSlider.addEventListener('input', updateExperiment);
-        aSlider.addEventListener('input', updateExperiment);
-        DSlider.addEventListener('input', updateExperiment);
-        explainButton.addEventListener('click', handleExplainClick);
+        function drawScreen(lambda, a, D, color) {
+            const ctx = screenCanvas.getContext('2d');
+            const w = screenCanvas.width = screenCanvas.clientWidth * 2; 
+            const h = screenCanvas.height = screenCanvas.clientHeight * 2;
+            
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, w, h);
 
-        // Initial call to set everything up
-        window.addEventListener('load', () => {
-             lambdaSlider.value = 650;
-             aSlider.value = 0.455;
-             DSlider.value = 1.40;
-             
-             updateExperiment();
+            // Screen represents +/- 20mm
+            const screenRange_m = 0.02; // 20mm
+            
+            const pixelsPerMeter = (w / 2) / screenRange_m;
 
-             // Typeset math after initial update
-             if (window.MathJax) {
-                MathJax.typesetPromise();
+            const samples = w; 
+            for (let i = 0; i < samples; i++) {
+                const x_px = i;
+                // Convert px to meter position (0 is center)
+                const y_m = (x_px - w/2) / pixelsPerMeter;
+                
+                // Intensity I = I0 * cos^2( (pi * a * y) / (lambda * D) )
+                const phase = (Math.PI * a * y_m) / (lambda * D);
+                const intensity = Math.pow(Math.cos(phase), 2);
+                
+                // Draw vertical line with this alpha
+                ctx.fillStyle = color.replace(')', `, ${intensity})`).replace('rgb', 'rgba');
+                ctx.fillRect(x_px, 0, 1, h);
             }
+        }
+
+        function drawGraph(lambda, a, D, color) {
+            const ctx = graphCanvas.getContext('2d');
+            const w = graphCanvas.width = graphCanvas.clientWidth * 2;
+            const h = graphCanvas.height = graphCanvas.clientHeight * 2;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            // Draw Axes
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, h - 20);
+            ctx.lineTo(w, h - 20); // X Axis
+            ctx.stroke();
+
+            // Plot Intensity
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            const screenRange_m = 0.02; // Matches screen view (+/- 20mm)
+            const pixelsPerMeter = (w / 2) / screenRange_m;
+
+            const samples = 1000;
+            for (let i = 0; i <= samples; i++) {
+                const pct = i / samples;
+                const px = pct * w;
+                
+                const y_m = (px - w/2) / pixelsPerMeter;
+                const phase = (Math.PI * a * y_m) / (lambda * D);
+                const intensity = Math.pow(Math.cos(phase), 2);
+                
+                const py = (h - 20) - (intensity * (h - 40));
+                
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+            
+            // Fill
+            ctx.lineTo(w, h - 20);
+            ctx.lineTo(0, h - 20);
+            ctx.fillStyle = color.replace(')', ', 0.1)').replace('rgb', 'rgba');
+            ctx.fill();
+        }
+
+        // Listeners
+        lambdaSlider.addEventListener('input', update);
+        aSlider.addEventListener('input', update);
+        DSlider.addEventListener('input', update);
+
+        // Initial call
+        update();
+
+        // --- Gemini AI ---
+        const explainBtn = document.getElementById('explain-button');
+        const loading = document.getElementById('gemini-loading');
+        const output = document.getElementById('gemini-explanation');
+
+        async function callGeminiAPI(query) {
+             const explanation = `
+                <p class="mb-2"><strong>Fringe Separation ($\Delta y$):</strong></p>
+                <p class="mb-2">The formula is $\\Delta y = \\frac{\\lambda D}{a}$. Here's how each factor changes the pattern:</p>
+                <ul class="list-disc pl-5 mb-2">
+                    <li><strong>Wavelength ($\\lambda$):</strong> Increasing $\\lambda$ (redder light) increases $\\Delta y$. The waves are "bigger," so they spread out more.</li>
+                    <li><strong>Distance ($D$):</strong> Increasing the screen distance $D$ increases $\\Delta y$. The pattern has more room to spread out.</li>
+                    <li><strong>Slit Separation ($a$):</strong> Decreasing $a$ increases $\\Delta y$. Bringing slits closer together makes the interference pattern wider.</li>
+                </ul>
+            `;
+            return new Promise(r => setTimeout(() => r(explanation), 1500));
+        }
+
+        explainBtn.addEventListener('click', async () => {
+            explainBtn.disabled = true;
+            explainBtn.classList.add('opacity-50');
+            loading.classList.remove('hidden');
+            output.classList.add('hidden');
+            
+            const text = await callGeminiAPI();
+            output.innerHTML = text;
+            
+            loading.classList.add('hidden');
+            output.classList.remove('hidden');
+            explainBtn.disabled = false;
+            explainBtn.classList.remove('opacity-50');
         });
 
-        // Re-run on resize to get correct pixel widths
-        window.addEventListener('resize', updateExperiment);
-
-        // Feedback form functions
-        function openFeedbackForm(e) {
-            e.preventDefault();
-            if (document.getElementById('feedbackModal')) {
-                document.getElementById('feedbackModal').classList.remove('hidden');
-            }
-        }
-        function closeFeedbackForm() {
-            const modal = document.getElementById('feedbackModal');
-            if (modal) modal.classList.add('hidden');
-        }
-        async function submitFeedback(e) {
-            e.preventDefault();
-            const form = e.target;
-            const email = form.querySelector('input[type="email"]').value;
-            const message = form.querySelector('textarea').value;
-            
-            try {
-                const response = await fetch('https://formspree.io/f/mnjzeogj', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, message })
-                });
-                if (response.ok) {
-                    alert('Thank you for your feedback!');
-                    closeFeedbackForm();
-                    form.reset();
-                } else {
-                    alert('Error sending feedback. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error sending feedback.');
-            }
-        }
-
-    </script>
-
-    <!-- Language Translation System -->
-    <script>
+        // --- Language ---
         const translations = {
             en: {
                 'nav.back': 'Back to Home',
                 'title': "Young's Double-Slit Experiment",
-                'schematic.title': 'Apparatus Schematic',
+                'controls.title': 'Parameters',
                 'controls.wavelength': 'Wavelength ($\\lambda$)',
                 'controls.slit': 'Slit Separation ($a$)',
                 'controls.distance': 'Screen Distance ($D$)',
-                'pattern.title': 'Interference Pattern on Screen',
-                'pattern.fringe': 'Fringe Separation ($\\Delta y$): ',
-                'pattern.center': '(Center of pattern)',
-                'explanation.text': 'The separation between the bright fringes (dots) is given by the formula:',
-                'explanation.question': 'Try answering question (a)(i) from your sheet: How can you increase the average separation ($\\Delta y$)?',
-                'explanation.increase1': 'Increase Wavelength ($\\lambda$):',
-                'explanation.move_lambda': 'Move the $\\lambda$ slider to the right (towards red).',
-                'explanation.increase2': 'Increase Screen Distance ($D$):',
-                'explanation.move_D': 'Move the $D$ slider to the right.',
-                'explanation.decrease': 'Decrease Slit Separation ($a$):',
-                'explanation.move_a': 'Move the $a$ slider to the left.',
-                'button.explain': '✨ Explain This Concept',
-                'button.feedback': '📝 Send Feedback',
-                'feedback.title': 'Send Us Your Feedback',
-                'feedback.email': 'Your email',
-                'feedback.message': 'Your feedback or suggestions...',
-                'feedback.send': 'Send',
-                'feedback.cancel': 'Cancel',
-                'feedback.thanks': 'Thank you for your feedback!',
-                'feedback.error': 'Error sending feedback. Please try again.'
+                'pattern.title': 'Interference Pattern',
+                'pattern.fringe': 'Fringe Separation ($\\Delta y$)',
+                'graph.title': 'Intensity Profile',
+                'explanation.text': 'Formula',
+                'explanation.question': 'Try answering question (a)(i): How can you increase $\\Delta y$?',
+                'button.explain': 'Explain This Concept',
+                'data.title': 'Results',
+                'ai.title': 'AI Physics Tutor'
             },
             zh: {
                 'nav.back': '返回首頁',
                 'title': '楊氏雙狹縫實驗',
-                'schematic.title': '實驗裝置示意圖',
+                'controls.title': '參數設置',
                 'controls.wavelength': '波長 ($\\lambda$)',
                 'controls.slit': '狹縫間距 ($a$)',
                 'controls.distance': '屏幕距離 ($D$)',
-                'pattern.title': '屏幕上的干涉圖樣',
-                'pattern.fringe': '條紋間距 ($\\Delta y$): ',
-                'pattern.center': '(圖樣中心)',
-                'explanation.text': '明條紋（光點）之間的間距由以下公式給出：',
-                'explanation.question': '試回答工作紙問題 (a)(i)：如何增加平均間距 ($\\Delta y$)？',
-                'explanation.increase1': '增加波長 ($\\lambda$):',
-                'explanation.move_lambda': '向右移動 $\\lambda$ 滑桿（移向紅色）。',
-                'explanation.increase2': '增加屏幕距離 ($D$):',
-                'explanation.move_D': '向右移動 $D$ 滑桿。',
-                'explanation.decrease': '減少狹縫間距 ($a$):',
-                'explanation.move_a': '向左移動 $a$ 滑桿。',
-                'button.explain': '✨ 解釋此概念',
-                'button.feedback': '📝 發送反饋',
-                'feedback.title': '發送您的反饋',
-                'feedback.email': '您的電子郵件',
-                'feedback.message': '您的反饋或建議...',
-                'feedback.send': '發送',
-                'feedback.cancel': '取消',
-                'feedback.thanks': '感謝您的反饋！',
-                'feedback.error': '發送反饋時出錯。請重試。'
+                'pattern.title': '干涉圖樣',
+                'pattern.fringe': '條紋間距 ($\\Delta y$)',
+                'graph.title': '強度分佈',
+                'explanation.text': '公式',
+                'explanation.question': '試回答問題 (a)(i)：如何增加 $\\Delta y$？',
+                'button.explain': '解釋此概念',
+                'data.title': '結果',
+                'ai.title': 'AI 物理導師'
             },
             cn: {
                 'nav.back': '返回首页',
                 'title': '杨氏双缝实验',
-                'schematic.title': '实验装置示意图',
+                'controls.title': '参数设置',
                 'controls.wavelength': '波长 ($\\lambda$)',
                 'controls.slit': '狭缝间距 ($a$)',
                 'controls.distance': '屏幕距离 ($D$)',
-                'pattern.title': '屏幕上的干涉图样',
-                'pattern.fringe': '条纹间距 ($\\Delta y$): ',
-                'pattern.center': '(图样中心)',
-                'explanation.text': '明条纹（光点）之间的间距由以下公式给出：',
-                'explanation.question': '试回答工作纸问题 (a)(i)：如何增加平均间距 ($\\Delta y$)？',
-                'explanation.increase1': '增加波长 ($\\lambda$):',
-                'explanation.move_lambda': '向右移动 $\\lambda$ 滑杆（移向红色）。',
-                'explanation.increase2': '增加屏幕距离 ($D$):',
-                'explanation.move_D': '向右移动 $D$ 滑杆。',
-                'explanation.decrease': '减少狭缝间距 ($a$):',
-                'explanation.move_a': '向左移动 $a$ 滑杆。',
-                'button.explain': '✨ 解释此概念',
-                'button.feedback': '📝 发送反馈',
-                'feedback.title': '发送您的反馈',
-                'feedback.email': '您的电子邮件',
-                'feedback.message': '您的反馈或建议...',
-                'feedback.send': '发送',
-                'feedback.cancel': '取消',
-                'feedback.thanks': '感谢您的反馈！',
-                'feedback.error': '发送反馈时出错。请重试。'
+                'pattern.title': '干涉图样',
+                'pattern.fringe': '条纹间距 ($\\Delta y$)',
+                'graph.title': '强度分布',
+                'explanation.text': '公式',
+                'explanation.question': '试回答问题 (a)(i)：如何增加 $\\Delta y$？',
+                'button.explain': '解释此概念',
+                'data.title': '结果',
+                'ai.title': 'AI 物理导师'
             }
         };
 
-        let currentLang = localStorage.getItem('preferred_language') || 'en';
-
         function setLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('preferred_language', lang);
-            
-            // Update all elements with data-i18n attribute
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (translations[lang] && translations[lang][key]) {
                     el.textContent = translations[lang][key];
                 }
             });
-
-            // Update placeholders
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                const key = el.getAttribute('data-i18n-placeholder');
-                if (translations[lang] && translations[lang][key]) {
-                    el.placeholder = translations[lang][key];
-                }
-            });
-            
-            // Update language buttons
-            document.querySelectorAll('.lang-btn').forEach(btn => {
-                if (btn.getAttribute('data-lang') === lang) {
-                    btn.classList.add('bg-blue-600', 'text-white');
-                    btn.classList.remove('text-slate-600');
-                } else {
-                    btn.classList.remove('bg-blue-600', 'text-white');
-                    btn.classList.add('text-slate-600');
-                }
-            });
-            
-            // Update document language
-            document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
-
-            // Retrigger MathJax if present
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise();
-            }
+            if (window.MathJax) MathJax.typesetPromise();
         }
-
-        // Initialize language on page load
-        window.addEventListener('load', () => {
-            setLanguage(currentLang);
-        });
     </script>
-
-    <!-- Feedback Modal -->
-    <div id="feedbackModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4" data-i18n="feedback.title">Send Us Your Feedback</h3>
-            <form onsubmit="submitFeedback(event)" class="space-y-4">
-                <input type="email" placeholder="Your email" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" data-i18n-placeholder="feedback.email">
-                <textarea placeholder="Your feedback or suggestions..." rows="4" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" data-i18n-placeholder="feedback.message"></textarea>
-                <div class="flex gap-3">
-                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition" data-i18n="feedback.send">Send</button>
-                    <button type="button" onclick="closeFeedbackForm()" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition" data-i18n="feedback.cancel">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
 </body>
 </html>

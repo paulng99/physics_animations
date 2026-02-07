@@ -197,6 +197,16 @@
                     </div>
                 </div>
 
+                <!-- Data Panel -->
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="font-semibold text-slate-700 border-b pb-2 mb-4" data-i18n="data.title">Results</h3>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-slate-600" data-i18n="data.n_max">Max Order ($n_{max}$)</span>
+                        <span id="n-max-val" class="text-2xl font-bold text-slate-800 font-mono">3</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2" data-i18n="data.n_max_hint">Theoretical maximum number of orders observable on one side.</p>
+                </div>
+
             </div>
 
             <!-- Right Column: Screen & Graph -->
@@ -288,6 +298,7 @@
         const dVal = document.getElementById('d-val');
         const NVal = document.getElementById('N-val');
         const linesPerMm = document.getElementById('lines-per-mm');
+        const nMaxVal = document.getElementById('n-max-val');
         
         const screenCanvas = document.getElementById('screen-canvas');
         const graphCanvas = document.getElementById('graph-canvas');
@@ -349,6 +360,12 @@
             
             const lines = (1000 / state.d).toFixed(0);
             linesPerMm.textContent = lines;
+
+            // Calculate n_max
+            // d * sin(90) = n_max * lambda => n_max = d / lambda
+            // d in um, lambda in nm. d_nm = d * 1000
+            const n_max = Math.floor((state.d * 1000) / state.lambda);
+            nMaxVal.textContent = n_max;
 
             // Colors
             const color = wavelengthToColor(state.lambda);
@@ -551,6 +568,9 @@
                 'controls.lines': 'Lines per mm:',
                 'controls.N': 'Number of Slits ($N$)',
                 'controls.N_hint': 'Affects sharpness of maxima.',
+                'data.title': 'Results',
+                'data.n_max': 'Max Order ($n_{max}$)',
+                'data.n_max_hint': 'Theoretical maximum number of orders observable on one side.',
                 'screen.view': 'Diffraction Pattern (Angle $\\theta$)',
                 'graph.title': 'Intensity Profile',
                 'formula.title': 'Grating Equation',
@@ -571,6 +591,9 @@
                 'controls.lines': '每毫米線數：',
                 'controls.N': '狹縫數量 ($N$)',
                 'controls.N_hint': '影響主極大值的銳度。',
+                'data.title': '結果',
+                'data.n_max': '最大級數 ($n_{max}$)',
+                'data.n_max_hint': '單側可觀察到的最大級數理論值。',
                 'screen.view': '繞射圖樣 (角度 $\\theta$)',
                 'graph.title': '強度分佈',
                 'formula.title': '光柵方程',
@@ -591,6 +614,9 @@
                 'controls.lines': '每毫米线数：',
                 'controls.N': '狭缝数量 ($N$)',
                 'controls.N_hint': '影响主极大值的锐度。',
+                'data.title': '结果',
+                'data.n_max': '最大级数 ($n_{max}$)',
+                'data.n_max_hint': '单侧可观察到的最大级数理论值。',
                 'screen.view': '衍射图样 (角度 $\\theta$)',
                 'graph.title': '强度分布',
                 'formula.title': '光栅方程',
