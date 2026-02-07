@@ -137,25 +137,25 @@
         
         
         <div class="mt-6 grid grid-cols-2 md:grid-cols-3 items-center justify-center gap-4">
-            <button id="releaseButton" class="sim-button">Release Ball!</button>
-            <button id="resetButton" class="sim-button">Reset</button>
-            <button id="explainButton" class="sim-button col-span-2 md:col-span-1">✨ Explain the Physics</button>
+            <button id="releaseButton" class="sim-button" data-i18n="button.release">Release Ball!</button>
+            <button id="resetButton" class="sim-button" data-i18n="button.reset">Reset</button>
+            <button id="explainButton" class="sim-button col-span-2 md:col-span-1" data-i18n="button.explain">✨ Explain the Physics</button>
         </div>
 
         <div class="mt-4 p-4 bg-slate-100 rounded-lg shadow-inner text-slate-700">
             <p class="text-sm">
-                <strong><span class="text-red-600">Red Arrow</span>:</strong> Centripetal Force (tension in the string)
+                <strong><span class="text-red-600" data-i18n="info.red">Red Arrow</span>:</strong> <span data-i18n="info.red.desc">Centripetal Force (tension in the string)</span>
             </p>
             <p class="text-sm">
-                <strong><span class="text-green-600">Green Arrow</span>:</strong> Tangential Velocity (direction of motion)
+                <strong><span class="text-green-600" data-i18n="info.green">Green Arrow</span>:</strong> <span data-i18n="info.green.desc">Tangential Velocity (direction of motion)</span>
             </p>
-            <p class="text-sm mt-2">
+            <p class="text-sm mt-2" data-i18n="info.watch">
                 Watch how the ball continues to move in the direction of the **green arrow** (tangential velocity) at the exact moment of release!
             </p>
         </div>
 
         <div class="mt-4 text-center">
-            <button onclick="openFeedbackForm(event)" class="text-sm text-blue-600 hover:text-blue-800 transition">📝 Send us your feedback</button>
+            <button onclick="openFeedbackForm(event)" class="text-sm text-blue-600 hover:text-blue-800 transition" data-i18n="button.feedback">📝 Send us your feedback</button>
         </div>
 
         </div>
@@ -164,13 +164,13 @@
     <!-- Feedback Modal -->
     <div id="feedbackModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 class="text-xl font-bold text-slate-800 mb-4">Send Us Your Feedback</h3>
+            <h3 class="text-xl font-bold text-slate-800 mb-4" data-i18n="feedback.title">Send Us Your Feedback</h3>
             <form onsubmit="submitFeedback(event)" class="space-y-4">
-                <input type="email" placeholder="Your email" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <textarea placeholder="Your feedback or suggestions..." rows="4" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                <input type="email" placeholder="Your email" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" data-i18n-placeholder="feedback.email">
+                <textarea placeholder="Your feedback or suggestions..." rows="4" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" data-i18n-placeholder="feedback.message"></textarea>
                 <div class="flex gap-3">
-                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Send</button>
-                    <button type="button" onclick="closeFeedbackForm()" class="flex-1 bg-slate-200 text-slate-800 py-2 rounded-lg hover:bg-slate-300 transition">Cancel</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition" data-i18n="feedback.send">Send</button>
+                    <button type="button" onclick="closeFeedbackForm()" class="flex-1 bg-slate-200 text-slate-800 py-2 rounded-lg hover:bg-slate-300 transition" data-i18n="feedback.cancel">Cancel</button>
                 </div>
             </form>
         </div>
@@ -579,13 +579,17 @@
                 'button.release': 'Release Ball!',
                 'button.reset': 'Reset',
                 'button.explain': '✨ Explain the Physics',
-                'info.blue': 'Red Arrow:',
-                'info.blue.desc': 'Centripetal Force (tension in the string)',
-                'info.green': 'Green Arrow:',
+                'info.red': 'Red Arrow',
+                'info.red.desc': 'Centripetal Force (tension in the string)',
+                'info.green': 'Green Arrow',
                 'info.green.desc': 'Tangential Velocity (direction of motion)',
                 'info.watch': 'Watch how the ball continues to move in the direction of the **green arrow** (tangential velocity) at the exact moment of release!',
                 'button.feedback': '📝 Send us your feedback',
                 'feedback.title': 'Send Us Your Feedback',
+                'feedback.email': 'Your email',
+                'feedback.message': 'Your feedback or suggestions...',
+                'feedback.send': 'Send',
+                'feedback.cancel': 'Cancel',
                 'feedback.thanks': 'Thank you for your feedback!',
                 'feedback.error': 'Error sending feedback. Please try again.'
             },
@@ -596,13 +600,17 @@
                 'button.release': '放開球！',
                 'button.reset': '重設',
                 'button.explain': '✨ 解釋物理原理',
-                'info.blue': '紅色箭頭：',
-                'info.blue.desc': '向心力（繩子張力）',
-                'info.green': '綠色箭頭：',
+                'info.red': '紅色箭頭',
+                'info.red.desc': '向心力（繩子張力）',
+                'info.green': '綠色箭頭',
                 'info.green.desc': '切線速度（運動方向）',
                 'info.watch': '觀察球在放手的瞬間如何沿著**綠色箭頭**（切線速度）的方向繼續移動！',
                 'button.feedback': '📝 發送反饋',
                 'feedback.title': '發送您的反饋',
+                'feedback.email': '您的電子郵件',
+                'feedback.message': '您的反饋或建議...',
+                'feedback.send': '發送',
+                'feedback.cancel': '取消',
                 'feedback.thanks': '感謝您的反饋！',
                 'feedback.error': '發送反饋時出錯。請重試。'
             },
@@ -613,13 +621,17 @@
                 'button.release': '放开球！',
                 'button.reset': '重设',
                 'button.explain': '✨ 解释物理原理',
-                'info.blue': '红色箭头：',
-                'info.blue.desc': '向心力（绳子张力）',
-                'info.green': '绿色箭头：',
+                'info.red': '红色箭头',
+                'info.red.desc': '向心力（绳子张力）',
+                'info.green': '绿色箭头',
                 'info.green.desc': '切线速度（运动方向）',
                 'info.watch': '观察球在放手的瞬间如何沿着**绿色箭头**（切线速度）的方向继续移动！',
                 'button.feedback': '📝 发送反馈',
                 'feedback.title': '发送您的反馈',
+                'feedback.email': '您的电子邮件',
+                'feedback.message': '您的反馈或建议...',
+                'feedback.send': '发送',
+                'feedback.cancel': '取消',
                 'feedback.thanks': '感谢您的反馈！',
                 'feedback.error': '发送反馈时出错。请重试。'
             }
@@ -635,6 +647,14 @@
                 const key = el.getAttribute('data-i18n');
                 if (translations[lang] && translations[lang][key]) {
                     el.textContent = translations[lang][key];
+                }
+            });
+
+            // Update placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (translations[lang] && translations[lang][key]) {
+                    el.placeholder = translations[lang][key];
                 }
             });
             

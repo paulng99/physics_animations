@@ -37,22 +37,29 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
-                    <span class="font-medium">Back</span>
+                    <span class="font-medium" data-i18n="btn.back">Back</span>
                 </a>
                 <h1 class="text-2xl font-bold flex items-center gap-3">
                     <i class="fa-solid fa-flask"></i>
-                    Physics Lab Seating Planner
+                    <span data-i18n="app.title">Physics Lab Seating Planner</span>
                 </h1>
-                <p class="opacity-90 text-sm mt-1">
+                <p class="opacity-90 text-sm mt-1" data-i18n="app.subtitle">
                     12 Tables (3x4) • Smart Balancing • Drag & Drop
                 </p>
             </div>
-            <button onclick="window.print()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded flex items-center gap-2 transition">
-                <i class="fa-solid fa-print"></i> Print
-            </button>
-            <button onclick="openFeedbackForm(event)" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded flex items-center gap-2 transition">
-                <i class="fa-solid fa-comment"></i> Feedback
-            </button>
+            <div class="flex items-center gap-3">
+                <div class="flex bg-blue-700/50 rounded-lg p-1 mr-2">
+                    <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded text-xs font-bold transition hover:bg-white/20 text-white/80" data-lang="zh">繁</button>
+                    <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded text-xs font-bold transition hover:bg-white/20 text-white/80" data-lang="cn">简</button>
+                    <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded text-xs font-bold transition hover:bg-white/20 bg-white text-blue-600 shadow-sm" data-lang="en">EN</button>
+                </div>
+                <button onclick="window.print()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded flex items-center gap-2 transition">
+                    <i class="fa-solid fa-print"></i> <span data-i18n="btn.print">Print</span>
+                </button>
+                <button onclick="openFeedbackForm(event)" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded flex items-center gap-2 transition">
+                    <i class="fa-solid fa-comment"></i> <span data-i18n="btn.feedback">Feedback</span>
+                </button>
+            </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -65,10 +72,10 @@
                     
                     <!-- TABS -->
                     <div class="flex border-b mb-4">
-                        <button id="tabSingle" onclick="switchTab('single')" class="flex-1 pb-2 border-b-2 border-blue-600 text-blue-600 font-bold text-sm transition-colors">
+                        <button id="tabSingle" onclick="switchTab('single')" class="flex-1 pb-2 border-b-2 border-blue-600 text-blue-600 font-bold text-sm transition-colors" data-i18n="tab.single">
                             Single Entry
                         </button>
-                        <button id="tabBulk" onclick="switchTab('bulk')" class="flex-1 pb-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-blue-600 transition-colors">
+                        <button id="tabBulk" onclick="switchTab('bulk')" class="flex-1 pb-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-blue-600 transition-colors" data-i18n="tab.bulk">
                             Bulk Import
                         </button>
                     </div>
@@ -86,20 +93,20 @@
                             </select>
                         </div>
                         <button onclick="addStudent()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded transition flex justify-center items-center gap-2">
-                            <i class="fa-solid fa-plus"></i> Add Student
+                            <i class="fa-solid fa-plus"></i> <span data-i18n="btn.add">Add Student</span>
                         </button>
                     </div>
 
                     <!-- BULK FORM -->
                     <div id="formBulk" class="hidden">
                         <div class="bg-blue-50 p-2 rounded text-xs text-blue-800 mb-2 border border-blue-100">
-                            <strong>Format per line (Tab Separated):</strong><br>
-                            ClassNumber &nbsp;&nbsp;&nbsp; Name &nbsp;&nbsp;&nbsp; Mark<br>
-                            <span class="text-blue-600 opacity-70 italic">(Best for copy-paste from Excel)</span>
+                            <strong data-i18n="bulk.format">Format per line (Tab Separated):</strong><br>
+                            <span data-i18n="bulk.columns">ClassNumber &nbsp;&nbsp;&nbsp; Name &nbsp;&nbsp;&nbsp; Mark</span><br>
+                            <span class="text-blue-600 opacity-70 italic" data-i18n="bulk.note">(Best for copy-paste from Excel)</span>
                         </div>
                         <textarea id="inBulk" rows="6" class="w-full border p-2 rounded text-sm outline-blue-500 font-mono whitespace-pre" placeholder="1	Alice	85&#10;2	Bob	62&#10;3	Charlie	45"></textarea>
                         <button onclick="bulkImport()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded transition flex justify-center items-center gap-2 mt-3">
-                            <i class="fa-solid fa-file-import"></i> Import Students
+                            <i class="fa-solid fa-file-import"></i> <span data-i18n="btn.import">Import Students</span>
                         </button>
                     </div>
                 </div>
@@ -107,10 +114,10 @@
                 <!-- CONTROLS -->
                 <div class="flex gap-2">
                     <button onclick="generatePlan()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded shadow font-semibold flex justify-center items-center gap-2">
-                        <i class="fa-solid fa-rotate"></i> Generate Plan
+                        <i class="fa-solid fa-rotate"></i> <span data-i18n="btn.generate">Generate Plan</span>
                     </button>
                     <button onclick="loadDemoData()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 rounded font-medium" title="Load Sample Data">
-                        Demo
+                        <span data-i18n="btn.demo">Demo</span>
                     </button>
                     <button onclick="clearAll()" class="bg-red-100 hover:bg-red-200 text-red-600 px-4 rounded" title="Clear All">
                         <i class="fa-solid fa-trash"></i>
@@ -120,11 +127,11 @@
                 <!-- STUDENT LIST -->
                 <div class="bg-white p-4 rounded-lg shadow border border-gray-200 h-[500px] overflow-y-auto flex flex-col">
                     <div class="flex justify-between items-center mb-2 border-b pb-2 sticky top-0 bg-white z-10">
-                        <h3 class="font-bold text-gray-700">Class List <span id="studentCount" class="text-xs bg-gray-200 px-2 rounded-full ml-1">0</span></h3>
+                        <h3 class="font-bold text-gray-700"><span data-i18n="header.classList">Class List</span> <span id="studentCount" class="text-xs bg-gray-200 px-2 rounded-full ml-1">0</span></h3>
                     </div>
                     <div id="studentList" class="space-y-2 flex-1">
                         <!-- JS will populate this -->
-                        <p class="text-center text-gray-400 italic mt-10">No students added.</p>
+                        <p class="text-center text-gray-400 italic mt-10" data-i18n="msg.noStudents">No students added.</p>
                     </div>
                 </div>
             </div>
@@ -135,7 +142,7 @@
                 <!-- Warnings Area -->
                 <div id="warningArea" class="hidden bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg mb-6">
                     <h3 class="font-bold flex items-center gap-2 mb-1">
-                        <i class="fa-solid fa-circle-exclamation"></i> Constraint Conflicts
+                        <i class="fa-solid fa-circle-exclamation"></i> <span data-i18n="warning.title">Constraint Conflicts</span>
                     </h3>
                     <ul id="warningList" class="list-disc pl-5 text-sm"></ul>
                 </div>
@@ -145,7 +152,7 @@
                     
                     <!-- Markers: Upside Down View -->
                     <div class="absolute top-4 left-0 right-0 text-center text-slate-400 text-xs font-bold tracking-widest uppercase">
-                        Back of Lab (Rows 10-12)
+                        <span data-i18n="label.backOfLab">Back of Lab (Rows 10-12)</span>
                     </div>
 
                     <!-- Tables Container -->
@@ -155,16 +162,16 @@
 
                     <!-- Teacher Marker (Front) at Bottom -->
                     <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 bg-slate-800 text-white px-8 py-2 rounded-t-lg shadow-lg font-bold uppercase tracking-wider text-sm z-10 border-b-4 border-slate-900">
-                        Teacher's Desk (Front)
+                        <span data-i18n="label.teachersDesk">Teacher's Desk (Front)</span>
                     </div>
                 </div>
 
                 <!-- Legend -->
                 <div class="mt-8 flex flex-wrap gap-4 text-sm text-gray-600 bg-white p-4 rounded shadow-sm justify-center no-print">
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-green-600 rounded-full"></span> High Score (80+)</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-blue-600 rounded-full"></span> Mid Score (60-79)</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-yellow-600 rounded-full"></span> Low Score (40-59)</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-red-600 rounded-full"></span> Critical (&lt;40)</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-green-600 rounded-full"></span> <span data-i18n="legend.high">High Score (80+)</span></div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-blue-600 rounded-full"></span> <span data-i18n="legend.mid">Mid Score (60-79)</span></div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-yellow-600 rounded-full"></span> <span data-i18n="legend.low">Low Score (40-59)</span></div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-red-600 rounded-full"></span> <span data-i18n="legend.critical">Critical (&lt;40)</span></div>
                 </div>
             </div>
         </div>
@@ -172,11 +179,259 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
+        // --- I18N SYSTEM ---
+        const translations = {
+            en: {
+                "app.title": "Physics Lab Seating Planner",
+                "app.subtitle": "12 Tables (3x4) • Smart Balancing • Drag & Drop",
+                "btn.back": "Back",
+                "btn.print": "Print",
+                "btn.feedback": "Feedback",
+                "tab.single": "Single Entry",
+                "tab.bulk": "Bulk Import",
+                "placeholder.name": "Name",
+                "placeholder.classNo": "Class No.",
+                "placeholder.mark": "Mark (0-100)",
+                "opt.noPref": "No Row Pref",
+                "opt.front": "Front Row (Tables 1-3)",
+                "opt.back": "Back Row (Tables 10-12)",
+                "btn.add": "Add Student",
+                "bulk.format": "Format per line (Tab Separated):",
+                "bulk.columns": "ClassNumber    Name    Mark",
+                "bulk.note": "(Best for copy-paste from Excel)",
+                "bulk.placeholder": "1\tAlice\t85\n2\tBob\t62\n3\tCharlie\t45",
+                "btn.import": "Import Students",
+                "btn.generate": "Generate Plan",
+                "btn.demo": "Demo",
+                "btn.clear": "Clear All",
+                "header.classList": "Class List",
+                "msg.noStudents": "No students added.",
+                "label.backOfLab": "Back of Lab (Rows 10-12)",
+                "label.teachersDesk": "Teacher's Desk (Front)",
+                "legend.high": "High Score (80+)",
+                "legend.mid": "Mid Score (60-79)",
+                "legend.low": "Low Score (40-59)",
+                "legend.critical": "Critical (<40)",
+                "modal.title": "Send Us Your Feedback",
+                "modal.email": "Your email",
+                "modal.message": "Your feedback or suggestions...",
+                "btn.send": "Send",
+                "btn.cancel": "Cancel",
+                "warning.title": "Constraint Conflicts",
+                
+                "alert.required": "Name and Mark are required",
+                "alert.imported": "Successfully imported {n} students.",
+                "alert.noValid": "No valid lines found. Format: ClassNo [TAB] Name [TAB] Mark",
+                "alert.clear": "Clear all students and seating plan?",
+                "alert.tableFull": "Table is full (Max 4)",
+                "alert.feedbackThanks": "Thank you for your feedback!",
+                "alert.feedbackError": "Error sending feedback.",
+                "label.partner": "Partner",
+                "label.avoid": "Avoid",
+                "label.none": "None",
+                "label.front": "Front",
+                "label.back": "Back",
+                "label.table": "Table",
+                "label.empty": "Empty",
+                "label.avg": "Avg",
+                "link.with": "w/",
+                "link.not": "not",
+                "warn.avoid": "Table {t}: {name} sitting with {enemy} (Should Avoid)",
+                "warn.prefFront": "{name} prefers Front but is at Table {t}",
+                "warn.prefBack": "{name} prefers Back but is at Table {t}",
+                "warn.separated": "{name} separated from partner {partner}"
+            },
+            zh: {
+                "app.title": "物理實驗室座位規劃",
+                "app.subtitle": "12 張桌子 (3x4) • 智能平衡 • 拖放操作",
+                "btn.back": "返回",
+                "btn.print": "列印",
+                "btn.feedback": "反饋",
+                "tab.single": "單筆輸入",
+                "tab.bulk": "批量導入",
+                "placeholder.name": "姓名",
+                "placeholder.classNo": "班號",
+                "placeholder.mark": "分數 (0-100)",
+                "opt.noPref": "無座位偏好",
+                "opt.front": "前排 (桌號 1-3)",
+                "opt.back": "後排 (桌號 10-12)",
+                "btn.add": "新增學生",
+                "bulk.format": "每行格式 (Tab 分隔):",
+                "bulk.columns": "班號    姓名    分數",
+                "bulk.note": "(適合從 Excel 複製貼上)",
+                "bulk.placeholder": "1\t愛麗絲\t85\n2\t波波\t62\n3\t查理\t45",
+                "btn.import": "導入學生",
+                "btn.generate": "生成座位表",
+                "btn.demo": "演示",
+                "btn.clear": "清除全部",
+                "header.classList": "班級名單",
+                "msg.noStudents": "尚未添加學生。",
+                "label.backOfLab": "實驗室後方 (第 10-12 排)",
+                "label.teachersDesk": "教師講台 (前方)",
+                "legend.high": "高分 (80+)",
+                "legend.mid": "中等 (60-79)",
+                "legend.low": "低分 (40-59)",
+                "legend.critical": "及格邊緣 (<40)",
+                "modal.title": "發送反饋",
+                "modal.email": "您的電子郵件",
+                "modal.message": "您的反饋或建議...",
+                "btn.send": "發送",
+                "btn.cancel": "取消",
+                "warning.title": "約束衝突",
+
+                "alert.required": "姓名和分數為必填項",
+                "alert.imported": "成功導入 {n} 名學生。",
+                "alert.noValid": "未找到有效行。格式: 班號 [TAB] 姓名 [TAB] 分數",
+                "alert.clear": "確定要清除所有學生和座位表嗎？",
+                "alert.tableFull": "桌子已滿 (最多 4 人)",
+                "alert.feedbackThanks": "感謝您的反饋！",
+                "alert.feedbackError": "發送反饋時出錯。",
+                "label.partner": "夥伴",
+                "label.avoid": "避免",
+                "label.none": "無",
+                "label.front": "前排",
+                "label.back": "後排",
+                "label.table": "桌子",
+                "label.empty": "空位",
+                "label.avg": "平均",
+                "link.with": "同",
+                "link.not": "非",
+                "warn.avoid": "第 {t} 桌: {name} 與 {enemy} 同桌 (應避免)",
+                "warn.prefFront": "{name} 偏好前排但在第 {t} 桌",
+                "warn.prefBack": "{name} 偏好後排但在第 {t} 桌",
+                "warn.separated": "{name} 與夥伴 {partner} 分開"
+            },
+            cn: {
+                "app.title": "物理实验室座位规划",
+                "app.subtitle": "12 张桌子 (3x4) • 智能平衡 • 拖放操作",
+                "btn.back": "返回",
+                "btn.print": "打印",
+                "btn.feedback": "反馈",
+                "tab.single": "单笔输入",
+                "tab.bulk": "批量导入",
+                "placeholder.name": "姓名",
+                "placeholder.classNo": "班号",
+                "placeholder.mark": "分数 (0-100)",
+                "opt.noPref": "无座位偏好",
+                "opt.front": "前排 (桌号 1-3)",
+                "opt.back": "后排 (桌号 10-12)",
+                "btn.add": "新增学生",
+                "bulk.format": "每行格式 (Tab 分隔):",
+                "bulk.columns": "班号    姓名    分数",
+                "bulk.note": "(适合从 Excel 复制粘贴)",
+                "bulk.placeholder": "1\t爱丽丝\t85\n2\t波波\t62\n3\t查理\t45",
+                "btn.import": "导入学生",
+                "btn.generate": "生成座位表",
+                "btn.demo": "演示",
+                "btn.clear": "清除全部",
+                "header.classList": "班级名单",
+                "msg.noStudents": "尚未添加学生。",
+                "label.backOfLab": "实验室后方 (第 10-12 排)",
+                "label.teachersDesk": "教师讲台 (前方)",
+                "legend.high": "高分 (80+)",
+                "legend.mid": "中等 (60-79)",
+                "legend.low": "低分 (40-59)",
+                "legend.critical": "及格边缘 (<40)",
+                "modal.title": "发送反馈",
+                "modal.email": "您的电子邮件",
+                "modal.message": "您的反馈或建议...",
+                "btn.send": "发送",
+                "btn.cancel": "取消",
+                "warning.title": "约束冲突",
+
+                "alert.required": "姓名和分数为必填项",
+                "alert.imported": "成功导入 {n} 名学生。",
+                "alert.noValid": "未找到有效行。格式: 班号 [TAB] 姓名 [TAB] 分数",
+                "alert.clear": "确定要清除所有学生和座位表吗？",
+                "alert.tableFull": "桌子已满 (最多 4 人)",
+                "alert.feedbackThanks": "感谢您的反馈！",
+                "alert.feedbackError": "发送反馈时出错。",
+                "label.partner": "伙伴",
+                "label.avoid": "避免",
+                "label.none": "无",
+                "label.front": "前排",
+                "label.back": "后排",
+                "label.table": "桌子",
+                "label.empty": "空位",
+                "label.avg": "平均",
+                "link.with": "同",
+                "link.not": "非",
+                "warn.avoid": "第 {t} 桌: {name} 与 {enemy} 同桌 (应避免)",
+                "warn.prefFront": "{name} 偏好前排但在第 {t} 桌",
+                "warn.prefBack": "{name} 偏好后排但在第 {t} 桌",
+                "warn.separated": "{name} 与伙伴 {partner} 分开"
+            }
+        };
+
         // --- STATE ---
         let students = [];
         let tables = Array.from({ length: 12 }, () => []); // 12 Tables
         let draggedStudentId = null;
         let draggedFromTable = null;
+        let currentLang = localStorage.getItem('preferred_language') || 'en';
+
+        // --- I18N FUNCTIONS ---
+        function t(key, params = {}) {
+            let text = (translations[currentLang] && translations[currentLang][key]) || translations['en'][key] || key;
+            Object.keys(params).forEach(k => {
+                text = text.replace(`{${k}}`, params[k]);
+            });
+            return text;
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('preferred_language', lang);
+
+            // Update DOM text
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (key) el.textContent = t(key);
+            });
+
+            // Update Placeholders
+            const inputs = {
+                'inName': 'placeholder.name',
+                'inClassNo': 'placeholder.classNo',
+                'inMark': 'placeholder.mark',
+                'inBulk': 'bulk.placeholder'
+            };
+            Object.entries(inputs).forEach(([id, key]) => {
+                const el = document.getElementById(id);
+                if (el) el.placeholder = t(key);
+            });
+
+            // Update Modal Placeholders
+            const modalEmail = document.querySelector('#feedbackModal input[type="email"]');
+            const modalMsg = document.querySelector('#feedbackModal textarea');
+            if (modalEmail) modalEmail.placeholder = t('modal.email');
+            if (modalMsg) modalMsg.placeholder = t('modal.message');
+
+            // Update Select Options
+            const prefSelect = document.getElementById('inPref');
+            if (prefSelect) {
+                prefSelect.options[0].text = t('opt.noPref');
+                prefSelect.options[1].text = t('opt.front');
+                prefSelect.options[2].text = t('opt.back');
+            }
+
+            // Update Buttons State
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.getAttribute('data-lang') === lang) {
+                     btn.classList.remove('bg-white', 'text-blue-600');
+                     btn.classList.add('bg-blue-800', 'text-white', 'ring-2', 'ring-white/50');
+                } else {
+                     btn.classList.remove('bg-blue-800', 'text-white', 'ring-2', 'ring-white/50');
+                     btn.classList.add('bg-white/20', 'text-white');
+                }
+            });
+
+            document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+            
+            // Re-render
+            renderStudentList();
+            renderTables();
+        }
 
         // --- MOCK DATA ---
         const NAMES = [
@@ -197,7 +452,6 @@
                 avoidId: null
             }));
             
-            // Clear tables logic
             tables = Array.from({ length: 12 }, () => []);
             renderStudentList();
             renderTables();
@@ -205,7 +459,7 @@
         }
 
         function clearAll() {
-            if(confirm("Clear all students and seating plan?")) {
+            if(confirm(t("alert.clear"))) {
                 students = [];
                 tables = Array.from({ length: 12 }, () => []);
                 renderStudentList();
@@ -224,13 +478,11 @@
             if (tab === 'single') {
                 formSingle.classList.remove('hidden');
                 formBulk.classList.add('hidden');
-                // Style: Active
                 tabSingle.className = "flex-1 pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm transition-colors";
                 tabBulk.className = "flex-1 pb-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-indigo-600 transition-colors";
             } else {
                 formSingle.classList.add('hidden');
                 formBulk.classList.remove('hidden');
-                // Style: Active
                 tabSingle.className = "flex-1 pb-2 border-b-2 border-transparent text-gray-500 font-medium text-sm hover:text-indigo-600 transition-colors";
                 tabBulk.className = "flex-1 pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm transition-colors";
             }
@@ -253,7 +505,7 @@
             const pref = document.getElementById('inPref').value;
 
             if (!name || !mark) {
-                alert("Name and Mark are required");
+                alert(t("alert.required"));
                 return;
             }
 
@@ -269,7 +521,6 @@
 
             students.push(newStudent);
             
-            // Reset form
             document.getElementById('inName').value = '';
             document.getElementById('inClassNo').value = '';
             document.getElementById('inMark').value = '';
@@ -288,7 +539,6 @@
             lines.forEach(line => {
                 if (!line.trim()) return;
                 
-                // Expect: ClassNo [TAB] Name [TAB] Mark
                 const parts = line.split('\t').map(p => p.trim());
                 
                 if (parts.length >= 3) {
@@ -315,10 +565,10 @@
             if (count > 0) {
                 document.getElementById('inBulk').value = '';
                 renderStudentList();
-                alert(`Successfully imported ${count} students.`);
+                alert(t("alert.imported", {n: count}));
                 switchTab('single'); 
             } else {
-                alert("No valid lines found. Format: ClassNo [TAB] Name [TAB] Mark");
+                alert(t("alert.noValid"));
             }
         }
 
@@ -351,16 +601,11 @@
             document.getElementById('studentCount').innerText = students.length;
             
             if (students.length === 0) {
-                listEl.innerHTML = '<p class="text-center text-gray-400 italic mt-10">No students added.</p>';
+                listEl.innerHTML = `<p class="text-center text-gray-400 italic mt-10" data-i18n="msg.noStudents">${t("msg.noStudents")}</p>`;
                 return;
             }
 
             listEl.innerHTML = students.map(s => {
-                const otherOptions = students
-                    .filter(other => other.id !== s.id)
-                    .map(o => `<option value="${o.id}">${o.name}</option>`)
-                    .join('');
-
                 return `
                 <div class="border rounded p-3 text-sm bg-gray-50 relative group hover:bg-white transition-colors">
                     <div class="flex justify-between items-start mb-2">
@@ -370,7 +615,7 @@
                                 <span class="text-xs font-mono px-1 rounded bg-gray-200 ${getMarkColorClass(s.mark)}">${s.mark}%</span>
                                 ${s.preference !== 'none' ? 
                                     `<span class="text-xs bg-indigo-100 text-indigo-800 px-1 rounded capitalize">
-                                        <i class="fa-solid ${s.preference === 'front' ? 'fa-arrow-up' : 'fa-arrow-down'}"></i> ${s.preference}
+                                        <i class="fa-solid ${s.preference === 'front' ? 'fa-arrow-up' : 'fa-arrow-down'}"></i> ${s.preference === 'front' ? t('label.front') : t('label.back')}
                                     </span>` : ''}
                             </div>
                         </div>
@@ -381,22 +626,22 @@
                     
                     <div class="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
                         <div>
-                            <label class="text-[10px] text-gray-500 uppercase font-bold">Partner</label>
+                            <label class="text-[10px] text-gray-500 uppercase font-bold">${t('label.partner')}</label>
                             <select onchange="updateConstraint('${s.id}', 'partnerId', this.value)" class="w-full text-xs border rounded p-1 bg-white">
-                                <option value="none">None</option>
+                                <option value="none">${t('label.none')}</option>
                                 ${students.map(o => o.id !== s.id ? `<option value="${o.id}" ${s.partnerId === o.id ? 'selected' : ''}>${o.name}</option>` : '').join('')}
                             </select>
                         </div>
                         <div>
-                            <label class="text-[10px] text-gray-500 uppercase font-bold">Avoid</label>
+                            <label class="text-[10px] text-gray-500 uppercase font-bold">${t('label.avoid')}</label>
                             <select onchange="updateConstraint('${s.id}', 'avoidId', this.value)" class="w-full text-xs border rounded p-1 bg-white">
-                                <option value="none">None</option>
+                                <option value="none">${t('label.none')}</option>
                                 ${students.map(o => o.id !== s.id ? `<option value="${o.id}" ${s.avoidId === o.id ? 'selected' : ''}>${o.name}</option>` : '').join('')}
                             </select>
                         </div>
                     </div>
-                    ${s.partnerId ? `<div class="text-xs text-green-600 mt-1"><i class="fa-solid fa-link"></i> w/ ${students.find(x=>x.id===s.partnerId)?.name || '?'}</div>` : ''}
-                    ${s.avoidId ? `<div class="text-xs text-red-600 mt-1"><i class="fa-solid fa-ban"></i> not ${students.find(x=>x.id===s.avoidId)?.name || '?'}</div>` : ''}
+                    ${s.partnerId ? `<div class="text-xs text-green-600 mt-1"><i class="fa-solid fa-link"></i> ${t('link.with')} ${students.find(x=>x.id===s.partnerId)?.name || '?'}</div>` : ''}
+                    ${s.avoidId ? `<div class="text-xs text-red-600 mt-1"><i class="fa-solid fa-ban"></i> ${t('link.not')} ${students.find(x=>x.id===s.avoidId)?.name || '?'}</div>` : ''}
                 </div>
                 `;
             }).join('');
@@ -424,8 +669,8 @@
                 
                 const isFront = index < 3;
                 const isBack = index >= 9;
-                const rowLabel = isFront ? '<span class="text-[10px] bg-blue-100 text-blue-700 px-1 rounded">Front</span>' : 
-                               (isBack ? '<span class="text-[10px] bg-orange-100 text-orange-700 px-1 rounded">Back</span>' : '');
+                const rowLabel = isFront ? `<span class="text-[10px] bg-blue-100 text-blue-700 px-1 rounded">${t('label.front')}</span>` : 
+                               (isBack ? `<span class="text-[10px] bg-orange-100 text-orange-700 px-1 rounded">${t('label.back')}</span>` : '');
 
                 let seatsHtml = '';
                 // Fill 4 slots
@@ -449,7 +694,7 @@
                     } else {
                         seatsHtml += `
                             <div class="border border-dashed border-gray-300 rounded bg-gray-50 flex items-center justify-center h-[50px]">
-                                <span class="text-xs text-gray-300">Empty</span>
+                                <span class="text-xs text-gray-300">${t('label.empty')}</span>
                             </div>
                         `;
                     }
@@ -463,10 +708,10 @@
                     >
                         <!-- Table Header -->
                         <div class="bg-slate-100 p-2 rounded-t-xl border-b flex justify-between items-center">
-                            <span class="font-bold text-slate-600 text-sm">Table ${index + 1}</span>
+                            <span class="font-bold text-slate-600 text-sm">${t('label.table')} ${index + 1}</span>
                             <div class="flex gap-1 items-center">
                                 ${rowLabel}
-                                ${tableStudents.length > 0 ? `<span class="text-xs bg-slate-200 px-1 rounded font-mono">Avg: ${avgMark}</span>` : ''}
+                                ${tableStudents.length > 0 ? `<span class="text-xs bg-slate-200 px-1 rounded font-mono">${t('label.avg')}: ${avgMark}</span>` : ''}
                             </div>
                         </div>
                         <!-- Seats -->
@@ -493,11 +738,9 @@
         function generatePlan() {
             if (students.length === 0) return;
 
-            // 1. Randomize initial pool to ensure diversity in tie-breaking
             let pool = shuffleArray([...students]);
             let newTables = Array.from({ length: 12 }, () => []);
             
-            // Sort by mark desc (high to low) for balancing, but equal marks are now random due to shuffle above
             pool.sort((a, b) => b.mark - a.mark);
 
             const frontTables = [0, 1, 2];
@@ -511,7 +754,6 @@
                 return true;
             };
 
-            // Partner logic
             const handledIds = new Set();
             const pairs = [];
             pool.forEach(s => {
@@ -527,7 +769,6 @@
             });
             pool = pool.filter(s => !handledIds.has(s.id));
 
-            // Pairs Distribution - Shuffle to randomize placement
             shuffleArray(pairs);
             pairs.forEach(pair => {
                 const [p1, p2] = pair;
@@ -535,7 +776,6 @@
                 if (p1.preference === 'front' || p2.preference === 'front') targetIndices = frontTables;
                 else if (p1.preference === 'back' || p2.preference === 'back') targetIndices = backTables;
 
-                // Sort targets by emptiness
                 targetIndices.sort((a, b) => newTables[a].length - newTables[b].length);
 
                 let placed = false;
@@ -556,10 +796,9 @@
                 }
             });
 
-            // Row Preferences - Shuffle
             const frontPref = shuffleArray(pool.filter(s => s.preference === 'front'));
             const backPref = shuffleArray(pool.filter(s => s.preference === 'back'));
-            const noPref = pool.filter(s => s.preference === 'none'); // Already sorted by mark/shuffled
+            const noPref = pool.filter(s => s.preference === 'none');
 
             frontPref.forEach(s => {
                 if (!frontTables.some(t => addToTable(s, t))) {
@@ -572,17 +811,11 @@
                     [...middleTables].reverse().some(t => addToTable(s, t));
                 }
             });
-
-            // Balance Remaining (noPref)
-            // noPref is already sorted by Mark Descending (High -> Low)
             
             noPref.forEach(s => {
                 let valid = allTables.filter(i => newTables[i].length < 4);
-                
-                // Randomize valid tables list BEFORE sorting to break ties randomly
                 shuffleArray(valid);
 
-                // Sort logic: Least crowded, then lowest average
                 valid.sort((a, b) => {
                     const lenDiff = newTables[a].length - newTables[b].length;
                     if (lenDiff !== 0) return lenDiff;
@@ -605,20 +838,17 @@
             const warnings = [];
             tables.forEach((table, tIdx) => {
                 table.forEach(s => {
-                    // Avoid
                     if (s.avoidId) {
                         const enemy = table.find(m => m.id === s.avoidId);
-                        if (enemy) warnings.push(`Table ${tIdx+1}: ${s.name} sitting with ${enemy.name} (Should Avoid)`);
+                        if (enemy) warnings.push(t("warn.avoid", {t: tIdx+1, name: s.name, enemy: enemy.name}));
                     }
-                    // Row Pref
-                    if (s.preference === 'front' && tIdx > 2) warnings.push(`${s.name} prefers Front but is at Table ${tIdx+1}`);
-                    if (s.preference === 'back' && tIdx < 9) warnings.push(`${s.name} prefers Back but is at Table ${tIdx+1}`);
-                    // Partner Missing
+                    if (s.preference === 'front' && tIdx > 2) warnings.push(t("warn.prefFront", {name: s.name, t: tIdx+1}));
+                    if (s.preference === 'back' && tIdx < 9) warnings.push(t("warn.prefBack", {name: s.name, t: tIdx+1}));
                     if (s.partnerId) {
                         const partner = students.find(x => x.id === s.partnerId);
                         if (partner) {
                             const partnerAtTable = table.find(x => x.id === s.partnerId);
-                            if (!partnerAtTable) warnings.push(`${s.name} separated from partner ${partner.name}`);
+                            if (!partnerAtTable) warnings.push(t("warn.separated", {name: s.name, partner: partner.name}));
                         }
                     }
                 });
@@ -652,7 +882,7 @@
             if (!student) return;
 
             if (tables[targetTableIndex].length >= 4 && draggedFromTable !== targetTableIndex) {
-                alert("Table is full (Max 4)");
+                alert(t("alert.tableFull"));
                 return;
             }
 
@@ -667,8 +897,8 @@
         }
 
         // Init
-        renderStudentList();
-
+        // renderStudentList(); // Called in setLanguage
+        
         // Feedback form functions
         function openFeedbackForm(e) {
             e.preventDefault();
@@ -693,29 +923,34 @@
                     body: JSON.stringify({ email, message })
                 });
                 if (response.ok) {
-                    alert('Thank you for your feedback!');
+                    alert(t("alert.feedbackThanks"));
                     closeFeedbackForm();
                     form.reset();
                 } else {
-                    alert('Error sending feedback. Please try again.');
+                    alert(t("alert.feedbackError"));
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error sending feedback.');
+                alert(t("alert.feedbackError"));
             }
         }
+
+        // Initialize Language
+        window.addEventListener('DOMContentLoaded', () => {
+            setLanguage(currentLang);
+        });
     </script>
 
     <!-- Feedback Modal -->
     <div id="feedbackModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Send Us Your Feedback</h3>
+            <h3 class="text-xl font-bold text-gray-800 mb-4" data-i18n="modal.title">Send Us Your Feedback</h3>
             <form onsubmit="submitFeedback(event)" class="space-y-4">
                 <input type="email" placeholder="Your email" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <textarea placeholder="Your feedback or suggestions..." rows="4" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                 <div class="flex gap-3">
-                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Send</button>
-                    <button type="button" onclick="closeFeedbackForm()" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition" data-i18n="btn.send">Send</button>
+                    <button type="button" onclick="closeFeedbackForm()" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition" data-i18n="btn.cancel">Cancel</button>
                 </div>
             </form>
         </div>

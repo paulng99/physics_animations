@@ -80,6 +80,12 @@
 </head>
 <body>
 
+<div class="absolute top-4 right-4 z-10 flex gap-2">
+    <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 text-sm font-medium transition" data-lang="zh">繁</button>
+    <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 text-sm font-medium transition" data-lang="cn">简</button>
+    <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg bg-blue-600 text-white border border-blue-500 text-sm font-medium transition shadow-lg" data-lang="en">EN</button>
+</div>
+
 <div id="canvas-container"></div>
 
 <div class="ui-panel">
@@ -87,24 +93,24 @@
     <div class="control-group">
         <h3 class="text-lg font-bold mb-3 text-gray-900 flex items-center gap-2">
             <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
-            Oscilloscope Input
+            <span data-i18n="input.title">Oscilloscope Input</span>
         </h3>
         <div class="mb-6">
             <div class="slider-label">
-                <span id="vp-label">Peak Voltage ($V_p$):</span>
+                <span id="vp-label" data-i18n="input.vp">Peak Voltage ($V_p$):</span>
                 <span id="vp-val" class="text-blue-600 font-mono text-xl">10.0 V</span>
             </div>
             <input type="range" id="vp-slider" min="1" max="20" step="0.5" value="10" aria-labelledby="vp-label vp-val">
         </div>
         <div class="legend">
             <div class="legend-item">
-                <div class="color-box bg-green-500 shadow-sm"></div> <span class="text-gray-600">Peak ($V_p$)</span>
+                <div class="color-box bg-green-500 shadow-sm"></div> <span class="text-gray-600" data-i18n="legend.peak">Peak ($V_p$)</span>
             </div>
             <div class="legend-item">
-                <div class="color-box bg-blue-400 shadow-sm"></div> <span class="text-gray-600">R.M.S. Value</span>
+                <div class="color-box bg-blue-400 shadow-sm"></div> <span class="text-gray-600" data-i18n="legend.rms">R.M.S. Value</span>
             </div>
         </div>
-        <p class="text-xs text-gray-500 italic mt-4 leading-relaxed">
+        <p class="text-xs text-gray-500 italic mt-4 leading-relaxed" data-i18n="input.desc">
             The dashed blue line shows the "effective" DC equivalent voltage.
         </p>
     </div>
@@ -113,7 +119,7 @@
     <div class="control-group">
         <h3 class="text-lg font-bold mb-3 text-gray-900 flex items-center gap-2">
             <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
-            Quantitative Analysis
+            <span data-i18n="math.title">Quantitative Analysis</span>
         </h3>
         <div id="math-rms" class="math-container shadow-inner"></div>
         <div id="math-pp" class="math-container shadow-inner"></div>
@@ -123,13 +129,13 @@
     <div class="control-group">
         <h3 class="text-lg font-bold mb-3 text-gray-900 flex items-center gap-2">
             <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
-            Visual Comparison
+            <span data-i18n="visual.title">Visual Comparison</span>
         </h3>
         <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-900 text-sm leading-relaxed">
-            <p class="mb-2">
+            <p class="mb-2" data-i18n="visual.desc1">
                 Notice that the <strong>Blue R.M.S. line</strong> sits at approximately 70.7% of the total height of the <strong>Green Peak</strong>.
             </p>
-            <p>
+            <p data-i18n="visual.desc2">
                 Even though the voltage reaches the peak, the "average" power delivered is equivalent to the steady blue line level.
             </p>
         </div>
@@ -204,6 +210,7 @@
     function renderMath() {
         const vrms = peakVoltage / Math.SQRT2;
         const vpp = peakVoltage * 2;
+        const textVpp = typeof t === 'function' ? t('math.vpp_text') : 'V (Peak-to-Peak)';
 
         katex.render(
             `V_{rms} = \\frac{V_p}{\\sqrt{2}} = \\frac{${peakVoltage.toFixed(1)}}{\\sqrt{2}} \\approx \\color{#60a5fa}{${vrms.toFixed(2)}\\text{ V}}`,
@@ -212,7 +219,7 @@
         );
 
         katex.render(
-            `V_{pp} = 2 \\times V_p = ${vpp.toFixed(1)}\\text{ V (Peak-to-Peak)}`,
+            `V_{pp} = 2 \\times V_p = ${vpp.toFixed(1)}\\text{ ${textVpp}}`,
             document.getElementById('math-pp'),
             { throwOnError: false, displayMode: true }
         );
@@ -246,17 +253,97 @@
         requestAnimationFrame(animate);
         
         const pos = waveLine.geometry.attributes.position.array;
-        const t = Date.now() * 0.004;
+        const t_time = Date.now() * 0.004;
 
         for(let i=0; i<=200; i++) {
-            pos[i*3 + 1] = Math.sin(i*0.1 - t) * (peakVoltage * scale);
+            pos[i*3 + 1] = Math.sin(i*0.1 - t_time) * (peakVoltage * scale);
         }
         waveLine.geometry.attributes.position.needsUpdate = true;
         
         renderer.render(scene, camera);
     }
 
-    window.onload = init;
+    window.onload = () => {
+        init();
+        setLanguage(currentLang);
+    };
+
+    // Language Translation System
+    const translations = {
+        en: {
+            'input.title': 'Oscilloscope Input',
+            'input.vp': 'Peak Voltage ($V_p$):',
+            'legend.peak': 'Peak ($V_p$)',
+            'legend.rms': 'R.M.S. Value',
+            'input.desc': 'The dashed blue line shows the "effective" DC equivalent voltage.',
+            'math.title': 'Quantitative Analysis',
+            'math.vpp_text': 'V (Peak-to-Peak)',
+            'visual.title': 'Visual Comparison',
+            'visual.desc1': 'Notice that the <strong>Blue R.M.S. line</strong> sits at approximately 70.7% of the total height of the <strong>Green Peak</strong>.',
+            'visual.desc2': 'Even though the voltage reaches the peak, the "average" power delivered is equivalent to the steady blue line level.'
+        },
+        zh: {
+            'input.title': '示波器輸入',
+            'input.vp': '峰值電壓 ($V_p$):',
+            'legend.peak': '峰值 ($V_p$)',
+            'legend.rms': '均方根值 (R.M.S.)',
+            'input.desc': '藍色虛線顯示"有效"的直流等效電壓。',
+            'math.title': '定量分析',
+            'math.vpp_text': 'V (峰對峰值)',
+            'visual.title': '視覺比較',
+            'visual.desc1': '注意<strong>藍色 R.M.S. 線</strong>位於<strong>綠色峰值</strong>高度的約 70.7% 處。',
+            'visual.desc2': '即使電壓達到峰值，傳遞的"平均"功率相當於穩定的藍色線水平。'
+        },
+        cn: {
+            'input.title': '示波器输入',
+            'input.vp': '峰值电压 ($V_p$):',
+            'legend.peak': '峰值 ($V_p$)',
+            'legend.rms': '均方根值 (R.M.S.)',
+            'input.desc': '蓝色虚线显示"有效"的直流等效电压。',
+            'math.title': '定量分析',
+            'math.vpp_text': 'V (峰对峰值)',
+            'visual.title': '视觉比较',
+            'visual.desc1': '注意<strong>蓝色 R.M.S. 线</strong>位于<strong>绿色峰值</strong>高度的约 70.7% 处。',
+            'visual.desc2': '即使电压达到峰值，传递的"平均"功率相当于稳定的蓝色线水平。'
+        }
+    };
+
+    let currentLang = localStorage.getItem('preferred_language') || 'en';
+
+    function t(key) {
+        return (translations[currentLang] && translations[currentLang][key]) || key;
+    }
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('preferred_language', lang);
+        
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (translations[lang] && translations[lang][key]) {
+                if (key.includes('desc')) {
+                    el.innerHTML = translations[lang][key];
+                } else {
+                    el.textContent = translations[lang][key];
+                }
+            }
+        });
+        
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            if (btn.getAttribute('data-lang') === lang) {
+                btn.classList.add('bg-blue-600', 'border-blue-500');
+                btn.classList.remove('bg-white/10', 'border-white/20');
+            } else {
+                btn.classList.remove('bg-blue-600', 'border-blue-500');
+                btn.classList.add('bg-white/10', 'border-white/20');
+            }
+        });
+        
+        document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+        
+        // Re-render math to update language inside KaTeX
+        renderMath();
+    }
 </script>
 </body>
 </html>

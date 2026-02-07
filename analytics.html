@@ -27,18 +27,27 @@
   
   <div class="max-w-6xl mx-auto px-6 py-8">
     
-    <!-- Back Button -->
-    <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 transition mb-6">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-      </svg>
-      <span class="font-medium">返回首頁</span>
-    </a>
+    <!-- Top Bar -->
+    <div class="flex justify-between items-center mb-6">
+        <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          <span class="font-medium" data-i18n="btn.back">返回首頁</span>
+        </a>
+
+        <!-- Language Switcher -->
+        <div class="flex bg-white rounded-lg p-1 shadow-sm border border-slate-200">
+            <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded text-xs font-bold transition hover:bg-slate-100 text-slate-600" data-lang="zh">繁</button>
+            <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded text-xs font-bold transition hover:bg-slate-100 text-slate-600" data-lang="cn">简</button>
+            <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded text-xs font-bold transition hover:bg-slate-100 text-slate-600" data-lang="en">EN</button>
+        </div>
+    </div>
 
     <!-- Header -->
     <div class="text-center mb-12">
-      <h1 class="text-4xl font-bold text-slate-800 mb-2">Analytics Dashboard</h1>
-      <p class="text-slate-600">查看您的網站統計數據</p>
+      <h1 class="text-4xl font-bold text-slate-800 mb-2" data-i18n="analytics.title">Analytics Dashboard</h1>
+      <p class="text-slate-600" data-i18n="analytics.subtitle">查看您的網站統計數據</p>
     </div>
 
     <!-- Quick Access Card -->
@@ -50,27 +59,30 @@
           </svg>
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-slate-800">Google Analytics</h2>
-          <p class="text-slate-600">追蹤 ID: G-RJQ61GJDVS</p>
+          <h2 class="text-2xl font-bold text-slate-800" data-i18n="card.ga.title">Google Analytics</h2>
+          <p class="text-slate-600" data-i18n="card.ga.id">追蹤 ID: G-RJQ61GJDVS</p>
         </div>
       </div>
       
       <div class="space-y-4">
         <a href="https://analytics.google.com/analytics/web/#/p461917468/reports/intelligenthome" 
            target="_blank"
-           class="block w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-6 rounded-xl transition shadow-lg text-center">
+           class="block w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-6 rounded-xl transition shadow-lg text-center"
+           data-i18n="btn.openGA">
           🚀 開啟 Google Analytics 儀表板
         </a>
         
         <div class="grid md:grid-cols-2 gap-4">
           <a href="https://analytics.google.com/analytics/web/#/p461917468/reports/reportinghub" 
              target="_blank"
-             class="block bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium py-3 px-4 rounded-lg transition text-center">
+             class="block bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium py-3 px-4 rounded-lg transition text-center"
+             data-i18n="btn.realtime">
             📊 查看即時報告
           </a>
           <a href="https://analytics.google.com/analytics/web/#/p461917468/reports/lifecycle-engagement" 
              target="_blank"
-             class="block bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium py-3 px-4 rounded-lg transition text-center">
+             class="block bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium py-3 px-4 rounded-lg transition text-center"
+             data-i18n="btn.engagement">
             👥 用戶參與度
           </a>
         </div>
@@ -81,51 +93,51 @@
     <div class="grid md:grid-cols-3 gap-6 mb-8">
       <div class="stat-card text-white p-6 rounded-2xl shadow-lg">
         <div class="text-3xl mb-2">📈</div>
-        <h3 class="text-lg font-semibold mb-1">即時訪客</h3>
-        <p class="text-white/80 text-sm">查看當前正在訪問您網站的用戶數量</p>
+        <h3 class="text-lg font-semibold mb-1" data-i18n="stat.realtime">即時訪客</h3>
+        <p class="text-white/80 text-sm" data-i18n="stat.realtime.desc">查看當前正在訪問您網站的用戶數量</p>
       </div>
       
       <div class="stat-card text-white p-6 rounded-2xl shadow-lg">
         <div class="text-3xl mb-2">🌍</div>
-        <h3 class="text-lg font-semibold mb-1">流量來源</h3>
-        <p class="text-white/80 text-sm">了解訪客從哪裡來到您的網站</p>
+        <h3 class="text-lg font-semibold mb-1" data-i18n="stat.source">流量來源</h3>
+        <p class="text-white/80 text-sm" data-i18n="stat.source.desc">了解訪客從哪裡來到您的網站</p>
       </div>
       
       <div class="stat-card text-white p-6 rounded-2xl shadow-lg">
         <div class="text-3xl mb-2">📄</div>
-        <h3 class="text-lg font-semibold mb-1">熱門頁面</h3>
-        <p class="text-white/80 text-sm">查看最受歡迎的實驗和工具</p>
+        <h3 class="text-lg font-semibold mb-1" data-i18n="stat.pages">熱門頁面</h3>
+        <p class="text-white/80 text-sm" data-i18n="stat.pages.desc">查看最受歡迎的實驗和工具</p>
       </div>
     </div>
 
     <!-- Instructions -->
     <div class="bg-slate-50 border border-slate-200 rounded-2xl p-8">
-      <h3 class="text-xl font-bold text-slate-800 mb-4">📚 如何使用</h3>
+      <h3 class="text-xl font-bold text-slate-800 mb-4" data-i18n="how.title">📚 如何使用</h3>
       <ol class="space-y-3 text-slate-700">
         <li class="flex items-start gap-3">
           <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</span>
-          <span>點擊上方「開啟 Google Analytics 儀表板」按鈕</span>
+          <span data-i18n="how.step1">點擊上方「開啟 Google Analytics 儀表板」按鈕</span>
         </li>
         <li class="flex items-start gap-3">
           <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</span>
-          <span>使用您的 Google 帳號登入（需要有該 GA 屬性的訪問權限）</span>
+          <span data-i18n="how.step2">使用您的 Google 帳號登入（需要有該 GA 屬性的訪問權限）</span>
         </li>
         <li class="flex items-start gap-3">
           <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</span>
-          <span>即可查看完整的訪客數據、流量來源、使用者行為等統計資訊</span>
+          <span data-i18n="how.step3">即可查看完整的訪客數據、流量來源、使用者行為等統計資訊</span>
         </li>
       </ol>
       
       <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
         <p class="text-sm text-amber-800">
-          <strong>💡 提示：</strong> 如果您無法訪問，請確保您的 Google 帳號已被授予此 Analytics 屬性的查看權限。
+          <strong data-i18n="how.tip">💡 提示： 如果您無法訪問，請確保您的 Google 帳號已被授予此 Analytics 屬性的查看權限。</strong>
         </p>
       </div>
     </div>
 
     <!-- Page Tracking Status -->
     <div class="mt-8 bg-white rounded-2xl shadow-xl p-6 border border-slate-200">
-      <h3 class="text-lg font-bold text-slate-800 mb-4">✅ 已追蹤的頁面</h3>
+      <h3 class="text-lg font-bold text-slate-800 mb-4" data-i18n="tracked.title">✅ 已追蹤的頁面</h3>
       <div class="grid md:grid-cols-2 gap-3">
         <div class="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
           <span class="text-green-600">✓</span>
@@ -148,5 +160,105 @@
 
   </div>
 
+  <script>
+    const translations = {
+      en: {
+        "btn.back": "Back to Home",
+        "analytics.title": "Analytics Dashboard",
+        "analytics.subtitle": "View your website statistics",
+        "card.ga.title": "Google Analytics",
+        "card.ga.id": "Tracking ID: G-RJQ61GJDVS",
+        "btn.openGA": "🚀 Open Google Analytics Dashboard",
+        "btn.realtime": "📊 View Realtime Report",
+        "btn.engagement": "👥 User Engagement",
+        "stat.realtime": "Realtime Visitors",
+        "stat.realtime.desc": "Users currently visiting your site",
+        "stat.source": "Traffic Sources",
+        "stat.source.desc": "Where your visitors come from",
+        "stat.pages": "Popular Pages",
+        "stat.pages.desc": "Most viewed experiments and tools",
+        "how.title": "📚 How to Use",
+        "how.step1": "Click 'Open Google Analytics Dashboard' above",
+        "how.step2": "Log in with your Google account (access required)",
+        "how.step3": "View complete statistics including visitors, sources, and behavior",
+        "how.tip": "💡 Tip: If you cannot access, ensure your Google account has permission for this property.",
+        "tracked.title": "✅ Tracked Pages"
+      },
+      zh: {
+        "btn.back": "返回首頁",
+        "analytics.title": "Analytics Dashboard",
+        "analytics.subtitle": "查看您的網站統計數據",
+        "card.ga.title": "Google Analytics",
+        "card.ga.id": "追蹤 ID: G-RJQ61GJDVS",
+        "btn.openGA": "🚀 開啟 Google Analytics 儀表板",
+        "btn.realtime": "📊 查看即時報告",
+        "btn.engagement": "👥 用戶參與度",
+        "stat.realtime": "即時訪客",
+        "stat.realtime.desc": "查看當前正在訪問您網站的用戶數量",
+        "stat.source": "流量來源",
+        "stat.source.desc": "了解訪客從哪裡來到您的網站",
+        "stat.pages": "熱門頁面",
+        "stat.pages.desc": "查看最受歡迎的實驗和工具",
+        "how.title": "📚 如何使用",
+        "how.step1": "點擊上方「開啟 Google Analytics 儀表板」按鈕",
+        "how.step2": "使用您的 Google 帳號登入（需要有該 GA 屬性的訪問權限）",
+        "how.step3": "即可查看完整的訪客數據、流量來源、使用者行為等統計資訊",
+        "how.tip": "💡 提示： 如果您無法訪問，請確保您的 Google 帳號已被授予此 Analytics 屬性的查看權限。",
+        "tracked.title": "✅ 已追蹤的頁面"
+      },
+      cn: {
+        "btn.back": "返回首页",
+        "analytics.title": "Analytics Dashboard",
+        "analytics.subtitle": "查看您的网站统计数据",
+        "card.ga.title": "Google Analytics",
+        "card.ga.id": "追踪 ID: G-RJQ61GJDVS",
+        "btn.openGA": "🚀 开启 Google Analytics 仪表板",
+        "btn.realtime": "📊 查看即时报告",
+        "btn.engagement": "👥 用户参与度",
+        "stat.realtime": "即时访客",
+        "stat.realtime.desc": "查看当前正在访问您网站的用户数量",
+        "stat.source": "流量来源",
+        "stat.source.desc": "了解访客从哪里来到您的网站",
+        "stat.pages": "热门页面",
+        "stat.pages.desc": "查看最受欢迎的实验和工具",
+        "how.title": "📚 如何使用",
+        "how.step1": "点击上方「开启 Google Analytics 仪表板」按钮",
+        "how.step2": "使用您的 Google 账号登入（需要有该 GA 属性的访问权限）",
+        "how.step3": "即可查看完整的访客数据、流量来源、使用者行为等统计资讯",
+        "how.tip": "💡 提示： 如果您无法访问，请确保您的 Google 账号已被授予此 Analytics 属性的查看权限。",
+        "tracked.title": "✅ 已追踪的页面"
+      }
+    };
+
+    let currentLang = localStorage.getItem('preferred_language') || 'en';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('preferred_language', lang);
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+          el.textContent = translations[lang][key];
+        }
+      });
+      
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        if (btn.getAttribute('data-lang') === lang) {
+          btn.classList.add('bg-blue-600', 'text-white');
+          btn.classList.remove('text-slate-600', 'hover:bg-slate-100');
+        } else {
+          btn.classList.remove('bg-blue-600', 'text-white');
+          btn.classList.add('text-slate-600', 'hover:bg-slate-100');
+        }
+      });
+      
+      document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setLanguage(currentLang);
+    });
+  </script>
 </body>
 </html>

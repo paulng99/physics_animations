@@ -167,7 +167,7 @@
             <!-- Wavelength (λ) -->
             <div>
                 <label for="lambda-slider" class="flex justify-between text-sm font-medium text-gray-700">
-                    <span class="whitespace-nowrap">Wavelength ($\lambda$)</span>
+                    <span class="whitespace-nowrap" data-i18n="controls.wavelength">Wavelength ($\lambda$)</span>
                     <span id="lambda-value" class="font-bold text-blue-600">650 nm</span>
                 </label>
                 <input type="range" id="lambda-slider" min="400" max="700" value="650" class="mt-2">
@@ -176,7 +176,7 @@
             <!-- Slit Separation (a) -->
             <div>
                 <label for="a-slider" class="flex justify-between text-sm font-medium text-gray-700">
-                    <span class="whitespace-nowrap">Slit Separation ($a$)</span>
+                    <span class="whitespace-nowrap" data-i18n="controls.slit">Slit Separation ($a$)</span>
                     <span id="a-value" class="font-bold text-blue-600">0.40 mm</span>
                 </label>
                 <input type="range" id="a-slider" min="0.1" max="1.0" value="0.4" step="0.01" class="mt-2">
@@ -185,7 +185,7 @@
             <!-- Screen Distance (D) -->
             <div>
                 <label for="D-slider" class="flex justify-between text-sm font-medium text-gray-700">
-                    <span class="whitespace-nowrap">Screen Distance ($D$)</span>
+                    <span class="whitespace-nowrap" data-i18n="controls.distance">Screen Distance ($D$)</span>
                     <span id="D-value" class="font-bold text-blue-600">1.40 m</span>
                 </label>
                 <input type="range" id="D-slider" min="1.0" max="3.0" value="1.4" step="0.01" class="mt-2">
@@ -195,9 +195,9 @@
         <!-- Result: Interference Pattern -->
         <div class="space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <h2 class="text-xl font-semibold text-gray-700">Interference Pattern on Screen</h2>
+                <h2 class="text-xl font-semibold text-gray-700" data-i18n="pattern.title">Interference Pattern on Screen</h2>
                 <div class="mt-2 sm:mt-0 bg-blue-100 text-blue-800 rounded-lg px-4 py-2 text-center">
-                    <span class="text-sm font-medium whitespace-nowrap">Fringe Separation ($\Delta y$): </span>
+                    <span class="text-sm font-medium whitespace-nowrap" data-i18n="pattern.fringe">Fringe Separation ($\Delta y$): </span>
                     <span id="delta-y-value" class="text-lg font-bold">2.28 mm</span>
                 </div>
             </div>
@@ -207,7 +207,7 @@
                 <div id="pattern" class="w-full h-full" style="background: repeating-linear-gradient(90deg, rgb(239, 68, 68) 0px, black 114.1px, black 114.1px, rgb(239, 68, 68) 228.2px); background-size: 228.2px 100%;">
                 </div>
             </div>
-            <div class="text-xs text-gray-500 text-center">
+            <div class="text-xs text-gray-500 text-center" data-i18n="pattern.center">
                 (Center of pattern)
             </div>
         </div>
@@ -215,19 +215,19 @@
         <!-- Explanation -->
         <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
             <div>
-                <p class="text-sm text-gray-600">
+                <p class="text-sm text-gray-600" data-i18n="explanation.text">
                     The separation between the bright fringes (dots) is given by the formula:
                 </p>
                 <strong class="text-gray-800 text-base block text-center my-2">
                     $\Delta y = \frac{\lambda D}{a}$
                 </strong>
-                <p class="text-sm text-gray-600 mt-2">
+                <p class="text-sm text-gray-600 mt-2" data-i18n="explanation.question">
                     Try answering question (a)(i) from your sheet: How can you increase the average separation ($\Delta y$)?
                 </p>
                 <ol class="list-decimal list-inside text-sm text-gray-600 space-y-1 mt-2">
-                    <li><strong class="text-blue-600 whitespace-nowrap">Increase Wavelength ($\lambda$):</strong> Move the $\lambda$ slider to the right (towards red).</li>
-                    <li><strong class="text-blue-600 whitespace-nowrap">Increase Screen Distance ($D$):</strong> Move the $D$ slider to the right.</li>
-                    <li><strong class="text-blue-600 whitespace-nowrap">Decrease Slit Separation ($a$):</strong> Move the $a$ slider to the left.</li>
+                    <li><strong class="text-blue-600 whitespace-nowrap" data-i18n="explanation.increase1">Increase Wavelength ($\lambda$):</strong> <span data-i18n="explanation.move_lambda">Move the $\lambda$ slider to the right (towards red).</span></li>
+                    <li><strong class="text-blue-600 whitespace-nowrap" data-i18n="explanation.increase2">Increase Screen Distance ($D$):</strong> <span data-i18n="explanation.move_D">Move the $D$ slider to the right.</span></li>
+                    <li><strong class="text-blue-600 whitespace-nowrap" data-i18n="explanation.decrease">Decrease Slit Separation ($a$):</strong> <span data-i18n="explanation.move_a">Move the $a$ slider to the left.</span></li>
                 </ol>
             </div>
 
@@ -243,10 +243,10 @@
                         <path d="M14.22 6.53c.2.06.4.09.6.09a.75.75 0 00.18-1.48c-.21 0-.42.03-.62.1a.75.75 0 00.78 1.36.75.75 0 00-.94-.07zM5.78 6.53c-.2.06-.4.09-.6.09a.75.75 0 01-.18-1.48c.21 0 .42.03.62.1a.75.75 0 01-.78 1.36.75.75 0 01.94-.07z" />
                         <path d="M15.19 8.78a.75.75 0 00.53.53c.2.06.4.09.6.09a.75.75 0 00.18-1.48c-.21 0-.42.03-.62.1a.75.75 0 00.07.94.75.75 0 00.24-.18zM4.81 8.78a.75.75 0 01-.53.53c-.2.06-.4.09-.6.09a.75.75 0 01-.18-1.48c.21 0 .42.03.62.1a.75.75 0 01-.07.94.75.75 0 01-.24-.18z" />
                     </svg>
-                    ✨ Explain This Concept
+                    <span data-i18n="button.explain">✨ Explain This Concept</span>
                 </button>
                 <button onclick="openFeedbackForm(event)" class="w-full flex items-center justify-center px-4 py-2 mt-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none transition-colors">
-                    📝 Send Feedback
+                    <span data-i18n="button.feedback">📝 Send Feedback</span>
                 </button>
                 <div id="gemini-loading" class="hidden flex items-center justify-center mt-4">
                     <div class="spinner"></div>
@@ -564,16 +564,20 @@
                 'nav.back': 'Back to Home',
                 'title': "Young's Double-Slit Experiment",
                 'schematic.title': 'Apparatus Schematic',
-                'controls.wavelength': 'Wavelength',
-                'controls.slit': 'Slit Separation',
-                'controls.distance': 'Screen Distance',
+                'controls.wavelength': 'Wavelength ($\\lambda$)',
+                'controls.slit': 'Slit Separation ($a$)',
+                'controls.distance': 'Screen Distance ($D$)',
                 'pattern.title': 'Interference Pattern on Screen',
-                'pattern.fringe': 'Fringe Separation',
+                'pattern.fringe': 'Fringe Separation ($\\Delta y$): ',
+                'pattern.center': '(Center of pattern)',
                 'explanation.text': 'The separation between the bright fringes (dots) is given by the formula:',
-                'explanation.question': 'Try answering question (a)(i) from your sheet: How can you increase the average separation',
-                'explanation.increase1': 'Increase Wavelength',
-                'explanation.increase2': 'Increase Screen Distance',
-                'explanation.decrease': 'Decrease Slit Separation',
+                'explanation.question': 'Try answering question (a)(i) from your sheet: How can you increase the average separation ($\\Delta y$)?',
+                'explanation.increase1': 'Increase Wavelength ($\\lambda$):',
+                'explanation.move_lambda': 'Move the $\\lambda$ slider to the right (towards red).',
+                'explanation.increase2': 'Increase Screen Distance ($D$):',
+                'explanation.move_D': 'Move the $D$ slider to the right.',
+                'explanation.decrease': 'Decrease Slit Separation ($a$):',
+                'explanation.move_a': 'Move the $a$ slider to the left.',
                 'button.explain': '✨ Explain This Concept',
                 'button.feedback': '📝 Send Feedback',
                 'feedback.title': 'Send Us Your Feedback',
@@ -588,16 +592,20 @@
                 'nav.back': '返回首頁',
                 'title': '楊氏雙狹縫實驗',
                 'schematic.title': '實驗裝置示意圖',
-                'controls.wavelength': '波長',
-                'controls.slit': '狹縫間距',
-                'controls.distance': '屏幕距離',
+                'controls.wavelength': '波長 ($\\lambda$)',
+                'controls.slit': '狹縫間距 ($a$)',
+                'controls.distance': '屏幕距離 ($D$)',
                 'pattern.title': '屏幕上的干涉圖樣',
-                'pattern.fringe': '條紋間距',
-                'explanation.text': '明條紋之間的間距由以下公式給出：',
-                'explanation.question': '試回答工作紙問題 (a)(i)：如何增加平均間距',
-                'explanation.increase1': '增加波長',
-                'explanation.increase2': '增加屏幕距離',
-                'explanation.decrease': '減少狹縫間距',
+                'pattern.fringe': '條紋間距 ($\\Delta y$): ',
+                'pattern.center': '(圖樣中心)',
+                'explanation.text': '明條紋（光點）之間的間距由以下公式給出：',
+                'explanation.question': '試回答工作紙問題 (a)(i)：如何增加平均間距 ($\\Delta y$)？',
+                'explanation.increase1': '增加波長 ($\\lambda$):',
+                'explanation.move_lambda': '向右移動 $\\lambda$ 滑桿（移向紅色）。',
+                'explanation.increase2': '增加屏幕距離 ($D$):',
+                'explanation.move_D': '向右移動 $D$ 滑桿。',
+                'explanation.decrease': '減少狹縫間距 ($a$):',
+                'explanation.move_a': '向左移動 $a$ 滑桿。',
                 'button.explain': '✨ 解釋此概念',
                 'button.feedback': '📝 發送反饋',
                 'feedback.title': '發送您的反饋',
@@ -612,16 +620,20 @@
                 'nav.back': '返回首页',
                 'title': '杨氏双缝实验',
                 'schematic.title': '实验装置示意图',
-                'controls.wavelength': '波长',
-                'controls.slit': '狭缝间距',
-                'controls.distance': '屏幕距离',
+                'controls.wavelength': '波长 ($\\lambda$)',
+                'controls.slit': '狭缝间距 ($a$)',
+                'controls.distance': '屏幕距离 ($D$)',
                 'pattern.title': '屏幕上的干涉图样',
-                'pattern.fringe': '条纹间距',
-                'explanation.text': '明条纹之间的间距由以下公式给出：',
-                'explanation.question': '试回答工作纸问题 (a)(i)：如何增加平均间距',
-                'explanation.increase1': '增加波长',
-                'explanation.increase2': '增加屏幕距离',
-                'explanation.decrease': '减少狭缝间距',
+                'pattern.fringe': '条纹间距 ($\\Delta y$): ',
+                'pattern.center': '(图样中心)',
+                'explanation.text': '明条纹（光点）之间的间距由以下公式给出：',
+                'explanation.question': '试回答工作纸问题 (a)(i)：如何增加平均间距 ($\\Delta y$)？',
+                'explanation.increase1': '增加波长 ($\\lambda$):',
+                'explanation.move_lambda': '向右移动 $\\lambda$ 滑杆（移向红色）。',
+                'explanation.increase2': '增加屏幕距离 ($D$):',
+                'explanation.move_D': '向右移动 $D$ 滑杆。',
+                'explanation.decrease': '减少狭缝间距 ($a$):',
+                'explanation.move_a': '向左移动 $a$ 滑杆。',
                 'button.explain': '✨ 解释此概念',
                 'button.feedback': '📝 发送反馈',
                 'feedback.title': '发送您的反馈',
@@ -647,6 +659,14 @@
                     el.textContent = translations[lang][key];
                 }
             });
+
+            // Update placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (translations[lang] && translations[lang][key]) {
+                    el.placeholder = translations[lang][key];
+                }
+            });
             
             // Update language buttons
             document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -661,6 +681,11 @@
             
             // Update document language
             document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+
+            // Retrigger MathJax if present
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise();
+            }
         }
 
         // Initialize language on page load
@@ -672,13 +697,13 @@
     <!-- Feedback Modal -->
     <div id="feedbackModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Send Us Your Feedback</h3>
+            <h3 class="text-xl font-bold text-gray-800 mb-4" data-i18n="feedback.title">Send Us Your Feedback</h3>
             <form onsubmit="submitFeedback(event)" class="space-y-4">
-                <input type="email" placeholder="Your email" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <textarea placeholder="Your feedback or suggestions..." rows="4" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                <input type="email" placeholder="Your email" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" data-i18n-placeholder="feedback.email">
+                <textarea placeholder="Your feedback or suggestions..." rows="4" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" data-i18n-placeholder="feedback.message"></textarea>
                 <div class="flex gap-3">
-                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Send</button>
-                    <button type="button" onclick="closeFeedbackForm()" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition" data-i18n="feedback.send">Send</button>
+                    <button type="button" onclick="closeFeedbackForm()" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition" data-i18n="feedback.cancel">Cancel</button>
                 </div>
             </form>
         </div>
