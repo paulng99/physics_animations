@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Force Addition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MathJax -->
+    <script>
+        MathJax = {
+          tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']]
+          },
+          svg: {
+            fontCache: 'global'
+          }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); }
+        mjx-container { display: inline-block !important; }
+        
+        canvas {
+            touch-action: none; /* Prevent scrolling when touching canvas */
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 flex flex-col">
+
+    <!-- Header -->
+    <header class="max-w-6xl mx-auto w-full px-6 pt-6 pb-4">
+        <nav class="flex items-center justify-between">
+            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+            </a>
+            
+            <div class="flex gap-2">
+                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
+                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="cn">简</button>
+                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow w-full max-w-6xl mx-auto px-6 pb-16">
+        <div class="glass rounded-3xl p-6 md:p-8 border border-white/60 space-y-6 h-full flex flex-col">
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-slate-800" data-i18n="title">Vector Force Addition</h1>
+                    <p class="text-slate-500 mt-1" data-i18n="subtitle">Drag vector heads to change magnitude and direction. Add forces to see the resultant.</p>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="addVector()" class="px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition shadow-sm flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span data-i18n="btn.add">Add Force</span>
+                    </button>
+                    <button onclick="resetSim()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition">
+                        <span data-i18n="btn.reset">Reset</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="relative flex-grow min-h-[500px] bg-white rounded-2xl border border-slate-200 shadow-inner overflow-hidden">
+                <!-- Grid Background -->
+                <div class="absolute inset-0 pointer-events-none opacity-20" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px;"></div>
+                <div class="absolute inset-0 pointer-events-none opacity-10" style="background-image: linear-gradient(to right, #cbd5e1 1px, transparent 1px), linear-gradient(to bottom, #cbd5e1 1px, transparent 1px); background-size: 100px 100px;"></div>
+                
+                <canvas id="vector-canvas" class="w-full h-full cursor-crosshair"></canvas>
+                
+                <!-- Legend / Overlay -->
+                <div class="absolute top-4 left-4 bg-white/90 backdrop-blur p-4 rounded-xl shadow-sm border border-slate-200 min-w-[200px]">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2" data-i18n="legend.title">Forces</h3>
+                    <div id="vector-list" class="space-y-2 text-sm">
+                        <!-- Dynamic List -->
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-200">
+                        <div class="flex justify-between items-center font-bold text-slate-800">
+                            <span class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-slate-800"></span> Resultant ($R$)
+                            </span>
+                            <span id="resultant-val">0 N</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Display Mode Toggles -->
+                <div class="absolute bottom-4 right-4 flex gap-2">
+                    <button onclick="toggleComponentMode()" id="btn-comp" class="bg-white px-3 py-1.5 rounded-lg shadow border border-slate-200 text-xs font-medium hover:bg-slate-50 text-slate-600">
+                        <span data-i18n="mode.components">Show Components</span>
+                    </button>
+                    <button onclick="toggleSumMode()" id="btn-sum" class="bg-white px-3 py-1.5 rounded-lg shadow border border-slate-200 text-xs font-medium hover:bg-slate-50 text-slate-600">
+                        <span data-i18n="mode.sum">Head-to-Tail</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- Setup ---
+        const canvas = document.getElementById('vector-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, centerX, centerY;
+        
+        // State
+        let vectors = []; // { x, y, color, id } (Tip coordinates relative to center)
+        let draggedVectorIndex = -1;
+        let showComponents = false;
+        let showHeadToTail = false;
+        
+        // Animation State
+        let animationProgress = 0; // 0 to 1
+        let isAnimating = false;
+        let animationDirection = 1; // 1 for Head-to-Tail, -1 for Component
+        
+        // Scale: 100px = 10 Newtons (10px = 1N)
+        const PIXELS_PER_UNIT = 10; 
+        const COLORS = ['#DC2626', '#16A34A', '#D97706', '#9333EA', '#0891B2']; // Red, Green, Amber, Purple, Cyan
+
+        function resize() {
+            // High DPI support
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            ctx.scale(dpr, dpr);
+            
+            width = rect.width;
+            height = rect.height;
+            centerX = width / 2;
+            centerY = height / 2;
+            
+            draw();
+        }
+        window.addEventListener('resize', resize);
+
+        // --- Logic ---
+
+        function init() {
+            // Add initial vectors
+            vectors.push({ x: 100, y: -50, color: COLORS[0], id: 1 });
+            vectors.push({ x: -50, y: -100, color: COLORS[1], id: 2 });
+            resize();
+            updateUI();
+        }
+
+        function addVector() {
+            if (vectors.length >= 5) return;
+            // Randomize slightly
+            const angle = Math.random() * Math.PI * 2;
+            const mag = 100;
+            vectors.push({
+                x: Math.cos(angle) * mag,
+                y: Math.sin(angle) * mag,
+                color: COLORS[vectors.length % COLORS.length],
+                id: Date.now()
+            });
+            draw();
+            updateUI();
+        }
+
+        function resetSim() {
+            vectors = [];
+            addVector();
+            addVector();
+            draw();
+            updateUI();
+        }
+        
+        function removeVector(index) {
+            vectors.splice(index, 1);
+            draw();
+            updateUI();
+        }
+
+        function toggleComponentMode() {
+            showComponents = !showComponents;
+            document.getElementById('btn-comp').classList.toggle('bg-blue-50', showComponents);
+            document.getElementById('btn-comp').classList.toggle('text-blue-600', showComponents);
+            document.getElementById('btn-comp').classList.toggle('border-blue-200', showComponents);
+            draw();
+        }
+
+        function toggleSumMode() {
+            showHeadToTail = !showHeadToTail;
+            document.getElementById('btn-sum').classList.toggle('bg-blue-50', showHeadToTail);
+            document.getElementById('btn-sum').classList.toggle('text-blue-600', showHeadToTail);
+            document.getElementById('btn-sum').classList.toggle('border-blue-200', showHeadToTail);
+            
+            // Start Animation
+            animationDirection = showHeadToTail ? 1 : -1;
+            isAnimating = true;
+            animate();
+        }
+
+        function animate() {
+            if (!isAnimating) return;
+            
+            const maxProg = Math.max(1, vectors.length - 1);
+            animationProgress += 0.05 * animationDirection;
+            
+            // Clamp and Stop
+            if (animationProgress >= maxProg) {
+                animationProgress = maxProg;
+                isAnimating = false;
+            } else if (animationProgress <= 0) {
+                animationProgress = 0;
+                isAnimating = false;
+            } else {
+                requestAnimationFrame(animate);
+            }
+            
+            draw();
+        }
+
+        // --- Drawing ---
+
+        function drawArrow(fromX, fromY, toX, toY, color, width = 3, label = null) {
+            const headLen = 15;
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            
+            // Head
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headLen * Math.cos(angle - Math.PI / 6), toY - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(toX - headLen * Math.cos(angle + Math.PI / 6), toY - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.lineTo(toX, toY);
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            if (label) {
+                ctx.fillStyle = color;
+                ctx.font = 'bold 14px Inter';
+                ctx.textAlign = 'center';
+                // Offset label slightly away from tip
+                const labelX = toX + Math.cos(angle) * 20;
+                const labelY = toY + Math.sin(angle) * 20;
+                ctx.fillText(label, labelX, labelY);
+            }
+        }
+
+        function drawDashedLine(x1, y1, x2, y2, color) {
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]);
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw Origin Crosshair
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY); ctx.lineTo(width, centerY);
+            ctx.moveTo(centerX, 0); ctx.lineTo(centerX, height);
+            ctx.stroke();
+
+            let resultX = 0;
+            let resultY = 0;
+            
+            // Current "Tail" position accumulator
+            let currentTailX = centerX;
+            let currentTailY = centerY;
+
+            vectors.forEach((v, i) => {
+                // Target Start Position (Where the vector SHOULD start)
+                // If animationProgress = 0 (Origin Mode): Start at CenterX, CenterY
+                // If animationProgress = 1 (Head-to-Tail): Start at currentTailX, currentTailY
+                
+                // Calculate local progress for this vector
+                // i=0: always 1 (starts at origin, stays at origin for start point)
+                // i>0: moves when animationProgress passes (i-1)
+                // e.g. Vector 1 (index 1): moves when prog 0->1
+                // Vector 2 (index 2): moves when prog 1->2
+                
+                let localProgress;
+                if (i === 0) {
+                    localProgress = 1; 
+                } else {
+                    localProgress = Math.max(0, Math.min(1, animationProgress - (i - 1)));
+                }
+
+                // Interpolate Start Position
+                const targetStartX = currentTailX;
+                const targetStartY = currentTailY;
+                
+                const startX = centerX + (targetStartX - centerX) * localProgress;
+                const startY = centerY + (targetStartY - centerY) * localProgress;
+                
+                const endX = startX + v.x;
+                const endY = startY + v.y;
+                
+                // Draw Ghost at Origin (Only fully visible when Head-To-Tail is active/animating)
+                if (animationProgress > 0) {
+                     drawArrow(centerX, centerY, centerX + v.x, centerY + v.y, v.color + '20', 2);
+                }
+
+                // Components (Fade out during animation to avoid clutter)
+                if (showComponents && animationProgress < 0.5) {
+                    const opacity = Math.floor((1 - Math.min(1, animationProgress) * 2) * 255).toString(16).padStart(2, '0');
+                    drawDashedLine(startX, startY, endX, startY, v.color + opacity); 
+                    drawDashedLine(endX, startY, endX, endY, v.color + opacity); 
+                }
+
+                drawArrow(startX, startY, endX, endY, v.color, 3, `F${i+1}`);
+                
+                // Update accumulator for next vector's target start
+                currentTailX += v.x;
+                currentTailY += v.y;
+                
+                resultX += v.x;
+                resultY += v.y;
+            });
+
+            // Draw Resultant
+            if (vectors.length > 0) {
+                const resEndX = centerX + resultX;
+                const resEndY = centerY + resultY;
+                drawArrow(centerX, centerY, resEndX, resEndY, '#1e293b', 5, 'R');
+            }
+        }
+
+        function updateUI() {
+            const list = document.getElementById('vector-list');
+            list.innerHTML = '';
+            
+            let totalX = 0;
+            let totalY = 0;
+
+            vectors.forEach((v, i) => {
+                const mag = Math.sqrt(v.x*v.x + v.y*v.y) / PIXELS_PER_UNIT;
+                // Angle in degrees. Canvas Y is down, so invert Y for standard math calc
+                // Math angle: 0 is right, CCW positive.
+                // Screen: x, y. y is down.
+                // Real Y = -v.y
+                const angleRad = Math.atan2(-v.y, v.x);
+                let angleDeg = angleRad * 180 / Math.PI;
+                if (angleDeg < 0) angleDeg += 360;
+
+                totalX += v.x;
+                totalY += v.y;
+
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between group';
+                item.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full" style="background-color: ${v.color}"></span>
+                        <span class="font-bold">F${i+1}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono text-xs">${mag.toFixed(1)}N @ ${angleDeg.toFixed(0)}°</span>
+                        <button onclick="removeVector(${i})" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1 rounded transition" title="Remove Force">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+
+            // Update Resultant Text
+            const resMag = Math.sqrt(totalX*totalX + totalY*totalY) / PIXELS_PER_UNIT;
+            const resRad = Math.atan2(-totalY, totalX);
+            let resDeg = resRad * 180 / Math.PI;
+            if (resDeg < 0) resDeg += 360;
+            
+            document.getElementById('resultant-val').textContent = `${resMag.toFixed(1)} N @ ${resDeg.toFixed(0)}°`;
+        }
+
+        // --- Interaction ---
+
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            // Handle touch or mouse
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        canvas.addEventListener('mousedown', onDown);
+        canvas.addEventListener('touchstart', onDown);
+
+        function onDown(e) {
+            if (e.touches) e.preventDefault();
+            const pos = getMousePos(e);
+            const scaleX = canvas.width / width; // DPR scale adjustment usually handled by ctx, but mouse pos is screen pixels
+            // Actually canvas CSS size matches width/height.
+            
+            // Check collisions with vector heads
+            // In Head-to-Tail mode, interaction is tricky because heads move. 
+            // For simplicity, disable interaction in Head-to-Tail or map correctly.
+            // Let's force switch to Normal mode on drag? Or calculate positions.
+            
+            // If Head-to-Tail, logic is complex. Let's just allow dragging in Origin mode.
+            if (showHeadToTail) return;
+
+            vectors.forEach((v, i) => {
+                const tipX = centerX + v.x;
+                const tipY = centerY + v.y;
+                const dist = Math.hypot(pos.x - tipX, pos.y - tipY);
+                
+                if (dist < 20) { // 20px hit radius
+                    draggedVectorIndex = i;
+                }
+            });
+
+            if (draggedVectorIndex !== -1) {
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('mouseup', onUp);
+                window.addEventListener('touchmove', onMove);
+                window.addEventListener('touchend', onUp);
+            }
+        }
+
+        function onMove(e) {
+            if (draggedVectorIndex === -1) return;
+            const pos = getMousePos(e);
+            
+            vectors[draggedVectorIndex].x = pos.x - centerX;
+            vectors[draggedVectorIndex].y = pos.y - centerY;
+            
+            draw();
+            updateUI();
+        }
+
+        function onUp() {
+            draggedVectorIndex = -1;
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+            window.removeEventListener('touchmove', onMove);
+            window.removeEventListener('touchend', onUp);
+        }
+
+        // Init
+        init();
+
+        // --- Language ---
+        const translations = {
+            en: {
+                'nav.back': 'Back to Home',
+                'title': 'Vector Force Addition',
+                'subtitle': 'Drag vector heads to change magnitude and direction. Add forces to see the resultant.',
+                'btn.add': 'Add Force',
+                'btn.reset': 'Reset',
+                'legend.title': 'Forces',
+                'mode.components': 'Show Components',
+                'mode.sum': 'Head-to-Tail Method'
+            },
+            zh: {
+                'nav.back': '返回首頁',
+                'title': '力的向量合成',
+                'subtitle': '拖動箭頭以改變大小和方向。增加力以觀察合力。',
+                'btn.add': '增加力',
+                'btn.reset': '重設',
+                'legend.title': '力列表',
+                'mode.components': '顯示分量',
+                'mode.sum': '頭尾連接法'
+            },
+            cn: {
+                'nav.back': '返回首页',
+                'title': '力的向量合成',
+                'subtitle': '拖动箭头以改变大小和方向。增加力以观察合力。',
+                'btn.add': '增加力',
+                'btn.reset': '重设',
+                'legend.title': '力列表',
+                'mode.components': '显示分量',
+                'mode.sum': '头尾连接法'
+            }
+        };
+
+        function setLanguage(lang) {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+        }
+    </script>
+</body>
+</html>
