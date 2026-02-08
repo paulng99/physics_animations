@@ -280,23 +280,25 @@
             }
         }
 
-        function setMode(mode) {
+        function setMode(mode, updateTemp = true) {
             currentMode = mode;
             
             // Update UI
             document.querySelectorAll('.mode-button').forEach(btn => btn.classList.remove('active'));
             if (mode === 'evaporation') {
                 document.getElementById('evapModeBtn').classList.add('active');
-                temperature = 30;
+                if (updateTemp) temperature = 30;
             } else {
                 document.getElementById('boilModeBtn').classList.add('active');
-                temperature = 100;
+                if (updateTemp) temperature = 100;
             }
             
             // Update Slider
             const slider = document.getElementById('tempSlider');
-            slider.value = temperature;
-            handleTempChange({ target: slider });
+            if (updateTemp) {
+                slider.value = temperature;
+                handleTempChange({ target: slider });
+            }
             
             updateInfoPanel();
             resetSimulation();
@@ -307,13 +309,10 @@
             document.getElementById('tempValue').textContent = `${temperature}°C`;
             
             // Auto-switch mode based on temp
-            if (temperature >= 95 && currentMode !== 'boiling') {
-                setMode('boiling'); // This will reset, which might be jarring. Maybe just switch UI?
-                // Let's just switch the UI state without resetting simulation logic fully if not needed
-                // Actually, let's keep it simple: manual mode switch is primary, but high temp acts like boiling
-            } else if (temperature < 95 && currentMode === 'boiling') {
-                // If user lowers temp in boiling mode, maybe switch to evap?
-                // Let's stick to the button logic for explicit mode, but adjust physics.
+            if (temperature >= 100 && currentMode !== 'boiling') {
+                setMode('boiling', false); 
+            } else if (temperature < 100 && currentMode === 'boiling') {
+                setMode('evaporation', false);
             }
         }
 
@@ -423,6 +422,9 @@
 
             // Update & Draw Particles
             particles.forEach(p => {
+                const isBoiling = temperature >= 100;
+                const isSurface = p.y < waterLevel + 15; // Surface zone (approx 1-2 molecular diameters visually)
+                
                 if (p.state === 'liquid') {
                     // Movement inside water
                     p.x += p.vx * speedBase * 0.5;
@@ -435,9 +437,16 @@
                     // Surface interaction
                     if (p.y < waterLevel) {
                         // Check escape condition
+                        // Evaporation: Only surface particles can escape
+                        // Boiling: Bulk particles can escape (simulated by bubbles or high energy)
+                        
                         // Probability increases with temperature
-                        // In boiling mode, escape is very likely if near surface
                         const escapeProb = (temperature > 90) ? 0.1 : (temperature / 10000);
+                        
+                        // Logic: If boiling, allow escape. If evaporation, only allow if it was a surface particle (tracked by position)
+                        // Note: p.y < waterLevel means it just crossed.
+                        // We enforce that 'Blue' (deep) particles shouldn't easily escape without becoming 'Orange' first.
+                        // But effectively, they become orange as they approach.
                         
                         if (Math.random() < escapeProb && p.vy < 0) {
                             p.state = 'gas';
@@ -447,27 +456,49 @@
                             p.vy *= -1;
                         }
                     }
+
+                    // Visualization Logic
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    
+                    if (isBoiling) {
+                        // Boiling: All particles are high energy/eligible
+                        ctx.fillStyle = 'rgba(239, 68, 68, 0.9)'; // Red
+                        ctx.shadowColor = 'rgba(239, 68, 68, 0.6)';
+                        ctx.shadowBlur = 8;
+                    } else if (isSurface) {
+                        // Evaporation: Only surface particles are eligible
+                        ctx.fillStyle = 'rgba(251, 191, 36, 0.9)'; // Amber/Orange
+                        ctx.shadowColor = 'rgba(251, 191, 36, 0.6)';
+                        ctx.shadowBlur = 8;
+                    } else {
+                        // Bulk liquid
+                        ctx.fillStyle = p.color;
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.fill();
+                    ctx.shadowBlur = 0; // Reset shadow
+
                 } else {
                     // Gas state
                     p.x += p.vx * speedBase;
                     p.y += p.vy * speedBase;
-                    p.vy += GRAVITY * 0.1; // Slight gravity? Maybe they just float up
-                    // Actually gas rises usually, but let's just let them fly off
+                    p.vy += GRAVITY * 0.1; 
                     
                     // Fade out/reset if off screen
                     if (p.y < -10 || p.x < -10 || p.x > width + 10) {
                         p.state = 'liquid';
-                        p.y = height; // Re-enter from bottom or random
+                        p.y = height; // Re-enter from bottom
                         p.x = Math.random() * width;
                         p.vy = (Math.random() - 0.5) * 2;
                     }
-                }
 
-                // Draw Particle
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.fillStyle = p.state === 'liquid' ? p.color : 'rgba(147, 197, 253, 0.6)'; // Lighter when gas
-                ctx.fill();
+                    // Draw Gas Particle
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(147, 197, 253, 0.6)'; // Light blue gas
+                    ctx.fill();
+                }
             });
 
             animationId = requestAnimationFrame(animate);

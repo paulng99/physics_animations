@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Studio - Physics Animations</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { color-scheme: light; }
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); }
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Scrollbar for the model list */
+        .model-list::-webkit-scrollbar { width: 6px; }
+        .model-list::-webkit-scrollbar-track { background: transparent; }
+        .model-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 text-slate-800">
+
+    <!-- Header -->
+    <header class="max-w-7xl mx-auto px-6 pt-8 pb-6">
+        <nav class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition">Φ</a>
+                <div>
+                    <div class="font-semibold text-lg">AI Studio</div>
+                    <div class="text-sm text-slate-500">Powered by fal.ai</div>
+                </div>
+            </div>
+            <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-indigo-600">Back to Home</a>
+        </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 pb-20">
+        
+        <!-- API Key Config -->
+        <section id="apiKeySection" class="mb-8 p-4 bg-white border border-yellow-200 rounded-xl shadow-sm flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 text-sm text-slate-700">
+                <span class="text-xl">🔑</span>
+                <span>To generate images, you need a <strong>fal.ai API Key</strong>.</span>
+            </div>
+            <div class="flex gap-2">
+                <input type="password" id="apiKeyInput" placeholder="Paste your FAL_KEY here" class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button onclick="saveKey()" class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">Save</button>
+            </div>
+        </section>
+
+        <div class="grid lg:grid-cols-12 gap-8">
+            
+            <!-- Sidebar: Model Selection -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="glass rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h2 class="text-lg font-bold mb-4">Select Model</h2>
+                    
+                    <!-- Model Selection -->
+                    <div class="space-y-3">
+                        <select id="modelSelect" onchange="selectModel(this.value)" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium text-slate-700 appearance-none cursor-pointer hover:bg-white transition">
+                            <optgroup label="Popular Models" id="popularModelsGroup">
+                                <option value="fal-ai/flux/dev" selected>Flux.1 [dev] - High quality, balanced</option>
+                                <option value="fal-ai/flux-pro/v1.1">Flux 1.1 Pro - Professional realism</option>
+                                <option value="fal-ai/recraft-v3">Recraft V3 - Vector art, branding</option>
+                                <option value="fal-ai/fast-sdxl">Fast SDXL - Lightning fast</option>
+                            </optgroup>
+                            <optgroup label="Flux Family">
+                                <option value="fal-ai/flux/schnell">Flux.1 [schnell] - Fastest Flux</option>
+                                <option value="fal-ai/flux-pro">Flux Pro - Original Pro</option>
+                                <option value="fal-ai/flux-realism">Flux Realism - LoRA Fine-tune</option>
+                            </optgroup>
+                            <optgroup label="Stable Diffusion">
+                                <option value="fal-ai/stable-diffusion-v3-medium">Stable Diffusion 3 Medium</option>
+                                <option value="fal-ai/fast-lightning-sdxl">Fast Lightning SDXL</option>
+                                <option value="fal-ai/lora">SDXL LoRA - Custom LoRAs</option>
+                            </optgroup>
+                            <optgroup label="Other Models">
+                                <option value="fal-ai/aura-flow">Aura Flow</option>
+                                <option value="fal-ai/playai/v2/text-to-image">PlayAI V2</option>
+                                <option value="fal-ai/hunyuan-dit">Hunyuan DiT</option>
+                                <option value="fal-ai/pixart-sigma">PixArt Sigma</option>
+                            </optgroup>
+                            <optgroup label="Custom" id="customModelsGroup">
+                                <!-- Custom options added here -->
+                            </optgroup>
+                        </select>
+                        
+                        <div class="flex gap-2">
+                            <button onclick="toggleCustomInput()" class="flex-1 py-2 px-3 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:text-indigo-600 hover:border-indigo-300 transition">
+                                ➕ Add Custom Model ID
+                            </button>
+                        </div>
+
+                        <!-- Hidden Custom Input -->
+                        <div id="customInputContainer" class="hidden mt-2">
+                            <div class="flex gap-2">
+                                <input type="text" id="customModelId" placeholder="e.g. fal-ai/luma-dream-machine" class="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <button onclick="addCustomModel()" class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Use</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main: Configuration & Output -->
+            <div class="lg:col-span-8 space-y-6">
+                
+                <!-- Input Panel -->
+                <div class="glass rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-bold" id="currentModelTitle">Flux.1 [dev]</h2>
+                        <span class="px-2 py-1 bg-slate-100 text-slate-500 text-xs rounded-md font-mono" id="currentModelId">fal-ai/flux/dev</span>
+                    </div>
+
+                    <div id="dynamicForm" class="space-y-5">
+                        <!-- Default Form Fields (will be replaced dynamically) -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Prompt</label>
+                            <textarea id="promptInput" rows="3" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" placeholder="Describe the image you want to create..."></textarea>
+                        </div>
+                        
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Image Size</label>
+                                <select id="sizeInput" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="landscape_4_3">Landscape (4:3)</option>
+                                    <option value="landscape_16_9">Landscape (16:9)</option>
+                                    <option value="square_hd">Square (HD)</option>
+                                    <option value="portrait_4_3">Portrait (3:4)</option>
+                                    <option value="portrait_16_9">Portrait (9:16)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Inference Steps (Quality)</label>
+                                <input type="number" id="stepsInput" value="28" min="1" max="50" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- JSON Fallback Toggle -->
+                    <div class="mt-4 pt-4 border-t border-slate-100">
+                        <button onclick="toggleJsonMode()" class="text-xs text-slate-500 hover:text-indigo-600 flex items-center gap-1">
+                            <span class="text-lg">⚙️</span> Advanced: Edit Raw JSON
+                        </button>
+                        <div id="jsonEditorContainer" class="hidden mt-3">
+                            <textarea id="jsonInput" rows="5" class="w-full font-mono text-xs px-4 py-3 bg-slate-900 text-green-400 rounded-xl focus:outline-none resize-none">{}</textarea>
+                            <div class="text-xs text-slate-400 mt-1">Overrides above settings.</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <div class="flex items-center justify-between mb-2 px-1">
+                            <span class="text-xs font-medium text-slate-500">Estimated Cost</span>
+                            <span id="costEstimate" class="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-md">--</span>
+                        </div>
+                        <button onclick="generateImage()" id="generateBtn" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-[1.01] transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed">
+                            Generate Image ✨
+                        </button>
+                        <div id="errorMsg" class="hidden mt-3 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100"></div>
+                    </div>
+                </div>
+
+                <!-- Output Panel -->
+                <div class="glass rounded-2xl border border-slate-200 p-6 shadow-sm min-h-[400px] flex flex-col items-center justify-center relative overflow-hidden" id="outputContainer">
+                    
+                    <!-- Placeholder State -->
+                    <div id="outputPlaceholder" class="text-center">
+                        <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">🎨</div>
+                        <h3 class="text-lg font-medium text-slate-700">Ready to Create</h3>
+                        <p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Select a model, enter a prompt, and watch the magic happen.</p>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="loadingState" class="hidden text-center absolute inset-0 bg-white/90 z-10 flex flex-col items-center justify-center">
+                        <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+                        <div class="font-medium text-slate-700" id="loadingText">Generating...</div>
+                        <div class="text-xs text-slate-500 mt-2" id="loadingTime">0.0s</div>
+                    </div>
+
+                    <!-- Result State -->
+                    <div id="resultState" class="hidden w-full h-full">
+                        <img id="resultImage" src="" alt="Generated Image" class="w-full h-auto rounded-lg shadow-md object-contain max-h-[600px]">
+                        <div class="mt-4 flex justify-between items-center">
+                            <span class="text-xs text-slate-400" id="generationMeta"></span>
+                            <a id="downloadLink" href="#" target="_blank" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                Download High-Res ⬇️
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { fal } from 'https://esm.sh/@fal-ai/client@1.0.3';
+
+        // --- State ---
+        let currentModel = 'fal-ai/flux/dev';
+        let isJsonMode = false;
+        let generationStartTime = 0;
+        let timerInterval;
+
+        // Pricing Map (Approximate costs per image)
+        const pricingMap = {
+            'fal-ai/flux/dev': '$0.025 / image',
+            'fal-ai/flux-pro/v1.1': '$0.040 / image',
+            'fal-ai/flux/schnell': '$0.003 / image',
+            'fal-ai/flux-pro': '$0.050 / image',
+            'fal-ai/flux-realism': '$0.035 / image',
+            'fal-ai/recraft-v3': '$0.035 / image',
+            'fal-ai/fast-sdxl': '$0.003 / image',
+            'fal-ai/stable-diffusion-v3-medium': '$0.035 / image',
+            'fal-ai/fast-lightning-sdxl': '$0.003 / image',
+            'fal-ai/lora': '$0.005 / image',
+            'fal-ai/aura-flow': '$0.020 / image',
+            'fal-ai/playai/v2/text-to-image': '$0.030 / image',
+            'fal-ai/hunyuan-dit': '$0.020 / image',
+            'fal-ai/pixart-sigma': '$0.015 / image'
+        };
+
+        // --- Initialization ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('fal_key');
+            if (savedKey) {
+                document.getElementById('apiKeyInput').value = savedKey;
+                document.getElementById('apiKeySection').classList.add('opacity-50', 'hover:opacity-100', 'transition');
+            }
+
+            // Setup Search - Deprecated in Select Mode
+            // document.getElementById('modelSearch').addEventListener('input', (e) => filterModels(e.target.value));
+            
+            // Initial Form Setup
+            updateFormForModel(currentModel);
+            
+            // Sync Select with Current Model
+            const select = document.getElementById('modelSelect');
+            if (select) select.value = currentModel;
+            
+            // Initial Pricing
+            updatePricing(currentModel);
+        });
+
+        // --- API Key Management ---
+        window.saveKey = () => {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            if (key) {
+                localStorage.setItem('fal_key', key);
+                alert('Key saved securely in browser storage!');
+                document.getElementById('apiKeySection').classList.add('opacity-50');
+            }
+        };
+
+        // --- Custom Input Toggle ---
+        window.toggleCustomInput = () => {
+            const container = document.getElementById('customInputContainer');
+            container.classList.toggle('hidden');
+        };
+
+        // --- Model Management ---
+        window.selectModel = (modelId) => {
+            currentModel = modelId;
+            document.getElementById('currentModelId').textContent = modelId;
+            document.getElementById('currentModelTitle').textContent = formatModelName(modelId);
+            
+            // Update Select if changed externally
+            const select = document.getElementById('modelSelect');
+            if (select && select.value !== modelId) {
+                // If the option doesn't exist, add it
+                if (!select.querySelector(`option[value="${modelId}"]`)) {
+                    const opt = document.createElement('option');
+                    opt.value = modelId;
+                    opt.textContent = modelId + " (Custom)";
+                    opt.selected = true;
+                    // Add to custom group or just append
+                    let group = document.getElementById('customModelsGroup');
+                    if (!group) {
+                        group = document.createElement('optgroup');
+                        group.label = "Custom Models";
+                        group.id = "customModelsGroup";
+                        select.insertBefore(group, select.firstChild);
+                    }
+                    group.appendChild(opt);
+                }
+                select.value = modelId;
+            }
+
+            // Update Form Fields
+            updateFormForModel(modelId);
+            
+            // Update Pricing
+            updatePricing(modelId);
+        };
+
+        function updatePricing(modelId) {
+            const el = document.getElementById('costEstimate');
+            if (pricingMap[modelId]) {
+                el.textContent = pricingMap[modelId];
+                el.className = 'text-xs font-bold text-slate-700 bg-green-100 text-green-700 px-2 py-1 rounded-md';
+            } else {
+                el.textContent = 'Check Pricing ↗';
+                el.className = 'text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md cursor-pointer hover:bg-indigo-100';
+                el.onclick = () => window.open('https://fal.ai/pricing', '_blank');
+            }
+        }
+
+        function formatModelName(id) {
+            const parts = id.split('/');
+            return parts[parts.length - 1].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        // --- Form Generation Logic ---
+        function updateFormForModel(modelId) {
+            const formContainer = document.getElementById('dynamicForm');
+            
+            // Clear existing form (except prompt, which we want to preserve if possible)
+            // Ideally we'd keep the prompt value.
+            const existingPrompt = document.getElementById('promptInput') ? document.getElementById('promptInput').value : '';
+
+            let fieldsHtml = '';
+
+            // Configuration for known models
+            if (modelId.includes('recraft')) {
+                fieldsHtml = `
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Prompt</label>
+                        <textarea id="promptInput" rows="3" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">${existingPrompt}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Style</label>
+                        <select id="styleInput" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="realistic_image">Realistic Image</option>
+                            <option value="digital_illustration">Digital Illustration</option>
+                            <option value="vector_illustration">Vector Illustration</option>
+                            <option value="icon">Icon</option>
+                        </select>
+                    </div>
+                    <div>
+                         <label class="block text-sm font-medium text-slate-700 mb-2">Image Size</label>
+                         <select id="sizeInput" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="square_hd">Square</option>
+                            <option value="landscape_16_9">Landscape</option>
+                            <option value="portrait_16_9">Portrait</option>
+                        </select>
+                    </div>
+                `;
+            } else if (modelId.includes('flux')) {
+                fieldsHtml = `
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Prompt</label>
+                        <textarea id="promptInput" rows="3" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">${existingPrompt}</textarea>
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Image Size</label>
+                            <select id="sizeInput" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="landscape_4_3">Landscape (4:3)</option>
+                                <option value="landscape_16_9">Landscape (16:9)</option>
+                                <option value="square_hd">Square (HD)</option>
+                                <option value="portrait_4_3">Portrait (3:4)</option>
+                                <option value="portrait_16_9">Portrait (9:16)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Inference Steps</label>
+                            <input type="number" id="stepsInput" value="28" min="1" max="50" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                    <div>
+                         <label class="block text-sm font-medium text-slate-700 mb-2">Safety Tolerance</label>
+                         <select id="safetyInput" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="2">Strict</option>
+                            <option value="4">Medium</option>
+                            <option value="6">Permissive</option>
+                        </select>
+                    </div>
+                `;
+            } else if (modelId.includes('sdxl')) {
+                fieldsHtml = `
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Prompt</label>
+                        <textarea id="promptInput" rows="3" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">${existingPrompt}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Negative Prompt</label>
+                        <input type="text" id="negativePromptInput" placeholder="blurry, low quality, ugly..." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Image Size</label>
+                            <select id="sizeInput" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="square_hd">Square</option>
+                                <option value="landscape_16_9">Landscape</option>
+                                <option value="portrait_16_9">Portrait</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Generic Fallback
+                fieldsHtml = `
+                     <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4 text-sm text-blue-700">
+                        This model doesn't have a custom preset. Using generic inputs.
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Prompt</label>
+                        <textarea id="promptInput" rows="3" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">${existingPrompt}</textarea>
+                    </div>
+                     <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Additional JSON Parameters</label>
+                        <textarea id="extraJsonInput" rows="3" class="w-full font-mono text-xs px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none" placeholder='{"image_size": "square_hd"}'></textarea>
+                    </div>
+                `;
+            }
+
+            formContainer.innerHTML = fieldsHtml;
+            updateJsonPreview();
+        }
+
+        /* Deprecated fetchAllModels function removed */
+
+        window.addCustomModel = () => {
+            const id = document.getElementById('customModelId').value.trim();
+            if(!id) return;
+            selectModel(id);
+        }
+
+        /* Deprecated renderModelList function removed */
+
+        function filterModels(query) {
+             // Deprecated in Select Mode
+        }
+
+        // --- JSON Editor ---
+        window.toggleJsonMode = () => {
+            isJsonMode = !isJsonMode;
+            const editor = document.getElementById('jsonEditorContainer');
+            const form = document.getElementById('dynamicForm');
+            
+            if (isJsonMode) {
+                editor.classList.remove('hidden');
+                form.classList.add('opacity-50', 'pointer-events-none');
+                updateJsonPreview(); // Sync current form to JSON
+            } else {
+                editor.classList.add('hidden');
+                form.classList.remove('opacity-50', 'pointer-events-none');
+            }
+        };
+
+        function updateJsonPreview() {
+            const input = getInputValues();
+            document.getElementById('jsonInput').value = JSON.stringify(input, null, 2);
+        }
+
+        function getInputValues() {
+            const prompt = document.getElementById('promptInput')?.value || "";
+            const input = { prompt };
+            
+            const size = document.getElementById('sizeInput')?.value;
+            if (size) input.image_size = size;
+
+            const steps = document.getElementById('stepsInput')?.value;
+            if (steps) input.num_inference_steps = parseInt(steps);
+
+            const style = document.getElementById('styleInput')?.value;
+            if (style) input.style = style;
+            
+            const safety = document.getElementById('safetyInput')?.value;
+            if (safety) input.safety_tolerance = safety;
+
+            const negative = document.getElementById('negativePromptInput')?.value;
+            if (negative) input.negative_prompt = negative;
+            
+            // Extra JSON
+            const extra = document.getElementById('extraJsonInput')?.value;
+            if (extra) {
+                try {
+                    Object.assign(input, JSON.parse(extra));
+                } catch(e) {}
+            }
+
+            return input;
+        }
+
+        // --- Generation ---
+        window.generateImage = async () => {
+            const key = localStorage.getItem('fal_key');
+            if (!key) {
+                alert('Please enter your fal.ai API key first!');
+                document.getElementById('apiKeyInput').focus();
+                return;
+            }
+
+            const btn = document.getElementById('generateBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            const outputPlaceholder = document.getElementById('outputPlaceholder');
+            const loadingState = document.getElementById('loadingState');
+            const resultState = document.getElementById('resultState');
+            const loadingTime = document.getElementById('loadingTime');
+
+            // Reset UI
+            errorMsg.classList.add('hidden');
+            outputPlaceholder.classList.add('hidden');
+            resultState.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+            btn.disabled = true;
+            
+            // Timer
+            generationStartTime = Date.now();
+            timerInterval = setInterval(() => {
+                const seconds = ((Date.now() - generationStartTime) / 1000).toFixed(1);
+                loadingTime.textContent = `${seconds}s`;
+            }, 100);
+
+            try {
+                // Config
+                fal.config({ credentials: key });
+
+                // Inputs
+                let inputArgs = isJsonMode 
+                    ? JSON.parse(document.getElementById('jsonInput').value) 
+                    : getInputValues();
+
+                // Call API
+                const result = await fal.subscribe(currentModel, {
+                    input: inputArgs,
+                    logs: true,
+                    onQueueUpdate: (update) => {
+                        if (update.status === 'IN_QUEUE') {
+                            document.getElementById('loadingText').textContent = 'Queued...';
+                        } else if (update.status === 'IN_PROGRESS') {
+                            document.getElementById('loadingText').textContent = 'Generating...';
+                        }
+                    }
+                });
+
+                // Handle Result
+                if (result.images && result.images.length > 0) {
+                    const imageUrl = result.images[0].url;
+                    
+                    const img = document.getElementById('resultImage');
+                    img.src = imageUrl;
+                    img.onload = () => {
+                        loadingState.classList.add('hidden');
+                        resultState.classList.remove('hidden');
+                        
+                        document.getElementById('downloadLink').href = imageUrl;
+                        document.getElementById('generationMeta').textContent = `${((Date.now() - generationStartTime) / 1000).toFixed(1)}s • ${currentModel}`;
+                    };
+                } else {
+                    throw new Error('No image returned');
+                }
+
+            } catch (err) {
+                console.error(err);
+                loadingState.classList.add('hidden');
+                errorMsg.textContent = err.message || 'Generation failed';
+                errorMsg.classList.remove('hidden');
+                outputPlaceholder.classList.remove('hidden');
+            } finally {
+                clearInterval(timerInterval);
+                btn.disabled = false;
+            }
+        };
+
+    </script>
+</body>
+</html>
