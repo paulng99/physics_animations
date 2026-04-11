@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photoelectric Effect Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
+        mjx-container { display: inline-block !important; }
+        .glass { background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); }
+        canvas { background-color: white; border-radius: 0.75rem; border: 2px solid #e2e8f0; }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-RJQ61GJDVS');
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+
+    <header class="max-w-6xl mx-auto px-4 pt-6 pb-4">
+        <nav class="flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                    <span data-i18n="nav.back">Back</span>
+                </a>
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-sm">Φ</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
+                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 pb-12">
+        <div class="glass rounded-3xl p-6 md:p-8 border border-white/60 shadow-xl">
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800" data-i18n="title">Photoelectric Effect Simulation</h1>
+            <p class="text-slate-600 mt-2 text-sm md:text-base" data-i18n="subtitle">Explore Einstein's explanation of light as quantised photons</p>
+
+            <div class="grid lg:grid-cols-3 gap-6 mt-6">
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <h3 class="font-semibold text-sm text-slate-700 mb-2" data-i18n="canvas.apparatus">Apparatus View</h3>
+                            <canvas id="apparatusCanvas" class="w-full" style="aspect-ratio: 4/3;"></canvas>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-sm text-slate-700 mb-2" data-i18n="canvas.graph">KE<sub>max</sub> vs Frequency Graph</h3>
+                            <canvas id="graphCanvas" class="w-full" style="aspect-ratio: 4/3;"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        <button id="toggleBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="btn.start">Start Light</button>
+                        <button id="resetBtn" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all" data-i18n="btn.reset">Reset</button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <h3 class="font-semibold text-slate-800 mb-3" data-i18n="controls.title">Controls</h3>
+
+                        <label class="block text-sm font-medium text-slate-600 mb-1" data-i18n="controls.freq">Light Frequency (×10¹⁴ Hz)</label>
+                        <input type="range" id="freqSlider" min="3" max="12" value="7" step="0.1" class="w-full accent-blue-600">
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span>3</span>
+                            <span id="freqVal" class="font-semibold text-blue-600">7.0 × 10¹⁴ Hz</span>
+                            <span>12</span>
+                        </div>
+                        <div class="mt-1 text-xs text-center">
+                            <span data-i18n="controls.wavelength">Wavelength:</span>
+                            <span id="wavelengthVal" class="font-semibold text-blue-600">429 nm</span>
+                            <span id="colorChip" class="inline-block w-4 h-4 rounded-full ml-1 align-middle border border-slate-200" style="background: #6200ff;"></span>
+                        </div>
+
+                        <label class="block text-sm font-medium text-slate-600 mb-1 mt-4" data-i18n="controls.intensity">Light Intensity</label>
+                        <input type="range" id="intensitySlider" min="1" max="10" value="5" class="w-full accent-blue-600">
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span data-i18n="controls.low">Low</span>
+                            <span id="intensityVal" class="font-semibold text-blue-600">5</span>
+                            <span data-i18n="controls.high">High</span>
+                        </div>
+
+                        <label class="block text-sm font-medium text-slate-600 mb-1 mt-4" data-i18n="controls.metal">Metal Surface</label>
+                        <select id="metalSelect" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="cs">Caesium (Cs) — φ = 2.1 eV</option>
+                            <option value="na">Sodium (Na) — φ = 2.3 eV</option>
+                            <option value="zn" selected>Zinc (Zn) — φ = 4.3 eV</option>
+                            <option value="cu">Copper (Cu) — φ = 4.7 eV</option>
+                            <option value="pt">Platinum (Pt) — φ = 6.35 eV</option>
+                        </select>
+
+                        <label class="block text-sm font-medium text-slate-600 mb-1 mt-4" data-i18n="controls.voltage">Stopping Voltage (V)</label>
+                        <input type="range" id="voltageSlider" min="-3" max="3" value="0" step="0.1" class="w-full accent-blue-600">
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span>-3 V</span>
+                            <span id="voltageVal" class="font-semibold text-blue-600">0.0 V</span>
+                            <span>+3 V</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <h3 class="font-semibold text-slate-800 mb-3" data-i18n="readings.title">Readings</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-slate-500" data-i18n="readings.photonE">Photon Energy (E = hf)</span>
+                                <span id="readPhotonE" class="font-semibold text-blue-600">2.90 eV</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500" data-i18n="readings.workfn">Work Function (φ)</span>
+                                <span id="readWorkFn" class="font-semibold text-amber-600">4.30 eV</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500" data-i18n="readings.kemax">KE<sub>max</sub></span>
+                                <span id="readKE" class="font-semibold text-green-600">0.00 eV</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500" data-i18n="readings.threshold">Threshold freq (f₀)</span>
+                                <span id="readThreshold" class="font-semibold text-red-600">10.39 × 10¹⁴ Hz</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500" data-i18n="readings.electrons">Electrons emitted?</span>
+                                <span id="readEmitted" class="font-bold text-red-600" data-i18n="readings.no">No</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <h3 class="font-semibold text-slate-800 mb-2" data-i18n="legend.title">Legend</h3>
+                        <div class="space-y-1 text-sm">
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full inline-block" style="background: #eab308;"></span><span data-i18n="legend.photon">Photon</span></div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span><span data-i18n="legend.electron">Electron</span></div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-400 inline-block"></span><span data-i18n="legend.metal">Metal surface</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 grid md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-3" data-i18n="info.title">Einstein's Photoelectric Equation</h3>
+                    <div class="text-sm text-slate-600 space-y-2">
+                        <p data-i18n="info.p1">The photon energy is given by \( E = hf \), where \( h \) is Planck's constant and \( f \) is the frequency of light.</p>
+                        <p data-i18n="info.p2">When a photon strikes a metal surface, it can eject an electron if the photon energy exceeds the work function \( \phi \) of the metal:</p>
+                        <div class="text-center py-3 text-base">$$hf = \phi + \frac{1}{2}mv_{\max}^2$$</div>
+                        <p data-i18n="info.p3">The maximum kinetic energy of the ejected electrons is: \( KE_{\max} = hf - \phi \)</p>
+                        <p data-i18n="info.p4">Below the threshold frequency \( f_0 = \phi / h \), no electrons are emitted regardless of the light intensity. This cannot be explained by the wave model of light.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-3" data-i18n="info.evidenceTitle">Evidence & Wave Model Limitations</h3>
+                    <div class="text-sm text-slate-600 space-y-2">
+                        <p data-i18n="info.ev1"><strong>Evidence for light quanta:</strong> The photoelectric effect demonstrates that light energy is quantised — it arrives in discrete packets (photons) of energy \( E = hf \).</p>
+                        <p data-i18n="info.ev2"><strong>Wave model failure 1:</strong> The wave model predicts that any frequency of light, given sufficient intensity, should eject electrons. In reality, there is a sharp threshold frequency below which no emission occurs.</p>
+                        <p data-i18n="info.ev3"><strong>Wave model failure 2:</strong> The wave model predicts a time delay before emission as energy accumulates. In reality, emission is instantaneous even at very low intensities.</p>
+                        <p data-i18n="info.ev4"><strong>Intensity effect:</strong> Increasing intensity increases the number of photons (hence the photocurrent), but does NOT increase the maximum kinetic energy of individual electrons — only increasing frequency does that.</p>
+                        <p data-i18n="info.ev5"><strong>Particle nature:</strong> The photoelectric effect is key evidence for the particle nature of light, complementing the wave evidence from diffraction and interference.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    window.addEventListener('load', () => {
+        const appCanvas = document.getElementById('apparatusCanvas');
+        const graphCanvas = document.getElementById('graphCanvas');
+        const actx = appCanvas.getContext('2d');
+        const gctx = graphCanvas.getContext('2d');
+
+        const metals = {
+            cs: { name: 'Caesium', phi: 2.1 },
+            na: { name: 'Sodium', phi: 2.3 },
+            zn: { name: 'Zinc', phi: 4.3 },
+            cu: { name: 'Copper', phi: 4.7 },
+            pt: { name: 'Platinum', phi: 6.35 }
+        };
+
+        const h_eV = 4.1357e-15; // Planck's constant in eV·s
+
+        let AW, AH, GW, GH, scale;
+        let lightOn = false;
+        let photons = [];
+        let electrons = [];
+        let animId;
+
+        function resizeCanvases() {
+            const dpr = window.devicePixelRatio || 1;
+
+            let rect = appCanvas.parentElement.getBoundingClientRect();
+            appCanvas.width = rect.width * dpr;
+            appCanvas.height = rect.width * 0.75 * dpr;
+            appCanvas.style.width = rect.width + 'px';
+            appCanvas.style.height = rect.width * 0.75 + 'px';
+            AW = appCanvas.width;
+            AH = appCanvas.height;
+
+            rect = graphCanvas.parentElement.getBoundingClientRect();
+            graphCanvas.width = rect.width * dpr;
+            graphCanvas.height = rect.width * 0.75 * dpr;
+            graphCanvas.style.width = rect.width + 'px';
+            graphCanvas.style.height = rect.width * 0.75 + 'px';
+            GW = graphCanvas.width;
+            GH = graphCanvas.height;
+
+            scale = AW / 500;
+        }
+        resizeCanvases();
+        window.addEventListener('resize', resizeCanvases);
+
+        const freqSlider = document.getElementById('freqSlider');
+        const intensitySlider = document.getElementById('intensitySlider');
+        const metalSelect = document.getElementById('metalSelect');
+        const voltageSlider = document.getElementById('voltageSlider');
+
+        function getFreq() { return parseFloat(freqSlider.value) * 1e14; }
+        function getPhi() { return metals[metalSelect.value].phi; }
+        function getVoltage() { return parseFloat(voltageSlider.value); }
+        function getIntensity() { return parseInt(intensitySlider.value); }
+
+        function freqToWavelength(f) { return 3e8 / f * 1e9; }
+
+        function wavelengthToColor(wl) {
+            let r = 0, g = 0, b = 0;
+            if (wl >= 380 && wl < 440) { r = -(wl - 440) / 60; b = 1; }
+            else if (wl >= 440 && wl < 490) { g = (wl - 440) / 50; b = 1; }
+            else if (wl >= 490 && wl < 510) { g = 1; b = -(wl - 510) / 20; }
+            else if (wl >= 510 && wl < 580) { r = (wl - 510) / 70; g = 1; }
+            else if (wl >= 580 && wl < 645) { r = 1; g = -(wl - 645) / 65; }
+            else if (wl >= 645 && wl <= 780) { r = 1; }
+            else if (wl < 380) { r = 0.6; b = 1; }
+            else { r = 0.5; }
+
+            r = Math.round(Math.min(255, r * 255));
+            g = Math.round(Math.min(255, g * 255));
+            b = Math.round(Math.min(255, b * 255));
+            return `rgb(${r},${g},${b})`;
+        }
+
+        function computePhotonEnergy() { return h_eV * getFreq(); }
+        function computeKEmax() { return Math.max(0, computePhotonEnergy() - getPhi()); }
+        function computeThresholdFreq() { return getPhi() / h_eV; }
+
+        function canEmit() { return computePhotonEnergy() >= getPhi(); }
+
+        function electronReachesCollector() {
+            const ke = computeKEmax();
+            const v = getVoltage();
+            return ke + v > 0;
+        }
+
+        function updateReadings() {
+            const E = computePhotonEnergy();
+            const phi = getPhi();
+            const ke = computeKEmax();
+            const f0 = computeThresholdFreq();
+            const wl = freqToWavelength(getFreq());
+
+            document.getElementById('readPhotonE').textContent = E.toFixed(2) + ' eV';
+            document.getElementById('readWorkFn').textContent = phi.toFixed(2) + ' eV';
+            document.getElementById('readKE').textContent = ke.toFixed(2) + ' eV';
+            document.getElementById('readThreshold').textContent = (f0 / 1e14).toFixed(2) + ' × 10¹⁴ Hz';
+            document.getElementById('freqVal').textContent = parseFloat(freqSlider.value).toFixed(1) + ' × 10¹⁴ Hz';
+            document.getElementById('wavelengthVal').textContent = Math.round(wl) + ' nm';
+            document.getElementById('intensityVal').textContent = intensitySlider.value;
+            document.getElementById('voltageVal').textContent = parseFloat(voltageSlider.value).toFixed(1) + ' V';
+
+            const color = wavelengthToColor(wl);
+            document.getElementById('colorChip').style.background = color;
+
+            const emitting = canEmit() && lightOn;
+            const emitEl = document.getElementById('readEmitted');
+            if (!lightOn) {
+                emitEl.textContent = translations[currentLang]?.['readings.off'] || '—';
+                emitEl.className = 'font-bold text-slate-400';
+            } else if (emitting) {
+                emitEl.textContent = translations[currentLang]?.['readings.yes'] || 'Yes';
+                emitEl.className = 'font-bold text-green-600';
+            } else {
+                emitEl.textContent = translations[currentLang]?.['readings.no'] || 'No';
+                emitEl.className = 'font-bold text-red-600';
+            }
+        }
+
+        freqSlider.addEventListener('input', updateReadings);
+        intensitySlider.addEventListener('input', updateReadings);
+        metalSelect.addEventListener('change', updateReadings);
+        voltageSlider.addEventListener('input', updateReadings);
+
+        const metalX = () => AW * 0.55;
+        const metalTop = () => AH * 0.15;
+        const metalBot = () => AH * 0.85;
+        const collectorX = () => AW * 0.85;
+
+        function spawnPhoton() {
+            const wl = freqToWavelength(getFreq());
+            const color = wavelengthToColor(wl);
+            const y = metalTop() + Math.random() * (metalBot() - metalTop());
+            photons.push({
+                x: 0,
+                y: y,
+                vx: 3 * scale,
+                color: color,
+                alive: true
+            });
+        }
+
+        function spawnElectron(y) {
+            if (!canEmit()) return;
+            const ke = computeKEmax();
+            const speed = 1.5 * scale * Math.sqrt(ke / 3);
+            const angle = (Math.random() - 0.5) * Math.PI * 0.4;
+            electrons.push({
+                x: metalX() + 5 * scale,
+                y: y,
+                vx: speed * Math.cos(angle),
+                vy: speed * Math.sin(angle),
+                alive: true,
+                age: 0
+            });
+        }
+
+        function drawApparatus() {
+            actx.clearRect(0, 0, AW, AH);
+
+            const bgGrad = actx.createLinearGradient(0, 0, AW, AH);
+            bgGrad.addColorStop(0, '#f8fafc');
+            bgGrad.addColorStop(1, '#f1f5f9');
+            actx.fillStyle = bgGrad;
+            actx.fillRect(0, 0, AW, AH);
+
+            // Light source
+            const lsX = 10 * scale, lsY = AH * 0.3, lsW = 40 * scale, lsH = AH * 0.4;
+            actx.fillStyle = '#334155';
+            actx.fillRect(lsX, lsY, lsW, lsH);
+            if (lightOn) {
+                const wl = freqToWavelength(getFreq());
+                const col = wavelengthToColor(wl);
+                actx.fillStyle = col;
+                actx.globalAlpha = 0.3;
+                actx.beginPath();
+                actx.moveTo(lsX + lsW, lsY);
+                actx.lineTo(metalX(), metalTop());
+                actx.lineTo(metalX(), metalBot());
+                actx.lineTo(lsX + lsW, lsY + lsH);
+                actx.closePath();
+                actx.fill();
+                actx.globalAlpha = 1;
+            }
+
+            actx.fillStyle = '#94a3b8';
+            actx.font = `bold ${10 * scale}px Inter`;
+            actx.textAlign = 'center';
+            actx.fillText('hf', lsX + lsW / 2, lsY + lsH / 2 + 3 * scale);
+
+            // Metal cathode
+            const mx = metalX();
+            const grad = actx.createLinearGradient(mx - 8 * scale, 0, mx + 8 * scale, 0);
+            grad.addColorStop(0, '#94a3b8');
+            grad.addColorStop(0.5, '#cbd5e1');
+            grad.addColorStop(1, '#94a3b8');
+            actx.fillStyle = grad;
+            actx.fillRect(mx - 6 * scale, metalTop(), 12 * scale, metalBot() - metalTop());
+            actx.strokeStyle = '#64748b';
+            actx.lineWidth = 1 * scale;
+            actx.strokeRect(mx - 6 * scale, metalTop(), 12 * scale, metalBot() - metalTop());
+
+            actx.fillStyle = '#475569';
+            actx.font = `${9 * scale}px Inter`;
+            actx.textAlign = 'center';
+            actx.fillText('Cathode (−)', mx, metalBot() + 14 * scale);
+
+            // Collector anode
+            const cx = collectorX();
+            actx.fillStyle = '#3b82f6';
+            actx.fillRect(cx - 4 * scale, metalTop() + 20 * scale, 8 * scale, metalBot() - metalTop() - 40 * scale);
+            actx.fillStyle = '#1e40af';
+            actx.font = `${9 * scale}px Inter`;
+            actx.fillText('Anode (+)', cx, metalBot() + 14 * scale);
+
+            // Voltage labels
+            const v = getVoltage();
+            actx.fillStyle = v >= 0 ? '#16a34a' : '#dc2626';
+            actx.font = `bold ${10 * scale}px Inter`;
+            actx.fillText((v >= 0 ? '+' : '') + v.toFixed(1) + ' V', (mx + cx) / 2, metalBot() + 28 * scale);
+
+            // Wire connecting cathode and anode
+            actx.strokeStyle = '#94a3b8';
+            actx.lineWidth = 1.5 * scale;
+            actx.setLineDash([4 * scale, 3 * scale]);
+            actx.beginPath();
+            actx.moveTo(mx, metalBot());
+            actx.lineTo(mx, metalBot() + 35 * scale);
+            actx.lineTo(cx, metalBot() + 35 * scale);
+            actx.lineTo(cx, metalBot() - 20 * scale);
+            actx.stroke();
+            actx.setLineDash([]);
+
+            // Ammeter symbol
+            const amX = (mx + cx) / 2, amY = metalBot() + 35 * scale;
+            actx.fillStyle = '#f8fafc';
+            actx.strokeStyle = '#3b82f6';
+            actx.lineWidth = 2 * scale;
+            actx.beginPath();
+            actx.arc(amX, amY, 10 * scale, 0, Math.PI * 2);
+            actx.fill();
+            actx.stroke();
+            actx.fillStyle = '#1e40af';
+            actx.font = `bold ${10 * scale}px Inter`;
+            actx.fillText('A', amX, amY + 3.5 * scale);
+
+            // Draw photons
+            for (const p of photons) {
+                if (!p.alive) continue;
+                actx.fillStyle = p.color;
+                actx.globalAlpha = 0.9;
+                actx.beginPath();
+                actx.arc(p.x, p.y, 3 * scale, 0, Math.PI * 2);
+                actx.fill();
+
+                actx.strokeStyle = p.color;
+                actx.lineWidth = 1 * scale;
+                actx.beginPath();
+                const waveLen = 8 * scale;
+                for (let dx = -waveLen; dx < 0; dx += 1) {
+                    actx.lineTo(p.x + dx, p.y + Math.sin(dx * 0.8) * 2 * scale);
+                }
+                actx.stroke();
+                actx.globalAlpha = 1;
+            }
+
+            // Draw electrons
+            for (const e of electrons) {
+                if (!e.alive) continue;
+                actx.fillStyle = '#3b82f6';
+                actx.beginPath();
+                actx.arc(e.x, e.y, 2.5 * scale, 0, Math.PI * 2);
+                actx.fill();
+
+                actx.fillStyle = 'white';
+                actx.font = `bold ${6 * scale}px Inter`;
+                actx.textAlign = 'center';
+                actx.textBaseline = 'middle';
+                actx.fillText('−', e.x, e.y);
+                actx.textBaseline = 'alphabetic';
+            }
+        }
+
+        function drawGraph() {
+            gctx.clearRect(0, 0, GW, GH);
+
+            const bgGrad = gctx.createLinearGradient(0, 0, GW, GH);
+            bgGrad.addColorStop(0, '#f8fafc');
+            bgGrad.addColorStop(1, '#f1f5f9');
+            gctx.fillStyle = bgGrad;
+            gctx.fillRect(0, 0, GW, GH);
+
+            const gs = GW / 400;
+            const pad = { left: 55 * gs, right: 20 * gs, top: 25 * gs, bottom: 45 * gs };
+            const plotW = GW - pad.left - pad.right;
+            const plotH = GH - pad.top - pad.bottom;
+
+            const fMin = 0, fMax = 14;
+            const keMin = -3, keMax = 6;
+
+            function fx(f) { return pad.left + (f - fMin) / (fMax - fMin) * plotW; }
+            function fy(ke) { return pad.top + (keMax - ke) / (keMax - keMin) * plotH; }
+
+            // Grid
+            gctx.strokeStyle = '#e2e8f0';
+            gctx.lineWidth = 0.5 * gs;
+            for (let f = 0; f <= fMax; f += 2) {
+                gctx.beginPath();
+                gctx.moveTo(fx(f), pad.top);
+                gctx.lineTo(fx(f), GH - pad.bottom);
+                gctx.stroke();
+            }
+            for (let ke = keMin; ke <= keMax; ke += 1) {
+                gctx.beginPath();
+                gctx.moveTo(pad.left, fy(ke));
+                gctx.lineTo(GW - pad.right, fy(ke));
+                gctx.stroke();
+            }
+
+            // Axes
+            gctx.strokeStyle = '#334155';
+            gctx.lineWidth = 1.5 * gs;
+            gctx.beginPath();
+            gctx.moveTo(pad.left, pad.top);
+            gctx.lineTo(pad.left, GH - pad.bottom);
+            gctx.lineTo(GW - pad.right, GH - pad.bottom);
+            gctx.stroke();
+
+            // Zero line
+            gctx.strokeStyle = '#94a3b8';
+            gctx.lineWidth = 1 * gs;
+            gctx.setLineDash([4 * gs, 3 * gs]);
+            gctx.beginPath();
+            gctx.moveTo(pad.left, fy(0));
+            gctx.lineTo(GW - pad.right, fy(0));
+            gctx.stroke();
+            gctx.setLineDash([]);
+
+            // Axis labels
+            gctx.fillStyle = '#334155';
+            gctx.font = `${9 * gs}px Inter`;
+            gctx.textAlign = 'center';
+            gctx.fillText('f (×10¹⁴ Hz)', GW / 2, GH - 8 * gs);
+
+            gctx.save();
+            gctx.translate(14 * gs, GH / 2);
+            gctx.rotate(-Math.PI / 2);
+            gctx.fillText('KEmax (eV)', 0, 0);
+            gctx.restore();
+
+            // Tick labels
+            gctx.font = `${7.5 * gs}px Inter`;
+            gctx.fillStyle = '#64748b';
+            gctx.textAlign = 'center';
+            for (let f = 0; f <= fMax; f += 2) {
+                gctx.fillText(f, fx(f), GH - pad.bottom + 14 * gs);
+            }
+            gctx.textAlign = 'right';
+            for (let ke = keMin; ke <= keMax; ke += 1) {
+                gctx.fillText(ke, pad.left - 6 * gs, fy(ke) + 3 * gs);
+            }
+
+            // Plot the line for current metal
+            const phi = getPhi();
+            const f0 = phi / h_eV / 1e14;
+
+            gctx.strokeStyle = '#2563eb';
+            gctx.lineWidth = 2 * gs;
+            gctx.beginPath();
+            gctx.moveTo(fx(f0), fy(0));
+            const fEnd = Math.min(fMax, 14);
+            gctx.lineTo(fx(fEnd), fy(h_eV * fEnd * 1e14 - phi));
+            gctx.stroke();
+
+            // Dashed extension below axis (no emission region)
+            gctx.strokeStyle = '#94a3b8';
+            gctx.setLineDash([4 * gs, 3 * gs]);
+            gctx.lineWidth = 1.5 * gs;
+            gctx.beginPath();
+            gctx.moveTo(fx(0), fy(-phi));
+            gctx.lineTo(fx(f0), fy(0));
+            gctx.stroke();
+            gctx.setLineDash([]);
+
+            // Threshold marker
+            gctx.fillStyle = '#dc2626';
+            gctx.beginPath();
+            gctx.arc(fx(f0), fy(0), 4 * gs, 0, Math.PI * 2);
+            gctx.fill();
+            gctx.fillStyle = '#dc2626';
+            gctx.font = `bold ${8 * gs}px Inter`;
+            gctx.textAlign = 'center';
+            gctx.fillText('f₀', fx(f0), fy(0) - 8 * gs);
+
+            // Work function marker
+            gctx.fillStyle = '#d97706';
+            gctx.font = `${7.5 * gs}px Inter`;
+            gctx.textAlign = 'left';
+            gctx.fillText('−φ = −' + phi.toFixed(1) + ' eV', pad.left + 6 * gs, fy(-phi) - 4 * gs);
+
+            // Current frequency marker
+            const curF = parseFloat(freqSlider.value);
+            const curKE = Math.max(0, h_eV * curF * 1e14 - phi);
+            const canE = h_eV * curF * 1e14 >= phi;
+
+            gctx.strokeStyle = canE ? '#16a34a' : '#ef4444';
+            gctx.lineWidth = 1.5 * gs;
+            gctx.setLineDash([3 * gs, 3 * gs]);
+            gctx.beginPath();
+            gctx.moveTo(fx(curF), GH - pad.bottom);
+            gctx.lineTo(fx(curF), canE ? fy(curKE) : fy(h_eV * curF * 1e14 - phi));
+            gctx.stroke();
+            gctx.setLineDash([]);
+
+            if (canE) {
+                gctx.fillStyle = '#16a34a';
+                gctx.beginPath();
+                gctx.arc(fx(curF), fy(curKE), 5 * gs, 0, Math.PI * 2);
+                gctx.fill();
+                gctx.fillStyle = '#16a34a';
+                gctx.font = `bold ${8 * gs}px Inter`;
+                gctx.textAlign = 'left';
+                gctx.fillText(curKE.toFixed(2) + ' eV', fx(curF) + 8 * gs, fy(curKE) + 3 * gs);
+            } else {
+                gctx.fillStyle = '#ef4444';
+                gctx.beginPath();
+                const noY = fy(h_eV * curF * 1e14 - phi);
+                gctx.arc(fx(curF), noY, 5 * gs, 0, Math.PI * 2);
+                gctx.fill();
+
+                gctx.fillStyle = '#ef4444';
+                gctx.font = `bold ${8 * gs}px Inter`;
+                gctx.textAlign = 'center';
+                gctx.fillText('No emission', fx(curF), noY - 10 * gs);
+            }
+
+            // "No emission" shading
+            gctx.fillStyle = 'rgba(239,68,68,0.06)';
+            gctx.fillRect(pad.left, fy(0), fx(f0) - pad.left, GH - pad.bottom - fy(0));
+        }
+
+        function updatePhysics() {
+            if (lightOn) {
+                const intensity = getIntensity();
+                for (let i = 0; i < intensity; i++) {
+                    if (Math.random() < 0.15) spawnPhoton();
+                }
+            }
+
+            for (const p of photons) {
+                if (!p.alive) continue;
+                p.x += p.vx;
+                if (p.x >= metalX() - 6 * scale) {
+                    p.alive = false;
+                    if (canEmit() && Math.random() < 0.6) {
+                        spawnElectron(p.y);
+                    }
+                }
+            }
+
+            const v = getVoltage();
+            const accel = v * 0.08 * scale;
+
+            for (const e of electrons) {
+                if (!e.alive) continue;
+                e.vx += accel;
+                e.x += e.vx;
+                e.y += e.vy;
+                e.age++;
+
+                if (!electronReachesCollector() && e.x > metalX() + 30 * scale) {
+                    e.vx *= 0.95;
+                    if (Math.abs(e.vx) < 0.1 * scale) {
+                        e.vx = -2 * scale;
+                    }
+                }
+
+                if (e.x < metalX() || e.x > collectorX() + 20 * scale || e.y < 0 || e.y > AH || e.age > 300) {
+                    e.alive = false;
+                }
+            }
+
+            for (let i = photons.length - 1; i >= 0; i--) {
+                if (!photons[i].alive) photons.splice(i, 1);
+            }
+            for (let i = electrons.length - 1; i >= 0; i--) {
+                if (!electrons[i].alive) electrons.splice(i, 1);
+            }
+        }
+
+        function animate() {
+            updatePhysics();
+            drawApparatus();
+            drawGraph();
+            animId = requestAnimationFrame(animate);
+        }
+
+        document.getElementById('toggleBtn').addEventListener('click', function() {
+            lightOn = !lightOn;
+            const btnEl = this;
+            if (lightOn) {
+                btnEl.textContent = translations[currentLang]?.['btn.stop'] || 'Stop Light';
+                btnEl.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                btnEl.classList.add('bg-red-500', 'hover:bg-red-600');
+            } else {
+                btnEl.textContent = translations[currentLang]?.['btn.start'] || 'Start Light';
+                btnEl.classList.remove('bg-red-500', 'hover:bg-red-600');
+                btnEl.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            }
+            updateReadings();
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            lightOn = false;
+            photons.length = 0;
+            electrons.length = 0;
+            freqSlider.value = 7;
+            intensitySlider.value = 5;
+            metalSelect.value = 'zn';
+            voltageSlider.value = 0;
+            const btn = document.getElementById('toggleBtn');
+            btn.textContent = translations[currentLang]?.['btn.start'] || 'Start Light';
+            btn.classList.remove('bg-red-500', 'hover:bg-red-600');
+            btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            updateReadings();
+        });
+
+        updateReadings();
+        animate();
+
+        // i18n
+        const translations = {
+            en: {
+                'nav.back': 'Back',
+                'title': 'Photoelectric Effect Simulation',
+                'subtitle': "Explore Einstein's explanation of light as quantised photons",
+                'canvas.apparatus': 'Apparatus View',
+                'canvas.graph': 'KE_max vs Frequency Graph',
+                'btn.start': 'Start Light',
+                'btn.stop': 'Stop Light',
+                'btn.reset': 'Reset',
+                'controls.title': 'Controls',
+                'controls.freq': 'Light Frequency (×10¹⁴ Hz)',
+                'controls.intensity': 'Light Intensity',
+                'controls.low': 'Low',
+                'controls.high': 'High',
+                'controls.metal': 'Metal Surface',
+                'controls.voltage': 'Stopping Voltage (V)',
+                'controls.wavelength': 'Wavelength:',
+                'readings.title': 'Readings',
+                'readings.photonE': 'Photon Energy (E = hf)',
+                'readings.workfn': 'Work Function (φ)',
+                'readings.kemax': 'KE_max',
+                'readings.threshold': 'Threshold freq (f₀)',
+                'readings.electrons': 'Electrons emitted?',
+                'readings.yes': 'Yes',
+                'readings.no': 'No',
+                'readings.off': '—',
+                'legend.title': 'Legend',
+                'legend.photon': 'Photon',
+                'legend.electron': 'Electron',
+                'legend.metal': 'Metal surface',
+                'info.title': "Einstein's Photoelectric Equation",
+                'info.p1': 'The photon energy is given by E = hf, where h is Planck\'s constant and f is the frequency of light.',
+                'info.p2': 'When a photon strikes a metal surface, it can eject an electron if the photon energy exceeds the work function φ of the metal:',
+                'info.p3': 'The maximum kinetic energy of the ejected electrons is: KE_max = hf − φ',
+                'info.p4': 'Below the threshold frequency f₀ = φ/h, no electrons are emitted regardless of the light intensity. This cannot be explained by the wave model of light.',
+                'info.evidenceTitle': 'Evidence & Wave Model Limitations',
+                'info.ev1': '<strong>Evidence for light quanta:</strong> The photoelectric effect demonstrates that light energy is quantised — it arrives in discrete packets (photons) of energy E = hf.',
+                'info.ev2': '<strong>Wave model failure 1:</strong> The wave model predicts that any frequency of light, given sufficient intensity, should eject electrons. In reality, there is a sharp threshold frequency below which no emission occurs.',
+                'info.ev3': '<strong>Wave model failure 2:</strong> The wave model predicts a time delay before emission as energy accumulates. In reality, emission is instantaneous even at very low intensities.',
+                'info.ev4': '<strong>Intensity effect:</strong> Increasing intensity increases the number of photons (hence the photocurrent), but does NOT increase the maximum kinetic energy of individual electrons — only increasing frequency does that.',
+                'info.ev5': '<strong>Particle nature:</strong> The photoelectric effect is key evidence for the particle nature of light, complementing the wave evidence from diffraction and interference.'
+            },
+            zh: {
+                'nav.back': '返回',
+                'title': '光電效應模擬',
+                'subtitle': '探索愛因斯坦對光量子化的解釋',
+                'canvas.apparatus': '實驗裝置',
+                'canvas.graph': '最大動能 vs 頻率圖',
+                'btn.start': '開啟光源',
+                'btn.stop': '關閉光源',
+                'btn.reset': '重置',
+                'controls.title': '控制面板',
+                'controls.freq': '光的頻率 (×10¹⁴ Hz)',
+                'controls.intensity': '光強度',
+                'controls.low': '低',
+                'controls.high': '高',
+                'controls.metal': '金屬表面',
+                'controls.voltage': '遏止電壓 (V)',
+                'controls.wavelength': '波長：',
+                'readings.title': '讀數',
+                'readings.photonE': '光子能量 (E = hf)',
+                'readings.workfn': '功函數 (φ)',
+                'readings.kemax': '最大動能 KE_max',
+                'readings.threshold': '閾值頻率 (f₀)',
+                'readings.electrons': '電子是否被釋出？',
+                'readings.yes': '是',
+                'readings.no': '否',
+                'readings.off': '—',
+                'legend.title': '圖例',
+                'legend.photon': '光子',
+                'legend.electron': '電子',
+                'legend.metal': '金屬表面',
+                'info.title': '愛因斯坦光電方程',
+                'info.p1': '光子能量由 E = hf 給出，其中 h 是普朗克常數，f 是光的頻率。',
+                'info.p2': '當光子撞擊金屬表面時，若光子能量超過金屬的功函數 φ，便能激發電子：',
+                'info.p3': '釋出電子的最大動能為：KE_max = hf − φ',
+                'info.p4': '低於閾值頻率 f₀ = φ/h 時，無論光強度多大都不會釋出電子。這無法用光的波動模型來解釋。',
+                'info.evidenceTitle': '證據與波動模型的局限',
+                'info.ev1': '<strong>光量子的證據：</strong>光電效應表明光能是量子化的——它以離散的能量包（光子）形式到達，能量為 E = hf。',
+                'info.ev2': '<strong>波動模型失敗 1：</strong>波動模型預測任何頻率的光，只要強度足夠，都應能激發電子。但事實上存在一個明確的閾值頻率，低於此頻率則不會發射。',
+                'info.ev3': '<strong>波動模型失敗 2：</strong>波動模型預測在能量累積過程中會有時間延遲。但事實上，即使在非常低的強度下，發射也是瞬時的。',
+                'info.ev4': '<strong>強度效應：</strong>增加強度會增加光子數量（從而增加光電流），但不會增加單個電子的最大動能——只有增加頻率才能做到。',
+                'info.ev5': '<strong>粒子性：</strong>光電效應是光的粒子性質的關鍵證據，與衍射和干涉所提供的波動性證據互補。'
+            }
+        };
+
+        let currentLang = localStorage.getItem('preferred_language') || 'en';
+        if (currentLang === 'cn') currentLang = 'zh';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('preferred_language', lang);
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    if (translations[lang][key].includes('<strong>') || translations[lang][key].includes('<sub>')) {
+                        el.innerHTML = translations[lang][key];
+                    } else {
+                        el.textContent = translations[lang][key];
+                    }
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.getAttribute('data-lang') === lang) {
+                    btn.classList.add('bg-blue-600', 'text-white');
+                    btn.classList.remove('text-slate-600');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('text-slate-600');
+                }
+            });
+            document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
+
+            const btn = document.getElementById('toggleBtn');
+            if (lightOn) {
+                btn.textContent = translations[lang]?.['btn.stop'] || 'Stop Light';
+            } else {
+                btn.textContent = translations[lang]?.['btn.start'] || 'Start Light';
+            }
+            updateReadings();
+        }
+        window.setLanguage = setLanguage;
+
+        setLanguage(currentLang);
+    });
+    </script>
+</body>
+</html>
