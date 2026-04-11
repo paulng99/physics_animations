@@ -700,9 +700,6 @@
             updateReadings();
         });
 
-        updateReadings();
-        animate();
-
         // i18n
         const translations = {
             en: {
@@ -828,6 +825,8 @@
         }
         window.setLanguage = setLanguage;
 
+        updateReadings();
+        animate();
         setLanguage(currentLang);
     });
     </script>
