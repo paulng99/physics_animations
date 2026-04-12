@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnetic Effect of Electric Current</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <script>
+        window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, svg: { fontCache: 'global' } };
+    </script>
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
+        .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); }
+        canvas { background-color: white; border-radius: 0.5rem; border: 2px solid #e2e8f0; touch-action: none; }
+        mjx-container { display: inline-block !important; }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date()); gtag('config', 'G-RJQ61GJDVS');
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+    <header class="max-w-6xl mx-auto px-6 pt-6 pb-4">
+        <nav class="flex items-center justify-between">
+            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+            </a>
+            <div class="flex gap-2">
+                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
+                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="cn">简</button>
+                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="w-full max-w-6xl mx-auto px-6 pb-16">
+        <div class="glass rounded-3xl p-6 md:p-8 border border-white/60">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-800" data-i18n="title">Magnetic Effect of Electric Current</h1>
+                <p class="text-md md:text-lg text-slate-600 mt-2" data-i18n="subtitle">Visualize B-fields from straight wires, coils, and solenoids</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <div class="w-full aspect-[4/3] bg-white rounded-lg shadow-lg border-2 border-slate-200 relative">
+                        <canvas id="emCanvas"></canvas>
+                    </div>
+                    <div class="mt-2 flex justify-center gap-4">
+                        <button onclick="setScene('wire')" class="scene-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-blue-600 text-white" data-scene="wire" data-i18n="scene.wire">Straight Wire</button>
+                        <button onclick="setScene('coil')" class="scene-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-white border border-slate-200 text-slate-700 hover:border-blue-300" data-scene="coil" data-i18n="scene.coil">Circular Coil</button>
+                        <button onclick="setScene('solenoid')" class="scene-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-white border border-slate-200 text-slate-700 hover:border-blue-300" data-scene="solenoid" data-i18n="scene.solenoid">Solenoid</button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-3" data-i18n="controls.title">Parameters</h2>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.current">Current I (A)</label>
+                                <input type="range" id="currentSlider" min="0.5" max="10" step="0.5" value="5" class="w-full accent-green-600 mt-1">
+                                <div class="text-xs text-green-600 text-right font-semibold"><span id="currentVal">5.0</span> A</div>
+                            </div>
+                            <div id="turnsGroup">
+                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.turns">Turns N</label>
+                                <input type="range" id="turnsSlider" min="1" max="20" value="10" class="w-full accent-blue-600 mt-1">
+                                <div class="text-xs text-blue-600 text-right font-semibold"><span id="turnsVal">10</span></div>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.direction">Current Direction</label>
+                                <div class="flex gap-2 mt-1">
+                                    <button onclick="setDirection(1)" id="dirUp" class="flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold bg-green-600 text-white transition">⊙ <span data-i18n="dir.out">Out</span></button>
+                                    <button onclick="setDirection(-1)" id="dirDown" class="flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold bg-white border border-slate-200 text-slate-600 transition">⊗ <span data-i18n="dir.in">In</span></button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="showFieldPts" checked class="accent-amber-600 w-4 h-4">
+                                <label for="showFieldPts" class="text-sm font-medium text-slate-600" data-i18n="controls.fieldpts">Show Field Pattern</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="formulaCard" class="bg-amber-50 rounded-2xl border border-amber-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="formula.title">Formula</h2>
+                        <div id="formulaContent" class="text-center text-lg text-amber-900 font-serif py-2">
+                            $B = \frac{\mu_0 I}{2\pi r}$
+                        </div>
+                        <p id="formulaDesc" class="text-sm text-slate-600 mt-2" data-i18n="formula.wire.desc">B-field around a long straight wire decreases with distance r.</p>
+                    </div>
+
+                    <div id="resultCard" class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="result.title">Computed B</h2>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div class="text-slate-600" data-i18n="result.at">At distance r:</div>
+                            <div class="text-right font-semibold text-amber-600" id="rDisplay">0.05 m</div>
+                            <div class="text-slate-600">B =</div>
+                            <div class="text-right font-semibold text-amber-600" id="bDisplay">2.0 × 10⁻⁵ T</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 rounded-2xl border border-blue-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="info.title">Key Concepts</h2>
+                        <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
+                            <li data-i18n="info.1">Moving charges / currents create magnetic fields.</li>
+                            <li data-i18n="info.2">Use the right-hand grip rule to find B direction.</li>
+                            <li data-i18n="info.3">Solenoid field is uniform inside, like a bar magnet.</li>
+                            <li data-i18n="info.4">More turns & higher current → stronger B-field.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('emCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    const parent = canvas.parentElement;
+    canvas.width = parent.clientWidth;
+    canvas.height = parent.clientHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', () => { resizeCanvas(); draw(); });
+
+const GREEN = '#16A34A';
+const AMBER = '#D97706';
+const RED = '#DC2626';
+const BLUE = '#2563EB';
+const SLATE = '#475569';
+const MU0 = 4 * Math.PI * 1e-7;
+
+let scene = 'wire';
+let current = 5;
+let turns = 10;
+let direction = 1;
+let showFieldPts = true;
+
+function setScene(s) {
+    scene = s;
+    document.querySelectorAll('.scene-btn').forEach(btn => {
+        if (btn.getAttribute('data-scene') === s) {
+            btn.classList.add('bg-blue-600', 'text-white');
+            btn.classList.remove('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+        }
+    });
+    document.getElementById('turnsGroup').style.display = (s === 'wire') ? 'none' : 'block';
+    updateFormula();
+    draw();
+}
+
+function setDirection(d) {
+    direction = d;
+    const up = document.getElementById('dirUp');
+    const dn = document.getElementById('dirDown');
+    if (d === 1) {
+        up.classList.add('bg-green-600', 'text-white');
+        up.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+        dn.classList.remove('bg-green-600', 'text-white');
+        dn.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+    } else {
+        dn.classList.add('bg-green-600', 'text-white');
+        dn.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+        up.classList.remove('bg-green-600', 'text-white');
+        up.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+    }
+    draw();
+}
+
+function updateFormula() {
+    const fc = document.getElementById('formulaContent');
+    const fd = document.getElementById('formulaDesc');
+    if (scene === 'wire') {
+        fc.innerHTML = '$B = \\frac{\\mu_0 I}{2\\pi r}$';
+        fd.setAttribute('data-i18n', 'formula.wire.desc');
+    } else if (scene === 'coil') {
+        fc.innerHTML = '$B = \\frac{\\mu_0 N I}{2 R}$';
+        fd.setAttribute('data-i18n', 'formula.coil.desc');
+    } else {
+        fc.innerHTML = '$B = \\frac{\\mu_0 N I}{l}$';
+        fd.setAttribute('data-i18n', 'formula.solenoid.desc');
+    }
+    const key = fd.getAttribute('data-i18n');
+    if (translations[currentLang] && translations[currentLang][key]) {
+        fd.innerText = translations[currentLang][key];
+    } else {
+        const defaults = {
+            'formula.wire.desc': 'B-field around a long straight wire decreases with distance r.',
+            'formula.coil.desc': 'B-field at the centre of a flat coil with N turns and radius R.',
+            'formula.solenoid.desc': 'Uniform B-field inside a long solenoid of length l with N turns.'
+        };
+        fd.innerText = defaults[key] || '';
+    }
+    if (window.MathJax && window.MathJax.typeset) {
+        MathJax.typeset([fc]);
+    }
+    updateResult();
+}
+
+function updateResult() {
+    let r, B;
+    if (scene === 'wire') {
+        r = 0.05;
+        B = MU0 * current / (2 * Math.PI * r);
+        document.getElementById('rDisplay').textContent = r.toFixed(2) + ' m';
+    } else if (scene === 'coil') {
+        r = 0.05;
+        B = MU0 * turns * current / (2 * r);
+        document.getElementById('rDisplay').textContent = 'R = ' + r.toFixed(2) + ' m';
+    } else {
+        r = 0.2;
+        B = MU0 * turns * current / r;
+        document.getElementById('rDisplay').textContent = 'l = ' + r.toFixed(2) + ' m';
+    }
+    const exp = Math.floor(Math.log10(Math.abs(B)));
+    const coeff = B / Math.pow(10, exp);
+    document.getElementById('bDisplay').textContent = coeff.toFixed(2) + ' × 10' + superscript(exp) + ' T';
+}
+
+function superscript(n) {
+    const map = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+    return String(n).split('').map(c => map[c] || c).join('');
+}
+
+document.getElementById('currentSlider').addEventListener('input', e => {
+    current = parseFloat(e.target.value);
+    document.getElementById('currentVal').textContent = current.toFixed(1);
+    updateResult();
+    draw();
+});
+
+document.getElementById('turnsSlider').addEventListener('input', e => {
+    turns = parseInt(e.target.value);
+    document.getElementById('turnsVal').textContent = turns;
+    updateResult();
+    draw();
+});
+
+document.getElementById('showFieldPts').addEventListener('change', e => {
+    showFieldPts = e.target.checked;
+    draw();
+});
+
+function drawArrow(x1, y1, x2, y2, color, width) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    if (len < 2) return;
+    const ux = dx / len, uy = dy / len;
+    const headLen = Math.min(10, len * 0.3);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width || 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2 - ux * headLen * 0.5, y2 - uy * headLen * 0.5);
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - ux * headLen - uy * headLen * 0.4, y2 - uy * headLen + ux * headLen * 0.4);
+    ctx.lineTo(x2 - ux * headLen + uy * headLen * 0.4, y2 - uy * headLen - ux * headLen * 0.4);
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawWireScene() {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const maxR = Math.min(cx, cy) * 0.85;
+
+    // Wire cross-section
+    ctx.beginPath();
+    ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+    ctx.fillStyle = '#CBD5E1';
+    ctx.fill();
+    ctx.strokeStyle = SLATE;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Direction symbol
+    ctx.fillStyle = GREEN;
+    ctx.font = 'bold 18px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(direction === 1 ? '⊙' : '⊗', cx, cy);
+
+    // Concentric field rings
+    const ringRadii = [40, 70, 110, 160, 220];
+    for (const r of ringRadii) {
+        if (r > maxR) continue;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = AMBER;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.5;
+        ctx.setLineDash([4, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+
+        if (showFieldPts) {
+            const nArrows = Math.max(4, Math.round(r / 25));
+            for (let i = 0; i < nArrows; i++) {
+                const ang = (2 * Math.PI * i) / nArrows;
+                const tangent = direction === 1 ? ang + Math.PI / 2 : ang - Math.PI / 2;
+                const px = cx + r * Math.cos(ang);
+                const py = cy + r * Math.sin(ang);
+                const arrLen = 12;
+                drawArrow(px - arrLen * 0.5 * Math.cos(tangent), py - arrLen * 0.5 * Math.sin(tangent),
+                          px + arrLen * 0.5 * Math.cos(tangent), py + arrLen * 0.5 * Math.sin(tangent), AMBER, 1.5);
+            }
+        }
+    }
+
+    // B label
+    ctx.font = 'italic bold 16px Inter, sans-serif';
+    ctx.fillStyle = AMBER;
+    ctx.textAlign = 'left';
+    ctx.fillText('B', cx + ringRadii[1] + 5, cy - 10);
+
+    // Current label
+    ctx.fillStyle = GREEN;
+    ctx.fillText('I', cx + 20, cy - 2);
+
+    // Right-hand rule hint
+    ctx.font = '13px Inter, sans-serif';
+    ctx.fillStyle = SLATE;
+    ctx.textAlign = 'center';
+    const rhText = translations[currentLang]?.['canvas.rhr'] || 'Right-hand grip rule: thumb = I, fingers = B';
+    ctx.fillText(rhText, cx, canvas.height - 15);
+}
+
+function drawCoilScene() {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const coilR = Math.min(cx, cy) * 0.35;
+
+    // Coil ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, coilR, 0, Math.PI * 2);
+    ctx.strokeStyle = '#64748B';
+    ctx.lineWidth = 8;
+    ctx.stroke();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#CBD5E1';
+    ctx.stroke();
+
+    // Current arrows on coil
+    const nCA = 8;
+    for (let i = 0; i < nCA; i++) {
+        const ang = (2 * Math.PI * i) / nCA;
+        const tangent = direction === 1 ? ang + Math.PI / 2 : ang - Math.PI / 2;
+        const px = cx + coilR * Math.cos(ang);
+        const py = cy + coilR * Math.sin(ang);
+        const arrLen = 16;
+        drawArrow(px - arrLen * 0.5 * Math.cos(tangent), py - arrLen * 0.5 * Math.sin(tangent),
+                  px + arrLen * 0.5 * Math.cos(tangent), py + arrLen * 0.5 * Math.sin(tangent), GREEN, 2);
+    }
+
+    if (showFieldPts) {
+        // Central field (perpendicular to plane)
+        const bDir = direction === 1 ? -1 : 1;
+        const fieldSymbol = bDir < 0 ? '⊙' : '⊗';
+        ctx.fillStyle = AMBER;
+        ctx.font = 'bold 28px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(fieldSymbol, cx, cy);
+        ctx.font = 'italic bold 14px Inter, sans-serif';
+        ctx.fillText('B', cx + 20, cy - 5);
+
+        // Field lines radiating from center (side view conceptual)
+        const nLines = 6;
+        for (let i = 0; i < nLines; i++) {
+            const ang = (2 * Math.PI * i) / nLines;
+            const r1 = coilR + 20;
+            const r2 = coilR + 55;
+            const px1 = cx + r1 * Math.cos(ang);
+            const py1 = cy + r1 * Math.sin(ang);
+            const px2 = cx + r2 * Math.cos(ang);
+            const py2 = cy + r2 * Math.sin(ang);
+            ctx.strokeStyle = AMBER;
+            ctx.lineWidth = 1.2;
+            ctx.globalAlpha = 0.5;
+            ctx.setLineDash([3, 5]);
+            ctx.beginPath();
+            ctx.moveTo(px1, py1);
+            ctx.lineTo(px2, py2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    // Labels
+    ctx.font = '13px Inter, sans-serif';
+    ctx.fillStyle = SLATE;
+    ctx.textAlign = 'center';
+    const coilText = translations[currentLang]?.['canvas.coil'] || 'Top view of circular coil — B is perpendicular to the plane';
+    ctx.fillText(coilText, cx, canvas.height - 15);
+    ctx.fillStyle = GREEN;
+    ctx.font = 'italic bold 14px Inter, sans-serif';
+    ctx.fillText('I', cx + coilR + 12, cy);
+}
+
+function drawSolenoidScene() {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const solLen = Math.min(canvas.width * 0.6, 350);
+    const solH = Math.min(canvas.height * 0.28, 80);
+    const x0 = cx - solLen / 2;
+    const x1 = cx + solLen / 2;
+    const y0 = cy - solH / 2;
+    const y1 = cy + solH / 2;
+
+    // Solenoid body
+    ctx.fillStyle = '#F1F5F9';
+    ctx.strokeStyle = '#94A3B8';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x0, y0, solLen, solH, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Coil turns
+    const nTurns = Math.min(turns, 20);
+    const spacing = solLen / (nTurns + 1);
+    ctx.strokeStyle = '#64748B';
+    ctx.lineWidth = 2;
+    for (let i = 1; i <= nTurns; i++) {
+        const tx = x0 + i * spacing;
+        ctx.beginPath();
+        ctx.ellipse(tx, cy, 6, solH / 2 - 2, 0, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    // Current direction arrows on top & bottom
+    const arrSpacing = solLen / 6;
+    for (let i = 1; i <= 5; i++) {
+        const ax = x0 + i * arrSpacing;
+        // Top wire: current goes right or left
+        const topDir = direction === 1 ? 1 : -1;
+        drawArrow(ax - 10 * topDir, y0 - 6, ax + 10 * topDir, y0 - 6, GREEN, 1.5);
+        drawArrow(ax + 10 * topDir, y1 + 6, ax - 10 * topDir, y1 + 6, GREEN, 1.5);
+    }
+
+    if (showFieldPts) {
+        // Internal field arrows (uniform)
+        const internalDir = direction === 1 ? 1 : -1;
+        const nInternal = 4;
+        const intSpacing = solLen / (nInternal + 1);
+        for (let i = 1; i <= nInternal; i++) {
+            const ax = x0 + i * intSpacing;
+            drawArrow(ax - 18, cy, ax + 18, cy, AMBER, 2);
+        }
+
+        // External field lines (looping back)
+        ctx.strokeStyle = AMBER;
+        ctx.lineWidth = 1.2;
+        ctx.globalAlpha = 0.4;
+        ctx.setLineDash([4, 6]);
+        const extOffsets = [40, 70, 100];
+        for (const off of extOffsets) {
+            ctx.beginPath();
+            ctx.moveTo(x1 + 10, cy);
+            ctx.bezierCurveTo(x1 + off, cy - off * 1.2, x0 - off, cy - off * 1.2, x0 - 10, cy);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x1 + 10, cy);
+            ctx.bezierCurveTo(x1 + off, cy + off * 1.2, x0 - off, cy + off * 1.2, x0 - 10, cy);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+
+        // N and S labels at ends
+        ctx.font = 'bold 16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        if (internalDir > 0) {
+            ctx.fillStyle = RED;
+            ctx.fillText('N', x1 + 20, cy);
+            ctx.fillStyle = BLUE;
+            ctx.fillText('S', x0 - 20, cy);
+        } else {
+            ctx.fillStyle = RED;
+            ctx.fillText('N', x0 - 20, cy);
+            ctx.fillStyle = BLUE;
+            ctx.fillText('S', x1 + 20, cy);
+        }
+    }
+
+    // Labels
+    ctx.fillStyle = AMBER;
+    ctx.font = 'italic bold 14px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('B', cx, cy - 12);
+
+    ctx.fillStyle = GREEN;
+    ctx.fillText('I', x0 + arrSpacing, y0 - 18);
+
+    ctx.font = '13px Inter, sans-serif';
+    ctx.fillStyle = SLATE;
+    const solText = translations[currentLang]?.['canvas.solenoid'] || 'Solenoid: uniform B inside, like a bar magnet outside';
+    ctx.fillText(solText, cx, canvas.height - 15);
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (scene === 'wire') drawWireScene();
+    else if (scene === 'coil') drawCoilScene();
+    else drawSolenoidScene();
+}
+
+setScene('wire');
+
+// --- i18n ---
+const translations = {
+    en: {
+        'nav.back': 'Back to Home',
+        'title': 'Magnetic Effect of Electric Current',
+        'subtitle': 'Visualize B-fields from straight wires, coils, and solenoids',
+        'scene.wire': 'Straight Wire',
+        'scene.coil': 'Circular Coil',
+        'scene.solenoid': 'Solenoid',
+        'controls.title': 'Parameters',
+        'controls.current': 'Current I (A)',
+        'controls.turns': 'Turns N',
+        'controls.direction': 'Current Direction',
+        'dir.out': 'Out',
+        'dir.in': 'In',
+        'controls.fieldpts': 'Show Field Pattern',
+        'formula.title': 'Formula',
+        'formula.wire.desc': 'B-field around a long straight wire decreases with distance r.',
+        'formula.coil.desc': 'B-field at the centre of a flat coil with N turns and radius R.',
+        'formula.solenoid.desc': 'Uniform B-field inside a long solenoid of length l with N turns.',
+        'result.title': 'Computed B',
+        'result.at': 'At distance r:',
+        'info.title': 'Key Concepts',
+        'info.1': 'Moving charges / currents create magnetic fields.',
+        'info.2': 'Use the right-hand grip rule to find B direction.',
+        'info.3': 'Solenoid field is uniform inside, like a bar magnet.',
+        'info.4': 'More turns & higher current → stronger B-field.',
+        'canvas.rhr': 'Right-hand grip rule: thumb = I, fingers = B',
+        'canvas.coil': 'Top view of circular coil — B is perpendicular to the plane',
+        'canvas.solenoid': 'Solenoid: uniform B inside, like a bar magnet outside'
+    },
+    zh: {
+        'nav.back': '返回首頁',
+        'title': '電流的磁效應',
+        'subtitle': '可視化直導線、線圈和螺線管的磁場',
+        'scene.wire': '直導線',
+        'scene.coil': '環形線圈',
+        'scene.solenoid': '螺線管',
+        'controls.title': '參數',
+        'controls.current': '電流 I (A)',
+        'controls.turns': '匝數 N',
+        'controls.direction': '電流方向',
+        'dir.out': '出紙面',
+        'dir.in': '入紙面',
+        'controls.fieldpts': '顯示磁場圖案',
+        'formula.title': '公式',
+        'formula.wire.desc': '長直導線周圍的磁場隨距離 r 減小。',
+        'formula.coil.desc': 'N 匝、半徑 R 的平面線圈中心處的磁場。',
+        'formula.solenoid.desc': '長度 l、N 匝螺線管內部的均勻磁場。',
+        'result.title': '計算結果 B',
+        'result.at': '在距離 r 處：',
+        'info.title': '核心概念',
+        'info.1': '移動電荷/電流會產生磁場。',
+        'info.2': '用右手螺旋定則判斷 B 的方向。',
+        'info.3': '螺線管內部磁場均勻，像條形磁鐵。',
+        'info.4': '匝數越多、電流越大 → 磁場越強。',
+        'canvas.rhr': '右手螺旋定則：拇指 = I，手指 = B',
+        'canvas.coil': '俯視環形線圈 — B 垂直於平面',
+        'canvas.solenoid': '螺線管：內部磁場均勻，外部像條形磁鐵'
+    },
+    cn: {
+        'nav.back': '返回首页',
+        'title': '电流的磁效应',
+        'subtitle': '可视化直导线、线圈和螺线管的磁场',
+        'scene.wire': '直导线',
+        'scene.coil': '环形线圈',
+        'scene.solenoid': '螺线管',
+        'controls.title': '参数',
+        'controls.current': '电流 I (A)',
+        'controls.turns': '匝数 N',
+        'controls.direction': '电流方向',
+        'dir.out': '出纸面',
+        'dir.in': '入纸面',
+        'controls.fieldpts': '显示磁场图案',
+        'formula.title': '公式',
+        'formula.wire.desc': '长直导线周围的磁场随距离 r 减小。',
+        'formula.coil.desc': 'N 匝、半径 R 的平面线圈中心处的磁场。',
+        'formula.solenoid.desc': '长度 l、N 匝螺线管内部的均匀磁场。',
+        'result.title': '计算结果 B',
+        'result.at': '在距离 r 处：',
+        'info.title': '核心概念',
+        'info.1': '移动电荷/电流会产生磁场。',
+        'info.2': '用右手螺旋定则判断 B 的方向。',
+        'info.3': '螺线管内部磁场均匀，像条形磁铁。',
+        'info.4': '匝数越多、电流越大 → 磁场越强。',
+        'canvas.rhr': '右手螺旋定则：拇指 = I，手指 = B',
+        'canvas.coil': '俯视环形线圈 — B 垂直于平面',
+        'canvas.solenoid': '螺线管：内部磁场均匀，外部像条形磁铁'
+    }
+};
+
+let currentLang = localStorage.getItem('preferred_language') || 'en';
+
+function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('preferred_language', lang);
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+            if (el.tagName === 'OPTION') el.textContent = translations[lang][key];
+            else el.innerText = translations[lang][key];
+        }
+    });
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        if (btn.getAttribute('data-lang') === lang) {
+            btn.classList.add('bg-blue-600', 'text-white');
+            btn.classList.remove('text-slate-600');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('text-slate-600');
+        }
+    });
+    document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+    updateFormula();
+    draw();
+}
+
+window.addEventListener('DOMContentLoaded', () => setLanguage(currentLang));
+</script>
+</body>
+</html>

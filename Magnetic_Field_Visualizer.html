@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnetic Field Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
+        .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); }
+        canvas { background-color: white; border-radius: 0.5rem; border: 2px solid #e2e8f0; touch-action: none; }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date()); gtag('config', 'G-RJQ61GJDVS');
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+    <header class="max-w-6xl mx-auto px-6 pt-6 pb-4">
+        <nav class="flex items-center justify-between">
+            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+            </a>
+            <div class="flex gap-2">
+                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
+                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="cn">简</button>
+                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="w-full max-w-5xl mx-auto px-6 pb-16">
+        <div class="glass rounded-3xl p-6 md:p-8 border border-white/60">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-800" data-i18n="title">Magnetic Field Visualizer</h1>
+                <p class="text-md md:text-lg text-slate-600 mt-2" data-i18n="subtitle">Explore magnetic poles, field lines, and compass behaviour</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <div class="w-full aspect-[4/3] bg-white rounded-lg shadow-lg border-2 border-slate-200 relative">
+                        <canvas id="fieldCanvas"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2 text-center" data-i18n="canvas.hint">Drag magnets to reposition them. Compasses follow the net field.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-3" data-i18n="controls.title">Controls</h2>
+
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.mode">Mode</label>
+                                <select id="modeSelect" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="bar" data-i18n="mode.bar">Bar Magnet</option>
+                                    <option value="two" data-i18n="mode.two">Two Bar Magnets</option>
+                                    <option value="horseshoe" data-i18n="mode.horseshoe">Horseshoe Magnet</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.fieldlines">Field Line Density</label>
+                                <input type="range" id="densitySlider" min="6" max="24" value="12" class="w-full accent-blue-600 mt-1">
+                                <div class="text-xs text-slate-500 text-right"><span id="densityVal">12</span> <span data-i18n="controls.lines">lines</span></div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="showCompass" checked class="accent-blue-600 w-4 h-4">
+                                <label for="showCompass" class="text-sm font-medium text-slate-600" data-i18n="controls.compass">Show Compasses</label>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="showArrows" checked class="accent-blue-600 w-4 h-4">
+                                <label for="showArrows" class="text-sm font-medium text-slate-600" data-i18n="controls.arrows">Show Field Arrows</label>
+                            </div>
+
+                            <button id="flipMagnet2" class="hidden w-full px-4 py-2 rounded-xl bg-amber-100 text-amber-700 font-semibold text-sm hover:bg-amber-200 transition-all" data-i18n="controls.flip">Flip 2nd Magnet</button>
+
+                            <button onclick="resetPositions()" class="w-full px-4 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all text-sm font-semibold" data-i18n="controls.reset">Reset Positions</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="legend.title">Legend</h2>
+                        <ul class="space-y-2 text-sm">
+                            <li class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-red-600"></span>
+                                <span class="text-slate-700" data-i18n="legend.north">North Pole (N)</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+                                <span class="text-slate-700" data-i18n="legend.south">South Pole (S)</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                                <span class="text-slate-700" data-i18n="legend.fieldline">Field Lines (N → S)</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-green-600"></span>
+                                <span class="text-slate-700" data-i18n="legend.compass">Compass Needles</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-blue-50 rounded-2xl border border-blue-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="info.title">Key Concepts</h2>
+                        <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
+                            <li data-i18n="info.1">Like poles repel; unlike poles attract.</li>
+                            <li data-i18n="info.2">Field lines go from N to S outside the magnet.</li>
+                            <li data-i18n="info.3">A compass needle aligns with the local field direction.</li>
+                            <li data-i18n="info.4">Field strength is stronger where lines are closer together.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('fieldCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    const parent = canvas.parentElement;
+    canvas.width = parent.clientWidth;
+    canvas.height = parent.clientHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const NORTH_COLOR = '#DC2626';
+const SOUTH_COLOR = '#2563EB';
+const FIELD_COLOR = '#D97706';
+const COMPASS_COLOR = '#16A34A';
+
+let mode = 'bar';
+let fieldLineDensity = 12;
+let showCompass = true;
+let showArrows = true;
+
+class Magnet {
+    constructor(x, y, angle, flipped) {
+        this.x = x;
+        this.y = y;
+        this.angle = angle || 0;
+        this.flipped = flipped || false;
+        this.halfLen = 50;
+        this.halfW = 18;
+    }
+
+    get northPos() {
+        const dir = this.flipped ? -1 : 1;
+        return {
+            x: this.x + dir * this.halfLen * Math.cos(this.angle),
+            y: this.y + dir * this.halfLen * Math.sin(this.angle)
+        };
+    }
+    get southPos() {
+        const dir = this.flipped ? -1 : 1;
+        return {
+            x: this.x - dir * this.halfLen * Math.cos(this.angle),
+            y: this.y - dir * this.halfLen * Math.sin(this.angle)
+        };
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        const nDir = this.flipped ? -1 : 1;
+        // North half
+        ctx.fillStyle = NORTH_COLOR;
+        ctx.beginPath();
+        ctx.roundRect(nDir > 0 ? 0 : -this.halfLen, -this.halfW, this.halfLen, this.halfW * 2, [0, 6, 6, 0]);
+        ctx.fill();
+        // South half
+        ctx.fillStyle = SOUTH_COLOR;
+        ctx.beginPath();
+        ctx.roundRect(nDir > 0 ? -this.halfLen : 0, -this.halfW, this.halfLen, this.halfW * 2, [6, 0, 0, 6]);
+        ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('N', nDir * this.halfLen / 2, 0);
+        ctx.fillText('S', -nDir * this.halfLen / 2, 0);
+
+        ctx.restore();
+    }
+
+    containsPoint(px, py) {
+        const dx = px - this.x;
+        const dy = py - this.y;
+        const cos = Math.cos(-this.angle);
+        const sin = Math.sin(-this.angle);
+        const lx = dx * cos - dy * sin;
+        const ly = dx * sin + dy * cos;
+        return Math.abs(lx) <= this.halfLen + 5 && Math.abs(ly) <= this.halfW + 5;
+    }
+}
+
+class HorseshoeMagnet {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.w = 120;
+        this.h = 100;
+        this.gap = 40;
+        this.armW = 24;
+    }
+
+    get northPos() { return { x: this.x - this.w / 2 + this.armW / 2, y: this.y + this.h / 2 }; }
+    get southPos() { return { x: this.x + this.w / 2 - this.armW / 2, y: this.y + this.h / 2 }; }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // Top bar
+        ctx.fillStyle = '#6B7280';
+        ctx.beginPath();
+        ctx.roundRect(-this.w / 2, -this.h / 2, this.w, this.armW, 6);
+        ctx.fill();
+
+        // Left arm (N)
+        ctx.fillStyle = NORTH_COLOR;
+        ctx.fillRect(-this.w / 2, -this.h / 2 + this.armW, this.armW, this.h - this.armW);
+
+        // Right arm (S)
+        ctx.fillStyle = SOUTH_COLOR;
+        ctx.fillRect(this.w / 2 - this.armW, -this.h / 2 + this.armW, this.armW, this.h - this.armW);
+
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('N', -this.w / 2 + this.armW / 2, this.h / 4);
+        ctx.fillText('S', this.w / 2 - this.armW / 2, this.h / 4);
+
+        ctx.restore();
+    }
+
+    containsPoint(px, py) {
+        const dx = px - this.x;
+        const dy = py - this.y;
+        return Math.abs(dx) <= this.w / 2 + 5 && Math.abs(dy) <= this.h / 2 + 5;
+    }
+}
+
+let magnets = [];
+let horseshoe = null;
+
+function initMagnets() {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    magnets = [];
+    horseshoe = null;
+    if (mode === 'bar') {
+        magnets.push(new Magnet(cx, cy, 0, false));
+    } else if (mode === 'two') {
+        magnets.push(new Magnet(cx - 100, cy, 0, false));
+        magnets.push(new Magnet(cx + 100, cy, Math.PI, false));
+    } else if (mode === 'horseshoe') {
+        horseshoe = new HorseshoeMagnet(cx, cy);
+    }
+}
+
+function dipoleField(px, py, nx, ny, sx, sy, strength) {
+    const dnx = px - nx, dny = py - ny;
+    const dsx = px - sx, dsy = py - sy;
+    const rn2 = dnx * dnx + dny * dny + 100;
+    const rs2 = dsx * dsx + dsy * dsy + 100;
+    const rn = Math.sqrt(rn2);
+    const rs = Math.sqrt(rs2);
+    const s = strength || 5000;
+    return {
+        bx: s * dnx / (rn2 * rn) - s * dsx / (rs2 * rs),
+        by: s * dny / (rn2 * rn) - s * dsy / (rs2 * rs)
+    };
+}
+
+function totalField(px, py) {
+    let bx = 0, by = 0;
+    if (horseshoe) {
+        const n = horseshoe.northPos;
+        const s = horseshoe.southPos;
+        const f = dipoleField(px, py, n.x, n.y, s.x, s.y, 5000);
+        bx += f.bx; by += f.by;
+    }
+    for (const m of magnets) {
+        const n = m.northPos;
+        const s = m.southPos;
+        const f = dipoleField(px, py, n.x, n.y, s.x, s.y, 5000);
+        bx += f.bx; by += f.by;
+    }
+    return { bx, by };
+}
+
+function traceFieldLine(startX, startY, dir, maxSteps) {
+    const pts = [{ x: startX, y: startY }];
+    let x = startX, y = startY;
+    const step = 3;
+    for (let i = 0; i < (maxSteps || 300); i++) {
+        const { bx, by } = totalField(x, y);
+        const mag = Math.sqrt(bx * bx + by * by);
+        if (mag < 1e-8) break;
+        x += dir * step * bx / mag;
+        y += dir * step * by / mag;
+        if (x < -50 || x > canvas.width + 50 || y < -50 || y > canvas.height + 50) break;
+        pts.push({ x, y });
+
+        let nearPole = false;
+        for (const m of magnets) {
+            const sn = m.northPos, ss = m.southPos;
+            if (Math.hypot(x - sn.x, y - sn.y) < 8 || Math.hypot(x - ss.x, y - ss.y) < 8) nearPole = true;
+        }
+        if (horseshoe) {
+            const sn = horseshoe.northPos, ss = horseshoe.southPos;
+            if (Math.hypot(x - sn.x, y - sn.y) < 12 || Math.hypot(x - ss.x, y - ss.y) < 12) nearPole = true;
+        }
+        if (nearPole && i > 5) break;
+    }
+    return pts;
+}
+
+function drawFieldLine(pts) {
+    if (pts.length < 2) return;
+    ctx.strokeStyle = FIELD_COLOR;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+        ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    if (showArrows && pts.length > 20) {
+        const mid = Math.floor(pts.length / 2);
+        const p1 = pts[mid - 1], p2 = pts[mid + 1];
+        if (p1 && p2) {
+            const ang = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+            drawArrowHead(pts[mid].x, pts[mid].y, ang, FIELD_COLOR, 7);
+        }
+    }
+}
+
+function drawArrowHead(x, y, angle, color, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(size, 0);
+    ctx.lineTo(-size, -size * 0.6);
+    ctx.lineTo(-size, size * 0.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawCompass(cx, cy, size) {
+    const { bx, by } = totalField(cx, cy);
+    const mag = Math.sqrt(bx * bx + by * by);
+    if (mag < 1e-8) return;
+    const ang = Math.atan2(by, bx);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    ctx.beginPath();
+    ctx.arc(0, 0, size, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fill();
+    ctx.strokeStyle = '#94A3B8';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.rotate(ang);
+    // North half (red)
+    ctx.fillStyle = NORTH_COLOR;
+    ctx.beginPath();
+    ctx.moveTo(size * 0.8, 0);
+    ctx.lineTo(-size * 0.15, -size * 0.2);
+    ctx.lineTo(-size * 0.15, size * 0.2);
+    ctx.closePath();
+    ctx.fill();
+    // South half (blue)
+    ctx.fillStyle = SOUTH_COLOR;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.8, 0);
+    ctx.lineTo(size * 0.15, -size * 0.2);
+    ctx.lineTo(size * 0.15, size * 0.2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function drawCompasses() {
+    if (!showCompass) return;
+    const spacing = 55;
+    const margin = 30;
+    for (let x = margin; x < canvas.width - margin; x += spacing) {
+        for (let y = margin; y < canvas.height - margin; y += spacing) {
+            let tooClose = false;
+            for (const m of magnets) {
+                if (m.containsPoint(x, y)) tooClose = true;
+            }
+            if (horseshoe && horseshoe.containsPoint(x, y)) tooClose = true;
+            if (!tooClose) drawCompass(x, y, 10);
+        }
+    }
+}
+
+function getAllNorthPoles() {
+    const poles = [];
+    for (const m of magnets) poles.push(m.northPos);
+    if (horseshoe) poles.push(horseshoe.northPos);
+    return poles;
+}
+
+function drawFieldLines() {
+    const northPoles = getAllNorthPoles();
+    const n = fieldLineDensity;
+    for (const pole of northPoles) {
+        for (let i = 0; i < n; i++) {
+            const ang = (2 * Math.PI * i) / n;
+            const startX = pole.x + 10 * Math.cos(ang);
+            const startY = pole.y + 10 * Math.sin(ang);
+            const pts = traceFieldLine(startX, startY, 1, 400);
+            drawFieldLine(pts);
+        }
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawFieldLines();
+    drawCompasses();
+    if (horseshoe) horseshoe.draw(ctx);
+    for (const m of magnets) m.draw(ctx);
+}
+
+let dragging = null;
+let dragOffset = { x: 0, y: 0 };
+
+function getPointerPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+}
+
+function onPointerDown(e) {
+    e.preventDefault();
+    const pos = getPointerPos(e);
+    for (let i = magnets.length - 1; i >= 0; i--) {
+        if (magnets[i].containsPoint(pos.x, pos.y)) {
+            dragging = magnets[i];
+            dragOffset = { x: pos.x - magnets[i].x, y: pos.y - magnets[i].y };
+            return;
+        }
+    }
+    if (horseshoe && horseshoe.containsPoint(pos.x, pos.y)) {
+        dragging = horseshoe;
+        dragOffset = { x: pos.x - horseshoe.x, y: pos.y - horseshoe.y };
+    }
+}
+
+function onPointerMove(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const pos = getPointerPos(e);
+    dragging.x = pos.x - dragOffset.x;
+    dragging.y = pos.y - dragOffset.y;
+    draw();
+}
+
+function onPointerUp() { dragging = null; }
+
+canvas.addEventListener('mousedown', onPointerDown);
+canvas.addEventListener('mousemove', onPointerMove);
+canvas.addEventListener('mouseup', onPointerUp);
+canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+canvas.addEventListener('touchmove', onPointerMove, { passive: false });
+canvas.addEventListener('touchend', onPointerUp);
+
+document.getElementById('modeSelect').addEventListener('change', e => {
+    mode = e.target.value;
+    document.getElementById('flipMagnet2').classList.toggle('hidden', mode !== 'two');
+    initMagnets();
+    draw();
+});
+
+document.getElementById('densitySlider').addEventListener('input', e => {
+    fieldLineDensity = parseInt(e.target.value);
+    document.getElementById('densityVal').textContent = fieldLineDensity;
+    draw();
+});
+
+document.getElementById('showCompass').addEventListener('change', e => {
+    showCompass = e.target.checked;
+    draw();
+});
+
+document.getElementById('showArrows').addEventListener('change', e => {
+    showArrows = e.target.checked;
+    draw();
+});
+
+document.getElementById('flipMagnet2').addEventListener('click', () => {
+    if (magnets.length > 1) {
+        magnets[1].flipped = !magnets[1].flipped;
+        draw();
+    }
+});
+
+function resetPositions() {
+    initMagnets();
+    draw();
+}
+
+initMagnets();
+draw();
+
+window.addEventListener('resize', () => { resizeCanvas(); initMagnets(); draw(); });
+
+// --- i18n ---
+const translations = {
+    en: {
+        'nav.back': 'Back to Home',
+        'title': 'Magnetic Field Visualizer',
+        'subtitle': 'Explore magnetic poles, field lines, and compass behaviour',
+        'canvas.hint': 'Drag magnets to reposition them. Compasses follow the net field.',
+        'controls.title': 'Controls',
+        'controls.mode': 'Mode',
+        'mode.bar': 'Bar Magnet',
+        'mode.two': 'Two Bar Magnets',
+        'mode.horseshoe': 'Horseshoe Magnet',
+        'controls.fieldlines': 'Field Line Density',
+        'controls.lines': 'lines',
+        'controls.compass': 'Show Compasses',
+        'controls.arrows': 'Show Field Arrows',
+        'controls.flip': 'Flip 2nd Magnet',
+        'controls.reset': 'Reset Positions',
+        'legend.title': 'Legend',
+        'legend.north': 'North Pole (N)',
+        'legend.south': 'South Pole (S)',
+        'legend.fieldline': 'Field Lines (N → S)',
+        'legend.compass': 'Compass Needles',
+        'info.title': 'Key Concepts',
+        'info.1': 'Like poles repel; unlike poles attract.',
+        'info.2': 'Field lines go from N to S outside the magnet.',
+        'info.3': 'A compass needle aligns with the local field direction.',
+        'info.4': 'Field strength is stronger where lines are closer together.'
+    },
+    zh: {
+        'nav.back': '返回首頁',
+        'title': '磁場可視化器',
+        'subtitle': '探索磁極、磁力線和指南針的行為',
+        'canvas.hint': '拖動磁鐵重新定位。指南針跟隨淨磁場方向。',
+        'controls.title': '控制面板',
+        'controls.mode': '模式',
+        'mode.bar': '條形磁鐵',
+        'mode.two': '兩個條形磁鐵',
+        'mode.horseshoe': '馬蹄形磁鐵',
+        'controls.fieldlines': '磁力線密度',
+        'controls.lines': '條',
+        'controls.compass': '顯示指南針',
+        'controls.arrows': '顯示磁場箭頭',
+        'controls.flip': '翻轉第二塊磁鐵',
+        'controls.reset': '重置位置',
+        'legend.title': '圖例',
+        'legend.north': '北極 (N)',
+        'legend.south': '南極 (S)',
+        'legend.fieldline': '磁力線 (N → S)',
+        'legend.compass': '指南針',
+        'info.title': '核心概念',
+        'info.1': '同極相斥；異極相吸。',
+        'info.2': '磁力線在磁鐵外部從 N 極到 S 極。',
+        'info.3': '指南針指向局部磁場方向。',
+        'info.4': '磁力線越密集，磁場越強。'
+    },
+    cn: {
+        'nav.back': '返回首页',
+        'title': '磁场可视化器',
+        'subtitle': '探索磁极、磁力线和指南针的行为',
+        'canvas.hint': '拖动磁铁重新定位。指南针跟随净磁场方向。',
+        'controls.title': '控制面板',
+        'controls.mode': '模式',
+        'mode.bar': '条形磁铁',
+        'mode.two': '两个条形磁铁',
+        'mode.horseshoe': '马蹄形磁铁',
+        'controls.fieldlines': '磁力线密度',
+        'controls.lines': '条',
+        'controls.compass': '显示指南针',
+        'controls.arrows': '显示磁场箭头',
+        'controls.flip': '翻转第二块磁铁',
+        'controls.reset': '重置位置',
+        'legend.title': '图例',
+        'legend.north': '北极 (N)',
+        'legend.south': '南极 (S)',
+        'legend.fieldline': '磁力线 (N → S)',
+        'legend.compass': '指南针',
+        'info.title': '核心概念',
+        'info.1': '同极相斥；异极相吸。',
+        'info.2': '磁力线在磁铁外部从 N 极到 S 极。',
+        'info.3': '指南针指向局部磁场方向。',
+        'info.4': '磁力线越密集，磁场越强。'
+    }
+};
+
+let currentLang = localStorage.getItem('preferred_language') || 'en';
+
+function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('preferred_language', lang);
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+            if (el.tagName === 'OPTION') el.textContent = translations[lang][key];
+            else el.innerText = translations[lang][key];
+        }
+    });
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        if (btn.getAttribute('data-lang') === lang) {
+            btn.classList.add('bg-blue-600', 'text-white');
+            btn.classList.remove('text-slate-600');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('text-slate-600');
+        }
+    });
+    document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+}
+
+window.addEventListener('DOMContentLoaded', () => setLanguage(currentLang));
+</script>
+</body>
+</html>
