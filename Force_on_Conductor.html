@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Force Due to Magnetic Field</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <script>
+        window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, svg: { fontCache: 'global' } };
+    </script>
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
+        .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); }
+        canvas { background-color: white; border-radius: 0.5rem; border: 2px solid #e2e8f0; touch-action: none; }
+        mjx-container { display: inline-block !important; }
+        input[type="range"] { cursor: pointer; }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date()); gtag('config', 'G-RJQ61GJDVS');
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+    <header class="max-w-6xl mx-auto px-6 pt-6 pb-4">
+        <nav class="flex items-center justify-between">
+            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+            </a>
+            <div class="flex gap-2">
+                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
+                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="cn">简</button>
+                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="w-full max-w-6xl mx-auto px-6 pb-16">
+        <div class="glass rounded-3xl p-6 md:p-8 border border-white/60">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-800" data-i18n="title">Force Due to Magnetic Field</h1>
+                <p class="text-md md:text-lg text-slate-600 mt-2" data-i18n="subtitle">F = BIl sinθ on conductors & F = BQv sinθ on moving charges</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <div class="w-full aspect-[4/3] bg-white rounded-lg shadow-lg border-2 border-slate-200 relative">
+                        <canvas id="forceCanvas"></canvas>
+                    </div>
+                    <div class="mt-2 flex flex-wrap justify-center gap-3">
+                        <button onclick="setView('conductor')" class="view-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-blue-600 text-white" data-view="conductor" data-i18n="view.conductor">Current in B Field</button>
+                        <button onclick="setView('motor')" class="view-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-white border border-slate-200 text-slate-700 hover:border-blue-300" data-view="motor" data-i18n="view.motor">DC Motor</button>
+                        <button onclick="setView('charge')" class="view-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-white border border-slate-200 text-slate-700 hover:border-blue-300" data-view="charge" data-i18n="view.charge">Moving Charge</button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-3" data-i18n="controls.title">Parameters</h2>
+                        <div class="space-y-3">
+                            <div id="bFieldGroup">
+                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.bfield">Magnetic Field B (T)</label>
+                                <input type="range" id="bSlider" min="0.1" max="2" step="0.1" value="1" class="w-full accent-amber-600 mt-1">
+                                <div class="text-xs text-amber-600 text-right font-semibold"><span id="bVal">1.0</span> T</div>
+                            </div>
+                            <div id="currentGroup">
+                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.current">Current I (A)</label>
+                                <input type="range" id="iSlider" min="0.5" max="10" step="0.5" value="5" class="w-full accent-green-600 mt-1">
+                                <div class="text-xs text-green-600 text-right font-semibold"><span id="iVal">5.0</span> A</div>
+                            </div>
+                            <div id="lengthGroup">
+                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.length">Wire Length l (m)</label>
+                                <input type="range" id="lSlider" min="0.05" max="0.5" step="0.05" value="0.2" class="w-full accent-slate-600 mt-1">
+                                <div class="text-xs text-slate-600 text-right font-semibold"><span id="lVal">0.20</span> m</div>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.angle">Angle θ (°)</label>
+                                <input type="range" id="thetaSlider" min="0" max="180" step="5" value="90" class="w-full accent-purple-600 mt-1">
+                                <div class="text-xs text-purple-600 text-right font-semibold"><span id="thetaVal">90</span>°</div>
+                            </div>
+                            <div id="chargeGroup" class="hidden">
+                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.charge">Charge (positive/negative)</label>
+                                <div class="flex gap-2 mt-1">
+                                    <button onclick="setCharge(1)" id="chargePos" class="flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold bg-red-500 text-white transition">+ <span data-i18n="charge.pos">Positive</span></button>
+                                    <button onclick="setCharge(-1)" id="chargeNeg" class="flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold bg-white border border-slate-200 text-slate-600 transition">− <span data-i18n="charge.neg">Negative</span></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="formulaCard" class="bg-red-50 rounded-2xl border border-red-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="formula.title">Formula</h2>
+                        <div id="formulaContent" class="text-center text-lg text-red-900 font-serif py-2">
+                            $F = BIl\sin\theta$
+                        </div>
+                        <div id="formulaResult" class="mt-2 text-center">
+                            <span class="text-slate-600 text-sm">F = </span>
+                            <span id="fDisplay" class="text-lg font-bold text-red-600">1.00 N</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="legend.title">Legend</h2>
+                        <ul class="space-y-2 text-sm">
+                            <li class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-red-600"></span>
+                                <span class="text-slate-700" data-i18n="legend.force">Force (F)</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-green-600"></span>
+                                <span class="text-slate-700" data-i18n="legend.current">Current (I) / Velocity (v)</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                                <span class="text-slate-700" data-i18n="legend.bfield">Magnetic Field (B)</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-blue-50 rounded-2xl border border-blue-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="info.title">Key Concepts</h2>
+                        <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
+                            <li data-i18n="info.1">F = BIl sinθ for a current-carrying conductor.</li>
+                            <li data-i18n="info.2">F = BQv sinθ for a moving charge in a field.</li>
+                            <li data-i18n="info.3">Use Fleming's left-hand rule: First finger = B, seCond finger = I, thuMb = F.</li>
+                            <li data-i18n="info.4">A DC motor uses the turning effect of F on a coil in a magnetic field.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('forceCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    const parent = canvas.parentElement;
+    canvas.width = parent.clientWidth;
+    canvas.height = parent.clientHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', () => { resizeCanvas(); draw(); });
+
+const RED = '#DC2626';
+const GREEN = '#16A34A';
+const AMBER = '#D97706';
+const PURPLE = '#9333EA';
+const BLUE = '#2563EB';
+const SLATE = '#475569';
+
+let view = 'conductor';
+let B = 1.0, I = 5.0, l = 0.2, theta = 90, chargeSign = 1;
+let motorAngle = 0;
+let motorAnimId = null;
+
+function setView(v) {
+    view = v;
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        if (btn.getAttribute('data-view') === v) {
+            btn.classList.add('bg-blue-600', 'text-white');
+            btn.classList.remove('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+        }
+    });
+
+    document.getElementById('currentGroup').style.display = (v === 'charge') ? 'none' : '';
+    document.getElementById('lengthGroup').style.display = (v === 'charge') ? 'none' : '';
+    document.getElementById('chargeGroup').classList.toggle('hidden', v !== 'charge');
+    document.getElementById('thetaSlider').parentElement.style.display = (v === 'motor') ? 'none' : '';
+
+    if (v === 'motor') {
+        theta = 90;
+        document.getElementById('thetaSlider').value = 90;
+        document.getElementById('thetaVal').textContent = '90';
+        startMotor();
+    } else {
+        stopMotor();
+    }
+
+    updateFormula();
+    draw();
+}
+
+function setCharge(s) {
+    chargeSign = s;
+    const pos = document.getElementById('chargePos');
+    const neg = document.getElementById('chargeNeg');
+    if (s === 1) {
+        pos.classList.add('bg-red-500', 'text-white');
+        pos.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+        neg.classList.remove('bg-blue-500', 'text-white');
+        neg.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+    } else {
+        neg.classList.add('bg-blue-500', 'text-white');
+        neg.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+        pos.classList.remove('bg-red-500', 'text-white');
+        pos.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+    }
+    draw();
+}
+
+function updateFormula() {
+    const fc = document.getElementById('formulaContent');
+    if (view === 'charge') {
+        fc.innerHTML = '$F = BQv\\sin\\theta$';
+    } else {
+        fc.innerHTML = '$F = BIl\\sin\\theta$';
+    }
+    if (window.MathJax && window.MathJax.typeset) MathJax.typeset([fc]);
+    updateResult();
+}
+
+function updateResult() {
+    let F;
+    if (view === 'charge') {
+        const v = 1e6;
+        const Q = 1.6e-19;
+        F = B * Q * v * Math.sin(theta * Math.PI / 180);
+    } else {
+        F = B * I * l * Math.sin(theta * Math.PI / 180);
+    }
+    const el = document.getElementById('fDisplay');
+    if (view === 'charge') {
+        if (F === 0) {
+            el.textContent = '0 N';
+        } else {
+            const exp = Math.floor(Math.log10(Math.abs(F)));
+            const coeff = F / Math.pow(10, exp);
+            const map = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+            const sup = String(exp).split('').map(c => map[c] || c).join('');
+            el.textContent = coeff.toFixed(2) + ' × 10' + sup + ' N';
+        }
+    } else {
+        el.textContent = F.toFixed(2) + ' N';
+    }
+}
+
+function drawArrow(x1, y1, x2, y2, color, lineW) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    if (len < 2) return;
+    const ux = dx / len, uy = dy / len;
+    const headLen = Math.min(12, len * 0.3);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineW || 2.5;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2 - ux * headLen * 0.5, y2 - uy * headLen * 0.5);
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - ux * headLen - uy * headLen * 0.4, y2 - uy * headLen + ux * headLen * 0.4);
+    ctx.lineTo(x2 - ux * headLen + uy * headLen * 0.4, y2 - uy * headLen - ux * headLen * 0.4);
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawBFieldSymbols(x0, y0, w, h, into) {
+    const spacing = 35;
+    ctx.font = '14px Inter, sans-serif';
+    ctx.fillStyle = AMBER;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const symbol = into ? '×' : '·';
+    for (let x = x0 + spacing / 2; x < x0 + w; x += spacing) {
+        for (let y = y0 + spacing / 2; y < y0 + h; y += spacing) {
+            if (into) {
+                ctx.strokeStyle = AMBER;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(x - 5, y - 5);
+                ctx.lineTo(x + 5, y + 5);
+                ctx.moveTo(x + 5, y - 5);
+                ctx.lineTo(x - 5, y + 5);
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    }
+}
+
+function drawConductorScene() {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const regionW = canvas.width * 0.7;
+    const regionH = canvas.height * 0.7;
+    const rx = cx - regionW / 2;
+    const ry = cy - regionH / 2;
+
+    // B field region
+    ctx.fillStyle = '#FFFBEB';
+    ctx.beginPath();
+    ctx.roundRect(rx, ry, regionW, regionH, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#FCD34D';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    drawBFieldSymbols(rx, ry, regionW, regionH, true);
+
+    ctx.font = 'italic bold 16px Inter, sans-serif';
+    ctx.fillStyle = AMBER;
+    ctx.textAlign = 'left';
+    ctx.fillText('B (into page)', rx + 8, ry + 18);
+
+    // Wire
+    const thetaRad = theta * Math.PI / 180;
+    const wireLen = Math.min(regionW, regionH) * 0.55;
+    const wx1 = cx - wireLen / 2 * Math.cos(thetaRad);
+    const wy1 = cy + wireLen / 2 * Math.sin(thetaRad);
+    const wx2 = cx + wireLen / 2 * Math.cos(thetaRad);
+    const wy2 = cy - wireLen / 2 * Math.sin(thetaRad);
+
+    ctx.strokeStyle = SLATE;
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(wx1, wy1);
+    ctx.lineTo(wx2, wy2);
+    ctx.stroke();
+
+    // Current arrow along wire
+    const iLen = 50;
+    const iDir = thetaRad;
+    drawArrow(cx - iLen * Math.cos(iDir), cy + iLen * Math.sin(iDir),
+              cx + iLen * Math.cos(iDir), cy - iLen * Math.sin(iDir), GREEN, 3);
+
+    // I label
+    ctx.fillStyle = GREEN;
+    ctx.font = 'italic bold 16px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('I', cx + (iLen + 12) * Math.cos(iDir), cy - (iLen + 12) * Math.sin(iDir));
+
+    // Force arrow (perpendicular using cross product I × B)
+    // B is into page (0,0,-1), I is (cosθ, -sinθ, 0)
+    // F = I × B → (−sinθ·(−1) − 0, 0 − cosθ·(−1), 0) = (sinθ, cosθ, 0)
+    const sinT = Math.sin(thetaRad);
+    const cosT = Math.cos(thetaRad);
+    const fMag = B * I * l * sinT;
+    const fScale = Math.min(80, 20 + fMag * 8);
+    const fx = sinT;
+    const fy = cosT;
+
+    if (fMag > 0.01) {
+        drawArrow(cx, cy, cx + fx * fScale, cy - fy * fScale, RED, 3.5);
+        ctx.fillStyle = RED;
+        ctx.font = 'italic bold 16px Inter, sans-serif';
+        ctx.fillText('F', cx + fx * (fScale + 15), cy - fy * (fScale + 15));
+    }
+
+    // Angle arc
+    if (theta > 0 && theta < 180) {
+        ctx.strokeStyle = PURPLE;
+        ctx.lineWidth = 1.5;
+        const arcR = 30;
+        ctx.beginPath();
+        ctx.arc(cx, cy, arcR, -thetaRad, 0);
+        ctx.stroke();
+        ctx.fillStyle = PURPLE;
+        ctx.font = '13px Inter, sans-serif';
+        const midAngle = -thetaRad / 2;
+        ctx.fillText('θ', cx + (arcR + 12) * Math.cos(midAngle), cy + (arcR + 12) * Math.sin(midAngle));
+    }
+
+    // Hint
+    ctx.font = '13px Inter, sans-serif';
+    ctx.fillStyle = SLATE;
+    ctx.textAlign = 'center';
+    const hint = translations[currentLang]?.['canvas.flhr'] || "Fleming's left-hand rule: First = B, seCond = I, thuMb = F";
+    ctx.fillText(hint, cx, canvas.height - 15);
+}
+
+function startMotor() {
+    if (motorAnimId) return;
+    function animate() {
+        motorAngle += 0.02 * B * I;
+        draw();
+        motorAnimId = requestAnimationFrame(animate);
+    }
+    motorAnimId = requestAnimationFrame(animate);
+}
+
+function stopMotor() {
+    if (motorAnimId) {
+        cancelAnimationFrame(motorAnimId);
+        motorAnimId = null;
+    }
+    motorAngle = 0;
+}
+
+function drawMotorScene() {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+
+    // Magnet poles
+    const magnetW = 40;
+    const magnetH = canvas.height * 0.5;
+    const gapX = canvas.width * 0.35;
+
+    // Left magnet (N)
+    ctx.fillStyle = RED;
+    ctx.beginPath();
+    ctx.roundRect(cx - gapX - magnetW, cy - magnetH / 2, magnetW, magnetH, [8, 0, 0, 8]);
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 20px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('N', cx - gapX - magnetW / 2, cy);
+
+    // Right magnet (S)
+    ctx.fillStyle = BLUE;
+    ctx.beginPath();
+    ctx.roundRect(cx + gapX, cy - magnetH / 2, magnetW, magnetH, [0, 8, 8, 0]);
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.fillText('S', cx + gapX + magnetW / 2, cy);
+
+    // B field arrows between magnets
+    const nB = 5;
+    const bSpacing = magnetH / (nB + 1);
+    for (let i = 1; i <= nB; i++) {
+        const by = cy - magnetH / 2 + i * bSpacing;
+        drawArrow(cx - gapX + 10, by, cx + gapX - 10, by, AMBER, 1.5);
+    }
+    ctx.fillStyle = AMBER;
+    ctx.font = 'italic bold 14px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('B', cx, cy - magnetH / 2 + 12);
+
+    // Rotating coil
+    const coilW = gapX * 1.2;
+    const coilH = magnetH * 0.5;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(motorAngle);
+
+    // Coil rectangle
+    const halfW = coilW / 2 * Math.cos(0);
+    const projW = coilW / 2;
+    ctx.strokeStyle = SLATE;
+    ctx.lineWidth = 4;
+    ctx.strokeRect(-projW, -coilH / 2, projW * 2, coilH);
+
+    // Current direction arrows on coil sides
+    // Left side: up
+    drawArrow(-projW, coilH / 4, -projW, -coilH / 4, GREEN, 2.5);
+    // Right side: down
+    drawArrow(projW, -coilH / 4, projW, coilH / 4, GREEN, 2.5);
+
+    // Force arrows on left and right sides
+    const fMag2 = Math.min(40, 10 + B * I * 5);
+    drawArrow(-projW, 0, -projW - fMag2, 0, RED, 3);
+    drawArrow(projW, 0, projW + fMag2, 0, RED, 3);
+
+    ctx.restore();
+
+    // Axle
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#64748B';
+    ctx.fill();
+
+    // Commutator (simplified)
+    ctx.beginPath();
+    ctx.arc(cx, cy + coilH / 2 + 15, 10, 0, Math.PI * 2);
+    ctx.fillStyle = '#94A3B8';
+    ctx.fill();
+    ctx.strokeStyle = SLATE;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Brush contacts
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(cx - 18, cy + coilH / 2 + 25, 8, 12);
+    ctx.fillRect(cx + 10, cy + coilH / 2 + 25, 8, 12);
+
+    // Labels
+    ctx.font = '13px Inter, sans-serif';
+    ctx.fillStyle = SLATE;
+    ctx.textAlign = 'center';
+    const motorHint = translations[currentLang]?.['canvas.motor'] || 'Simple DC motor: coil rotates due to forces on current-carrying sides';
+    ctx.fillText(motorHint, cx, canvas.height - 15);
+}
+
+function drawChargeScene() {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const regionW = canvas.width * 0.7;
+    const regionH = canvas.height * 0.7;
+    const rx = cx - regionW / 2;
+    const ry = cy - regionH / 2;
+
+    // B field region
+    ctx.fillStyle = '#FFFBEB';
+    ctx.beginPath();
+    ctx.roundRect(rx, ry, regionW, regionH, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#FCD34D';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    drawBFieldSymbols(rx, ry, regionW, regionH, true);
+
+    ctx.font = 'italic bold 16px Inter, sans-serif';
+    ctx.fillStyle = AMBER;
+    ctx.textAlign = 'left';
+    ctx.fillText('B (into page)', rx + 8, ry + 18);
+
+    // Charge particle
+    const particleR = 16;
+    ctx.beginPath();
+    ctx.arc(cx, cy, particleR, 0, Math.PI * 2);
+    ctx.fillStyle = chargeSign === 1 ? '#FEE2E2' : '#DBEAFE';
+    ctx.fill();
+    ctx.strokeStyle = chargeSign === 1 ? RED : BLUE;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = chargeSign === 1 ? RED : BLUE;
+    ctx.font = 'bold 18px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(chargeSign === 1 ? '+' : '−', cx, cy);
+
+    // Velocity arrow
+    const thetaRad = theta * Math.PI / 180;
+    const vLen = 60;
+    const vx = Math.cos(thetaRad);
+    const vy = -Math.sin(thetaRad);
+    drawArrow(cx + particleR * vx, cy + particleR * vy,
+              cx + (particleR + vLen) * vx, cy + (particleR + vLen) * vy, GREEN, 3);
+    ctx.fillStyle = GREEN;
+    ctx.font = 'italic bold 16px Inter, sans-serif';
+    ctx.fillText('v', cx + (particleR + vLen + 15) * vx, cy + (particleR + vLen + 15) * vy);
+
+    // Force on charge: F = qv × B
+    // v = (cosθ, -sinθ, 0), B = (0, 0, -1)
+    // v × B = (-sinθ·(-1), -(cosθ·(-1)), 0) = (sinθ, cosθ, 0)
+    // For positive charge, F in this direction; for negative, opposite
+    const sinT = Math.sin(thetaRad);
+    const cosT = Math.cos(thetaRad);
+    const fDir = chargeSign;
+    const fScale = 50 * sinT;
+
+    if (sinT > 0.01) {
+        const fx = fDir * sinT;
+        const fy = -fDir * cosT;
+        drawArrow(cx + particleR * fx * 0.5, cy + particleR * fy * 0.5,
+                  cx + (particleR + fScale) * fx, cy + (particleR + fScale) * fy, RED, 3.5);
+        ctx.fillStyle = RED;
+        ctx.fillText('F', cx + (particleR + fScale + 15) * fx, cy + (particleR + fScale + 15) * fy);
+    }
+
+    // Angle arc
+    if (theta > 0 && theta < 180) {
+        ctx.strokeStyle = PURPLE;
+        ctx.lineWidth = 1.5;
+        const arcR = 35;
+        ctx.beginPath();
+        ctx.arc(cx, cy, arcR, -thetaRad, 0);
+        ctx.stroke();
+        ctx.fillStyle = PURPLE;
+        ctx.font = '13px Inter, sans-serif';
+        const midA = -thetaRad / 2;
+        ctx.fillText('θ', cx + (arcR + 12) * Math.cos(midA), cy + (arcR + 12) * Math.sin(midA));
+    }
+
+    // Hint
+    ctx.font = '13px Inter, sans-serif';
+    ctx.fillStyle = SLATE;
+    ctx.textAlign = 'center';
+    const hint = translations[currentLang]?.['canvas.charge'] || 'F = BQvsinθ — force is perpendicular to both v and B';
+    ctx.fillText(hint, cx, canvas.height - 15);
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (view === 'conductor') drawConductorScene();
+    else if (view === 'motor') drawMotorScene();
+    else drawChargeScene();
+}
+
+// Slider listeners
+document.getElementById('bSlider').addEventListener('input', e => {
+    B = parseFloat(e.target.value);
+    document.getElementById('bVal').textContent = B.toFixed(1);
+    updateResult(); draw();
+});
+document.getElementById('iSlider').addEventListener('input', e => {
+    I = parseFloat(e.target.value);
+    document.getElementById('iVal').textContent = I.toFixed(1);
+    updateResult(); draw();
+});
+document.getElementById('lSlider').addEventListener('input', e => {
+    l = parseFloat(e.target.value);
+    document.getElementById('lVal').textContent = l.toFixed(2);
+    updateResult(); draw();
+});
+document.getElementById('thetaSlider').addEventListener('input', e => {
+    theta = parseInt(e.target.value);
+    document.getElementById('thetaVal').textContent = theta;
+    updateResult(); draw();
+});
+
+setView('conductor');
+
+// --- i18n ---
+const translations = {
+    en: {
+        'nav.back': 'Back to Home',
+        'title': 'Force Due to Magnetic Field',
+        'subtitle': 'F = BIl sinθ on conductors & F = BQv sinθ on moving charges',
+        'view.conductor': 'Current in B Field',
+        'view.motor': 'DC Motor',
+        'view.charge': 'Moving Charge',
+        'controls.title': 'Parameters',
+        'controls.bfield': 'Magnetic Field B (T)',
+        'controls.current': 'Current I (A)',
+        'controls.length': 'Wire Length l (m)',
+        'controls.angle': 'Angle θ (°)',
+        'controls.charge': 'Charge (positive/negative)',
+        'charge.pos': 'Positive',
+        'charge.neg': 'Negative',
+        'formula.title': 'Formula',
+        'legend.title': 'Legend',
+        'legend.force': 'Force (F)',
+        'legend.current': 'Current (I) / Velocity (v)',
+        'legend.bfield': 'Magnetic Field (B)',
+        'info.title': 'Key Concepts',
+        'info.1': 'F = BIl sinθ for a current-carrying conductor.',
+        'info.2': 'F = BQv sinθ for a moving charge in a field.',
+        'info.3': "Fleming's left-hand rule: First = B, seCond = I, thuMb = F.",
+        'info.4': 'A DC motor uses the turning effect of F on a coil in a magnetic field.',
+        'canvas.flhr': "Fleming's left-hand rule: First = B, seCond = I, thuMb = F",
+        'canvas.motor': 'Simple DC motor: coil rotates due to forces on current-carrying sides',
+        'canvas.charge': 'F = BQvsinθ — force is perpendicular to both v and B'
+    },
+    zh: {
+        'nav.back': '返回首頁',
+        'title': '磁場對電流的作用力',
+        'subtitle': '導體受力 F = BIl sinθ & 運動電荷受力 F = BQv sinθ',
+        'view.conductor': '電流在磁場中',
+        'view.motor': '直流電動機',
+        'view.charge': '運動電荷',
+        'controls.title': '參數',
+        'controls.bfield': '磁場 B (T)',
+        'controls.current': '電流 I (A)',
+        'controls.length': '導線長度 l (m)',
+        'controls.angle': '角度 θ (°)',
+        'controls.charge': '電荷（正/負）',
+        'charge.pos': '正電荷',
+        'charge.neg': '負電荷',
+        'formula.title': '公式',
+        'legend.title': '圖例',
+        'legend.force': '力 (F)',
+        'legend.current': '電流 (I) / 速度 (v)',
+        'legend.bfield': '磁場 (B)',
+        'info.title': '核心概念',
+        'info.1': '載流導體受力 F = BIl sinθ。',
+        'info.2': '運動電荷受力 F = BQv sinθ。',
+        'info.3': '弗萊明左手定則：食指 = B，中指 = I，拇指 = F。',
+        'info.4': '直流電動機利用磁場中線圈受力的轉動效應。',
+        'canvas.flhr': '弗萊明左手定則：食指 = B，中指 = I，拇指 = F',
+        'canvas.motor': '簡單直流電動機：線圈因載流邊受力而轉動',
+        'canvas.charge': 'F = BQvsinθ — 力垂直於 v 和 B'
+    },
+    cn: {
+        'nav.back': '返回首页',
+        'title': '磁场对电流的作用力',
+        'subtitle': '导体受力 F = BIl sinθ & 运动电荷受力 F = BQv sinθ',
+        'view.conductor': '电流在磁场中',
+        'view.motor': '直流电动机',
+        'view.charge': '运动电荷',
+        'controls.title': '参数',
+        'controls.bfield': '磁场 B (T)',
+        'controls.current': '电流 I (A)',
+        'controls.length': '导线长度 l (m)',
+        'controls.angle': '角度 θ (°)',
+        'controls.charge': '电荷（正/负）',
+        'charge.pos': '正电荷',
+        'charge.neg': '负电荷',
+        'formula.title': '公式',
+        'legend.title': '图例',
+        'legend.force': '力 (F)',
+        'legend.current': '电流 (I) / 速度 (v)',
+        'legend.bfield': '磁场 (B)',
+        'info.title': '核心概念',
+        'info.1': '载流导体受力 F = BIl sinθ。',
+        'info.2': '运动电荷受力 F = BQv sinθ。',
+        'info.3': '弗莱明左手定则：食指 = B，中指 = I，拇指 = F。',
+        'info.4': '直流电动机利用磁场中线圈受力的转动效应。',
+        'canvas.flhr': '弗莱明左手定则：食指 = B，中指 = I，拇指 = F',
+        'canvas.motor': '简单直流电动机：线圈因载流边受力而转动',
+        'canvas.charge': 'F = BQvsinθ — 力垂直于 v 和 B'
+    }
+};
+
+let currentLang = localStorage.getItem('preferred_language') || 'en';
+
+function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('preferred_language', lang);
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+            if (el.tagName === 'OPTION') el.textContent = translations[lang][key];
+            else el.innerText = translations[lang][key];
+        }
+    });
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        if (btn.getAttribute('data-lang') === lang) {
+            btn.classList.add('bg-blue-600', 'text-white');
+            btn.classList.remove('text-slate-600');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('text-slate-600');
+        }
+    });
+    document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+    updateFormula();
+    draw();
+}
+
+window.addEventListener('DOMContentLoaded', () => setLanguage(currentLang));
+</script>
+</body>
+</html>
