@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inclined Plane and Newton's Laws (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+  <header class="max-w-6xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between gap-3">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+        <span>←</span><span data-i18n="back">Back to Topics</span>
+      </a>
+      <div class="flex gap-2">
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" data-lang="en" onclick="updateLanguage('en')">EN</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" data-lang="zh-hk" onclick="updateLanguage('zh-hk')">繁</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 pb-10">
+    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-5 md:p-7 shadow-sm">
+      <h1 class="text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">Inclined Plane: Newton's Laws</h1>
+      <p class="mt-2 text-slate-600" data-i18n="subtitle">Resolve forces along the slope and observe acceleration direction.</p>
+    </section>
+
+    <section class="mt-5 grid lg:grid-cols-3 gap-4">
+      <article class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
+        <canvas id="simCanvas" width="960" height="520" class="w-full rounded-xl border border-slate-200 bg-slate-50"></canvas>
+      </article>
+      <aside class="space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+
+          <label class="block text-sm text-slate-700" for="mass">
+            <span data-i18n="mass">Mass m (kg)</span>: <span id="massValue" class="font-semibold text-blue-600">2.0</span>
+          </label>
+          <input id="mass" type="range" min="0.5" max="8" step="0.1" value="2" class="w-full accent-blue-600 mb-3">
+
+          <label class="block text-sm text-slate-700" for="angle">
+            <span data-i18n="angle">Incline angle θ (°)</span>: <span id="angleValue" class="font-semibold text-blue-600">30.0</span>
+          </label>
+          <input id="angle" type="range" min="5" max="70" step="0.5" value="30" class="w-full accent-blue-600 mb-3">
+
+          <label class="block text-sm text-slate-700" for="mu">
+            <span data-i18n="mu">Friction coefficient μ</span>: <span id="muValue" class="font-semibold text-blue-600">0.20</span>
+          </label>
+          <input id="mu" type="range" min="0" max="1" step="0.01" value="0.2" class="w-full accent-blue-600 mb-3">
+
+          <label class="block text-sm text-slate-700" for="push">
+            <span data-i18n="push">Applied force up slope (N)</span>: <span id="pushValue" class="font-semibold text-blue-600">0.0</span>
+          </label>
+          <input id="push" type="range" min="0" max="80" step="0.5" value="0" class="w-full accent-blue-600 mb-4">
+
+          <div class="flex gap-2">
+            <button id="playBtn" class="flex-1 px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition" data-i18n="play">Start</button>
+            <button id="resetBtn" class="flex-1 px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition" data-i18n="reset">Reset</button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Readings</h2>
+          <div class="space-y-1">
+            <div class="flex justify-between"><span class="text-slate-600">mg sinθ</span><span id="downslopeOut" class="font-semibold text-red-600">9.81 N</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">μN</span><span id="frictionOut" class="font-semibold text-red-600">3.40 N</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="netForce">Net force</span><span id="netOut" class="font-semibold text-red-600">6.41 N</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">a</span><span id="accOut" class="font-semibold text-purple-600">3.21 m/s²</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">v</span><span id="velOut" class="font-semibold text-green-600">0.00 m/s</span></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE Formula Focus</h2>
+          <ul class="list-disc ml-5 space-y-1">
+            <li>F∥ = mg sinθ − μmg cosθ − F<sub>push</sub></li>
+            <li>a = F<sub>net</sub> / m</li>
+            <li>N = mg cosθ</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const g = 9.81;
+    const controls = {
+      mass: document.getElementById('mass'),
+      angle: document.getElementById('angle'),
+      mu: document.getElementById('mu'),
+      push: document.getElementById('push')
+    };
+    const out = {
+      massValue: document.getElementById('massValue'),
+      angleValue: document.getElementById('angleValue'),
+      muValue: document.getElementById('muValue'),
+      pushValue: document.getElementById('pushValue'),
+      downslopeOut: document.getElementById('downslopeOut'),
+      frictionOut: document.getElementById('frictionOut'),
+      netOut: document.getElementById('netOut'),
+      accOut: document.getElementById('accOut'),
+      velOut: document.getElementById('velOut')
+    };
+
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    const playBtn = document.getElementById('playBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const state = { s: 0, v: 0, running: false };
+
+    const translations = {
+      en: {
+        back: 'Back to Topics',
+        title: "Inclined Plane: Newton's Laws",
+        subtitle: 'Resolve forces along the slope and observe acceleration direction.',
+        controls: 'Controls',
+        mass: 'Mass m (kg)',
+        angle: 'Incline angle θ (°)',
+        mu: 'Friction coefficient μ',
+        push: 'Applied force up slope (N)',
+        play: 'Start',
+        reset: 'Reset',
+        readings: 'Readings',
+        netForce: 'Net force',
+        formulaTitle: 'HKDSE Formula Focus'
+      },
+      'zh-hk': {
+        back: '返回主題頁',
+        title: '斜面運動：牛頓定律',
+        subtitle: '把沿斜面方向分力後，觀察加速度方向及大小。',
+        controls: '控制面板',
+        mass: '質量 m (kg)',
+        angle: '斜面角度 θ (°)',
+        mu: '摩擦系數 μ',
+        push: '沿斜面向上外力 (N)',
+        play: '開始',
+        reset: '重設',
+        readings: '讀數',
+        netForce: '合力',
+        formulaTitle: 'HKDSE 重點公式'
+      }
+    };
+
+    function params() {
+      const m = Number(controls.mass.value);
+      const thetaDeg = Number(controls.angle.value);
+      const theta = thetaDeg * Math.PI / 180;
+      const mu = Number(controls.mu.value);
+      const push = Number(controls.push.value);
+      const downslope = m * g * Math.sin(theta);
+      const normal = m * g * Math.cos(theta);
+      const friction = mu * normal;
+      const net = downslope - friction - push;
+      const a = net / m;
+      return { m, thetaDeg, theta, mu, push, downslope, normal, friction, net, a };
+    }
+
+    function updateOutputs() {
+      const p = params();
+      out.massValue.textContent = p.m.toFixed(1);
+      out.angleValue.textContent = p.thetaDeg.toFixed(1);
+      out.muValue.textContent = p.mu.toFixed(2);
+      out.pushValue.textContent = p.push.toFixed(1);
+      out.downslopeOut.textContent = `${p.downslope.toFixed(2)} N`;
+      out.frictionOut.textContent = `${p.friction.toFixed(2)} N`;
+      out.netOut.textContent = `${p.net.toFixed(2)} N`;
+      out.accOut.textContent = `${p.a.toFixed(2)} m/s²`;
+      out.velOut.textContent = `${state.v.toFixed(2)} m/s`;
+    }
+
+    function drawArrow(x1, y1, x2, y2, color) {
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      const ang = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - 12 * Math.cos(ang - 0.35), y2 - 12 * Math.sin(ang - 0.35));
+      ctx.lineTo(x2 - 12 * Math.cos(ang + 0.35), y2 - 12 * Math.sin(ang + 0.35));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawScene() {
+      const p = params();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const originX = 140;
+      const originY = 430;
+      const slopeLen = 620;
+      const topX = originX + slopeLen;
+      const topY = originY - slopeLen * Math.tan(p.theta) * 0.45;
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.beginPath();
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(topX, topY);
+      ctx.lineTo(topX, originY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      const maxS = slopeLen * 0.7;
+      state.s = Math.max(0, Math.min(maxS, state.s));
+      const ux = (topX - originX) / slopeLen;
+      const uy = (topY - originY) / slopeLen;
+      const blockX = originX + ux * state.s;
+      const blockY = originY + uy * state.s;
+
+      ctx.save();
+      ctx.translate(blockX, blockY);
+      ctx.rotate(Math.atan2(uy, ux));
+      ctx.fillStyle = '#2563eb';
+      ctx.fillRect(-24, -24, 48, 48);
+      ctx.restore();
+
+      drawArrow(blockX, blockY, blockX + ux * 80, blockY + uy * 80, '#DC2626');
+      drawArrow(blockX, blockY, blockX + ux * 60, blockY + uy * 60, '#16A34A');
+      drawArrow(blockX, blockY, blockX + ux * 50, blockY + uy * 50, '#9333EA');
+      ctx.fillStyle = '#334155';
+      ctx.font = '14px Inter';
+      ctx.fillText('F', blockX + ux * 85, blockY + uy * 85);
+      ctx.fillText('v', blockX + ux * 65, blockY + uy * 65);
+      ctx.fillText('a', blockX + ux * 55, blockY + uy * 55);
+    }
+
+    let last = performance.now();
+    function animate(now) {
+      const dt = Math.min(0.03, (now - last) / 1000);
+      last = now;
+      if (state.running) {
+        const p = params();
+        state.v += p.a * dt;
+        state.s += state.v * 90 * dt;
+      }
+      drawScene();
+      updateOutputs();
+      requestAnimationFrame(animate);
+    }
+
+    function reset() {
+      state.running = false;
+      state.s = 40;
+      state.v = 0;
+      updateOutputs();
+      drawScene();
+    }
+
+    function updateLanguage(lang) {
+      localStorage.setItem('preferred_language', lang);
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+          el.innerText = translations[lang][key];
+        }
+      });
+      document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+      document.querySelectorAll('.lang-btn').forEach((btn) => {
+        const active = btn.dataset.lang === lang;
+        btn.classList.toggle('bg-blue-600', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('text-slate-600', !active);
+      });
+    }
+
+    Object.values(controls).forEach((input) => input.addEventListener('input', () => { state.running = false; updateOutputs(); }));
+    playBtn.addEventListener('click', () => { state.running = true; });
+    resetBtn.addEventListener('click', reset);
+
+    reset();
+    updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
