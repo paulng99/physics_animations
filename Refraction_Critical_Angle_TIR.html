@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Refraction, Critical Angle and TIR (HKDSE)</title>
+  <title>Refraction and TIR Optics Studio (HKDSE)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,10 +11,11 @@
   <style>
     body { font-family: 'Inter', sans-serif; }
     mjx-container { display: inline-block !important; }
+    .glass { background: rgba(255, 255, 255, 0.86); backdrop-filter: blur(10px); }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
-  <header class="max-w-6xl mx-auto px-4 py-4">
+  <header class="max-w-7xl mx-auto px-4 py-4">
     <div class="flex items-center justify-between gap-3">
       <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
         <span>←</span>
@@ -27,53 +28,87 @@
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 pb-10">
-    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-5 md:p-7 shadow-sm">
-      <h1 class="text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">Refraction, Critical Angle & Total Internal Reflection</h1>
-      <p class="mt-2 text-slate-600" data-i18n="subtitle">Adjust refractive indices and incidence angle to observe Snell's law and TIR.</p>
+  <main class="max-w-7xl mx-auto px-4 pb-12">
+    <section class="glass rounded-3xl border border-white/70 p-6 md:p-8 shadow-xl shadow-blue-100/30">
+      <div class="grid lg:grid-cols-[1.4fr_1fr] gap-6">
+        <div>
+          <p class="text-sm font-semibold text-blue-600 uppercase tracking-wide" data-i18n="tag">HKDSE Wave Optics Lab</p>
+          <h1 class="text-2xl md:text-4xl font-extrabold mt-2 text-slate-900" data-i18n="title">Refraction, Critical Angle & TIR Studio</h1>
+          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="subtitle">Drag the incident angle, compare Snell-law calculation with ray path, and switch to optical-fiber mode for repeated total internal reflection.</p>
+        </div>
+        <div class="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-5">
+          <h2 class="font-bold text-lg" data-i18n="focusTitle">Learning Focus</h2>
+          <ul class="mt-2 text-sm space-y-2 leading-relaxed">
+            <li data-i18n="focus1">• Verify n₁sin i = n₂sin r numerically.</li>
+            <li data-i18n="focus2">• Identify denser-to-rarer medium condition for TIR.</li>
+            <li data-i18n="focus3">• Connect critical angle concept with fiber optics.</li>
+          </ul>
+        </div>
+      </div>
     </section>
 
-    <section class="mt-5 grid lg:grid-cols-3 gap-4">
-      <article class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
-        <canvas id="rayCanvas" width="980" height="560" class="w-full rounded-xl border border-slate-200 bg-slate-50"></canvas>
+    <section class="mt-6 grid xl:grid-cols-[1.45fr_1fr] gap-5">
+      <article class="glass rounded-3xl border border-white/70 p-4 md:p-5 shadow-lg shadow-blue-100/30">
+        <canvas id="rayCanvas" width="1200" height="680" class="w-full rounded-2xl border border-slate-200 bg-slate-50 cursor-crosshair"></canvas>
+        <div class="mt-4 grid sm:grid-cols-4 gap-3 text-sm">
+          <div class="rounded-xl bg-red-50 border border-red-200 p-3">
+            <div class="text-red-700 font-semibold" data-i18n="cardInc">Incident</div>
+            <div id="cardI" class="text-red-600 text-lg font-bold">35.0°</div>
+          </div>
+          <div class="rounded-xl bg-green-50 border border-green-200 p-3">
+            <div class="text-green-700 font-semibold" data-i18n="cardRefr">Refracted</div>
+            <div id="cardR" class="text-green-600 text-lg font-bold">22.4°</div>
+          </div>
+          <div class="rounded-xl bg-amber-50 border border-amber-200 p-3">
+            <div class="text-amber-700 font-semibold" data-i18n="cardCritical">Critical</div>
+            <div id="cardC" class="text-amber-600 text-lg font-bold">41.8°</div>
+          </div>
+          <div class="rounded-xl bg-purple-50 border border-purple-200 p-3">
+            <div class="text-purple-700 font-semibold" data-i18n="cardMode">Mode</div>
+            <div id="cardMode" class="text-purple-600 text-lg font-bold">Refraction</div>
+          </div>
+        </div>
       </article>
 
       <aside class="space-y-4">
-        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+        <div class="glass rounded-2xl border border-white/70 p-4">
           <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
 
-          <label class="block text-sm font-medium text-slate-700" for="n1">
-            <span data-i18n="n1">Upper medium n₁</span>: <span id="n1Value" class="font-semibold text-blue-600">1.00</span>
-          </label>
-          <input id="n1" type="range" min="1" max="2" step="0.01" value="1.00" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm text-slate-700 mb-1" for="sceneMode"><span data-i18n="sceneMode">Scene mode</span></label>
+          <select id="sceneMode" class="w-full rounded-lg border border-slate-300 px-3 py-2 mb-3 bg-white">
+            <option value="interface">Single interface</option>
+            <option value="fiber">Optical fiber</option>
+          </select>
 
-          <label class="block text-sm font-medium text-slate-700" for="n2">
-            <span data-i18n="n2">Lower medium n₂</span>: <span id="n2Value" class="font-semibold text-blue-600">1.50</span>
-          </label>
-          <input id="n2" type="range" min="1" max="2.5" step="0.01" value="1.50" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm text-slate-700" for="n1"><span data-i18n="n1">Upper medium n₁</span>: <span id="n1Value" class="font-semibold text-blue-600">1.00</span></label>
+          <input id="n1" type="range" min="1.00" max="2.10" step="0.01" value="1.00" class="w-full accent-blue-600 mb-3" />
 
-          <label class="block text-sm font-medium text-slate-700" for="angle">
-            <span data-i18n="incidence">Incidence angle i (°)</span>: <span id="angleValue" class="font-semibold text-blue-600">35.0</span>
-          </label>
+          <label class="block text-sm text-slate-700" for="n2"><span data-i18n="n2">Lower medium n₂</span>: <span id="n2Value" class="font-semibold text-blue-600">1.50</span></label>
+          <input id="n2" type="range" min="1.00" max="2.50" step="0.01" value="1.50" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm text-slate-700" for="angle"><span data-i18n="incidence">Incidence angle i (°)</span>: <span id="angleValue" class="font-semibold text-blue-600">35.0</span></label>
           <input id="angle" type="range" min="0" max="89" step="0.1" value="35" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm text-slate-700" for="fiberLength"><span data-i18n="fiberLength">Fiber length (m, scaled)</span>: <span id="fiberOut" class="font-semibold text-blue-600">6.0</span></label>
+          <input id="fiberLength" type="range" min="2" max="12" step="0.1" value="6" class="w-full accent-blue-600" />
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Readings</h2>
-          <div class="space-y-1">
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="sinr">sin r</span><span id="sinrOut" class="font-semibold text-green-600">0.382</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="refracted">Refracted angle r</span><span id="rOut" class="font-semibold text-purple-600">22.5°</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="critical">Critical angle c</span><span id="cOut" class="font-semibold text-red-600">41.8°</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="mode">Mode</span><span id="modeOut" class="font-semibold text-amber-600">Refraction</span></div>
+        <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Computed Readings</h2>
+          <div class="space-y-1.5">
+            <div class="flex justify-between"><span class="text-slate-600">sin r</span><span id="sinrOut" class="font-semibold text-green-600">0.382</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="refracted">Refracted angle r</span><span id="rOut" class="font-semibold text-green-600">22.4°</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="critical">Critical angle c</span><span id="cOut" class="font-semibold text-amber-600">41.8°</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="tirCond">TIR condition met</span><span id="tirCondOut" class="font-semibold text-purple-600">No</span></div>
           </div>
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE Formula Focus</h2>
+        <div class="glass rounded-2xl border border-white/70 p-4 text-sm text-slate-700">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">Formula Bank</h2>
           <ul class="list-disc ml-5 space-y-1">
-            <li>n₁ sin i = n₂ sin r</li>
-            <li>For critical angle (n₁ > n₂): sin c = n₂ / n₁</li>
-            <li data-i18n="tirRule">TIR occurs when i > c and light goes from denser to rarer medium.</li>
+            <li><strong>n₁ sin i = n₂ sin r</strong></li>
+            <li><strong>sin c = n₂ / n₁</strong> (for n₁ > n₂)</li>
+            <li data-i18n="tirRule">TIR occurs when i &gt; c and light travels from denser to rarer medium.</li>
           </ul>
         </div>
       </aside>
@@ -81,167 +116,281 @@
   </main>
 
   <script>
-    const n1Input = document.getElementById('n1');
-    const n2Input = document.getElementById('n2');
-    const angleInput = document.getElementById('angle');
-    const n1Value = document.getElementById('n1Value');
-    const n2Value = document.getElementById('n2Value');
-    const angleValue = document.getElementById('angleValue');
-    const sinrOut = document.getElementById('sinrOut');
-    const rOut = document.getElementById('rOut');
-    const cOut = document.getElementById('cOut');
-    const modeOut = document.getElementById('modeOut');
+    const controls = {
+      sceneMode: document.getElementById('sceneMode'),
+      n1: document.getElementById('n1'),
+      n2: document.getElementById('n2'),
+      angle: document.getElementById('angle'),
+      fiberLength: document.getElementById('fiberLength')
+    };
+    const out = {
+      n1Value: document.getElementById('n1Value'),
+      n2Value: document.getElementById('n2Value'),
+      angleValue: document.getElementById('angleValue'),
+      fiberOut: document.getElementById('fiberOut'),
+      sinrOut: document.getElementById('sinrOut'),
+      rOut: document.getElementById('rOut'),
+      cOut: document.getElementById('cOut'),
+      tirCondOut: document.getElementById('tirCondOut'),
+      cardI: document.getElementById('cardI'),
+      cardR: document.getElementById('cardR'),
+      cardC: document.getElementById('cardC'),
+      cardMode: document.getElementById('cardMode')
+    };
 
     const canvas = document.getElementById('rayCanvas');
     const ctx = canvas.getContext('2d');
 
+    let pulse = 0;
+    let dragging = false;
+
     const translations = {
       en: {
         back: 'Back to Topics',
-        title: 'Refraction, Critical Angle & Total Internal Reflection',
-        subtitle: "Adjust refractive indices and incidence angle to observe Snell's law and TIR.",
+        tag: 'HKDSE Wave Optics Lab',
+        title: 'Refraction, Critical Angle & TIR Studio',
+        subtitle: 'Drag the incident angle, compare Snell-law calculation with ray path, and switch to optical-fiber mode for repeated total internal reflection.',
+        focusTitle: 'Learning Focus',
+        focus1: '• Verify n₁sin i = n₂sin r numerically.',
+        focus2: '• Identify denser-to-rarer medium condition for TIR.',
+        focus3: '• Connect critical angle concept with fiber optics.',
         controls: 'Controls',
+        sceneMode: 'Scene mode',
         n1: 'Upper medium n₁',
         n2: 'Lower medium n₂',
         incidence: 'Incidence angle i (°)',
-        readings: 'Readings',
-        sinr: 'sin r',
+        fiberLength: 'Fiber length (m, scaled)',
+        readings: 'Computed Readings',
         refracted: 'Refracted angle r',
         critical: 'Critical angle c',
-        mode: 'Mode',
-        formulaTitle: 'HKDSE Formula Focus',
-        tirRule: 'TIR occurs when i > c and light goes from denser to rarer medium.',
-        refractionMode: 'Refraction',
-        tirMode: 'Total Internal Reflection'
+        tirCond: 'TIR condition met',
+        formulaTitle: 'Formula Bank',
+        tirRule: 'TIR occurs when i > c and light travels from denser to rarer medium.',
+        cardInc: 'Incident',
+        cardRefr: 'Refracted',
+        cardCritical: 'Critical',
+        cardMode: 'Mode',
+        modeRef: 'Refraction',
+        modeTir: 'TIR',
+        yes: 'Yes',
+        no: 'No',
+        singleInterface: 'Single interface',
+        opticalFiber: 'Optical fiber'
       },
       'zh-hk': {
         back: '返回主題頁',
-        title: '折射、臨界角與全內反射',
-        subtitle: '調整折射率及入射角，觀察史涅耳定律及全內反射條件。',
+        tag: 'HKDSE 波動光學實驗室',
+        title: '折射、臨界角與全內反射專業模擬',
+        subtitle: '可拖曳入射角，比較史涅耳定律計算與光線路徑，並切換到光纖模式觀察多次全內反射。',
+        focusTitle: '學習重點',
+        focus1: '• 以數值驗證 n₁sin i = n₂sin r。',
+        focus2: '• 判斷由密入疏時的全內反射條件。',
+        focus3: '• 將臨界角概念連接光纖傳輸。',
         controls: '控制面板',
+        sceneMode: '場景模式',
         n1: '上層介質 n₁',
         n2: '下層介質 n₂',
         incidence: '入射角 i (°)',
-        readings: '讀數',
-        sinr: 'sin r',
+        fiberLength: '光纖長度（比例）',
+        readings: '計算讀數',
         refracted: '折射角 r',
         critical: '臨界角 c',
-        mode: '模式',
-        formulaTitle: 'HKDSE 重點公式',
-        tirRule: '當光由密入疏且 i > c 時，會發生全內反射。',
-        refractionMode: '折射',
-        tirMode: '全內反射'
+        tirCond: '是否達到全內反射',
+        formulaTitle: '公式庫',
+        tirRule: '當 i > c 且光線由密入疏時，會產生全內反射。',
+        cardInc: '入射角',
+        cardRefr: '折射角',
+        cardCritical: '臨界角',
+        cardMode: '模式',
+        modeRef: '折射',
+        modeTir: '全內反射',
+        yes: '是',
+        no: '否',
+        singleInterface: '單一介面',
+        opticalFiber: '光纖模式'
       }
     };
 
+    function getLang() {
+      return document.documentElement.lang === 'zh-HK' ? 'zh-hk' : 'en';
+    }
+
     function compute() {
-      const n1 = Number(n1Input.value);
-      const n2 = Number(n2Input.value);
-      const iDeg = Number(angleInput.value);
-      const iRad = iDeg * Math.PI / 180;
+      const n1 = Number(controls.n1.value);
+      const n2 = Number(controls.n2.value);
+      const iDeg = Number(controls.angle.value);
+      const iRad = (iDeg * Math.PI) / 180;
       const sinr = (n1 / n2) * Math.sin(iRad);
       const hasRefracted = sinr <= 1;
-      const rDeg = hasRefracted ? Math.asin(sinr) * 180 / Math.PI : null;
-      const hasCritical = n1 > n2;
-      const cDeg = hasCritical ? Math.asin(n2 / n1) * 180 / Math.PI : null;
-      const isTIR = hasCritical && iDeg > cDeg;
+      const rDeg = hasRefracted ? (Math.asin(sinr) * 180) / Math.PI : null;
+      const cDeg = n1 > n2 ? (Math.asin(n2 / n1) * 180) / Math.PI : null;
+      const isTIR = cDeg !== null && iDeg > cDeg;
       return { n1, n2, iDeg, iRad, sinr, rDeg, cDeg, isTIR };
     }
 
-    function draw() {
-      const data = compute();
-      const { n1, n2, iDeg, iRad, rDeg, sinr, cDeg, isTIR } = data;
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-      const rayLen = 260;
+    function updateOutputs() {
+      const t = translations[getLang()];
+      const d = compute();
+      out.n1Value.textContent = d.n1.toFixed(2);
+      out.n2Value.textContent = d.n2.toFixed(2);
+      out.angleValue.textContent = d.iDeg.toFixed(1);
+      out.fiberOut.textContent = Number(controls.fiberLength.value).toFixed(1);
+      out.sinrOut.textContent = d.sinr.toFixed(3);
+      out.rOut.textContent = d.rDeg === null ? '--' : `${d.rDeg.toFixed(1)}°`;
+      out.cOut.textContent = d.cDeg === null ? '--' : `${d.cDeg.toFixed(1)}°`;
+      out.tirCondOut.textContent = d.isTIR ? t.yes : t.no;
+      out.cardI.textContent = `${d.iDeg.toFixed(1)}°`;
+      out.cardR.textContent = d.rDeg === null ? '--' : `${d.rDeg.toFixed(1)}°`;
+      out.cardC.textContent = d.cDeg === null ? '--' : `${d.cDeg.toFixed(1)}°`;
+      out.cardMode.textContent = d.isTIR ? t.modeTir : t.modeRef;
+    }
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function drawArrow(x1, y1, x2, y2, color) {
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      const ang = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - 12 * Math.cos(ang - 0.35), y2 - 12 * Math.sin(ang - 0.35));
+      ctx.lineTo(x2 - 12 * Math.cos(ang + 0.35), y2 - 12 * Math.sin(ang + 0.35));
+      ctx.closePath();
+      ctx.fill();
+    }
 
-      ctx.fillStyle = '#e0f2fe';
-      ctx.fillRect(0, 0, canvas.width, centerY);
+    function drawInterfaceScene() {
+      const d = compute();
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const len = 290;
+
+      ctx.fillStyle = '#dbeafe';
+      ctx.fillRect(0, 0, canvas.width, cy);
       ctx.fillStyle = '#dcfce7';
-      ctx.fillRect(0, centerY, canvas.width, centerY);
+      ctx.fillRect(0, cy, canvas.width, cy);
 
       ctx.strokeStyle = '#334155';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(0, centerY);
-      ctx.lineTo(canvas.width, centerY);
+      ctx.moveTo(0, cy);
+      ctx.lineTo(canvas.width, cy);
       ctx.stroke();
 
-      ctx.setLineDash([7, 7]);
+      ctx.setLineDash([8, 6]);
       ctx.strokeStyle = '#64748b';
       ctx.beginPath();
-      ctx.moveTo(centerX, 30);
-      ctx.lineTo(centerX, canvas.height - 30);
+      ctx.moveTo(cx, 30);
+      ctx.lineTo(cx, canvas.height - 30);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      const incidentX = centerX - rayLen * Math.sin(iRad);
-      const incidentY = centerY - rayLen * Math.cos(iRad);
-      ctx.strokeStyle = '#dc2626';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(incidentX, incidentY);
-      ctx.lineTo(centerX, centerY);
-      ctx.stroke();
+      const ix = cx - len * Math.sin(d.iRad);
+      const iy = cy - len * Math.cos(d.iRad);
+      drawArrow(ix, iy, cx, cy, '#DC2626');
 
-      const incHeadX = centerX - 16 * Math.sin(iRad);
-      const incHeadY = centerY - 16 * Math.cos(iRad);
-      ctx.fillStyle = '#dc2626';
-      ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
-      ctx.lineTo(incHeadX - 5 * Math.cos(iRad), incHeadY + 5 * Math.sin(iRad));
-      ctx.lineTo(incHeadX + 5 * Math.cos(iRad), incHeadY - 5 * Math.sin(iRad));
-      ctx.closePath();
-      ctx.fill();
-
-      if (isTIR) {
-        const reflectAngle = iRad;
-        const rx = centerX + rayLen * Math.sin(reflectAngle);
-        const ry = centerY - rayLen * Math.cos(reflectAngle);
-        ctx.strokeStyle = '#16a34a';
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(rx, ry);
-        ctx.stroke();
-      } else if (rDeg !== null) {
-        const rRad = rDeg * Math.PI / 180;
-        const refractX = centerX + rayLen * Math.sin(rRad);
-        const refractY = centerY + rayLen * Math.cos(rRad);
-        ctx.strokeStyle = '#16a34a';
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(refractX, refractY);
-        ctx.stroke();
+      if (d.isTIR) {
+        const rx = cx + len * Math.sin(d.iRad);
+        const ry = cy - len * Math.cos(d.iRad);
+        drawArrow(cx, cy, rx, ry, '#16A34A');
+      } else if (d.rDeg !== null) {
+        const rRad = (d.rDeg * Math.PI) / 180;
+        const rx = cx + len * Math.sin(rRad);
+        const ry = cy + len * Math.cos(rRad);
+        drawArrow(cx, cy, rx, ry, '#16A34A');
       }
 
       ctx.fillStyle = '#0f172a';
-      ctx.font = '600 18px Inter';
-      ctx.fillText(`n₁ = ${n1.toFixed(2)}`, 40, 50);
-      ctx.fillText(`n₂ = ${n2.toFixed(2)}`, 40, canvas.height - 30);
-      ctx.fillText(`i = ${iDeg.toFixed(1)}°`, centerX + 24, centerY - 12);
+      ctx.font = '600 16px Inter';
+      ctx.fillText(`n₁ = ${d.n1.toFixed(2)}`, 40, 48);
+      ctx.fillText(`n₂ = ${d.n2.toFixed(2)}`, 40, canvas.height - 28);
     }
 
-    function refreshOutputs() {
-      const lang = document.documentElement.lang === 'zh-HK' ? 'zh-hk' : 'en';
-      const data = compute();
-      n1Value.textContent = data.n1.toFixed(2);
-      n2Value.textContent = data.n2.toFixed(2);
-      angleValue.textContent = data.iDeg.toFixed(1);
-      sinrOut.textContent = data.sinr.toFixed(3);
-      rOut.textContent = data.rDeg === null ? '--' : `${data.rDeg.toFixed(1)}°`;
-      cOut.textContent = data.cDeg === null ? '--' : `${data.cDeg.toFixed(1)}°`;
-      modeOut.textContent = data.isTIR ? translations[lang].tirMode : translations[lang].refractionMode;
-      draw();
+    function drawFiberScene() {
+      const d = compute();
+      const fiberLength = Number(controls.fiberLength.value);
+      const left = 120;
+      const right = left + fiberLength * 70;
+      const top = 220;
+      const bottom = 430;
+      const coreN = Math.max(d.n1, d.n2);
+      const claddingN = Math.min(d.n1, d.n2);
+      const launchAngle = Math.min(85, d.iDeg);
+      const launchRad = (launchAngle * Math.PI) / 180;
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(left - 34, top - 34, right - left + 68, bottom - top + 68);
+      ctx.fillStyle = '#bfdbfe';
+      ctx.fillRect(left, top, right - left, bottom - top);
+
+      ctx.strokeStyle = '#1d4ed8';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(left, top, right - left, bottom - top);
+
+      let x = left + 12;
+      let y = (top + bottom) / 2;
+      let dx = Math.cos(launchRad) * 8;
+      let dy = -Math.sin(launchRad) * 8;
+
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      for (let i = 0; i < 220; i += 1) {
+        x += dx;
+        y += dy;
+        if (y <= top || y >= bottom) dy *= -1;
+        if (x > right) break;
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      const t = translations[getLang()];
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '600 15px Inter';
+      ctx.fillText(`${t.opticalFiber}: n(core)=${coreN.toFixed(2)}, n(cladding)=${claddingN.toFixed(2)}`, left, top - 10);
     }
+
+    function drawScene() {
+      pulse += 0.025;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (controls.sceneMode.value === 'fiber') drawFiberScene();
+      else drawInterfaceScene();
+    }
+
+    function render() {
+      updateOutputs();
+      drawScene();
+      requestAnimationFrame(render);
+    }
+
+    canvas.addEventListener('mousedown', () => { dragging = true; });
+    window.addEventListener('mouseup', () => { dragging = false; });
+    canvas.addEventListener('mousemove', (ev) => {
+      if (!dragging || controls.sceneMode.value !== 'interface') return;
+      const rect = canvas.getBoundingClientRect();
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const x = ev.clientX - rect.left;
+      const y = ev.clientY - rect.top;
+      const dx = x - cx;
+      const dy = cy - y;
+      if (dy <= 0) return;
+      const angle = Math.atan2(Math.abs(dx), Math.abs(dy)) * 180 / Math.PI;
+      controls.angle.value = angle.toFixed(1);
+    });
 
     function updateLanguage(lang) {
       localStorage.setItem('preferred_language', lang);
       document.querySelectorAll('[data-i18n]').forEach((el) => {
         const key = el.getAttribute('data-i18n');
         const text = translations[lang] && translations[lang][key];
-        if (text) el.innerText = text;
+        if (text) el.textContent = text;
       });
       document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
       document.querySelectorAll('.lang-btn').forEach((btn) => {
@@ -250,12 +399,14 @@
         btn.classList.toggle('text-white', active);
         btn.classList.toggle('text-slate-600', !active);
       });
-      refreshOutputs();
+      controls.sceneMode.options[0].textContent = translations[lang].singleInterface;
+      controls.sceneMode.options[1].textContent = translations[lang].opticalFiber;
+      updateOutputs();
     }
 
-    [n1Input, n2Input, angleInput].forEach((input) => input.addEventListener('input', refreshOutputs));
-    refreshOutputs();
+    Object.values(controls).forEach((control) => control.addEventListener('input', updateOutputs));
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
+    render();
   </script>
 </body>
 </html>
