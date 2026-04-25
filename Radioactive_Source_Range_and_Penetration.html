@@ -280,6 +280,24 @@
             return background + base * inverseSquare * transmission;
         }
 
+        function getGeometry() {
+            const distance = parseFloat(distanceSlider.value);
+            const sourceLeft = 20 * scale;
+            const sourceWidth = 70 * scale;
+            const beamStartX = sourceLeft + sourceWidth;
+            const detectorWidth = 60 * scale;
+
+            // Map HKDSE distance control (1-20 cm) to a visible detector movement.
+            const normalized = (distance - 1) / 19;
+            const minPathLength = 220 * scale;
+            const maxPathLength = Math.max(minPathLength + 20 * scale, W - beamStartX - detectorWidth - 25 * scale);
+            const pathLength = minPathLength + normalized * (maxPathLength - minPathLength);
+
+            const detectorX = beamStartX + pathLength;
+            const absorberCenterX = beamStartX + pathLength * 0.55;
+            return { sourceLeft, sourceWidth, beamStartX, detectorX, detectorWidth, absorberCenterX };
+        }
+
         function getVerdict(transmission) {
             if (transmission < 0.12) return 'low';
             if (transmission < 0.55) return 'medium';
@@ -322,8 +340,9 @@
         }
 
         function createParticle() {
+            const geometry = getGeometry();
             return {
-                x: 90 * scale,
+                x: geometry.beamStartX,
                 y: H * 0.5 + (Math.random() - 0.5) * 150 * scale,
                 vx: 270 * scale,
                 alive: true,
@@ -353,8 +372,9 @@
                 spawnAccumulator -= 1;
             }
 
-            const absorberCenterX = W * 0.53;
-            const detectorX = W * 0.87;
+            const geometry = getGeometry();
+            const absorberCenterX = geometry.absorberCenterX;
+            const detectorX = geometry.detectorX;
 
             for (const p of particles) {
                 if (!p.alive) continue;
@@ -394,8 +414,9 @@
             const material = absorberType.value;
             const thickness = parseFloat(thicknessSlider.value);
             const distance = parseFloat(distanceSlider.value);
-            const absorberCenterX = W * 0.53;
-            const detectorX = W * 0.87;
+            const geometry = getGeometry();
+            const absorberCenterX = geometry.absorberCenterX;
+            const detectorX = geometry.detectorX;
             const absorberWidth = Math.max(2 * scale, thickness * 3.3 * scale);
 
             ctx.clearRect(0, 0, W, H);
@@ -410,19 +431,19 @@
             ctx.lineWidth = 2 * scale;
             ctx.setLineDash([8 * scale, 8 * scale]);
             ctx.beginPath();
-            ctx.moveTo(90 * scale, H * 0.5);
+            ctx.moveTo(geometry.beamStartX, H * 0.5);
             ctx.lineTo(detectorX, H * 0.5);
             ctx.stroke();
             ctx.setLineDash([]);
 
             ctx.save();
             ctx.fillStyle = '#334155';
-            ctx.fillRect(20 * scale, H * 0.5 - 70 * scale, 70 * scale, 140 * scale);
+            ctx.fillRect(geometry.sourceLeft, H * 0.5 - 70 * scale, geometry.sourceWidth, 140 * scale);
             ctx.fillStyle = '#e2e8f0';
             ctx.font = `bold ${18 * scale}px Inter`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('☢', 55 * scale, H * 0.5);
+            ctx.fillText('☢', geometry.sourceLeft + geometry.sourceWidth / 2, H * 0.5);
             ctx.restore();
 
             if (material !== 'none' && thickness > 0) {
@@ -472,10 +493,11 @@
             ctx.fillStyle = '#93c5fd';
             ctx.font = `${12 * scale}px Inter`;
             ctx.textAlign = 'left';
-            ctx.fillText(`${distance.toFixed(1)} cm`, W * 0.45, H * 0.5 + 28 * scale);
+            const distanceLabelX = geometry.beamStartX + (detectorX - geometry.beamStartX) * 0.5 - 24 * scale;
+            ctx.fillText(`${distance.toFixed(1)} cm`, distanceLabelX, H * 0.5 + 28 * scale);
             ctx.fillStyle = getColorByType(type);
             const symbol = type === 'alpha' ? 'α' : type === 'beta' ? 'β' : 'γ';
-            ctx.fillText(symbol, 95 * scale, H * 0.5 - 20 * scale);
+            ctx.fillText(symbol, geometry.beamStartX + 5 * scale, H * 0.5 - 20 * scale);
             ctx.restore();
         }
 
