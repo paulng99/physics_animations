@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transformer and Power Transmission (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+  <header class="max-w-6xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between gap-3">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+        <span>←</span><span data-i18n="back">Back to Topics</span>
+      </a>
+      <div class="flex gap-2">
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="updateLanguage('en')" data-lang="en">EN</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 pb-10">
+    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-5 md:p-7 shadow-sm">
+      <h1 class="text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">Transformer & Power Transmission</h1>
+      <p class="mt-2 text-slate-600" data-i18n="subtitle">Explore turns ratio, current changes, and transmission line loss.</p>
+    </section>
+
+    <section class="mt-5 grid lg:grid-cols-3 gap-4">
+      <article class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
+        <canvas id="canvas" width="980" height="520" class="w-full rounded-xl border border-slate-200 bg-slate-50"></canvas>
+      </article>
+
+      <aside class="space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+          <label class="block text-sm text-slate-700"><span data-i18n="vp">Primary voltage Vp (V)</span>: <span id="vpOut" class="font-semibold text-blue-600">240</span></label>
+          <input id="vp" type="range" min="100" max="500" step="5" value="240" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm text-slate-700"><span data-i18n="np">Primary turns Np</span>: <span id="npOut" class="font-semibold text-blue-600">200</span></label>
+          <input id="np" type="range" min="50" max="500" step="10" value="200" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm text-slate-700"><span data-i18n="ns">Secondary turns Ns</span>: <span id="nsOut" class="font-semibold text-blue-600">800</span></label>
+          <input id="ns" type="range" min="50" max="2000" step="10" value="800" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm text-slate-700"><span data-i18n="loadPower">Load power (kW)</span>: <span id="loadOut" class="font-semibold text-blue-600">20</span></label>
+          <input id="loadPower" type="range" min="2" max="80" step="1" value="20" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm text-slate-700"><span data-i18n="lineR">Line resistance (Ω)</span>: <span id="lineROut" class="font-semibold text-blue-600">8.0</span></label>
+          <input id="lineR" type="range" min="0.5" max="30" step="0.1" value="8" class="w-full accent-blue-600" />
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Readings</h2>
+          <div class="space-y-1">
+            <div class="flex justify-between"><span class="text-slate-600">Vs</span><span id="vsOut" class="font-semibold text-purple-600">960 V</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">Ip</span><span id="ipOut" class="font-semibold text-green-600">83.3 A</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">Is</span><span id="isOut" class="font-semibold text-green-600">20.8 A</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="lineLoss">Line loss</span><span id="lossOut" class="font-semibold text-red-600">3.46 kW</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="efficiency">Transmission efficiency</span><span id="effOut" class="font-semibold text-amber-600">85.2%</span></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE Formula Focus</h2>
+          <ul class="list-disc ml-5 space-y-1">
+            <li>Vp / Vs = Np / Ns</li>
+            <li>Ideal: VpIp ≈ VsIs</li>
+            <li>P<sub>loss</sub> = I²R (line)</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const ids = ['vp', 'np', 'ns', 'loadPower', 'lineR'];
+    const el = {};
+    ids.forEach((id) => { el[id] = document.getElementById(id); });
+    const out = {
+      vpOut: document.getElementById('vpOut'),
+      npOut: document.getElementById('npOut'),
+      nsOut: document.getElementById('nsOut'),
+      loadOut: document.getElementById('loadOut'),
+      lineROut: document.getElementById('lineROut'),
+      vsOut: document.getElementById('vsOut'),
+      ipOut: document.getElementById('ipOut'),
+      isOut: document.getElementById('isOut'),
+      lossOut: document.getElementById('lossOut'),
+      effOut: document.getElementById('effOut')
+    };
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let phase = 0;
+
+    const translations = {
+      en: {
+        back: 'Back to Topics',
+        title: 'Transformer & Power Transmission',
+        subtitle: 'Explore turns ratio, current changes, and transmission line loss.',
+        controls: 'Controls',
+        vp: 'Primary voltage Vp (V)',
+        np: 'Primary turns Np',
+        ns: 'Secondary turns Ns',
+        loadPower: 'Load power (kW)',
+        lineR: 'Line resistance (Ω)',
+        readings: 'Readings',
+        lineLoss: 'Line loss',
+        efficiency: 'Transmission efficiency',
+        formulaTitle: 'HKDSE Formula Focus'
+      },
+      'zh-hk': {
+        back: '返回主題頁',
+        title: '變壓器與輸電模擬',
+        subtitle: '探究匝數比、電流變化及輸電線損耗。',
+        controls: '控制面板',
+        vp: '一次側電壓 Vp (V)',
+        np: '一次側匝數 Np',
+        ns: '二次側匝數 Ns',
+        loadPower: '負載功率 (kW)',
+        lineR: '輸電線電阻 (Ω)',
+        readings: '讀數',
+        lineLoss: '線路損耗',
+        efficiency: '輸電效率',
+        formulaTitle: 'HKDSE 重點公式'
+      }
+    };
+
+    function calc() {
+      const Vp = Number(el.vp.value);
+      const Np = Number(el.np.value);
+      const Ns = Number(el.ns.value);
+      const Pload = Number(el.loadPower.value) * 1000;
+      const Rline = Number(el.lineR.value);
+      const ratio = Ns / Np;
+      const Vs = Vp * ratio;
+      const Is = Pload / Math.max(1, Vs);
+      const Ip = Pload / Math.max(1, Vp);
+      const Ploss = Is * Is * Rline;
+      const eff = (Pload / (Pload + Ploss)) * 100;
+      return { Vp, Np, Ns, Pload, Rline, Vs, Is, Ip, Ploss, eff };
+    }
+
+    function update() {
+      const c = calc();
+      out.vpOut.textContent = `${c.Vp.toFixed(0)}`;
+      out.npOut.textContent = `${c.Np.toFixed(0)}`;
+      out.nsOut.textContent = `${c.Ns.toFixed(0)}`;
+      out.loadOut.textContent = `${(c.Pload / 1000).toFixed(0)}`;
+      out.lineROut.textContent = `${c.Rline.toFixed(1)}`;
+      out.vsOut.textContent = `${c.Vs.toFixed(1)} V`;
+      out.ipOut.textContent = `${c.Ip.toFixed(1)} A`;
+      out.isOut.textContent = `${c.Is.toFixed(1)} A`;
+      out.lossOut.textContent = `${(c.Ploss / 1000).toFixed(2)} kW`;
+      out.effOut.textContent = `${c.eff.toFixed(1)}%`;
+    }
+
+    function drawCoil(cx, cy, turns, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      const loops = Math.max(6, Math.round(turns / 40));
+      for (let i = 0; i < loops; i += 1) {
+        const x = cx + i * 10;
+        ctx.beginPath();
+        ctx.arc(x, cy, 8, 0, Math.PI, true);
+        ctx.stroke();
+      }
+    }
+
+    function draw() {
+      const c = calc();
+      phase += 0.06;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#dbeafe';
+      ctx.fillRect(420, 80, 140, 340);
+      ctx.strokeStyle = '#1e3a8a';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(420, 80, 140, 340);
+
+      drawCoil(250, 250, c.Np, '#2563eb');
+      drawCoil(620, 250, c.Ns, '#16a34a');
+
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(170, 250);
+      ctx.lineTo(420, 250);
+      ctx.moveTo(560, 250);
+      ctx.lineTo(860, 250);
+      ctx.stroke();
+
+      const amp = 26;
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let x = 170; x <= 860; x += 4) {
+        const y = 250 + Math.sin((x / 40) + phase) * amp;
+        if (x === 170) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '600 16px Inter';
+      ctx.fillText(`Vp = ${c.Vp.toFixed(0)} V`, 120, 180);
+      ctx.fillText(`Ip = ${c.Ip.toFixed(1)} A`, 120, 205);
+      ctx.fillText(`Np = ${c.Np}`, 120, 230);
+      ctx.fillText(`Vs = ${c.Vs.toFixed(1)} V`, 690, 180);
+      ctx.fillText(`Is = ${c.Is.toFixed(1)} A`, 690, 205);
+      ctx.fillText(`Ns = ${c.Ns}`, 690, 230);
+
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(860, 220, 70, 60);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 14px Inter';
+      ctx.fillText('LOAD', 871, 255);
+
+      ctx.fillStyle = '#7c3aed';
+      ctx.font = '600 15px Inter';
+      ctx.fillText(`P_loss = ${(c.Ploss / 1000).toFixed(2)} kW`, 610, 330);
+      ctx.fillText(`Efficiency = ${c.eff.toFixed(1)}%`, 610, 355);
+
+      requestAnimationFrame(draw);
+    }
+
+    function updateLanguage(lang) {
+      localStorage.setItem('preferred_language', lang);
+      document.querySelectorAll('[data-i18n]').forEach((node) => {
+        const key = node.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) node.innerText = translations[lang][key];
+      });
+      document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+      document.querySelectorAll('.lang-btn').forEach((btn) => {
+        const active = btn.dataset.lang === lang;
+        btn.classList.toggle('bg-blue-600', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('text-slate-600', !active);
+      });
+    }
+
+    ids.forEach((id) => el[id].addEventListener('input', update));
+    update();
+    draw();
+    updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
+  </script>
+</body>
+</html>

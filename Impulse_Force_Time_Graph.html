@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Impulse and Force-Time Graph (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+  <header class="max-w-6xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between gap-3">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+        <span>←</span>
+        <span data-i18n="back">Back to Topics</span>
+      </a>
+      <div class="flex gap-2">
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="updateLanguage('en')" data-lang="en">EN</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 pb-10">
+    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-5 md:p-7 shadow-sm">
+      <h1 class="text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">Impulse and Force-Time Graph</h1>
+      <p class="mt-2 text-slate-600" data-i18n="subtitle">Observe collision force profile and verify impulse equals momentum change.</p>
+    </section>
+
+    <section class="mt-5 grid lg:grid-cols-3 gap-4">
+      <article class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
+        <canvas id="motionCanvas" width="960" height="270" class="w-full rounded-xl border border-slate-200 bg-slate-50"></canvas>
+        <canvas id="graphCanvas" width="960" height="250" class="w-full rounded-xl border border-slate-200 bg-slate-50 mt-3"></canvas>
+        <div class="mt-3 flex gap-2">
+          <button id="runBtn" class="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition" data-i18n="run">Run</button>
+          <button id="resetBtn" class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition" data-i18n="reset">Reset</button>
+        </div>
+      </article>
+
+      <aside class="space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+          <label class="block text-sm text-slate-700">
+            <span data-i18n="mass">Mass m (kg)</span>: <span id="massOut" class="font-semibold text-blue-600">1.00</span>
+          </label>
+          <input id="mass" type="range" min="0.5" max="5" step="0.1" value="1" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm text-slate-700">
+            <span data-i18n="u">Initial speed u (m/s)</span>: <span id="uOut" class="font-semibold text-green-600">6.00</span>
+          </label>
+          <input id="u" type="range" min="1" max="12" step="0.1" value="6" class="w-full accent-green-600 mb-3" />
+
+          <label class="block text-sm text-slate-700">
+            <span data-i18n="v">Final speed v (m/s)</span>: <span id="vOut" class="font-semibold text-green-600">2.00</span>
+          </label>
+          <input id="v" type="range" min="-8" max="10" step="0.1" value="2" class="w-full accent-green-600 mb-3" />
+
+          <label class="block text-sm text-slate-700">
+            <span data-i18n="dt">Contact time Δt (ms)</span>: <span id="dtOut" class="font-semibold text-purple-600">120</span>
+          </label>
+          <input id="dt" type="range" min="20" max="300" step="1" value="120" class="w-full accent-purple-600" />
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="results">Results</h2>
+          <div class="space-y-1">
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="deltaP">Δp</span><span id="dpRes" class="font-semibold text-blue-600">-4.00 kg·m/s</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="impulse">Impulse J</span><span id="jRes" class="font-semibold text-red-600">-4.00 N·s</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="favg">Average force</span><span id="fRes" class="font-semibold text-amber-600">-33.33 N</span></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE Formula Focus</h2>
+          <ul class="list-disc ml-5 space-y-1">
+            <li>J = FΔt</li>
+            <li>J = Δp = m(v-u)</li>
+            <li data-i18n="areaNote">Area under F-t graph gives impulse.</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const mass = document.getElementById('mass');
+    const u = document.getElementById('u');
+    const v = document.getElementById('v');
+    const dt = document.getElementById('dt');
+    const massOut = document.getElementById('massOut');
+    const uOut = document.getElementById('uOut');
+    const vOut = document.getElementById('vOut');
+    const dtOut = document.getElementById('dtOut');
+    const dpRes = document.getElementById('dpRes');
+    const jRes = document.getElementById('jRes');
+    const fRes = document.getElementById('fRes');
+    const runBtn = document.getElementById('runBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const motionCanvas = document.getElementById('motionCanvas');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const mCtx = motionCanvas.getContext('2d');
+    const gCtx = graphCanvas.getContext('2d');
+
+    const translations = {
+      en: {
+        back: 'Back to Topics',
+        title: 'Impulse and Force-Time Graph',
+        subtitle: 'Observe collision force profile and verify impulse equals momentum change.',
+        run: 'Run',
+        reset: 'Reset',
+        controls: 'Controls',
+        mass: 'Mass m (kg)',
+        u: 'Initial speed u (m/s)',
+        v: 'Final speed v (m/s)',
+        dt: 'Contact time Δt (ms)',
+        results: 'Results',
+        deltaP: 'Δp',
+        impulse: 'Impulse J',
+        favg: 'Average force',
+        formulaTitle: 'HKDSE Formula Focus',
+        areaNote: 'Area under F-t graph gives impulse.'
+      },
+      'zh-hk': {
+        back: '返回主題頁',
+        title: '衝量與力-時間圖',
+        subtitle: '觀察碰撞時的受力曲線，驗證衝量等於動量改變。',
+        run: '開始',
+        reset: '重設',
+        controls: '控制面板',
+        mass: '質量 m (kg)',
+        u: '初速度 u (m/s)',
+        v: '末速度 v (m/s)',
+        dt: '接觸時間 Δt (ms)',
+        results: '結果',
+        deltaP: 'Δp',
+        impulse: '衝量 J',
+        favg: '平均力',
+        formulaTitle: 'HKDSE 重點公式',
+        areaNote: 'F-t 圖下面積即為衝量。'
+      }
+    };
+
+    const state = { running: false, t: 0, duration: 2.2, last: 0, cartX: 110 };
+
+    function compute() {
+      const m = Number(mass.value);
+      const uVal = Number(u.value);
+      const vVal = Number(v.value);
+      const dtSec = Number(dt.value) / 1000;
+      const dp = m * (vVal - uVal);
+      const J = dp;
+      const favg = J / dtSec;
+      return { m, uVal, vVal, dtSec, dp, J, favg };
+    }
+
+    function updateReadings() {
+      const c = compute();
+      massOut.textContent = c.m.toFixed(2);
+      uOut.textContent = c.uVal.toFixed(2);
+      vOut.textContent = c.vVal.toFixed(2);
+      dtOut.textContent = (c.dtSec * 1000).toFixed(0);
+      dpRes.textContent = `${c.dp.toFixed(2)} kg·m/s`;
+      jRes.textContent = `${c.J.toFixed(2)} N·s`;
+      fRes.textContent = `${c.favg.toFixed(2)} N`;
+      drawFrame(state.t);
+    }
+
+    function forceAtTime(tNorm, c) {
+      const center = 0.5;
+      const width = Math.max(0.08, c.dtSec / state.duration);
+      const x = (tNorm - center) / width;
+      return c.favg * Math.exp(-x * x);
+    }
+
+    function drawMotion(c, tSec) {
+      mCtx.clearRect(0, 0, motionCanvas.width, motionCanvas.height);
+      mCtx.fillStyle = '#f8fafc';
+      mCtx.fillRect(0, 0, motionCanvas.width, motionCanvas.height);
+      const y = 180;
+      mCtx.strokeStyle = '#64748b';
+      mCtx.lineWidth = 4;
+      mCtx.beginPath();
+      mCtx.moveTo(40, y + 35);
+      mCtx.lineTo(920, y + 35);
+      mCtx.stroke();
+
+      mCtx.fillStyle = '#334155';
+      mCtx.fillRect(760, y - 12, 20, 94);
+
+      const pre = 0.9;
+      const collideStart = pre;
+      const collideEnd = pre + c.dtSec;
+      let x;
+      if (tSec < collideStart) {
+        x = 110 + (tSec / collideStart) * 560;
+      } else if (tSec <= collideEnd) {
+        x = 670 + ((tSec - collideStart) / c.dtSec) * 26;
+      } else {
+        const remain = Math.max(state.duration - collideEnd, 0.001);
+        x = 696 + ((tSec - collideEnd) / remain) * Math.sign(c.vVal || 1) * 210;
+      }
+      state.cartX = Math.max(70, Math.min(740, x));
+      mCtx.fillStyle = '#2563eb';
+      mCtx.fillRect(state.cartX, y, 80, 50);
+      mCtx.fillStyle = '#0f172a';
+      mCtx.beginPath();
+      mCtx.arc(state.cartX + 20, y + 54, 8, 0, Math.PI * 2);
+      mCtx.arc(state.cartX + 60, y + 54, 8, 0, Math.PI * 2);
+      mCtx.fill();
+
+      mCtx.fillStyle = '#16a34a';
+      mCtx.font = '600 16px Inter';
+      const vel = tSec < collideStart ? c.uVal : c.vVal;
+      mCtx.fillText(`v = ${vel.toFixed(2)} m/s`, 48, 48);
+    }
+
+    function drawGraph(c, tSec) {
+      gCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+      gCtx.fillStyle = '#f8fafc';
+      gCtx.fillRect(0, 0, graphCanvas.width, graphCanvas.height);
+      const margin = 45;
+      const w = graphCanvas.width - margin * 2;
+      const h = graphCanvas.height - margin * 2;
+      const yZero = margin + h / 2;
+
+      gCtx.strokeStyle = '#94a3b8';
+      gCtx.lineWidth = 1.5;
+      gCtx.beginPath();
+      gCtx.moveTo(margin, yZero);
+      gCtx.lineTo(graphCanvas.width - margin, yZero);
+      gCtx.moveTo(margin, margin);
+      gCtx.lineTo(margin, graphCanvas.height - margin);
+      gCtx.stroke();
+
+      const fMax = Math.max(Math.abs(c.favg), 5) * 1.15;
+      gCtx.strokeStyle = '#dc2626';
+      gCtx.lineWidth = 2.5;
+      gCtx.beginPath();
+      for (let i = 0; i <= 250; i += 1) {
+        const tNorm = i / 250;
+        const tCur = tNorm * state.duration;
+        const f = forceAtTime(tNorm, c);
+        const x = margin + tNorm * w;
+        const y = yZero - (f / fMax) * (h / 2);
+        if (i === 0) gCtx.moveTo(x, y); else gCtx.lineTo(x, y);
+        if (tCur <= tSec) {
+          gCtx.strokeStyle = 'rgba(220,38,38,0.3)';
+          gCtx.beginPath();
+          gCtx.moveTo(x, yZero);
+          gCtx.lineTo(x, y);
+          gCtx.stroke();
+          gCtx.strokeStyle = '#dc2626';
+        }
+      }
+      gCtx.stroke();
+
+      const tNormNow = Math.min(1, tSec / state.duration);
+      const fNow = forceAtTime(tNormNow, c);
+      const xNow = margin + tNormNow * w;
+      const yNow = yZero - (fNow / fMax) * (h / 2);
+      gCtx.fillStyle = '#dc2626';
+      gCtx.beginPath();
+      gCtx.arc(xNow, yNow, 4, 0, Math.PI * 2);
+      gCtx.fill();
+
+      gCtx.fillStyle = '#475569';
+      gCtx.font = '12px Inter';
+      gCtx.fillText('F (N)', margin + 5, margin - 10);
+      gCtx.fillText('t (s)', graphCanvas.width - margin - 16, yZero - 10);
+    }
+
+    function drawFrame(tSec) {
+      const c = compute();
+      drawMotion(c, tSec);
+      drawGraph(c, tSec);
+    }
+
+    function animate(ts) {
+      if (!state.running) return;
+      if (!state.last) state.last = ts;
+      const dtSec = (ts - state.last) / 1000;
+      state.last = ts;
+      state.t += dtSec;
+      if (state.t >= state.duration) {
+        state.t = state.duration;
+        state.running = false;
+      }
+      drawFrame(state.t);
+      if (state.running) requestAnimationFrame(animate);
+    }
+
+    runBtn.addEventListener('click', () => {
+      state.running = true;
+      state.t = 0;
+      state.last = 0;
+      requestAnimationFrame(animate);
+    });
+    resetBtn.addEventListener('click', () => {
+      state.running = false;
+      state.t = 0;
+      drawFrame(0);
+    });
+    [mass, u, v, dt].forEach((el) => el.addEventListener('input', () => {
+      state.running = false;
+      state.t = 0;
+      updateReadings();
+    }));
+
+    function updateLanguage(lang) {
+      localStorage.setItem('preferred_language', lang);
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        const text = translations[lang] && translations[lang][key];
+        if (text) el.innerText = text;
+      });
+      document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+      document.querySelectorAll('.lang-btn').forEach((btn) => {
+        const active = btn.dataset.lang === lang;
+        btn.classList.toggle('bg-blue-600', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('text-slate-600', !active);
+      });
+    }
+
+    updateReadings();
+    updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
+  </script>
+</body>
+</html>
