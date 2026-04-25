@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Electrostatics Field Explorer (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+  <header class="max-w-6xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between gap-3">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+        <span>←</span>
+        <span data-i18n="back">Back to Topics</span>
+      </a>
+      <div class="flex gap-2">
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="updateLanguage('en')" data-lang="en">EN</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 pb-10">
+    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-5 md:p-7 shadow-sm">
+      <h1 class="text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">Electrostatics Field Explorer</h1>
+      <p class="mt-2 text-slate-600" data-i18n="subtitle">Build charge configurations and inspect electric field and force behavior.</p>
+    </section>
+
+    <section class="mt-5 grid lg:grid-cols-3 gap-4">
+      <article class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
+        <canvas id="fieldCanvas" width="900" height="560" class="w-full rounded-xl border border-slate-200 bg-slate-50"></canvas>
+      </article>
+
+      <aside class="space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+          <label class="block text-sm text-slate-700 mb-1" data-i18n="activeCharge">Active charge</label>
+          <select id="activeIndex" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3">
+            <option value="0">Charge 1</option>
+            <option value="1">Charge 2</option>
+            <option value="2">Charge 3</option>
+          </select>
+
+          <label class="block text-sm text-slate-700 mb-1">
+            <span data-i18n="qValue">Charge value q (μC):</span>
+            <span id="qOut" class="font-semibold text-blue-600">+2.0</span>
+          </label>
+          <input id="qValue" type="range" min="-10" max="10" step="0.2" value="2" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm text-slate-700 mb-1">
+            <span data-i18n="testQ">Test charge q₀ (μC):</span>
+            <span id="testQOut" class="font-semibold text-blue-600">+1.0</span>
+          </label>
+          <input id="testQ" type="range" min="-5" max="5" step="0.1" value="1" class="w-full accent-blue-600 mb-3" />
+
+          <button id="resetBtn" class="w-full rounded-xl bg-blue-600 text-white py-2 font-semibold hover:bg-blue-700 transition" data-i18n="reset">Reset Positions</button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Readings at Test Charge</h2>
+          <div class="space-y-1">
+            <div class="flex justify-between"><span class="text-slate-600">|E|</span><span id="eOut" class="font-semibold text-amber-600">0 N/C</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">|F|</span><span id="fOut" class="font-semibold text-red-600">0 N</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="angle">Direction</span><span id="angleOut" class="font-semibold text-green-600">0°</span></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE Formula Focus</h2>
+          <ul class="list-disc ml-5 space-y-1">
+            <li><span class="font-medium">E = kQ / r²</span></li>
+            <li><span class="font-medium">F = qE</span></li>
+            <li data-i18n="vectorNote">Electric field is a vector sum of all source charges.</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('fieldCanvas');
+    const ctx = canvas.getContext('2d');
+    const k = 8.99e9;
+    const world = { xMin: -5, xMax: 5, yMin: -3, yMax: 3 };
+
+    const charges = [
+      { x: -2.5, y: 1.5, q: 2e-6, color: '#dc2626' },
+      { x: 2.3, y: 1.2, q: -3e-6, color: '#2563eb' },
+      { x: 0.2, y: -1.8, q: 1.5e-6, color: '#dc2626' }
+    ];
+    const testCharge = { x: 0, y: 0, q: 1e-6 };
+
+    const activeIndex = document.getElementById('activeIndex');
+    const qValue = document.getElementById('qValue');
+    const qOut = document.getElementById('qOut');
+    const testQ = document.getElementById('testQ');
+    const testQOut = document.getElementById('testQOut');
+    const eOut = document.getElementById('eOut');
+    const fOut = document.getElementById('fOut');
+    const angleOut = document.getElementById('angleOut');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let dragging = null;
+
+    const translations = {
+      en: {
+        back: 'Back to Topics',
+        title: 'Electrostatics Field Explorer',
+        subtitle: 'Build charge configurations and inspect electric field and force behavior.',
+        controls: 'Controls',
+        activeCharge: 'Active charge',
+        qValue: 'Charge value q (μC):',
+        testQ: 'Test charge q₀ (μC):',
+        reset: 'Reset Positions',
+        readings: 'Readings at Test Charge',
+        angle: 'Direction',
+        formulaTitle: 'HKDSE Formula Focus',
+        vectorNote: 'Electric field is a vector sum of all source charges.'
+      },
+      'zh-hk': {
+        back: '返回主題頁',
+        title: '靜電場探索器',
+        subtitle: '建立不同電荷配置，觀察電場及受力變化。',
+        controls: '控制面板',
+        activeCharge: '選擇電荷',
+        qValue: '電荷量 q (μC):',
+        testQ: '試探電荷 q₀ (μC):',
+        reset: '重設位置',
+        readings: '試探電荷位置讀數',
+        angle: '方向',
+        formulaTitle: 'HKDSE 重點公式',
+        vectorNote: '總電場為所有源電荷電場的向量和。'
+      }
+    };
+
+    function toPxX(x) {
+      return ((x - world.xMin) / (world.xMax - world.xMin)) * canvas.width;
+    }
+
+    function toPxY(y) {
+      return canvas.height - ((y - world.yMin) / (world.yMax - world.yMin)) * canvas.height;
+    }
+
+    function toWorldX(px) {
+      return world.xMin + (px / canvas.width) * (world.xMax - world.xMin);
+    }
+
+    function toWorldY(py) {
+      return world.yMin + ((canvas.height - py) / canvas.height) * (world.yMax - world.yMin);
+    }
+
+    function getNetFieldAt(x, y) {
+      let ex = 0;
+      let ey = 0;
+      charges.forEach((c) => {
+        const dx = x - c.x;
+        const dy = y - c.y;
+        const r2 = dx * dx + dy * dy;
+        const safeR2 = Math.max(r2, 0.03);
+        const r = Math.sqrt(safeR2);
+        const eMag = (k * c.q) / safeR2;
+        ex += eMag * (dx / r);
+        ey += eMag * (dy / r);
+      });
+      return { ex, ey };
+    }
+
+    function drawArrow(x, y, vx, vy, scale, color) {
+      const len = Math.hypot(vx, vy);
+      if (len < 1e-9) return;
+      const nx = vx / len;
+      const ny = vy / len;
+      const endX = x + nx * scale;
+      const endY = y + ny * scale;
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+
+      const ah = 6;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(endX, endY);
+      ctx.lineTo(endX - nx * ah - ny * (ah * 0.6), endY - ny * ah + nx * (ah * 0.6));
+      ctx.lineTo(endX - nx * ah + ny * (ah * 0.6), endY - ny * ah - nx * (ah * 0.6));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawFieldGrid() {
+      const spacing = 60;
+      for (let px = spacing / 2; px < canvas.width; px += spacing) {
+        for (let py = spacing / 2; py < canvas.height; py += spacing) {
+          const x = toWorldX(px);
+          const y = toWorldY(py);
+          const { ex, ey } = getNetFieldAt(x, y);
+          drawArrow(px, py, ex, -ey, 16, 'rgba(217, 119, 6, 0.7)');
+        }
+      }
+    }
+
+    function drawAxes() {
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, toPxY(0));
+      ctx.lineTo(canvas.width, toPxY(0));
+      ctx.moveTo(toPxX(0), 0);
+      ctx.lineTo(toPxX(0), canvas.height);
+      ctx.stroke();
+    }
+
+    function drawCharges() {
+      charges.forEach((c, idx) => {
+        const x = toPxX(c.x);
+        const y = toPxY(c.y);
+        const positive = c.q >= 0;
+        ctx.fillStyle = positive ? '#dc2626' : '#2563eb';
+        ctx.beginPath();
+        ctx.arc(x, y, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px Inter';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(positive ? '+' : '−', x, y + 1);
+
+        if (idx === Number(activeIndex.value)) {
+          ctx.strokeStyle = '#16a34a';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(x, y, 22, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      });
+    }
+
+    function drawTestCharge() {
+      const x = toPxX(testCharge.x);
+      const y = toPxY(testCharge.y);
+      ctx.fillStyle = '#16a34a';
+      ctx.beginPath();
+      ctx.arc(x, y, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px Inter';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('q₀', x, y + 1);
+
+      const { ex, ey } = getNetFieldAt(testCharge.x, testCharge.y);
+      drawArrow(x, y, ex, -ey, 42, '#d97706');
+
+      const eMag = Math.hypot(ex, ey);
+      const fMag = Math.abs(testCharge.q * eMag);
+      const angle = (Math.atan2(ey, ex) * 180) / Math.PI;
+      eOut.textContent = `${eMag.toExponential(2)} N/C`;
+      fOut.textContent = `${fMag.toExponential(2)} N`;
+      angleOut.textContent = `${angle.toFixed(1)}°`;
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawFieldGrid();
+      drawAxes();
+      drawCharges();
+      drawTestCharge();
+      requestAnimationFrame(render);
+    }
+
+    function pickTarget(px, py) {
+      const tx = toWorldX(px);
+      const ty = toWorldY(py);
+
+      const testDist = Math.hypot(tx - testCharge.x, ty - testCharge.y);
+      if (testDist < 0.35) return { type: 'test' };
+
+      for (let i = 0; i < charges.length; i += 1) {
+        const d = Math.hypot(tx - charges[i].x, ty - charges[i].y);
+        if (d < 0.45) return { type: 'source', index: i };
+      }
+      return null;
+    }
+
+    function updateActiveChargeValue() {
+      const idx = Number(activeIndex.value);
+      charges[idx].q = Number(qValue.value) * 1e-6;
+      qOut.textContent = `${charges[idx].q >= 0 ? '+' : ''}${Number(qValue.value).toFixed(1)}`;
+    }
+
+    function updateControlsFromActive() {
+      const idx = Number(activeIndex.value);
+      qValue.value = (charges[idx].q * 1e6).toFixed(1);
+      updateActiveChargeValue();
+    }
+
+    canvas.addEventListener('mousedown', (ev) => {
+      const rect = canvas.getBoundingClientRect();
+      const px = ev.clientX - rect.left;
+      const py = ev.clientY - rect.top;
+      dragging = pickTarget(px, py);
+      if (dragging && dragging.type === 'source') {
+        activeIndex.value = String(dragging.index);
+        updateControlsFromActive();
+      }
+    });
+
+    canvas.addEventListener('mousemove', (ev) => {
+      if (!dragging) return;
+      const rect = canvas.getBoundingClientRect();
+      const px = ev.clientX - rect.left;
+      const py = ev.clientY - rect.top;
+      const wx = Math.max(world.xMin + 0.2, Math.min(world.xMax - 0.2, toWorldX(px)));
+      const wy = Math.max(world.yMin + 0.2, Math.min(world.yMax - 0.2, toWorldY(py)));
+
+      if (dragging.type === 'test') {
+        testCharge.x = wx;
+        testCharge.y = wy;
+      } else if (dragging.type === 'source') {
+        charges[dragging.index].x = wx;
+        charges[dragging.index].y = wy;
+      }
+    });
+
+    window.addEventListener('mouseup', () => { dragging = null; });
+
+    activeIndex.addEventListener('change', updateControlsFromActive);
+    qValue.addEventListener('input', updateActiveChargeValue);
+    testQ.addEventListener('input', () => {
+      testCharge.q = Number(testQ.value) * 1e-6;
+      testQOut.textContent = `${testCharge.q >= 0 ? '+' : ''}${Number(testQ.value).toFixed(1)}`;
+    });
+
+    resetBtn.addEventListener('click', () => {
+      charges[0].x = -2.5; charges[0].y = 1.5;
+      charges[1].x = 2.3; charges[1].y = 1.2;
+      charges[2].x = 0.2; charges[2].y = -1.8;
+      testCharge.x = 0; testCharge.y = 0;
+    });
+
+    function updateLanguage(lang) {
+      localStorage.setItem('preferred_language', lang);
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        const text = translations[lang] && translations[lang][key];
+        if (text) el.innerText = text;
+      });
+      document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+      document.querySelectorAll('.lang-btn').forEach((btn) => {
+        const active = btn.dataset.lang === lang;
+        btn.classList.toggle('bg-blue-600', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('text-slate-600', !active);
+      });
+    }
+
+    testQOut.textContent = '+1.0';
+    updateControlsFromActive();
+    updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
+    render();
+  </script>
+</body>
+</html>

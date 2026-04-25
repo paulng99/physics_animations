@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Momentum and Collision Lab (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+  <header class="max-w-6xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between gap-3">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+        <span>←</span>
+        <span data-i18n="back">Back to Topics</span>
+      </a>
+      <div class="flex gap-2">
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="updateLanguage('en')" data-lang="en">EN</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 pb-10">
+    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-5 md:p-7 shadow-sm">
+      <h1 class="text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">Momentum and Collision Lab</h1>
+      <p class="mt-2 text-slate-600" data-i18n="subtitle">Test conservation of momentum for elastic and inelastic collisions.</p>
+    </section>
+
+    <section class="mt-5 grid lg:grid-cols-3 gap-4">
+      <article class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
+        <canvas id="simCanvas" class="w-full rounded-xl bg-slate-50 border border-slate-200" width="980" height="460"></canvas>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="startBtn" class="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition" data-i18n="start">Start</button>
+          <button id="resetBtn" class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition" data-i18n="reset">Reset</button>
+        </div>
+      </article>
+
+      <aside class="space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+
+          <label class="block text-sm font-medium text-slate-700" for="m1">
+            <span data-i18n="m1">Cart A mass m₁ (kg)</span>: <span id="m1Value" class="font-semibold text-blue-600">1.0</span>
+          </label>
+          <input id="m1" type="range" min="0.5" max="3" step="0.1" value="1.0" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm font-medium text-slate-700" for="m2">
+            <span data-i18n="m2">Cart B mass m₂ (kg)</span>: <span id="m2Value" class="font-semibold text-blue-600">1.5</span>
+          </label>
+          <input id="m2" type="range" min="0.5" max="3" step="0.1" value="1.5" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm font-medium text-slate-700" for="u1">
+            <span data-i18n="u1">Cart A initial u₁ (m/s)</span>: <span id="u1Value" class="font-semibold text-green-600">3.0</span>
+          </label>
+          <input id="u1" type="range" min="0.5" max="6" step="0.1" value="3.0" class="w-full accent-green-600 mb-3" />
+
+          <label class="block text-sm font-medium text-slate-700" for="u2">
+            <span data-i18n="u2">Cart B initial u₂ (m/s)</span>: <span id="u2Value" class="font-semibold text-green-600">0.0</span>
+          </label>
+          <input id="u2" type="range" min="-3" max="3" step="0.1" value="0.0" class="w-full accent-green-600 mb-3" />
+
+          <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="type">Collision type</label>
+          <div class="flex gap-2">
+            <button id="elasticBtn" class="collision-btn px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-medium" data-type="elastic" data-i18n="elastic">Elastic</button>
+            <button id="inelasticBtn" class="collision-btn px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium" data-type="inelastic" data-i18n="inelastic">Perfectly Inelastic</button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="results">Results</h2>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="pBefore">Momentum before</span><span id="pBefore" class="font-semibold text-purple-600">3.00 kg·m/s</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="pAfter">Momentum after</span><span id="pAfter" class="font-semibold text-purple-600">3.00 kg·m/s</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="keBefore">KE before</span><span id="keBefore" class="font-semibold text-red-600">4.50 J</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="keAfter">KE after</span><span id="keAfter" class="font-semibold text-red-600">4.50 J</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="v1After">v₁ after</span><span id="v1After" class="font-semibold text-green-600">-0.60 m/s</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="v2After">v₂ after</span><span id="v2After" class="font-semibold text-green-600">2.40 m/s</span></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE Formula Focus</h2>
+          <ul class="list-disc ml-5 space-y-1">
+            <li><span class="font-medium">m₁u₁ + m₂u₂ = m₁v₁ + m₂v₂</span></li>
+            <li><span class="font-medium">KE = 1/2 mv²</span></li>
+            <li><span class="font-medium">Inelastic: v₁ = v₂</span></li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const controls = {
+      m1: document.getElementById('m1'),
+      m2: document.getElementById('m2'),
+      u1: document.getElementById('u1'),
+      u2: document.getElementById('u2')
+    };
+
+    const outputs = {
+      m1Value: document.getElementById('m1Value'),
+      m2Value: document.getElementById('m2Value'),
+      u1Value: document.getElementById('u1Value'),
+      u2Value: document.getElementById('u2Value'),
+      pBefore: document.getElementById('pBefore'),
+      pAfter: document.getElementById('pAfter'),
+      keBefore: document.getElementById('keBefore'),
+      keAfter: document.getElementById('keAfter'),
+      v1After: document.getElementById('v1After'),
+      v2After: document.getElementById('v2After')
+    };
+
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const collisionBtns = document.querySelectorAll('.collision-btn');
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const state = {
+      collisionType: 'elastic',
+      running: false,
+      collided: false,
+      x1: 140,
+      x2: 700,
+      y: 290,
+      scale: 90
+    };
+
+    const translations = {
+      en: {
+        back: 'Back to Topics',
+        title: 'Momentum and Collision Lab',
+        subtitle: 'Test conservation of momentum for elastic and inelastic collisions.',
+        start: 'Start',
+        reset: 'Reset',
+        controls: 'Controls',
+        m1: 'Cart A mass m₁ (kg)',
+        m2: 'Cart B mass m₂ (kg)',
+        u1: 'Cart A initial u₁ (m/s)',
+        u2: 'Cart B initial u₂ (m/s)',
+        type: 'Collision type',
+        elastic: 'Elastic',
+        inelastic: 'Perfectly Inelastic',
+        results: 'Results',
+        pBefore: 'Momentum before',
+        pAfter: 'Momentum after',
+        keBefore: 'KE before',
+        keAfter: 'KE after',
+        v1After: 'v₁ after',
+        v2After: 'v₂ after',
+        formulaTitle: 'HKDSE Formula Focus'
+      },
+      'zh-hk': {
+        back: '返回主題頁',
+        title: '動量與碰撞實驗室',
+        subtitle: '透過彈性與完全非彈性碰撞驗證動量守恆。',
+        start: '開始',
+        reset: '重設',
+        controls: '控制面板',
+        m1: '小車 A 質量 m₁ (kg)',
+        m2: '小車 B 質量 m₂ (kg)',
+        u1: '小車 A 初速 u₁ (m/s)',
+        u2: '小車 B 初速 u₂ (m/s)',
+        type: '碰撞類型',
+        elastic: '彈性碰撞',
+        inelastic: '完全非彈性碰撞',
+        results: '結果',
+        pBefore: '碰撞前動量',
+        pAfter: '碰撞後動量',
+        keBefore: '碰撞前動能',
+        keAfter: '碰撞後動能',
+        v1After: '碰撞後 v₁',
+        v2After: '碰撞後 v₂',
+        formulaTitle: 'HKDSE 重點公式'
+      }
+    };
+
+    function getParams() {
+      return {
+        m1: Number(controls.m1.value),
+        m2: Number(controls.m2.value),
+        u1: Number(controls.u1.value),
+        u2: Number(controls.u2.value)
+      };
+    }
+
+    function calculateOutcome() {
+      const { m1, m2, u1, u2 } = getParams();
+      let v1;
+      let v2;
+      if (state.collisionType === 'elastic') {
+        v1 = ((m1 - m2) * u1 + 2 * m2 * u2) / (m1 + m2);
+        v2 = ((m2 - m1) * u2 + 2 * m1 * u1) / (m1 + m2);
+      } else {
+        v1 = (m1 * u1 + m2 * u2) / (m1 + m2);
+        v2 = v1;
+      }
+      const pBefore = m1 * u1 + m2 * u2;
+      const pAfter = m1 * v1 + m2 * v2;
+      const keBefore = 0.5 * m1 * u1 * u1 + 0.5 * m2 * u2 * u2;
+      const keAfter = 0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2;
+      return { m1, m2, u1, u2, v1, v2, pBefore, pAfter, keBefore, keAfter };
+    }
+
+    function updateReadings() {
+      const result = calculateOutcome();
+      outputs.m1Value.textContent = result.m1.toFixed(1);
+      outputs.m2Value.textContent = result.m2.toFixed(1);
+      outputs.u1Value.textContent = result.u1.toFixed(1);
+      outputs.u2Value.textContent = result.u2.toFixed(1);
+      outputs.pBefore.textContent = `${result.pBefore.toFixed(2)} kg·m/s`;
+      outputs.pAfter.textContent = `${result.pAfter.toFixed(2)} kg·m/s`;
+      outputs.keBefore.textContent = `${result.keBefore.toFixed(2)} J`;
+      outputs.keAfter.textContent = `${result.keAfter.toFixed(2)} J`;
+      outputs.v1After.textContent = `${result.v1.toFixed(2)} m/s`;
+      outputs.v2After.textContent = `${result.v2.toFixed(2)} m/s`;
+    }
+
+    function drawTrack() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(60, 330);
+      ctx.lineTo(920, 330);
+      ctx.stroke();
+
+      for (let i = 0; i <= 8; i += 1) {
+        const x = 80 + i * 100;
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, 335);
+        ctx.lineTo(x, 360);
+        ctx.stroke();
+      }
+    }
+
+    function drawCart(x, y, width, color, label) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x - width / 2, y - 50, width, 36);
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(x - width / 4, y - 8, 8, 0, Math.PI * 2);
+      ctx.arc(x + width / 4, y - 8, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px Inter';
+      ctx.fillText(label, x - 8, y - 26);
+    }
+
+    function updateSimulation() {
+      drawTrack();
+
+      const result = calculateOutcome();
+      const dt = 1 / 60;
+
+      if (state.running) {
+        if (!state.collided) {
+          state.x1 += result.u1 * state.scale * dt;
+          state.x2 += result.u2 * state.scale * dt;
+          const cart1Right = state.x1 + 40;
+          const cart2Left = state.x2 - 40;
+          if (cart1Right >= cart2Left) {
+            state.collided = true;
+            state.x1 = (state.x1 + state.x2) / 2 - 40;
+            state.x2 = (state.x1 + state.x2) / 2 + 40;
+          }
+        } else {
+          state.x1 += result.v1 * state.scale * dt;
+          state.x2 += result.v2 * state.scale * dt;
+        }
+
+        if (state.x1 < 80 || state.x2 > 900 || state.x2 < 80 || state.x1 > 900) {
+          state.running = false;
+        }
+      }
+
+      drawCart(state.x1, state.y, 80, '#2563eb', 'A');
+      drawCart(state.x2, state.y, 80, '#16a34a', 'B');
+
+      ctx.fillStyle = '#334155';
+      ctx.font = '15px Inter';
+      const speed1 = state.collided ? result.v1 : result.u1;
+      const speed2 = state.collided ? result.v2 : result.u2;
+      ctx.fillText(`vA: ${speed1.toFixed(2)} m/s`, 90, 75);
+      ctx.fillText(`vB: ${speed2.toFixed(2)} m/s`, 90, 100);
+
+      requestAnimationFrame(updateSimulation);
+    }
+
+    function resetSimulation() {
+      state.running = false;
+      state.collided = false;
+      state.x1 = 140;
+      state.x2 = 700;
+      updateReadings();
+    }
+
+    function updateLanguage(lang) {
+      localStorage.setItem('preferred_language', lang);
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        const text = translations[lang] && translations[lang][key];
+        if (text) el.innerText = text;
+      });
+      document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+      document.querySelectorAll('.lang-btn').forEach((btn) => {
+        const active = btn.dataset.lang === lang;
+        btn.classList.toggle('bg-blue-600', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('text-slate-600', !active);
+      });
+    }
+
+    Object.values(controls).forEach((input) => {
+      input.addEventListener('input', () => {
+        updateReadings();
+        if (!state.running) resetSimulation();
+      });
+    });
+
+    collisionBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        state.collisionType = btn.dataset.type;
+        collisionBtns.forEach((b) => {
+          const active = b === btn;
+          b.classList.toggle('bg-blue-600', active);
+          b.classList.toggle('text-white', active);
+          b.classList.toggle('bg-slate-200', !active);
+          b.classList.toggle('text-slate-700', !active);
+        });
+        updateReadings();
+        resetSimulation();
+      });
+    });
+
+    startBtn.addEventListener('click', () => {
+      state.running = true;
+    });
+
+    resetBtn.addEventListener('click', resetSimulation);
+
+    updateReadings();
+    resetSimulation();
+    updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
+    updateSimulation();
+  </script>
+</body>
+</html>
