@@ -3,51 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Radioactive Decay and Half-life Laboratory (HKDSE)</title>
+  <title>3D Radioactive Decay and Half-life Lab (HKDSE)</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; }
     mjx-container { display: inline-block !important; }
-    .glass { background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(10px); }
+    .glass { background: rgba(255,255,255,0.88); backdrop-filter: blur(10px); }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
   <header class="max-w-7xl mx-auto px-4 py-4">
-    <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center justify-between gap-3">
       <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
-        <span>←</span>
-        <span data-i18n="back">Back to Topics</span>
+        <span>←</span><span data-i18n="back">Back to Topics</span>
       </a>
       <div class="flex gap-2">
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="updateLanguage('en')" data-lang="en">EN</button>
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" data-lang="en" onclick="updateLanguage('en')">EN</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" data-lang="zh-hk" onclick="updateLanguage('zh-hk')">繁</button>
       </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 pb-12">
     <section class="glass rounded-3xl border border-white/70 p-6 md:p-8 shadow-xl shadow-blue-100/40">
-      <div class="grid lg:grid-cols-[1.35fr_1fr] gap-6 items-center">
+      <div class="grid lg:grid-cols-[1.35fr_1fr] gap-6">
         <div>
-          <p class="text-sm font-semibold text-blue-600 uppercase tracking-wide" data-i18n="tag">HKDSE Radioactivity Statistical Lab</p>
-          <h1 class="mt-2 text-2xl md:text-4xl font-extrabold text-slate-900 leading-tight" data-i18n="title">Radioactive Decay and Half-life Professional Lab</h1>
-          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="subtitle">Run repeated random decay trials, compare with theory, and inspect both linear and semilog plots like real data analysis.</p>
-          <div class="mt-4 flex flex-wrap gap-2 text-xs">
-            <span class="px-3 py-1.5 rounded-full bg-rose-100 text-rose-700 font-semibold">Nuclei N</span>
-            <span class="px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 font-semibold">Activity A</span>
-            <span class="px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 font-semibold">Theory fit</span>
-            <span class="px-3 py-1.5 rounded-full bg-green-100 text-green-700 font-semibold">Trial average</span>
-          </div>
+          <p class="text-sm uppercase tracking-wide font-semibold text-blue-600" data-i18n="tag">3D HKDSE Radioactivity Lab</p>
+          <h1 class="mt-2 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">3D Radioactive Decay & Half-life Lab</h1>
+          <p class="mt-3 text-slate-600" data-i18n="subtitle">Observe nuclei disappear in a 3D chamber and compare measured remaining count with the decay law.</p>
         </div>
-        <div class="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-5">
-          <h2 class="font-bold text-lg" data-i18n="focusTitle">Investigation Goals</h2>
-          <ul class="mt-3 text-sm space-y-2 leading-relaxed">
-            <li data-i18n="focus1">• Understand random microscopic decay but smooth macroscopic trend.</li>
-            <li data-i18n="focus2">• Validate N = N₀e⁻ˡᵗ using measured datasets.</li>
-            <li data-i18n="focus3">• Estimate half-life from graph and compare percentage error.</li>
+        <div class="rounded-2xl p-5 bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
+          <h2 class="font-bold text-lg" data-i18n="focusTitle">Focus</h2>
+          <ul class="mt-3 text-sm space-y-2">
+            <li data-i18n="focus1">• Random single-particle decay in 3D.</li>
+            <li data-i18n="focus2">• Macroscopic exponential law emerges.</li>
+            <li data-i18n="focus3">• Compare measured and theoretical N(t).</li>
           </ul>
         </div>
       </div>
@@ -55,76 +49,43 @@
 
     <section class="mt-6 grid xl:grid-cols-[1.45fr_1fr] gap-5">
       <article class="glass rounded-3xl border border-white/70 p-4 md:p-5 shadow-lg shadow-blue-100/30">
-        <canvas id="decayCanvas" width="1260" height="700" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
-        <div class="mt-3 grid sm:grid-cols-4 gap-3 text-sm">
-          <div class="rounded-xl border border-purple-200 bg-purple-50 px-3 py-2">
-            <div class="text-purple-700 font-semibold" data-i18n="cardTime">Time</div>
-            <div id="cardTime" class="text-purple-700 text-lg font-bold">0.00 s</div>
-          </div>
-          <div class="rounded-xl border border-green-200 bg-green-50 px-3 py-2">
-            <div class="text-green-700 font-semibold" data-i18n="cardN">Measured N</div>
-            <div id="cardN" class="text-green-700 text-lg font-bold">300</div>
-          </div>
-          <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
-            <div class="text-amber-700 font-semibold" data-i18n="cardA">Activity</div>
-            <div id="cardA" class="text-amber-700 text-lg font-bold">0.0 s⁻¹</div>
-          </div>
-          <div class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2">
-            <div class="text-blue-700 font-semibold" data-i18n="cardErr">Fit error</div>
-            <div id="cardErr" class="text-blue-700 text-lg font-bold">0.0%</div>
-          </div>
-        </div>
+        <canvas id="sceneCanvas" width="1260" height="700" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
+        <canvas id="graphCanvas" width="1260" height="240" class="w-full mt-3 rounded-2xl border border-slate-200 bg-slate-50"></canvas>
       </article>
 
       <aside class="space-y-4">
         <div class="glass rounded-2xl border border-white/70 p-4">
-          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Experiment Controls</h2>
-
-          <label class="block text-sm text-slate-700 mb-1"><span data-i18n="initialN">Initial nuclei N₀</span>: <span id="n0Out" class="font-semibold text-blue-600">300</span></label>
-          <input id="initialN" type="range" min="100" max="1000" step="20" value="300" class="w-full accent-blue-600 mb-3" />
-
-          <label class="block text-sm text-slate-700 mb-1"><span data-i18n="halfLife">Half-life T½ (s)</span>: <span id="halfOut" class="font-semibold text-blue-600">7.0</span></label>
-          <input id="halfLife" type="range" min="2" max="20" step="0.5" value="7" class="w-full accent-blue-600 mb-3" />
-
-          <label class="block text-sm text-slate-700 mb-1"><span data-i18n="timeStep">Time step Δt (s)</span>: <span id="stepOut" class="font-semibold text-blue-600">0.20</span></label>
-          <input id="timeStep" type="range" min="0.05" max="1" step="0.05" value="0.2" class="w-full accent-blue-600 mb-3" />
-
-          <label class="block text-sm text-slate-700 mb-1"><span data-i18n="trials">Number of trials</span>: <span id="trialOut" class="font-semibold text-blue-600">5</span></label>
-          <input id="trials" type="range" min="1" max="20" step="1" value="5" class="w-full accent-blue-600 mb-3" />
-
-          <label class="block text-sm text-slate-700 mb-1"><span data-i18n="viewMode">Graph mode</span></label>
-          <select id="viewMode" class="w-full rounded-lg border border-slate-300 px-3 py-2 mb-4 bg-white">
-            <option value="linear">Linear N-t</option>
-            <option value="semilog">Semilog lnN-t</option>
-          </select>
-
+          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+          <label class="block text-sm text-slate-700 mb-1"><span data-i18n="n0">Initial nuclei N₀</span>: <span id="n0Out" class="font-semibold text-blue-600">260</span></label>
+          <input id="n0" type="range" min="80" max="700" step="10" value="260" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm text-slate-700 mb-1"><span data-i18n="halfLife">Half-life T½ (s)</span>: <span id="halfOut" class="font-semibold text-blue-600">8.0</span></label>
+          <input id="halfLife" type="range" min="2" max="20" step="0.5" value="8" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm text-slate-700 mb-1"><span data-i18n="dt">Time step Δt (s)</span>: <span id="dtOut" class="font-semibold text-blue-600">0.20</span></label>
+          <input id="dt" type="range" min="0.05" max="1" step="0.05" value="0.2" class="w-full accent-blue-600 mb-4" />
           <div class="grid grid-cols-2 gap-2">
             <button id="startBtn" class="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2" data-i18n="start">Start</button>
             <button id="pauseBtn" class="rounded-xl bg-slate-700 hover:bg-slate-800 text-white font-semibold py-2" data-i18n="pause">Pause</button>
-            <button id="singleBtn" class="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2" data-i18n="singleRun">Single run</button>
+            <button id="stepBtn" class="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2" data-i18n="single">Single Step</button>
             <button id="resetBtn" class="rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2" data-i18n="reset">Reset</button>
           </div>
         </div>
 
         <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Analysis Readings</h2>
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Readings</h2>
           <div class="space-y-1.5">
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="time">Time</span><span id="tOut" class="font-semibold text-purple-600">0.00 s</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="remaining">Measured N</span><span id="nOut" class="font-semibold text-green-600">300</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="activity">Activity</span><span id="aOut" class="font-semibold text-amber-600">0.00 s⁻¹</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="theory">Theory N(t)</span><span id="theoryOut" class="font-semibold text-blue-600">300.0</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="averageN">Trial mean N</span><span id="avgOut" class="font-semibold text-teal-600">300.0</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="estimatedHalf">Estimated T½</span><span id="estHalfOut" class="font-semibold text-rose-600">--</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="time">Time</span><span id="timeOut" class="font-semibold text-purple-700">0.00 s</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="remaining">Remaining N</span><span id="remainingOut" class="font-semibold text-green-700">260</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="activity">Activity</span><span id="activityOut" class="font-semibold text-red-700">0.00 s⁻¹</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="theory">Theory N(t)</span><span id="theoryOut" class="font-semibold text-blue-700">260.0</span></div>
           </div>
         </div>
 
         <div class="glass rounded-2xl border border-white/70 p-4 text-sm text-slate-700">
           <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">Formula Bank</h2>
           <ul class="list-disc ml-5 space-y-1">
-            <li><strong>N = N₀e<sup>-λt</sup> = N₀(1/2)<sup>t/T½</sup></strong></li>
+            <li><strong>N = N₀(1/2)<sup>t/T½</sup></strong></li>
             <li><strong>λ = ln2 / T½</strong></li>
-            <li><strong>A = -ΔN/Δt = λN</strong></li>
-            <li data-i18n="fitNote">In semilog plot, slope = -λ.</li>
+            <li><strong>A = λN</strong></li>
           </ul>
         </div>
       </aside>
@@ -132,365 +93,260 @@
   </main>
 
   <script>
-    const canvas = document.getElementById('decayCanvas');
-    const ctx = canvas.getContext('2d');
     const controls = {
-      initialN: document.getElementById('initialN'),
+      n0: document.getElementById('n0'),
       halfLife: document.getElementById('halfLife'),
-      timeStep: document.getElementById('timeStep'),
-      trials: document.getElementById('trials'),
-      viewMode: document.getElementById('viewMode')
+      dt: document.getElementById('dt')
     };
-    const outputs = {
+    const out = {
       n0Out: document.getElementById('n0Out'),
       halfOut: document.getElementById('halfOut'),
-      stepOut: document.getElementById('stepOut'),
-      trialOut: document.getElementById('trialOut'),
-      tOut: document.getElementById('tOut'),
-      nOut: document.getElementById('nOut'),
-      aOut: document.getElementById('aOut'),
-      theoryOut: document.getElementById('theoryOut'),
-      avgOut: document.getElementById('avgOut'),
-      estHalfOut: document.getElementById('estHalfOut'),
-      cardTime: document.getElementById('cardTime'),
-      cardN: document.getElementById('cardN'),
-      cardA: document.getElementById('cardA'),
-      cardErr: document.getElementById('cardErr')
+      dtOut: document.getElementById('dtOut'),
+      timeOut: document.getElementById('timeOut'),
+      remainingOut: document.getElementById('remainingOut'),
+      activityOut: document.getElementById('activityOut'),
+      theoryOut: document.getElementById('theoryOut')
     };
+    const sceneCanvas = document.getElementById('sceneCanvas');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const gCtx = graphCanvas.getContext('2d');
     const startBtn = document.getElementById('startBtn');
     const pauseBtn = document.getElementById('pauseBtn');
-    const singleBtn = document.getElementById('singleBtn');
+    const stepBtn = document.getElementById('stepBtn');
     const resetBtn = document.getElementById('resetBtn');
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf8fafc);
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 300);
+    const renderer = new THREE.WebGLRenderer({ canvas: sceneCanvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    camera.position.set(0, 0, 12.5);
+    camera.lookAt(0, 0, 0);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.78));
+    const key = new THREE.DirectionalLight(0xffffff, 0.85);
+    key.position.set(7, 9, 10);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0x93c5fd, 0.48);
+    rim.position.set(-8, -5, -8);
+    scene.add(rim);
+
+    const chamber = new THREE.Mesh(
+      new THREE.BoxGeometry(8.2, 8.2, 8.2),
+      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.16 })
+    );
+    scene.add(chamber);
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(chamber.geometry), new THREE.LineBasicMaterial({ color: 0x64748b }));
+    scene.add(edges);
+
+    const nucGeo = new THREE.SphereGeometry(0.075, 12, 12);
+    const nucMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.45, metalness: 0.08 });
+    const particles = [];
+    const state = {
+      running: false,
+      t: 0,
+      N0: 260,
+      N: 260,
+      halfLife: 8,
+      dt: 0.2,
+      lastActivity: 0,
+      points: [{ t: 0, N: 260 }],
+      theoryPoints: [{ t: 0, N: 260 }],
+      lastTs: performance.now()
+    };
 
     const translations = {
       en: {
         back: 'Back to Topics',
-        tag: 'HKDSE Radioactivity Statistical Lab',
-        title: 'Radioactive Decay and Half-life Professional Lab',
-        subtitle: 'Run repeated random decay trials, compare with theory, and inspect both linear and semilog plots like real data analysis.',
-        focusTitle: 'Investigation Goals',
-        focus1: '• Understand random microscopic decay but smooth macroscopic trend.',
-        focus2: '• Validate N = N₀e⁻ˡᵗ using measured datasets.',
-        focus3: '• Estimate half-life from graph and compare percentage error.',
-        controls: 'Experiment Controls',
-        initialN: 'Initial nuclei N₀',
+        tag: '3D HKDSE Radioactivity Lab',
+        title: '3D Radioactive Decay & Half-life Lab',
+        subtitle: 'Observe nuclei disappear in a 3D chamber and compare measured remaining count with the decay law.',
+        focusTitle: 'Focus',
+        focus1: '• Random single-particle decay in 3D.',
+        focus2: '• Macroscopic exponential law emerges.',
+        focus3: '• Compare measured and theoretical N(t).',
+        controls: 'Controls',
+        n0: 'Initial nuclei N₀',
         halfLife: 'Half-life T½ (s)',
-        timeStep: 'Time step Δt (s)',
-        trials: 'Number of trials',
-        viewMode: 'Graph mode',
+        dt: 'Time step Δt (s)',
         start: 'Start',
         pause: 'Pause',
-        singleRun: 'Single run',
+        single: 'Single Step',
         reset: 'Reset',
-        readings: 'Analysis Readings',
+        readings: 'Readings',
         time: 'Time',
-        remaining: 'Measured N',
+        remaining: 'Remaining N',
         activity: 'Activity',
         theory: 'Theory N(t)',
-        averageN: 'Trial mean N',
-        estimatedHalf: 'Estimated T½',
-        cardTime: 'Time',
-        cardN: 'Measured N',
-        cardA: 'Activity',
-        cardErr: 'Fit error',
-        formulaTitle: 'Formula Bank',
-        fitNote: 'In semilog plot, slope = -λ.'
+        formulaTitle: 'Formula Bank'
       },
       'zh-hk': {
         back: '返回主題頁',
-        tag: 'HKDSE 放射統計實驗室',
-        title: '放射性衰變與半衰期專業實驗室',
-        subtitle: '進行多次隨機衰變試驗，比較理論曲線，並以線性及半對數圖分析數據。',
-        focusTitle: '實驗目標',
-        focus1: '• 理解微觀隨機、宏觀規律的衰變特性。',
-        focus2: '• 以量度數據驗證 N = N₀e⁻ˡᵗ。',
-        focus3: '• 由圖像估算半衰期並比較百分誤差。',
-        controls: '實驗控制',
-        initialN: '初始核數 N₀',
+        tag: '3D HKDSE 放射實驗室',
+        title: '3D 放射性衰變與半衰期實驗室',
+        subtitle: '在 3D 容器中觀察核子衰變，並比較量度剩餘數與理論衰減曲線。',
+        focusTitle: '重點',
+        focus1: '• 3D 單粒子隨機衰變。',
+        focus2: '• 宏觀上呈現指數衰減規律。',
+        focus3: '• 比較量度與理論 N(t)。',
+        controls: '控制面板',
+        n0: '初始核數 N₀',
         halfLife: '半衰期 T½ (s)',
-        timeStep: '時間步長 Δt (s)',
-        trials: '試驗次數',
-        viewMode: '圖像模式',
+        dt: '時間步長 Δt (s)',
         start: '開始',
         pause: '暫停',
-        singleRun: '單步',
+        single: '單步',
         reset: '重設',
-        readings: '分析讀數',
+        readings: '讀數',
         time: '時間',
-        remaining: '量度 N',
+        remaining: '剩餘 N',
         activity: '活度',
         theory: '理論 N(t)',
-        averageN: '試驗平均 N',
-        estimatedHalf: '估算 T½',
-        cardTime: '時間',
-        cardN: '量度 N',
-        cardA: '活度',
-        cardErr: '擬合誤差',
-        formulaTitle: '公式庫',
-        fitNote: '半對數圖中，斜率 = -λ。'
+        formulaTitle: '公式庫'
       }
     };
 
-    const state = {
-      running: false,
-      t: 0,
-      N0: 300,
-      halfLife: 7,
-      dt: 0.2,
-      trials: 5,
-      currentN: 300,
-      points: [],
-      theoryPoints: [],
-      trialSeries: [],
-      avgSeries: [],
-      lastActivity: 0,
-      estimatedHalf: null,
-      lastTimestamp: performance.now()
-    };
+    function rebuildParticles() {
+      particles.forEach((p) => scene.remove(p.mesh));
+      particles.length = 0;
+      for (let i = 0; i < state.N0; i += 1) {
+        const mesh = new THREE.Mesh(nucGeo, nucMat.clone());
+        mesh.position.set((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 7, (Math.random() - 0.5) * 7);
+        scene.add(mesh);
+        particles.push({ alive: true, mesh });
+      }
+      state.N = state.N0;
+    }
 
     function syncControls() {
-      state.N0 = Number(controls.initialN.value);
+      state.N0 = Number(controls.n0.value);
       state.halfLife = Number(controls.halfLife.value);
-      state.dt = Number(controls.timeStep.value);
-      state.trials = Number(controls.trials.value);
-      outputs.n0Out.textContent = state.N0.toFixed(0);
-      outputs.halfOut.textContent = state.halfLife.toFixed(1);
-      outputs.stepOut.textContent = state.dt.toFixed(2);
-      outputs.trialOut.textContent = state.trials.toFixed(0);
+      state.dt = Number(controls.dt.value);
+      out.n0Out.textContent = state.N0.toFixed(0);
+      out.halfOut.textContent = state.halfLife.toFixed(1);
+      out.dtOut.textContent = state.dt.toFixed(2);
     }
 
-    function seedTrials() {
-      state.trialSeries = [];
-      for (let k = 0; k < state.trials; k += 1) {
-        state.trialSeries.push([{ t: 0, N: state.N0 }]);
-      }
-    }
-
-    function resetSimulation() {
+    function resetSim() {
       syncControls();
       state.running = false;
       state.t = 0;
-      state.currentN = state.N0;
+      state.lastActivity = 0;
       state.points = [{ t: 0, N: state.N0 }];
       state.theoryPoints = [{ t: 0, N: state.N0 }];
-      state.avgSeries = [{ t: 0, N: state.N0 }];
-      state.lastActivity = 0;
-      state.estimatedHalf = null;
-      seedTrials();
-      updateReadings();
-      draw();
+      rebuildParticles();
+      updateOutputs();
     }
 
-    function lambda() {
-      return Math.log(2) / state.halfLife;
+    function updateOutputs() {
+      const lambda = Math.log(2) / state.halfLife;
+      const theory = state.N0 * Math.exp(-lambda * state.t);
+      out.timeOut.textContent = `${state.t.toFixed(2)} s`;
+      out.remainingOut.textContent = `${state.N}`;
+      out.activityOut.textContent = `${state.lastActivity.toFixed(2)} s⁻¹`;
+      out.theoryOut.textContent = theory.toFixed(1);
     }
 
-    function decayStepValue(N) {
-      const p = 1 - Math.exp(-lambda() * state.dt);
+    function decayStep() {
+      const lambda = Math.log(2) / state.halfLife;
+      const pDecay = 1 - Math.exp(-lambda * state.dt);
       let decayed = 0;
-      for (let i = 0; i < N; i += 1) {
-        if (Math.random() < p) decayed += 1;
-      }
-      return Math.max(0, N - decayed);
-    }
-
-    function runSingleStep() {
-      const prevN = state.currentN;
-      state.currentN = decayStepValue(state.currentN);
-      state.t += state.dt;
-      const theoryN = state.N0 * Math.exp(-lambda() * state.t);
-      state.points.push({ t: state.t, N: state.currentN });
-      state.theoryPoints.push({ t: state.t, N: theoryN });
-      state.lastActivity = (prevN - state.currentN) / state.dt;
-
-      let sum = 0;
-      state.trialSeries.forEach((series) => {
-        const last = series[series.length - 1];
-        const newN = decayStepValue(last.N);
-        series.push({ t: state.t, N: newN });
-        sum += newN;
-      });
-      state.avgSeries.push({ t: state.t, N: sum / state.trials });
-
-      estimateHalfLife();
-      updateReadings();
-      draw();
-    }
-
-    function estimateHalfLife() {
-      if (state.points.length < 5) {
-        state.estimatedHalf = null;
-        return;
-      }
-      let sx = 0;
-      let sy = 0;
-      let sxx = 0;
-      let sxy = 0;
-      let n = 0;
-      state.points.forEach((p) => {
-        if (p.N > 0) {
-          const x = p.t;
-          const y = Math.log(p.N);
-          sx += x;
-          sy += y;
-          sxx += x * x;
-          sxy += x * y;
-          n += 1;
+      for (let i = 0; i < particles.length; i += 1) {
+        const part = particles[i];
+        if (!part.alive) continue;
+        if (Math.random() < pDecay) {
+          part.alive = false;
+          part.mesh.visible = false;
+          decayed += 1;
         }
-      });
-      if (n < 2) return;
-      const denom = n * sxx - sx * sx;
-      if (Math.abs(denom) < 1e-9) return;
-      const slope = (n * sxy - sx * sy) / denom;
-      if (slope < 0) {
-        state.estimatedHalf = Math.log(2) / (-slope);
       }
+      state.N -= decayed;
+      state.lastActivity = decayed / state.dt;
+      state.t += state.dt;
+      const theory = state.N0 * Math.pow(0.5, state.t / state.halfLife);
+      state.points.push({ t: state.t, N: state.N });
+      state.theoryPoints.push({ t: state.t, N: theory });
+      updateOutputs();
     }
 
-    function updateReadings() {
-      const theoryN = state.N0 * Math.exp(-lambda() * state.t);
-      const avgN = state.avgSeries[state.avgSeries.length - 1].N;
-      const fitError = theoryN > 0 ? (Math.abs(state.currentN - theoryN) / theoryN) * 100 : 0;
-      outputs.tOut.textContent = `${state.t.toFixed(2)} s`;
-      outputs.nOut.textContent = `${state.currentN.toFixed(0)}`;
-      outputs.aOut.textContent = `${state.lastActivity.toFixed(2)} s⁻¹`;
-      outputs.theoryOut.textContent = theoryN.toFixed(2);
-      outputs.avgOut.textContent = avgN.toFixed(2);
-      outputs.estHalfOut.textContent = state.estimatedHalf ? `${state.estimatedHalf.toFixed(2)} s` : '--';
-      outputs.cardTime.textContent = `${state.t.toFixed(2)} s`;
-      outputs.cardN.textContent = `${state.currentN.toFixed(0)}`;
-      outputs.cardA.textContent = `${state.lastActivity.toFixed(2)} s⁻¹`;
-      outputs.cardErr.textContent = `${fitError.toFixed(1)}%`;
-    }
-
-    function drawAxes(x0, y0, w, h, xLabel, yLabel) {
-      ctx.strokeStyle = '#64748b';
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(x0, y0 + h);
-      ctx.lineTo(x0 + w, y0 + h);
-      ctx.stroke();
-      ctx.fillStyle = '#475569';
-      ctx.font = '13px Inter';
-      ctx.fillText(xLabel, x0 + w - 18, y0 + h + 20);
-      ctx.fillText(yLabel, x0 - 28, y0 - 8);
-    }
-
-    function drawSeriesLinear(series, color, x0, y0, w, h, tMax, nMax, lineWidth = 2) {
-      ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth;
-      ctx.beginPath();
-      series.forEach((p, i) => {
-        const x = x0 + (p.t / tMax) * w;
-        const y = y0 + h - (p.N / nMax) * h;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-    }
-
-    function drawSeriesSemilog(series, color, x0, y0, w, h, tMax, lnMax, lnMin, lineWidth = 2) {
-      ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth;
-      ctx.beginPath();
-      series.forEach((p, i) => {
-        const safeN = Math.max(1e-6, p.N);
-        const lnN = Math.log(safeN);
-        const x = x0 + (p.t / tMax) * w;
-        const y = y0 + h - ((lnN - lnMin) / (lnMax - lnMin)) * h;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-    }
-
-    function drawParticlePanel(x, y, w, h) {
-      ctx.fillStyle = '#eff6ff';
-      ctx.fillRect(x, y, w, h);
-      ctx.strokeStyle = '#93c5fd';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(x, y, w, h);
-      const ratio = state.currentN / state.N0;
-      const dotCount = Math.max(8, Math.min(160, Math.round(160 * ratio)));
-      for (let i = 0; i < dotCount; i += 1) {
-        const px = x + 8 + ((i * 23) % (w - 16));
-        const py = y + 10 + ((i * 37) % (h - 20));
-        ctx.fillStyle = '#dc2626';
-        ctx.beginPath();
-        ctx.arc(px, py, 2.6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = '#334155';
-      ctx.font = '12px Inter';
-      ctx.fillText(document.documentElement.lang === 'zh-HK' ? '核子樣本池' : 'Nuclei pool', x + 8, y + 16);
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const chartX = 70;
-      const chartY = 70;
-      const chartW = 790;
-      const chartH = 470;
-      const tMax = Math.max(25, state.t + state.dt * 2);
+    function drawGraph() {
+      gCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+      gCtx.fillStyle = '#f8fafc';
+      gCtx.fillRect(0, 0, graphCanvas.width, graphCanvas.height);
+      const m = 46;
+      const w = graphCanvas.width - m * 2;
+      const h = graphCanvas.height - m * 2;
+      const tMax = Math.max(18, state.points[state.points.length - 1].t + 1);
       const nMax = Math.max(10, state.N0);
-      const mode = controls.viewMode.value;
+      const toX = (t) => m + (t / tMax) * w;
+      const toY = (n) => graphCanvas.height - m - (n / nMax) * h;
 
-      if (mode === 'linear') {
-        drawAxes(chartX, chartY, chartW, chartH, 't (s)', 'N');
-        state.trialSeries.forEach((series, idx) => {
-          const alpha = 0.09 + (idx / Math.max(1, state.trialSeries.length - 1)) * 0.08;
-          drawSeriesLinear(series, `rgba(37,99,235,${alpha})`, chartX, chartY, chartW, chartH, tMax, nMax, 1.2);
-        });
-        drawSeriesLinear(state.theoryPoints, '#f59e0b', chartX, chartY, chartW, chartH, tMax, nMax, 2.2);
-        drawSeriesLinear(state.avgSeries, '#0f766e', chartX, chartY, chartW, chartH, tMax, nMax, 2.4);
-        drawSeriesLinear(state.points, '#2563eb', chartX, chartY, chartW, chartH, tMax, nMax, 2.8);
-      } else {
-        const lnMax = Math.log(state.N0);
-        const lnMin = 0;
-        drawAxes(chartX, chartY, chartW, chartH, 't (s)', 'ln N');
-        state.trialSeries.forEach((series, idx) => {
-          const alpha = 0.09 + (idx / Math.max(1, state.trialSeries.length - 1)) * 0.08;
-          drawSeriesSemilog(series, `rgba(37,99,235,${alpha})`, chartX, chartY, chartW, chartH, tMax, lnMax, lnMin, 1.2);
-        });
-        drawSeriesSemilog(state.theoryPoints, '#f59e0b', chartX, chartY, chartW, chartH, tMax, lnMax, lnMin, 2.2);
-        drawSeriesSemilog(state.avgSeries, '#0f766e', chartX, chartY, chartW, chartH, tMax, lnMax, lnMin, 2.4);
-        drawSeriesSemilog(state.points, '#2563eb', chartX, chartY, chartW, chartH, tMax, lnMax, lnMin, 2.8);
-      }
+      gCtx.strokeStyle = '#94a3b8';
+      gCtx.lineWidth = 1.5;
+      gCtx.beginPath();
+      gCtx.moveTo(m, m);
+      gCtx.lineTo(m, graphCanvas.height - m);
+      gCtx.lineTo(graphCanvas.width - m, graphCanvas.height - m);
+      gCtx.stroke();
 
-      drawParticlePanel(900, 82, 300, 190);
+      gCtx.strokeStyle = '#2563eb';
+      gCtx.lineWidth = 2.2;
+      gCtx.beginPath();
+      state.points.forEach((p, i) => {
+        const x = toX(p.t);
+        const y = toY(p.N);
+        if (i === 0) gCtx.moveTo(x, y); else gCtx.lineTo(x, y);
+      });
+      gCtx.stroke();
 
-      ctx.fillStyle = '#334155';
-      ctx.font = '13px Inter';
-      const legendY = 300;
-      const langZh = document.documentElement.lang === 'zh-HK';
-      ctx.fillStyle = '#2563eb'; ctx.fillRect(900, legendY, 16, 3);
-      ctx.fillStyle = '#334155'; ctx.fillText(langZh ? '本次量度' : 'Current run', 924, legendY + 5);
-      ctx.fillStyle = '#0f766e'; ctx.fillRect(900, legendY + 24, 16, 3);
-      ctx.fillStyle = '#334155'; ctx.fillText(langZh ? '多次平均' : 'Trial mean', 924, legendY + 29);
-      ctx.fillStyle = '#f59e0b'; ctx.fillRect(900, legendY + 48, 16, 3);
-      ctx.fillStyle = '#334155'; ctx.fillText(langZh ? '理論曲線' : 'Theory curve', 924, legendY + 53);
+      gCtx.strokeStyle = '#d97706';
+      gCtx.lineWidth = 2.1;
+      gCtx.beginPath();
+      state.theoryPoints.forEach((p, i) => {
+        const x = toX(p.t);
+        const y = toY(p.N);
+        if (i === 0) gCtx.moveTo(x, y); else gCtx.lineTo(x, y);
+      });
+      gCtx.stroke();
 
-      ctx.fillStyle = '#0f172a';
-      ctx.font = '600 14px Inter';
-      ctx.fillText(`λ = ${lambda().toFixed(4)} s^-1`, 900, 392);
-      ctx.fillText(`T1/2 set = ${state.halfLife.toFixed(2)} s`, 900, 416);
-      if (state.estimatedHalf) {
-        ctx.fillText(`T1/2 fit = ${state.estimatedHalf.toFixed(2)} s`, 900, 440);
-      } else {
-        ctx.fillText('T1/2 fit = --', 900, 440);
+      gCtx.fillStyle = '#334155';
+      gCtx.font = '12px Inter';
+      gCtx.fillText('t (s)', graphCanvas.width - m - 18, graphCanvas.height - m + 18);
+      gCtx.fillText('N', m - 20, m - 10);
+    }
+
+    function resizeRenderer() {
+      const r = sceneCanvas.getBoundingClientRect();
+      const w = Math.max(200, Math.floor(r.width));
+      const h = Math.max(220, Math.floor(r.height));
+      if (sceneCanvas.width !== w || sceneCanvas.height !== h) {
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
       }
     }
 
-    function animate(now) {
-      const elapsed = (now - state.lastTimestamp) / 1000;
-      state.lastTimestamp = now;
-      if (state.running && elapsed > state.dt * 0.45) {
-        runSingleStep();
-      } else {
-        draw();
+    function animate(ts) {
+      const elapsed = Math.min(0.05, (ts - state.lastTs) / 1000);
+      state.lastTs = ts;
+      if (state.running) {
+        if (!state.acc) state.acc = 0;
+        state.acc += elapsed;
+        while (state.acc >= state.dt) {
+          state.acc -= state.dt;
+          decayStep();
+          if (state.N <= 0) {
+            state.running = false;
+            break;
+          }
+        }
       }
+      chamber.rotation.y += 0.0025;
+      chamber.rotation.x += 0.0013;
+      edges.rotation.copy(chamber.rotation);
+      resizeRenderer();
+      renderer.render(scene, camera);
+      drawGraph();
       requestAnimationFrame(animate);
     }
 
@@ -508,26 +364,20 @@
         btn.classList.toggle('text-white', active);
         btn.classList.toggle('text-slate-600', !active);
       });
-      updateReadings();
-      draw();
     }
 
-    [controls.initialN, controls.halfLife, controls.timeStep, controls.trials].forEach((control) => {
-      control.addEventListener('input', () => {
-        if (!state.running) resetSimulation();
-        else syncControls();
+    [controls.n0, controls.halfLife, controls.dt].forEach((el) => {
+      el.addEventListener('input', () => {
+        syncControls();
+        if (!state.running) resetSim();
       });
     });
-    controls.viewMode.addEventListener('change', draw);
     startBtn.addEventListener('click', () => { state.running = true; });
     pauseBtn.addEventListener('click', () => { state.running = false; });
-    singleBtn.addEventListener('click', () => {
-      state.running = false;
-      runSingleStep();
-    });
-    resetBtn.addEventListener('click', resetSimulation);
+    stepBtn.addEventListener('click', () => { state.running = false; decayStep(); });
+    resetBtn.addEventListener('click', resetSim);
 
-    resetSimulation();
+    resetSim();
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
     requestAnimationFrame(animate);
   </script>

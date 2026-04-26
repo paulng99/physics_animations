@@ -3,98 +3,82 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Standing Waves and Resonance Studio (HKDSE)</title>
+  <title>Standing Waves Resonance 3D Studio (HKDSE)</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; }
     mjx-container { display: inline-block !important; }
-    .glass { background: rgba(255, 255, 255, 0.86); backdrop-filter: blur(8px); }
+    .glass { background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(10px); }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
   <header class="max-w-7xl mx-auto px-4 py-4">
-    <div class="flex items-center justify-between gap-3">
-      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+    <div class="flex items-center justify-between">
+      <a href="index.html" class="inline-flex items-center gap-2 text-blue-600 text-sm font-semibold hover:text-blue-700">
         <span>←</span><span data-i18n="back">Back to Topics</span>
       </a>
       <div class="flex gap-2">
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="updateLanguage('en')" data-lang="en">EN</button>
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm bg-blue-600 text-white" data-lang="en" onclick="updateLanguage('en')">EN</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm text-slate-600 hover:bg-blue-100" data-lang="zh-hk" onclick="updateLanguage('zh-hk')">繁</button>
       </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 pb-12">
-    <section class="glass rounded-3xl border border-white/70 p-6 md:p-8 shadow-lg shadow-blue-100/40">
-      <div class="grid lg:grid-cols-[1.4fr_1fr] gap-5">
+    <section class="glass rounded-3xl border border-white/70 p-6 md:p-8 shadow-xl shadow-blue-100/40">
+      <div class="grid lg:grid-cols-[1.45fr_1fr] gap-6">
         <div>
-          <p class="text-sm uppercase tracking-wide text-blue-600 font-semibold" data-i18n="tag">HKDSE Wave Motion Lab</p>
-          <h1 class="mt-2 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">Standing Waves & Resonance Studio</h1>
-          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="subtitle">Switch between string and air-column models, tune harmonics, and inspect resonance bandwidth with a frequency-response graph.</p>
+          <p class="text-blue-600 font-semibold text-sm uppercase tracking-wide" data-i18n="tag">HKDSE Wave Motion 3D Lab</p>
+          <h1 class="mt-2 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">Standing Waves and Resonance 3D Studio</h1>
+          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="subtitle">Observe a 3D vibrating string, identify node/antinode geometry, and compare driving frequency against resonance peaks.</p>
         </div>
         <div class="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-5">
-          <h2 class="font-bold text-lg" data-i18n="goalTitle">Learning Goals</h2>
-          <ul class="mt-2 text-sm space-y-1">
-            <li data-i18n="goal1">• Identify node/antinode patterns by harmonic number.</li>
-            <li data-i18n="goal2">• Connect boundary conditions with harmonic formulae.</li>
-            <li data-i18n="goal3">• Explain why amplitude peaks at resonance.</li>
+          <h2 class="font-bold text-lg" data-i18n="focusTitle">Learning Focus</h2>
+          <ul class="mt-3 text-sm space-y-2">
+            <li data-i18n="focus1">• Link f₁ = v/(2L) with harmonic sequence.</li>
+            <li data-i18n="focus2">• Visualize phase and amplitude in 3D space.</li>
+            <li data-i18n="focus3">• Use response curve to tune resonance quickly.</li>
           </ul>
         </div>
       </div>
     </section>
 
-    <section class="mt-6 grid xl:grid-cols-[1.45fr_1fr] gap-5">
-      <article class="glass rounded-3xl border border-white/70 p-4 md:p-5">
-        <canvas id="waveCanvas" class="w-full rounded-2xl bg-slate-50 border border-slate-200" width="1200" height="520"></canvas>
-        <canvas id="responseCanvas" class="w-full mt-3 rounded-2xl bg-slate-50 border border-slate-200" width="1200" height="250"></canvas>
+    <section class="mt-6 grid xl:grid-cols-[1.5fr_1fr] gap-5">
+      <article class="glass rounded-3xl border border-white/70 p-4">
+        <canvas id="waveCanvas" width="1200" height="520" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
+        <canvas id="responseCanvas" width="1200" height="250" class="w-full mt-3 rounded-2xl border border-slate-200 bg-slate-50"></canvas>
       </article>
 
       <aside class="space-y-4">
         <div class="glass rounded-2xl border border-white/70 p-4">
-          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Experiment Controls</h2>
-          <label class="block text-sm text-slate-700 mb-1" data-i18n="systemLabel">System</label>
-          <select id="system" class="w-full rounded-lg border border-slate-300 px-3 py-2 mb-3 bg-white">
-            <option value="string">String (both ends fixed)</option>
-            <option value="pipe-open">Air column (open-open)</option>
-            <option value="pipe-closed">Air column (closed-open)</option>
-          </select>
-
-          <label class="block text-sm text-slate-700" for="length"><span data-i18n="length">Effective length L (m)</span>: <span id="lengthOut" class="text-blue-600 font-semibold">1.20</span></label>
-          <input id="length" type="range" min="0.3" max="2.4" step="0.01" value="1.2" class="w-full accent-blue-600 mb-3" />
+          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+          <label class="block text-sm text-slate-700" for="length"><span data-i18n="length">String length L (m)</span>: <span id="lengthOut" class="text-blue-600 font-semibold">1.20</span></label>
+          <input id="length" type="range" min="0.4" max="2.4" step="0.01" value="1.2" class="w-full accent-blue-600 mb-3" />
 
           <label class="block text-sm text-slate-700" for="speed"><span data-i18n="speed">Wave speed v (m/s)</span>: <span id="speedOut" class="text-blue-600 font-semibold">120</span></label>
-          <input id="speed" type="range" min="40" max="380" step="1" value="120" class="w-full accent-blue-600 mb-3" />
+          <input id="speed" type="range" min="30" max="300" step="1" value="120" class="w-full accent-blue-600 mb-3" />
 
           <label class="block text-sm text-slate-700" for="frequency"><span data-i18n="frequency">Driver frequency f (Hz)</span>: <span id="frequencyOut" class="text-blue-600 font-semibold">100</span></label>
-          <input id="frequency" type="range" min="5" max="500" step="1" value="100" class="w-full accent-blue-600 mb-3" />
+          <input id="frequency" type="range" min="8" max="320" step="1" value="100" class="w-full accent-blue-600 mb-3" />
 
           <label class="block text-sm text-slate-700" for="harmonic"><span data-i18n="harmonic">Target harmonic n</span>: <span id="harmonicOut" class="text-blue-600 font-semibold">2</span></label>
           <input id="harmonic" type="range" min="1" max="10" step="1" value="2" class="w-full accent-blue-600 mb-3" />
 
-          <button id="tuneBtn" class="w-full rounded-xl bg-blue-600 text-white py-2 font-semibold hover:bg-blue-700 transition" data-i18n="autoTune">Auto-tune to fn</button>
+          <button id="tuneBtn" class="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2" data-i18n="tune">Auto Tune to fₙ</button>
         </div>
 
         <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
           <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Readings</h2>
           <div class="space-y-1.5">
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="fundamental">Fundamental f1</span><span id="f1Out" class="font-semibold text-green-600">50.0 Hz</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="resFreq">Target resonance fn</span><span id="fnOut" class="font-semibold text-purple-600">100.0 Hz</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="detuning">Detuning |f-fn|</span><span id="detuneOut" class="font-semibold text-red-600">0.0 Hz</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="amp">Relative amplitude</span><span id="ampOut" class="font-semibold text-blue-600">1.00</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="quality">Resonance quality</span><span id="qualityOut" class="font-semibold text-amber-700">Sharp</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="fundamental">Fundamental f₁</span><span id="f1Out" class="font-semibold text-green-600">50.0 Hz</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="resFreq">Resonance fₙ</span><span id="fnOut" class="font-semibold text-purple-600">100.0 Hz</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="detuning">Detuning |f-fₙ|</span><span id="detuneOut" class="font-semibold text-red-600">0.0 Hz</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="amplitude">Relative amplitude</span><span id="ampOut" class="font-semibold text-blue-600">1.00</span></div>
           </div>
-        </div>
-
-        <div class="glass rounded-2xl border border-white/70 p-4 text-sm text-slate-700">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE Formula Bank</h2>
-          <ul class="list-disc ml-5 space-y-1">
-            <li id="formula1">String/Open-open: fn = n(v/2L)</li>
-            <li id="formula2">Closed-open pipe: fn = n(v/4L), n = 1,3,5...</li>
-            <li data-i18n="formula3">Resonance occurs when driving frequency matches a natural frequency.</li>
-          </ul>
         </div>
       </aside>
     </section>
@@ -102,13 +86,12 @@
 
   <script>
     const controls = {
-      system: document.getElementById('system'),
       length: document.getElementById('length'),
       speed: document.getElementById('speed'),
       frequency: document.getElementById('frequency'),
       harmonic: document.getElementById('harmonic')
     };
-    const outputs = {
+    const out = {
       lengthOut: document.getElementById('lengthOut'),
       speedOut: document.getElementById('speedOut'),
       frequencyOut: document.getElementById('frequencyOut'),
@@ -116,254 +99,243 @@
       f1Out: document.getElementById('f1Out'),
       fnOut: document.getElementById('fnOut'),
       detuneOut: document.getElementById('detuneOut'),
-      ampOut: document.getElementById('ampOut'),
-      qualityOut: document.getElementById('qualityOut')
+      ampOut: document.getElementById('ampOut')
     };
     const tuneBtn = document.getElementById('tuneBtn');
-    const formula1 = document.getElementById('formula1');
-    const formula2 = document.getElementById('formula2');
     const waveCanvas = document.getElementById('waveCanvas');
     const responseCanvas = document.getElementById('responseCanvas');
-    const wCtx = waveCanvas.getContext('2d');
     const rCtx = responseCanvas.getContext('2d');
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf8fafc);
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100);
+    const renderer = new THREE.WebGLRenderer({ canvas: waveCanvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    camera.position.set(0, 2.4, 7.2);
+    camera.lookAt(0, 0, 0);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.74));
+    const key = new THREE.DirectionalLight(0xffffff, 0.85);
+    key.position.set(5, 8, 4);
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0x93c5fd, 0.45);
+    fill.position.set(-6, 4, -4);
+    scene.add(fill);
+
+    const base = new THREE.Mesh(
+      new THREE.BoxGeometry(8.6, 0.2, 2.5),
+      new THREE.MeshStandardMaterial({ color: 0xdbeafe, roughness: 0.95 })
+    );
+    base.position.y = -1;
+    scene.add(base);
+
+    const pegGeom = new THREE.CylinderGeometry(0.1, 0.1, 1.5, 20);
+    const pegMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
+    const leftPeg = new THREE.Mesh(pegGeom, pegMat);
+    leftPeg.position.set(-3.8, -0.2, 0);
+    scene.add(leftPeg);
+    const rightPeg = new THREE.Mesh(pegGeom, pegMat);
+    rightPeg.position.set(3.8, -0.2, 0);
+    scene.add(rightPeg);
+
+    const samples = 180;
+    const positions = new Float32Array(samples * 3);
+    const waveGeometry = new THREE.BufferGeometry();
+    waveGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const waveLine = new THREE.Line(
+      waveGeometry,
+      new THREE.LineBasicMaterial({ color: 0x2563eb, linewidth: 3 })
+    );
+    scene.add(waveLine);
+
+    const nodeGroup = new THREE.Group();
+    const antiGroup = new THREE.Group();
+    scene.add(nodeGroup, antiGroup);
 
     let phase = 0;
 
     const translations = {
       en: {
         back: 'Back to Topics',
-        tag: 'HKDSE Wave Motion Lab',
-        title: 'Standing Waves & Resonance Studio',
-        subtitle: 'Switch between string and air-column models, tune harmonics, and inspect resonance bandwidth with a frequency-response graph.',
-        goalTitle: 'Learning Goals',
-        goal1: '• Identify node/antinode patterns by harmonic number.',
-        goal2: '• Connect boundary conditions with harmonic formulae.',
-        goal3: '• Explain why amplitude peaks at resonance.',
-        controls: 'Experiment Controls',
-        systemLabel: 'System',
-        length: 'Effective length L (m)',
+        tag: 'HKDSE Wave Motion 3D Lab',
+        title: 'Standing Waves and Resonance 3D Studio',
+        subtitle: 'Observe a 3D vibrating string, identify node/antinode geometry, and compare driving frequency against resonance peaks.',
+        focusTitle: 'Learning Focus',
+        focus1: '• Link f₁ = v/(2L) with harmonic sequence.',
+        focus2: '• Visualize phase and amplitude in 3D space.',
+        focus3: '• Use response curve to tune resonance quickly.',
+        controls: 'Controls',
+        length: 'String length L (m)',
         speed: 'Wave speed v (m/s)',
         frequency: 'Driver frequency f (Hz)',
         harmonic: 'Target harmonic n',
-        autoTune: 'Auto-tune to fn',
+        tune: 'Auto Tune to fₙ',
         readings: 'Readings',
-        fundamental: 'Fundamental f1',
-        resFreq: 'Target resonance fn',
-        detuning: 'Detuning |f-fn|',
-        amp: 'Relative amplitude',
-        quality: 'Resonance quality',
-        formulaTitle: 'HKDSE Formula Bank',
-        formula3: 'Resonance occurs when driving frequency matches a natural frequency.',
-        sharp: 'Sharp',
-        moderate: 'Moderate',
-        broad: 'Broad'
+        fundamental: 'Fundamental f₁',
+        resFreq: 'Resonance fₙ',
+        detuning: 'Detuning |f-fₙ|',
+        amplitude: 'Relative amplitude'
       },
       'zh-hk': {
         back: '返回主題頁',
-        tag: 'HKDSE 波動實驗室',
-        title: '駐波與共振專業模擬',
-        subtitle: '可切換弦線及氣柱模型，調校諧波，並用頻率響應曲線分析共振帶寬。',
-        goalTitle: '學習目標',
-        goal1: '• 由諧波序數辨識波節與波腹分佈。',
-        goal2: '• 把邊界條件連結至諧波公式。',
-        goal3: '• 解釋為何在共振時振幅最大。',
-        controls: '實驗控制',
-        systemLabel: '系統',
-        length: '有效長度 L (m)',
+        tag: 'HKDSE 波動 3D 實驗室',
+        title: '駐波與共振 3D 專業模擬',
+        subtitle: '以 3D 觀察弦振動、波節/波腹幾何，並用頻率響應曲線判斷共振。',
+        focusTitle: '學習重點',
+        focus1: '• 用 f₁ = v/(2L) 連接諧波序列。',
+        focus2: '• 在 3D 空間觀察相位與振幅。',
+        focus3: '• 用響應曲線快速調諧至共振。',
+        controls: '控制面板',
+        length: '弦長 L (m)',
         speed: '波速 v (m/s)',
         frequency: '驅動頻率 f (Hz)',
         harmonic: '目標諧波 n',
-        autoTune: '自動調至 fn',
+        tune: '自動調至 fₙ',
         readings: '讀數',
-        fundamental: '基頻 f1',
-        resFreq: '目標共振 fn',
-        detuning: '失諧量 |f-fn|',
-        amp: '相對振幅',
-        quality: '共振尖銳度',
-        formulaTitle: 'HKDSE 公式庫',
-        formula3: '當外加頻率等於固有頻率時出現共振。',
-        sharp: '尖銳',
-        moderate: '中等',
-        broad: '寬闊'
+        fundamental: '基頻 f₁',
+        resFreq: '共振頻率 fₙ',
+        detuning: '失諧量 |f-fₙ|',
+        amplitude: '相對振幅'
       }
     };
 
-    function oddIndex(n) {
-      return 2 * n - 1;
-    }
-
-    function state() {
-      const system = controls.system.value;
+    function getState() {
       const L = Number(controls.length.value);
       const v = Number(controls.speed.value);
       const f = Number(controls.frequency.value);
       const n = Number(controls.harmonic.value);
-
-      let f1;
-      let fn;
-      let modeN = n;
-      if (system === 'pipe-closed') {
-        const oddN = oddIndex(n);
-        modeN = oddN;
-        f1 = v / (4 * L);
-        fn = oddN * f1;
-      } else {
-        f1 = v / (2 * L);
-        fn = n * f1;
-      }
-      const detuning = Math.abs(f - fn);
-      const bandwidth = Math.max(2.5, 0.09 * fn);
-      const amplitude = 1 / (1 + (detuning / bandwidth) ** 2);
-      return { system, L, v, f, n, modeN, f1, fn, detuning, amplitude, bandwidth };
+      const f1 = v / (2 * L);
+      const fn = n * f1;
+      const detune = Math.abs(f - fn);
+      const amp = 1 / (1 + (detune / (0.11 * fn + 0.8)) ** 2);
+      return { L, v, f, n, f1, fn, detune, amp };
     }
 
-    function updateReadings() {
-      const s = state();
-      outputs.lengthOut.textContent = s.L.toFixed(2);
-      outputs.speedOut.textContent = s.v.toFixed(0);
-      outputs.frequencyOut.textContent = s.f.toFixed(0);
-      outputs.harmonicOut.textContent = s.n.toFixed(0);
-      outputs.f1Out.textContent = `${s.f1.toFixed(1)} Hz`;
-      outputs.fnOut.textContent = `${s.fn.toFixed(1)} Hz`;
-      outputs.detuneOut.textContent = `${s.detuning.toFixed(1)} Hz`;
-      outputs.ampOut.textContent = s.amplitude.toFixed(2);
-      const lang = document.documentElement.lang === 'zh-HK' ? 'zh-hk' : 'en';
-      if (s.bandwidth < 10) outputs.qualityOut.textContent = translations[lang].sharp;
-      else if (s.bandwidth < 25) outputs.qualityOut.textContent = translations[lang].moderate;
-      else outputs.qualityOut.textContent = translations[lang].broad;
+    function resizeRenderer() {
+      const w = waveCanvas.clientWidth || waveCanvas.width;
+      const h = waveCanvas.clientHeight || waveCanvas.height;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
 
-      if (s.system === 'pipe-closed') {
-        formula1.textContent = 'Closed-open pipe: fn = n(v/4L), n = 1,3,5...';
-        formula2.textContent = `Current odd mode index: n = ${s.modeN}`;
-      } else {
-        formula1.textContent = 'String/Open-open: fn = n(v/2L)';
-        formula2.textContent = 'Allowed n = 1,2,3...';
+    function refreshMarkers(s) {
+      while (nodeGroup.children.length) nodeGroup.remove(nodeGroup.children[0]);
+      while (antiGroup.children.length) antiGroup.remove(antiGroup.children[0]);
+      const nodeMat = new THREE.MeshStandardMaterial({ color: 0xdc2626 });
+      const antiMat = new THREE.MeshStandardMaterial({ color: 0x16a34a });
+      const nodeGeom = new THREE.SphereGeometry(0.07, 16, 16);
+      const antiGeom = new THREE.SphereGeometry(0.09, 16, 16);
+      for (let i = 0; i <= s.n; i += 1) {
+        const t = i / s.n;
+        const x = -3.6 + t * 7.2;
+        const m = new THREE.Mesh(nodeGeom, nodeMat);
+        m.position.set(x, 0, 0);
+        nodeGroup.add(m);
+      }
+      for (let i = 0; i < s.n; i += 1) {
+        const t = (i + 0.5) / s.n;
+        const x = -3.6 + t * 7.2;
+        const m = new THREE.Mesh(antiGeom, antiMat);
+        m.position.set(x, 0, 0);
+        antiGroup.add(m);
       }
     }
 
-    function drawStandingWave(s) {
-      wCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
-      wCtx.fillStyle = '#f8fafc';
-      wCtx.fillRect(0, 0, waveCanvas.width, waveCanvas.height);
-      const left = 80;
-      const right = waveCanvas.width - 80;
-      const top = 70;
-      const bottom = waveCanvas.height - 70;
-      const mid = (top + bottom) / 2;
-      const width = right - left;
-      const A = 95 * s.amplitude;
-
-      wCtx.strokeStyle = '#334155';
-      wCtx.lineWidth = 1.5;
-      wCtx.beginPath();
-      wCtx.moveTo(left, mid);
-      wCtx.lineTo(right, mid);
-      wCtx.stroke();
-
-      wCtx.strokeStyle = '#2563eb';
-      wCtx.lineWidth = 3;
-      wCtx.beginPath();
-      for (let x = left; x <= right; x += 2) {
-        const u = (x - left) / width;
-        let profile;
-        if (s.system === 'pipe-closed') {
-          profile = Math.sin(0.5 * Math.PI * s.modeN * u);
-        } else {
-          profile = Math.sin(Math.PI * s.modeN * u);
-        }
-        const y = mid + A * profile * Math.cos(phase);
-        if (x === left) wCtx.moveTo(x, y);
-        else wCtx.lineTo(x, y);
-      }
-      wCtx.stroke();
-
-      const nodeCount = s.system === 'pipe-closed' ? s.n : s.modeN + 1;
-      for (let i = 0; i < nodeCount; i += 1) {
-        const x = s.system === 'pipe-closed'
-          ? left + (i / Math.max(1, nodeCount - 1)) * (right - left) * (1 - 1 / (2 * s.modeN))
-          : left + (i / Math.max(1, nodeCount - 1)) * (right - left);
-        wCtx.fillStyle = '#dc2626';
-        wCtx.beginPath();
-        wCtx.arc(x, mid, 4, 0, Math.PI * 2);
-        wCtx.fill();
-      }
-
-      for (let i = 0; i < s.modeN; i += 1) {
-        const x = left + ((i + 0.5) / s.modeN) * (right - left);
-        wCtx.fillStyle = '#16a34a';
-        wCtx.beginPath();
-        wCtx.arc(x, mid, 5, 0, Math.PI * 2);
-        wCtx.fill();
-      }
-
-      wCtx.fillStyle = '#0f172a';
-      wCtx.font = '600 16px Inter';
-      wCtx.fillText(`L=${s.L.toFixed(2)} m`, 30, 34);
-      wCtx.fillText(`v=${s.v.toFixed(0)} m/s`, 170, 34);
-      wCtx.fillText(`f=${s.f.toFixed(1)} Hz`, 325, 34);
-      wCtx.fillText(`fn=${s.fn.toFixed(1)} Hz`, 480, 34);
-      wCtx.fillText(`Arel=${s.amplitude.toFixed(2)}`, 670, 34);
+    function updateOutputs() {
+      const s = getState();
+      out.lengthOut.textContent = s.L.toFixed(2);
+      out.speedOut.textContent = s.v.toFixed(0);
+      out.frequencyOut.textContent = s.f.toFixed(0);
+      out.harmonicOut.textContent = s.n.toFixed(0);
+      out.f1Out.textContent = `${s.f1.toFixed(1)} Hz`;
+      out.fnOut.textContent = `${s.fn.toFixed(1)} Hz`;
+      out.detuneOut.textContent = `${s.detune.toFixed(1)} Hz`;
+      out.ampOut.textContent = s.amp.toFixed(2);
+      refreshMarkers(s);
+      drawResponse(s);
     }
 
     function drawResponse(s) {
-      rCtx.clearRect(0, 0, responseCanvas.width, responseCanvas.height);
+      const w = responseCanvas.width;
+      const h = responseCanvas.height;
+      rCtx.clearRect(0, 0, w, h);
       rCtx.fillStyle = '#f8fafc';
-      rCtx.fillRect(0, 0, responseCanvas.width, responseCanvas.height);
+      rCtx.fillRect(0, 0, w, h);
       const m = 45;
-      const w = responseCanvas.width - 2 * m;
-      const h = responseCanvas.height - 2 * m;
-      const fMin = Math.max(1, s.fn * 0.4);
-      const fMax = s.fn * 1.6;
-
+      const pw = w - m * 2;
+      const ph = h - m * 2;
       rCtx.strokeStyle = '#94a3b8';
-      rCtx.lineWidth = 1.2;
+      rCtx.lineWidth = 1.5;
       rCtx.beginPath();
       rCtx.moveTo(m, m);
-      rCtx.lineTo(m, responseCanvas.height - m);
-      rCtx.lineTo(responseCanvas.width - m, responseCanvas.height - m);
+      rCtx.lineTo(m, h - m);
+      rCtx.lineTo(w - m, h - m);
       rCtx.stroke();
 
-      rCtx.strokeStyle = '#9333ea';
-      rCtx.lineWidth = 2.6;
+      const fMin = 5;
+      const fMax = 330;
+      const toX = (f) => m + ((f - fMin) / (fMax - fMin)) * pw;
+      const toY = (a) => h - m - a * ph;
+      rCtx.strokeStyle = '#2563eb';
+      rCtx.lineWidth = 2.5;
       rCtx.beginPath();
       for (let i = 0; i <= 320; i += 1) {
-        const fCur = fMin + (i / 320) * (fMax - fMin);
-        const ampCur = 1 / (1 + ((fCur - s.fn) / s.bandwidth) ** 2);
-        const x = m + ((fCur - fMin) / (fMax - fMin)) * w;
-        const y = responseCanvas.height - m - ampCur * h;
+        const f = fMin + ((fMax - fMin) * i) / 320;
+        let response = 0;
+        for (let n = 1; n <= 10; n += 1) {
+          const peak = n * s.f1;
+          response += 1 / (1 + ((f - peak) / (0.08 * peak + 0.6)) ** 2);
+        }
+        response = Math.min(1, response / 2.7);
+        const x = toX(f);
+        const y = toY(response);
         if (i === 0) rCtx.moveTo(x, y);
         else rCtx.lineTo(x, y);
       }
       rCtx.stroke();
 
-      const xNow = m + ((s.f - fMin) / (fMax - fMin)) * w;
-      const yNow = responseCanvas.height - m - s.amplitude * h;
-      rCtx.fillStyle = '#2563eb';
+      const px = toX(s.f);
+      const py = toY(s.amp);
+      rCtx.fillStyle = '#dc2626';
       rCtx.beginPath();
-      rCtx.arc(xNow, yNow, 5, 0, Math.PI * 2);
+      rCtx.arc(px, py, 5, 0, Math.PI * 2);
       rCtx.fill();
-
       rCtx.fillStyle = '#475569';
       rCtx.font = '12px Inter';
-      rCtx.fillText('Frequency (Hz)', responseCanvas.width - 120, responseCanvas.height - 18);
-      rCtx.fillText('Relative amplitude', 12, 20);
+      rCtx.fillText('f (Hz)', w - m - 20, h - m - 10);
+      rCtx.fillText('Amplitude', m + 4, m - 10);
     }
 
-    function loop() {
-      const s = state();
-      phase += 0.06 + s.f * 0.0008;
-      updateReadings();
-      drawStandingWave(s);
-      drawResponse(s);
-      requestAnimationFrame(loop);
+    function updateWaveLine(s) {
+      phase += 0.05 + s.f / 1200;
+      const amp = 0.9 * s.amp;
+      for (let i = 0; i < samples; i += 1) {
+        const t = i / (samples - 1);
+        const x = -3.6 + t * 7.2;
+        const y = amp * Math.sin(Math.PI * s.n * t) * Math.cos(phase);
+        const z = 0.24 * amp * Math.sin(Math.PI * s.n * t + Math.PI / 2) * Math.sin(phase * 0.75);
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+      }
+      waveGeometry.attributes.position.needsUpdate = true;
+    }
+
+    function tick() {
+      resizeRenderer();
+      const s = getState();
+      updateWaveLine(s);
+      renderer.render(scene, camera);
+      requestAnimationFrame(tick);
     }
 
     function updateLanguage(lang) {
       localStorage.setItem('preferred_language', lang);
       document.querySelectorAll('[data-i18n]').forEach((el) => {
         const key = el.getAttribute('data-i18n');
-        const t = translations[lang] && translations[lang][key];
-        if (t) el.textContent = t;
+        const text = translations[lang] && translations[lang][key];
+        if (text) el.textContent = text;
       });
       document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
       document.querySelectorAll('.lang-btn').forEach((btn) => {
@@ -372,19 +344,19 @@
         btn.classList.toggle('text-white', active);
         btn.classList.toggle('text-slate-600', !active);
       });
-      updateReadings();
+      updateOutputs();
     }
 
+    Object.values(controls).forEach((input) => input.addEventListener('input', updateOutputs));
     tuneBtn.addEventListener('click', () => {
-      const s = state();
-      controls.frequency.value = String(Math.round(s.fn));
-      updateReadings();
+      const s = getState();
+      controls.frequency.value = s.fn.toFixed(0);
+      updateOutputs();
     });
-    Object.values(controls).forEach((c) => c.addEventListener('input', updateReadings));
 
-    updateReadings();
+    updateOutputs();
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
-    requestAnimationFrame(loop);
+    requestAnimationFrame(tick);
   </script>
 </body>
 </html>
