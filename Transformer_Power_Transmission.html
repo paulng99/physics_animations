@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Transformer and Transmission Studio (HKDSE)</title>
+  <title>3D Transformer and Power Transmission (HKDSE)</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,69 +17,39 @@
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
   <header class="max-w-7xl mx-auto px-4 py-4">
-    <div class="flex items-center justify-between">
-      <a href="index.html" class="inline-flex items-center gap-2 text-blue-600 text-sm font-semibold hover:text-blue-700">
+    <div class="flex items-center justify-between gap-3">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
         <span>←</span><span data-i18n="back">Back to Topics</span>
       </a>
       <div class="flex gap-2">
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm bg-blue-600 text-white" data-lang="en" onclick="updateLanguage('en')">EN</button>
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm text-slate-600 hover:bg-blue-100" data-lang="zh-hk" onclick="updateLanguage('zh-hk')">繁</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" data-lang="en" onclick="updateLanguage('en')">EN</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" data-lang="zh-hk" onclick="updateLanguage('zh-hk')">繁</button>
       </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 pb-12">
     <section class="glass rounded-3xl border border-white/70 p-6 md:p-8 shadow-xl shadow-blue-100/40">
-      <div class="grid lg:grid-cols-[1.45fr_1fr] gap-6">
-        <div>
-          <p class="text-blue-600 font-semibold text-sm uppercase tracking-wide" data-i18n="tag">HKDSE Electricity & Magnetism Pro Lab</p>
-          <h1 class="mt-2 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">Transformer and Power Transmission Studio</h1>
-          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="subtitle">Visualize station-to-home delivery, compare step-up ratios, and quantify why high-voltage transmission reduces I²R line loss.</p>
-        </div>
-        <div class="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-5">
-          <h2 class="font-bold text-lg" data-i18n="focusTitle">Lesson Targets</h2>
-          <ul class="mt-3 text-sm space-y-2">
-            <li data-i18n="focus1">• Apply Vp/Vs = Np/Ns for transformer design.</li>
-            <li data-i18n="focus2">• Connect power conservation with current scaling.</li>
-            <li data-i18n="focus3">• Evaluate transmission efficiency using line resistance.</li>
-          </ul>
-        </div>
-      </div>
+      <h1 class="text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">3D Transformer & Transmission Studio</h1>
+      <p class="mt-2 text-slate-600" data-i18n="subtitle">Power station, step-up transformer, transmission tower, and city load in one 3D learning scene.</p>
     </section>
 
-    <section class="mt-6 grid xl:grid-cols-[1.5fr_1fr] gap-5">
+    <section class="mt-6 grid xl:grid-cols-[1.45fr_1fr] gap-5">
       <article class="glass rounded-3xl border border-white/70 p-4">
-        <canvas id="gridCanvas" width="1220" height="640" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
-        <div class="mt-4 grid sm:grid-cols-4 gap-3">
-          <div class="rounded-xl bg-purple-50 border border-purple-200 px-3 py-2">
-            <div class="text-xs text-purple-700 font-semibold" data-i18n="cardVs">Transmission Voltage</div>
-            <div id="cardVs" class="text-lg font-bold text-purple-700">11.5 kV</div>
-          </div>
-          <div class="rounded-xl bg-green-50 border border-green-200 px-3 py-2">
-            <div class="text-xs text-green-700 font-semibold" data-i18n="cardIs">Line Current</div>
-            <div id="cardIs" class="text-lg font-bold text-green-700">4.3 A</div>
-          </div>
-          <div class="rounded-xl bg-red-50 border border-red-200 px-3 py-2">
-            <div class="text-xs text-red-700 font-semibold" data-i18n="cardLoss">Line Loss</div>
-            <div id="cardLoss" class="text-lg font-bold text-red-700">0.74 kW</div>
-          </div>
-          <div class="rounded-xl bg-blue-50 border border-blue-200 px-3 py-2">
-            <div class="text-xs text-blue-700 font-semibold" data-i18n="cardEff">Overall Efficiency</div>
-            <div id="cardEff" class="text-lg font-bold text-blue-700">97.1%</div>
-          </div>
-        </div>
+        <canvas id="simCanvas" width="1200" height="640" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
       </article>
 
       <aside class="space-y-4">
         <div class="glass rounded-2xl border border-white/70 p-4">
           <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
-          <label class="block text-sm text-slate-700" for="plantV"><span data-i18n="plantV">Generator output Vp (kV)</span>: <span id="plantVOut" class="text-blue-600 font-semibold">11.0</span></label>
+
+          <label class="block text-sm text-slate-700" for="plantV"><span data-i18n="plantV">Generator voltage Vp (kV)</span>: <span id="plantVOut" class="text-blue-600 font-semibold">11.0</span></label>
           <input id="plantV" type="range" min="3" max="25" step="0.1" value="11" class="w-full accent-blue-600 mb-3" />
 
           <label class="block text-sm text-slate-700" for="loadMW"><span data-i18n="loadMW">Demand power (MW)</span>: <span id="loadMWOut" class="text-blue-600 font-semibold">3.5</span></label>
           <input id="loadMW" type="range" min="0.5" max="12" step="0.1" value="3.5" class="w-full accent-blue-600 mb-3" />
 
-          <label class="block text-sm text-slate-700" for="stepRatio"><span data-i18n="stepRatio">Step-up turns ratio Ns/Np</span>: <span id="stepRatioOut" class="text-blue-600 font-semibold">20.0</span></label>
+          <label class="block text-sm text-slate-700" for="stepRatio"><span data-i18n="stepRatio">Step-up ratio Ns/Np</span>: <span id="stepRatioOut" class="text-blue-600 font-semibold">20.0</span></label>
           <input id="stepRatio" type="range" min="2" max="60" step="0.5" value="20" class="w-full accent-blue-600 mb-3" />
 
           <label class="block text-sm text-slate-700" for="lineR"><span data-i18n="lineR">Line resistance (Ω)</span>: <span id="lineROut" class="text-blue-600 font-semibold">5.0</span></label>
@@ -87,18 +58,17 @@
           <label class="block text-sm text-slate-700" for="mode"><span data-i18n="mode">Comparison mode</span></label>
           <select id="mode" class="w-full rounded-lg border border-slate-300 px-3 py-2 bg-white">
             <option value="normal">With step-up transformer</option>
-            <option value="no-stepup">Without step-up (baseline)</option>
+            <option value="no-stepup">Without step-up</option>
           </select>
         </div>
 
         <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Detailed Readings</h2>
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Readings</h2>
           <div class="space-y-1.5">
-            <div class="flex justify-between"><span class="text-slate-600">Vs (line)</span><span id="vsLineOut" class="font-semibold text-purple-700">220.0 kV</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">Vs</span><span id="vsOut" class="font-semibold text-purple-700">220.0 kV</span></div>
             <div class="flex justify-between"><span class="text-slate-600">Iline</span><span id="ilineOut" class="font-semibold text-green-700">15.9 A</span></div>
-            <div class="flex justify-between"><span class="text-slate-600">P_loss</span><span id="lossOut" class="font-semibold text-red-700">12.6 kW</span></div>
-            <div class="flex justify-between"><span class="text-slate-600">P_delivered</span><span id="deliveredOut" class="font-semibold text-blue-700">3.49 MW</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="efficiency">Efficiency</span><span id="effOut" class="font-semibold text-amber-700">99.6%</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">Ploss</span><span id="lossOut" class="font-semibold text-red-700">12.6 kW</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">Efficiency</span><span id="effOut" class="font-semibold text-blue-700">99.6%</span></div>
           </div>
         </div>
       </aside>
@@ -118,64 +88,120 @@
       loadMWOut: document.getElementById('loadMWOut'),
       stepRatioOut: document.getElementById('stepRatioOut'),
       lineROut: document.getElementById('lineROut'),
-      vsLineOut: document.getElementById('vsLineOut'),
+      vsOut: document.getElementById('vsOut'),
       ilineOut: document.getElementById('ilineOut'),
       lossOut: document.getElementById('lossOut'),
-      deliveredOut: document.getElementById('deliveredOut'),
-      effOut: document.getElementById('effOut'),
-      cardVs: document.getElementById('cardVs'),
-      cardIs: document.getElementById('cardIs'),
-      cardLoss: document.getElementById('cardLoss'),
-      cardEff: document.getElementById('cardEff')
+      effOut: document.getElementById('effOut')
     };
-    const canvas = document.getElementById('gridCanvas');
-    const ctx = canvas.getContext('2d');
-    let phase = 0;
+
+    const canvas = document.getElementById('simCanvas');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf8fafc);
+    const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 200);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(32, 14),
+      new THREE.MeshStandardMaterial({ color: 0xe6edf7, roughness: 1 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.74));
+    const key = new THREE.DirectionalLight(0xffffff, 0.9);
+    key.position.set(8, 14, 8);
+    scene.add(key);
+
+    camera.position.set(0, 9, 15);
+    camera.lookAt(0, 1, 0);
+
+    const plant = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 1.2, 2.2),
+      new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5 })
+    );
+    plant.position.set(-11, 0.6, 0);
+    scene.add(plant);
+
+    const stepUp = new THREE.Mesh(
+      new THREE.BoxGeometry(2.0, 1.6, 1.6),
+      new THREE.MeshStandardMaterial({ color: 0x6366f1, roughness: 0.5 })
+    );
+    stepUp.position.set(-6.5, 0.8, 0);
+    scene.add(stepUp);
+
+    const tower = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.25, 0.35, 5.5, 8),
+      new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9 })
+    );
+    tower.position.set(0.3, 2.75, 0);
+    scene.add(tower);
+
+    const stepDown = new THREE.Mesh(
+      new THREE.BoxGeometry(2.0, 1.4, 1.6),
+      new THREE.MeshStandardMaterial({ color: 0x8b5cf6, roughness: 0.5 })
+    );
+    stepDown.position.set(6.4, 0.7, 0);
+    scene.add(stepDown);
+
+    const city = new THREE.Mesh(
+      new THREE.BoxGeometry(2.6, 2.2, 2.2),
+      new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.35 })
+    );
+    city.position.set(11, 1.1, 0);
+    scene.add(city);
+
+    function buildLine() {
+      const pts = [
+        new THREE.Vector3(-10, 2.7, 0),
+        new THREE.Vector3(-5.8, 3.3, 0),
+        new THREE.Vector3(0.3, 4.6, 0),
+        new THREE.Vector3(6.2, 3.2, 0),
+        new THREE.Vector3(10.5, 2.7, 0)
+      ];
+      return new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({ color: 0x1d4ed8 })
+      );
+    }
+    const line = buildLine();
+    scene.add(line);
+
+    const pulseCount = 26;
+    const pulses = [];
+    for (let i = 0; i < pulseCount; i += 1) {
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(0.11, 12, 12),
+        new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xf59e0b, emissiveIntensity: 0.65 })
+      );
+      scene.add(m);
+      pulses.push({ mesh: m, t: i / pulseCount });
+    }
 
     const translations = {
       en: {
         back: 'Back to Topics',
-        tag: 'HKDSE Electricity & Magnetism Pro Lab',
-        title: 'Transformer and Power Transmission Studio',
-        subtitle: 'Visualize station-to-home delivery, compare step-up ratios, and quantify why high-voltage transmission reduces I²R line loss.',
-        focusTitle: 'Lesson Targets',
-        focus1: '• Apply Vp/Vs = Np/Ns for transformer design.',
-        focus2: '• Connect power conservation with current scaling.',
-        focus3: '• Evaluate transmission efficiency using line resistance.',
+        title: '3D Transformer & Transmission Studio',
+        subtitle: 'Power station, step-up transformer, transmission tower, and city load in one 3D learning scene.',
         controls: 'Controls',
-        plantV: 'Generator output Vp (kV)',
+        plantV: 'Generator voltage Vp (kV)',
         loadMW: 'Demand power (MW)',
-        stepRatio: 'Step-up turns ratio Ns/Np',
+        stepRatio: 'Step-up ratio Ns/Np',
         lineR: 'Line resistance (Ω)',
         mode: 'Comparison mode',
-        readings: 'Detailed Readings',
-        efficiency: 'Efficiency',
-        cardVs: 'Transmission Voltage',
-        cardIs: 'Line Current',
-        cardLoss: 'Line Loss',
-        cardEff: 'Overall Efficiency'
+        readings: 'Readings'
       },
       'zh-hk': {
         back: '返回主題頁',
-        tag: 'HKDSE 電與磁進階實驗室',
-        title: '變壓器與輸電專業模擬',
-        subtitle: '完整展示電站到住戶輸電流程，比較升壓比並量化高壓輸電如何降低 I²R 損耗。',
-        focusTitle: '學習目標',
-        focus1: '• 用 Vp/Vs = Np/Ns 設計變壓器。',
-        focus2: '• 由功率守恆理解電流縮放。',
-        focus3: '• 以線路電阻評估輸電效率。',
+        title: '3D 變壓器與輸電模擬',
+        subtitle: '以 3D 場景展示電站、升壓、輸電鐵塔與城市負載。',
         controls: '控制面板',
-        plantV: '發電端輸出 Vp (kV)',
+        plantV: '發電端電壓 Vp (kV)',
         loadMW: '需求功率 (MW)',
-        stepRatio: '升壓匝數比 Ns/Np',
-        lineR: '輸電線電阻 (Ω)',
+        stepRatio: '升壓比 Ns/Np',
+        lineR: '線路電阻 (Ω)',
         mode: '比較模式',
-        readings: '詳細讀數',
-        efficiency: '效率',
-        cardVs: '輸電電壓',
-        cardIs: '線路電流',
-        cardLoss: '線路損耗',
-        cardEff: '整體效率'
+        readings: '讀數'
       }
     };
 
@@ -184,13 +210,22 @@
       const loadP = Number(controls.loadMW.value) * 1e6;
       const ratio = Number(controls.stepRatio.value);
       const lineR = Number(controls.lineR.value);
-      const modeNoStep = controls.mode.value === 'no-stepup';
-      const lineV = modeNoStep ? plantV : plantV * ratio;
+      const noStep = controls.mode.value === 'no-stepup';
+      const lineV = noStep ? plantV : plantV * ratio;
       const lineI = loadP / Math.max(lineV, 1);
       const loss = lineI * lineI * lineR;
-      const delivered = Math.max(0, loadP - loss);
-      const eff = (delivered / loadP) * 100;
-      return { plantV, loadP, ratio, lineR, lineV, lineI, loss, delivered, eff, modeNoStep };
+      const eff = Math.max(0, ((loadP - loss) / loadP) * 100);
+      return { plantV, loadP, ratio, lineR, lineV, lineI, loss, eff, noStep };
+    }
+
+    function linePoint(t) {
+      const pts = line.geometry.attributes.position.array;
+      const arr = [];
+      for (let i = 0; i < pts.length; i += 3) arr.push(new THREE.Vector3(pts[i], pts[i + 1], pts[i + 2]));
+      const seg = (arr.length - 1) * t;
+      const i = Math.min(arr.length - 2, Math.floor(seg));
+      const lt = seg - i;
+      return arr[i].clone().lerp(arr[i + 1], lt);
     }
 
     function updateOutputs() {
@@ -199,153 +234,30 @@
       out.loadMWOut.textContent = (d.loadP / 1e6).toFixed(1);
       out.stepRatioOut.textContent = d.ratio.toFixed(1);
       out.lineROut.textContent = d.lineR.toFixed(1);
-      out.vsLineOut.textContent = `${(d.lineV / 1000).toFixed(1)} kV`;
+      out.vsOut.textContent = `${(d.lineV / 1000).toFixed(1)} kV`;
       out.ilineOut.textContent = `${d.lineI.toFixed(1)} A`;
-      out.lossOut.textContent = `${(d.loss / 1000).toFixed(1)} kW`;
-      out.deliveredOut.textContent = `${(d.delivered / 1e6).toFixed(2)} MW`;
+      out.lossOut.textContent = `${(d.loss / 1000).toFixed(2)} kW`;
       out.effOut.textContent = `${d.eff.toFixed(1)}%`;
-
-      out.cardVs.textContent = `${(d.lineV / 1000).toFixed(1)} kV`;
-      out.cardIs.textContent = `${d.lineI.toFixed(1)} A`;
-      out.cardLoss.textContent = `${(d.loss / 1000).toFixed(2)} kW`;
-      out.cardEff.textContent = `${d.eff.toFixed(1)}%`;
+      const pulseColor = d.noStep ? 0xef4444 : 0xf59e0b;
+      pulses.forEach((p) => p.mesh.material.color.setHex(pulseColor));
+      line.material.color.setHex(d.noStep ? 0xef4444 : 0x1d4ed8);
     }
 
-    function drawArrow(x1, y1, x2, y2, color) {
-      ctx.strokeStyle = color;
-      ctx.fillStyle = color;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-      const ang = Math.atan2(y2 - y1, x2 - x1);
-      ctx.beginPath();
-      ctx.moveTo(x2, y2);
-      ctx.lineTo(x2 - 12 * Math.cos(ang - 0.3), y2 - 12 * Math.sin(ang - 0.3));
-      ctx.lineTo(x2 - 12 * Math.cos(ang + 0.3), y2 - 12 * Math.sin(ang + 0.3));
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    function drawCoil(x, y, turns, color) {
-      const loops = Math.max(5, Math.min(20, Math.round(turns / 30)));
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2.5;
-      for (let i = 0; i < loops; i += 1) {
-        const cx = x + i * 12;
-        ctx.beginPath();
-        ctx.arc(cx, y, 9, 0, Math.PI, true);
-        ctx.stroke();
+    function resizeRenderer() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      if (w && h && (canvas.width !== w || canvas.height !== h)) {
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
       }
-      return loops * 12;
-    }
-
-    function drawScene() {
-      const d = compute();
-      phase += 0.08;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = '#0f172a';
-      ctx.font = '600 15px Inter';
-      ctx.fillText(d.modeNoStep ? 'Baseline: no step-up' : 'High-voltage step-up transmission', 24, 34);
-
-      const yTop = 220;
-      const yBottom = 360;
-      const xPlant = 90;
-      const xT1 = 250;
-      const xLineStart = 430;
-      const xLineEnd = 860;
-      const xLoad = 980;
-
-      ctx.fillStyle = '#1d4ed8';
-      ctx.fillRect(xPlant - 40, 180, 70, 90);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 12px Inter';
-      ctx.fillText('GEN', xPlant - 26, 230);
-
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(xPlant + 30, yTop);
-      ctx.lineTo(xT1 - 20, yTop);
-      ctx.moveTo(xPlant + 30, yBottom);
-      ctx.lineTo(xT1 - 20, yBottom);
-      ctx.stroke();
-
-      const w1 = drawCoil(xT1, yTop, 140, '#2563eb');
-      const w2 = drawCoil(xT1 + 95, yTop, 140 * d.ratio, '#16a34a');
-      ctx.fillStyle = '#64748b';
-      ctx.fillRect(xT1 + 64, 145, 30, 220);
-
-      ctx.strokeStyle = '#7c3aed';
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.moveTo(xT1 + 100 + w2, yTop);
-      ctx.lineTo(xLineStart, yTop);
-      ctx.lineTo(xLineEnd, yTop);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(xT1 + 100 + w2, yBottom);
-      ctx.lineTo(xLineStart, yBottom);
-      ctx.lineTo(xLineEnd, yBottom);
-      ctx.stroke();
-
-      const packetCount = 22;
-      for (let i = 0; i < packetCount; i += 1) {
-        const t = (i / packetCount + phase * 0.08) % 1;
-        const x = xLineStart + (xLineEnd - xLineStart) * t;
-        ctx.beginPath();
-        ctx.fillStyle = '#9333ea';
-        ctx.arc(x, yTop, 3.4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(x, yBottom, 3.4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      drawArrow(xT1 + 80, 118, xT1 + 170, 118, '#16a34a');
-      drawArrow(xLineStart + 10, 92, xLineEnd - 10, 92, '#9333ea');
-
-      ctx.fillStyle = '#dc2626';
-      ctx.fillRect(xLoad - 35, 190, 70, 90);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 12px Inter';
-      ctx.fillText('LOAD', xLoad - 22, 240);
-
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(xLineEnd, yTop);
-      ctx.lineTo(xLoad - 35, yTop);
-      ctx.lineTo(xLoad - 35, 218);
-      ctx.moveTo(xLineEnd, yBottom);
-      ctx.lineTo(xLoad - 35, yBottom);
-      ctx.lineTo(xLoad - 35, 252);
-      ctx.stroke();
-
-      ctx.fillStyle = '#0f172a';
-      ctx.font = '600 14px Inter';
-      ctx.fillText(`Line voltage: ${(d.lineV / 1000).toFixed(1)} kV`, 450, 430);
-      ctx.fillText(`Line current: ${d.lineI.toFixed(1)} A`, 450, 454);
-      ctx.fillText(`Line loss: ${(d.loss / 1000).toFixed(2)} kW`, 450, 478);
-      ctx.fillText(`Efficiency: ${d.eff.toFixed(1)}%`, 450, 502);
-    }
-
-    function tick() {
-      updateOutputs();
-      drawScene();
-      requestAnimationFrame(tick);
     }
 
     function updateLanguage(lang) {
       localStorage.setItem('preferred_language', lang);
       document.querySelectorAll('[data-i18n]').forEach((node) => {
         const key = node.getAttribute('data-i18n');
-        const text = translations[lang] && translations[lang][key];
-        if (text) node.textContent = text;
+        if (translations[lang] && translations[lang][key]) node.textContent = translations[lang][key];
       });
       document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
       document.querySelectorAll('.lang-btn').forEach((btn) => {
@@ -357,9 +269,24 @@
       updateOutputs();
     }
 
-    Object.values(controls).forEach((input) => input.addEventListener('input', updateOutputs));
+    Object.values(controls).forEach((el) => el.addEventListener('input', updateOutputs));
+
+    let time = 0;
+    function animate() {
+      time += 0.007 + compute().lineI * 0.00008;
+      resizeRenderer();
+      pulses.forEach((p) => {
+        p.t = (p.t + 0.0032 + compute().lineI * 0.00004) % 1;
+        p.mesh.position.copy(linePoint(p.t));
+      });
+      tower.rotation.y += 0.003;
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    updateOutputs();
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
-    tick();
+    requestAnimationFrame(animate);
   </script>
 </body>
 </html>

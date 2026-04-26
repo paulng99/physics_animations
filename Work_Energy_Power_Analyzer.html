@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Work Energy Power Professional Lab (HKDSE)</title>
+  <title>3D Work, Energy and Power Analyzer (HKDSE)</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; }
     mjx-container { display: inline-block !important; }
-    .glass { background: rgba(255, 255, 255, 0.86); backdrop-filter: blur(10px); }
+    .glass { background: rgba(255,255,255,0.88); backdrop-filter: blur(10px); }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
   <header class="max-w-7xl mx-auto px-4 py-4">
-    <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center justify-between gap-3">
       <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
-        <span>←</span>
-        <span data-i18n="back">Back to Topics</span>
+        <span>←</span><span data-i18n="back">Back to Topics</span>
       </a>
       <div class="flex gap-2">
         <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" data-lang="en" onclick="updateLanguage('en')">EN</button>
@@ -30,367 +30,204 @@
 
   <main class="max-w-7xl mx-auto px-4 pb-12">
     <section class="glass rounded-3xl border border-white/70 p-6 md:p-8 shadow-xl shadow-blue-100/40">
-      <div class="grid lg:grid-cols-[1.4fr_1fr] gap-6">
-        <div>
-          <p class="text-sm font-semibold text-blue-600 uppercase tracking-wide" data-i18n="tag">HKDSE Energy Analysis Studio</p>
-          <h1 class="mt-2 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">Work, Energy and Power Professional Lab</h1>
-          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="subtitle">Use realistic scenario controls, energy-flow animation, and exam-style derivation to connect W = Fs, P = W/t, and Ek = 1/2mv².</p>
-          <div class="mt-4 flex flex-wrap gap-2 text-xs">
-            <span class="px-3 py-1.5 rounded-full bg-red-100 text-red-700 font-semibold">Force F</span>
-            <span class="px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 font-semibold">Displacement s</span>
-            <span class="px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 font-semibold">Power P</span>
-            <span class="px-3 py-1.5 rounded-full bg-green-100 text-green-700 font-semibold">Kinetic Energy Ek</span>
-          </div>
-        </div>
-        <div class="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-5">
-          <h2 class="font-bold text-lg" data-i18n="focusTitle">Learning Targets</h2>
-          <ul class="mt-3 text-sm space-y-2">
-            <li data-i18n="focus1">• Distinguish input work and useful output work.</li>
-            <li data-i18n="focus2">• Compare average power for the same work done in different times.</li>
-            <li data-i18n="focus3">• Verify kinetic energy from motion readings.</li>
-          </ul>
-          <p class="mt-4 text-xs text-blue-100" data-i18n="focusTip">Exam tip: Always state whether force is parallel to displacement.</p>
-        </div>
-      </div>
+      <h1 class="text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">3D Work, Energy and Power Analyzer</h1>
+      <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="subtitle">Use a 3D conveyor experiment to connect force, displacement, time and efficiency with work, power and kinetic energy.</p>
     </section>
 
     <section class="mt-6 grid xl:grid-cols-[1.45fr_1fr] gap-5">
-      <article class="glass rounded-3xl border border-white/70 p-4 md:p-5 shadow-lg shadow-blue-100/30">
-        <canvas id="simCanvas" width="1180" height="620" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
+      <article class="glass rounded-3xl border border-white/70 p-4">
+        <canvas id="sceneCanvas" width="1200" height="640" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
         <div class="mt-4 grid sm:grid-cols-4 gap-3 text-sm">
-          <div class="rounded-xl border border-red-200 bg-red-50 px-3 py-2">
-            <div class="text-red-700 font-semibold" data-i18n="cardWork">Input Work</div>
-            <div id="cardWork" class="text-red-600 text-lg font-bold">0 J</div>
-          </div>
-          <div class="rounded-xl border border-purple-200 bg-purple-50 px-3 py-2">
-            <div class="text-purple-700 font-semibold" data-i18n="cardUseful">Useful Work</div>
-            <div id="cardUseful" class="text-purple-600 text-lg font-bold">0 J</div>
-          </div>
-          <div class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2">
-            <div class="text-blue-700 font-semibold" data-i18n="cardPower">Average Power</div>
-            <div id="cardPower" class="text-blue-600 text-lg font-bold">0 W</div>
-          </div>
-          <div class="rounded-xl border border-green-200 bg-green-50 px-3 py-2">
-            <div class="text-green-700 font-semibold" data-i18n="cardEk">Kinetic Energy</div>
-            <div id="cardEk" class="text-green-600 text-lg font-bold">0 J</div>
-          </div>
+          <div class="rounded-xl border border-red-200 bg-red-50 px-3 py-2"><div class="text-red-700 font-semibold">W</div><div id="workOut" class="text-red-700 text-lg font-bold">0 J</div></div>
+          <div class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2"><div class="text-blue-700 font-semibold">P</div><div id="powerOut" class="text-blue-700 text-lg font-bold">0 W</div></div>
+          <div class="rounded-xl border border-green-200 bg-green-50 px-3 py-2"><div class="text-green-700 font-semibold">v</div><div id="speedOut" class="text-green-700 text-lg font-bold">0 m/s</div></div>
+          <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2"><div class="text-amber-700 font-semibold">E<sub>k</sub></div><div id="keOut" class="text-amber-700 text-lg font-bold">0 J</div></div>
         </div>
       </article>
 
       <aside class="space-y-4">
         <div class="glass rounded-2xl border border-white/70 p-4">
-          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Experiment Controls</h2>
-
-          <label class="block text-sm text-slate-700" for="mode"><span data-i18n="mode">Scenario Mode</span></label>
-          <select id="mode" class="w-full rounded-lg border border-slate-300 px-3 py-2 mb-3 bg-white">
-            <option value="horizontal">Horizontal towing</option>
-            <option value="incline">Incline lifting</option>
-          </select>
-
-          <label class="block text-sm text-slate-700" for="force"><span data-i18n="force">Applied force F (N)</span>: <span id="forceValue" class="font-semibold text-blue-600">60.0</span></label>
-          <input id="force" type="range" min="5" max="220" step="0.5" value="60" class="w-full accent-blue-600 mb-3" />
-
-          <label class="block text-sm text-slate-700" for="distance"><span data-i18n="distance">Distance s (m)</span>: <span id="distanceValue" class="font-semibold text-blue-600">25.0</span></label>
-          <input id="distance" type="range" min="1" max="60" step="0.5" value="25" class="w-full accent-blue-600 mb-3" />
-
-          <label class="block text-sm text-slate-700" for="time"><span data-i18n="time">Time t (s)</span>: <span id="timeValue" class="font-semibold text-blue-600">10.0</span></label>
-          <input id="time" type="range" min="1" max="40" step="0.2" value="10" class="w-full accent-blue-600 mb-3" />
-
-          <label class="block text-sm text-slate-700" for="mass"><span data-i18n="mass">Mass m (kg)</span>: <span id="massValue" class="font-semibold text-blue-600">12.0</span></label>
-          <input id="mass" type="range" min="1" max="60" step="0.5" value="12" class="w-full accent-blue-600 mb-3" />
-
-          <label class="block text-sm text-slate-700" for="efficiency"><span data-i18n="eff">Efficiency (%)</span>: <span id="effValue" class="font-semibold text-blue-600">82</span></label>
-          <input id="efficiency" type="range" min="20" max="100" step="1" value="82" class="w-full accent-blue-600" />
+          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+          <label class="block text-sm text-slate-700"><span data-i18n="force">Applied force F (N)</span>: <span id="forceValue" class="font-semibold text-blue-600">40.0</span></label>
+          <input id="force" type="range" min="5" max="200" step="0.5" value="40" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm text-slate-700"><span data-i18n="distance">Distance s (m)</span>: <span id="distanceValue" class="font-semibold text-blue-600">20.0</span></label>
+          <input id="distance" type="range" min="1" max="60" step="0.5" value="20" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm text-slate-700"><span data-i18n="time">Time t (s)</span>: <span id="timeValue" class="font-semibold text-blue-600">8.0</span></label>
+          <input id="time" type="range" min="1" max="40" step="0.2" value="8" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm text-slate-700"><span data-i18n="mass">Mass m (kg)</span>: <span id="massValue" class="font-semibold text-blue-600">10.0</span></label>
+          <input id="mass" type="range" min="1" max="50" step="0.5" value="10" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm text-slate-700"><span data-i18n="efficiencyInput">Efficiency (%)</span>: <span id="effValue" class="font-semibold text-blue-600">85</span></label>
+          <input id="efficiency" type="range" min="20" max="100" step="1" value="85" class="w-full accent-blue-600" />
         </div>
 
         <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Detailed Readings</h2>
-          <div class="space-y-1.5">
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="work">Input work W</span><span id="workOut" class="font-semibold text-red-600">1500.0 J</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="usefulWork">Useful work</span><span id="usefulOut" class="font-semibold text-purple-600">1230.0 J</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="loss">Energy loss</span><span id="lossOut" class="font-semibold text-amber-600">270.0 J</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="power">Average power P</span><span id="powerOut" class="font-semibold text-blue-600">150.0 W</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="speed">Average speed v</span><span id="speedOut" class="font-semibold text-green-600">2.50 m/s</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="kinetic">Kinetic energy Ek</span><span id="keOut" class="font-semibold text-green-600">37.5 J</span></div>
-          </div>
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">Formula Bank</h2>
+          <ul class="list-disc ml-5 space-y-1 text-slate-700">
+            <li>W = Fs</li>
+            <li>P = W / t</li>
+            <li>E<sub>k</sub> = 1/2 mv²</li>
+            <li>η = useful output / input × 100%</li>
+          </ul>
         </div>
       </aside>
-    </section>
-
-    <section class="mt-5 grid lg:grid-cols-3 gap-4">
-      <article class="glass rounded-2xl border border-white/70 p-4">
-        <h3 class="font-bold text-slate-900" data-i18n="deriveTitle">Derivation Route</h3>
-        <ol class="mt-2 list-decimal ml-5 text-sm text-slate-700 space-y-1">
-          <li data-i18n="derive1">Evaluate work by the applied force: W = Fs (parallel component only).</li>
-          <li data-i18n="derive2">Use efficiency to get useful output: Wuseful = ηWinput.</li>
-          <li data-i18n="derive3">Compute average power by dividing work by time.</li>
-          <li data-i18n="derive4">Estimate speed v = s/t, then Ek = 1/2mv².</li>
-        </ol>
-      </article>
-      <article class="glass rounded-2xl border border-white/70 p-4">
-        <h3 class="font-bold text-slate-900" data-i18n="examTitle">HKDSE Answer Quality Checklist</h3>
-        <ul class="mt-2 text-sm text-slate-700 space-y-1">
-          <li data-i18n="exam1">• Include units: J, W, m/s.</li>
-          <li data-i18n="exam2">• State whether force is constant and collinear with motion.</li>
-          <li data-i18n="exam3">• Explain where energy loss goes (thermal/sound).</li>
-          <li data-i18n="exam4">• Keep 2-3 significant figures consistently.</li>
-        </ul>
-      </article>
-      <article class="glass rounded-2xl border border-white/70 p-4 text-sm text-slate-700">
-        <h3 class="font-bold text-slate-900" data-i18n="formulaTitle">Formula Bank</h3>
-        <div class="mt-2 space-y-1">
-          <p><strong>W = Fs</strong></p>
-          <p><strong>P = W / t</strong></p>
-          <p><strong>Ek = 1/2mv²</strong></p>
-          <p><strong>η = useful / input × 100%</strong></p>
-        </div>
-      </article>
     </section>
   </main>
 
   <script>
     const controls = {
-      mode: document.getElementById('mode'),
       force: document.getElementById('force'),
       distance: document.getElementById('distance'),
       time: document.getElementById('time'),
       mass: document.getElementById('mass'),
       efficiency: document.getElementById('efficiency')
     };
-
-    const outputs = {
+    const out = {
       forceValue: document.getElementById('forceValue'),
       distanceValue: document.getElementById('distanceValue'),
       timeValue: document.getElementById('timeValue'),
       massValue: document.getElementById('massValue'),
       effValue: document.getElementById('effValue'),
       workOut: document.getElementById('workOut'),
-      usefulOut: document.getElementById('usefulOut'),
-      lossOut: document.getElementById('lossOut'),
       powerOut: document.getElementById('powerOut'),
       speedOut: document.getElementById('speedOut'),
-      keOut: document.getElementById('keOut'),
-      cardWork: document.getElementById('cardWork'),
-      cardUseful: document.getElementById('cardUseful'),
-      cardPower: document.getElementById('cardPower'),
-      cardEk: document.getElementById('cardEk')
+      keOut: document.getElementById('keOut')
     };
-
-    const canvas = document.getElementById('simCanvas');
-    const ctx = canvas.getContext('2d');
-    let phase = 0;
 
     const translations = {
       en: {
         back: 'Back to Topics',
-        tag: 'HKDSE Energy Analysis Studio',
-        title: 'Work, Energy and Power Professional Lab',
-        subtitle: 'Use realistic scenario controls, energy-flow animation, and exam-style derivation to connect W = Fs, P = W/t, and Ek = 1/2mv².',
-        focusTitle: 'Learning Targets',
-        focus1: '• Distinguish input work and useful output work.',
-        focus2: '• Compare average power for the same work done in different times.',
-        focus3: '• Verify kinetic energy from motion readings.',
-        focusTip: 'Exam tip: Always state whether force is parallel to displacement.',
-        controls: 'Experiment Controls',
-        mode: 'Scenario Mode',
+        title: '3D Work, Energy and Power Analyzer',
+        subtitle: 'Use a 3D conveyor experiment to connect force, displacement, time and efficiency with work, power and kinetic energy.',
+        controls: 'Controls',
         force: 'Applied force F (N)',
         distance: 'Distance s (m)',
         time: 'Time t (s)',
         mass: 'Mass m (kg)',
-        eff: 'Efficiency (%)',
-        readings: 'Detailed Readings',
-        work: 'Input work W',
-        usefulWork: 'Useful work',
-        loss: 'Energy loss',
-        power: 'Average power P',
-        speed: 'Average speed v',
-        kinetic: 'Kinetic energy Ek',
-        cardWork: 'Input Work',
-        cardUseful: 'Useful Work',
-        cardPower: 'Average Power',
-        cardEk: 'Kinetic Energy',
-        deriveTitle: 'Derivation Route',
-        derive1: 'Evaluate work by the applied force: W = Fs (parallel component only).',
-        derive2: 'Use efficiency to get useful output: Wuseful = ηWinput.',
-        derive3: 'Compute average power by dividing work by time.',
-        derive4: 'Estimate speed v = s/t, then Ek = 1/2mv².',
-        examTitle: 'HKDSE Answer Quality Checklist',
-        exam1: '• Include units: J, W, m/s.',
-        exam2: '• State whether force is constant and collinear with motion.',
-        exam3: '• Explain where energy loss goes (thermal/sound).',
-        exam4: '• Keep 2-3 significant figures consistently.',
+        efficiencyInput: 'Efficiency (%)',
         formulaTitle: 'Formula Bank'
       },
       'zh-hk': {
         back: '返回主題頁',
-        tag: 'HKDSE 能量分析實驗室',
-        title: '功、能與功率專業模擬',
-        subtitle: '結合真實情境控制、能量流動畫及考試式推導，連接 W = Fs、P = W/t、Ek = 1/2mv²。',
-        focusTitle: '學習目標',
-        focus1: '• 分辨輸入功與有效輸出功。',
-        focus2: '• 比較同一做功在不同時間下的平均功率。',
-        focus3: '• 以運動讀數驗證動能公式。',
-        focusTip: '應試提示：先交代力是否與位移平行。',
-        controls: '實驗控制',
-        mode: '情境模式',
+        title: '3D 功、能與功率分析器',
+        subtitle: '透過 3D 輸送帶實驗，連結力、位移、時間與效率到做功、功率及動能。',
+        controls: '控制面板',
         force: '施加力 F (N)',
         distance: '位移 s (m)',
         time: '時間 t (s)',
         mass: '質量 m (kg)',
-        eff: '效率 (%)',
-        readings: '詳細讀數',
-        work: '輸入功 W',
-        usefulWork: '有效輸出功',
-        loss: '能量損耗',
-        power: '平均功率 P',
-        speed: '平均速度 v',
-        kinetic: '動能 Ek',
-        cardWork: '輸入功',
-        cardUseful: '有效功',
-        cardPower: '平均功率',
-        cardEk: '動能',
-        deriveTitle: '推導路線',
-        derive1: '先算施力做功：W = Fs（只取平行位移分量）。',
-        derive2: '利用效率求有效輸出：W有效 = ηW輸入。',
-        derive3: '以 P = W/t 求平均功率。',
-        derive4: '由 v = s/t，再代入 Ek = 1/2mv²。',
-        examTitle: 'HKDSE 作答質素清單',
-        exam1: '• 寫清楚單位：J、W、m/s。',
-        exam2: '• 說明力是否恆定及與位移同向。',
-        exam3: '• 交代能量損耗去向（熱/聲）。',
-        exam4: '• 有效數字保持一致。',
+        efficiencyInput: '效率 (%)',
         formulaTitle: '公式庫'
       }
     };
 
-    function getValues() {
-      const mode = controls.mode.value;
+    function compute() {
       const F = Number(controls.force.value);
       const s = Number(controls.distance.value);
       const t = Number(controls.time.value);
       const m = Number(controls.mass.value);
-      const eta = Number(controls.efficiency.value) / 100;
-      const theta = mode === 'incline' ? 25 * Math.PI / 180 : 0;
-      const parallelForce = F * Math.cos(theta);
-      const W = parallelForce * s;
-      const useful = W * eta;
-      const loss = W - useful;
+      const eff = Number(controls.efficiency.value) / 100;
+      const W = F * s;
       const P = W / t;
       const v = s / t;
       const Ek = 0.5 * m * v * v;
-      return { mode, F, s, t, m, eta, W, useful, loss, P, v, Ek, theta };
+      return { F, s, t, m, eff, W, P, v, Ek };
+    }
+
+    const canvas = document.getElementById('sceneCanvas');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf8fafc);
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 200);
+    camera.position.set(8.5, 6.8, 10.5);
+    camera.lookAt(0, 0, 0);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+    const ambient = new THREE.AmbientLight(0xffffff, 0.72);
+    const light1 = new THREE.DirectionalLight(0xffffff, 0.85);
+    light1.position.set(7, 10, 6);
+    const light2 = new THREE.DirectionalLight(0x93c5fd, 0.45);
+    light2.position.set(-8, 6, -6);
+    scene.add(ambient, light1, light2);
+
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 16), new THREE.MeshStandardMaterial({ color: 0xe8eef7, roughness: 1 }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -1.1;
+    scene.add(floor);
+
+    const belt = new THREE.Mesh(new THREE.BoxGeometry(10, 0.45, 2.2), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.75 }));
+    belt.position.set(0, -0.2, 0);
+    scene.add(belt);
+
+    const box = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.9), new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.35, metalness: 0.1 }));
+    box.position.set(-4, 0.6, 0);
+    scene.add(box);
+
+    const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 2, 0xDC2626, 0.45, 0.22);
+    const velArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 1.6, 0x16A34A, 0.36, 0.2);
+    const accArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 1.2, 0x9333EA, 0.32, 0.18);
+    scene.add(forceArrow, velArrow, accArrow);
+
+    const energyBars = [];
+    const barColors = [0xdc2626, 0x2563eb, 0xd97706];
+    for (let i = 0; i < 3; i += 1) {
+      const bar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6, 1, 0.6),
+        new THREE.MeshStandardMaterial({ color: barColors[i], roughness: 0.45 })
+      );
+      bar.position.set(3 + i * 0.95, -0.5, -2.4);
+      scene.add(bar);
+      energyBars.push(bar);
+    }
+
+    function resizeRenderer() {
+      const w = canvas.clientWidth || 1200;
+      const h = canvas.clientHeight || 640;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
     }
 
     function updateOutputs() {
-      const d = getValues();
-      outputs.forceValue.textContent = d.F.toFixed(1);
-      outputs.distanceValue.textContent = d.s.toFixed(1);
-      outputs.timeValue.textContent = d.t.toFixed(1);
-      outputs.massValue.textContent = d.m.toFixed(1);
-      outputs.effValue.textContent = `${(d.eta * 100).toFixed(0)}`;
-      outputs.workOut.textContent = `${d.W.toFixed(1)} J`;
-      outputs.usefulOut.textContent = `${d.useful.toFixed(1)} J`;
-      outputs.lossOut.textContent = `${d.loss.toFixed(1)} J`;
-      outputs.powerOut.textContent = `${d.P.toFixed(1)} W`;
-      outputs.speedOut.textContent = `${d.v.toFixed(2)} m/s`;
-      outputs.keOut.textContent = `${d.Ek.toFixed(1)} J`;
-      outputs.cardWork.textContent = `${d.W.toFixed(0)} J`;
-      outputs.cardUseful.textContent = `${d.useful.toFixed(0)} J`;
-      outputs.cardPower.textContent = `${d.P.toFixed(0)} W`;
-      outputs.cardEk.textContent = `${d.Ek.toFixed(0)} J`;
+      const d = compute();
+      out.forceValue.textContent = d.F.toFixed(1);
+      out.distanceValue.textContent = d.s.toFixed(1);
+      out.timeValue.textContent = d.t.toFixed(1);
+      out.massValue.textContent = d.m.toFixed(1);
+      out.effValue.textContent = (d.eff * 100).toFixed(0);
+      out.workOut.textContent = `${d.W.toFixed(1)} J`;
+      out.powerOut.textContent = `${d.P.toFixed(1)} W`;
+      out.speedOut.textContent = `${d.v.toFixed(2)} m/s`;
+      out.keOut.textContent = `${d.Ek.toFixed(1)} J`;
     }
 
-    function drawEnergyBar(label, value, max, color, x, y) {
-      const w = 330;
-      const h = 24;
-      const ratio = Math.max(0, Math.min(1, value / max));
-      ctx.fillStyle = '#e2e8f0';
-      ctx.fillRect(x, y, w, h);
-      ctx.fillStyle = color;
-      ctx.fillRect(x, y, w * ratio, h);
-      ctx.fillStyle = '#0f172a';
-      ctx.font = '500 13px Inter';
-      ctx.fillText(`${label}: ${value.toFixed(1)}`, x, y - 8);
-    }
+    let phase = 0;
+    function animate() {
+      const d = compute();
+      phase += 0.01 + d.v * 0.01;
 
-    function drawScene() {
-      const d = getValues();
-      phase += 0.015 + d.v * 0.004;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      box.position.x = -4 + ((Math.sin(phase) + 1) / 2) * 8;
+      box.rotation.y += 0.012;
 
-      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      bg.addColorStop(0, '#dbeafe');
-      bg.addColorStop(1, '#f8fafc');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const base = new THREE.Vector3(box.position.x, box.position.y + 0.65, box.position.z + 0.55);
+      forceArrow.position.copy(base);
+      forceArrow.setLength(1 + d.F / 70);
+      velArrow.position.copy(base.clone().add(new THREE.Vector3(0, 0.25, 0)));
+      velArrow.setLength(0.8 + d.v * 1.3);
+      accArrow.position.copy(base.clone().add(new THREE.Vector3(0, 0.5, 0)));
+      accArrow.setLength(0.7 + Math.min(1.6, d.P / 450));
 
-      const groundY = 465;
-      const startX = 80;
-      const trackW = 680;
-      const ratio = (Math.sin(phase) + 1) / 2;
-      const x = startX + ratio * trackW;
-      const y = d.mode === 'incline' ? groundY - 12 - ratio * 115 : groundY - 62;
+      const workH = Math.max(0.25, Math.min(4.5, d.W / 900));
+      const powerH = Math.max(0.25, Math.min(4.5, d.P / 120));
+      const keH = Math.max(0.25, Math.min(4.5, d.Ek / 45));
+      const vals = [workH, powerH, keH];
+      vals.forEach((h, i) => {
+        energyBars[i].scale.y = h;
+        energyBars[i].position.y = -0.9 + h * 0.5;
+      });
 
-      if (d.mode === 'incline') {
-        ctx.fillStyle = '#e2e8f0';
-        ctx.beginPath();
-        ctx.moveTo(90, groundY + 18);
-        ctx.lineTo(800, groundY + 18);
-        ctx.lineTo(800, groundY - 130);
-        ctx.closePath();
-        ctx.fill();
-      } else {
-        ctx.strokeStyle = '#64748b';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(60, groundY);
-        ctx.lineTo(860, groundY);
-        ctx.stroke();
-      }
-
-      ctx.save();
-      if (d.mode === 'incline') ctx.rotate(-d.theta * 0.15);
-      ctx.fillStyle = '#2563eb';
-      ctx.fillRect(x, y, 94, 62);
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(x, y + 62, 94, 6);
-      ctx.restore();
-
-      ctx.strokeStyle = '#DC2626';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(x + 46, y + 30);
-      ctx.lineTo(x + 158, y + 30);
-      ctx.stroke();
-      ctx.fillStyle = '#DC2626';
-      ctx.beginPath();
-      ctx.moveTo(x + 158, y + 30);
-      ctx.lineTo(x + 145, y + 23);
-      ctx.lineTo(x + 145, y + 37);
-      ctx.closePath();
-      ctx.fill();
-
-      const energyPulse = (Math.sin(phase * 5) + 1) / 2;
-      for (let i = 0; i < 16; i += 1) {
-        const px = 250 + i * 18 + energyPulse * 12;
-        ctx.fillStyle = `rgba(59,130,246,${0.2 + i * 0.03})`;
-        ctx.beginPath();
-        ctx.arc(px, 118, 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      ctx.fillStyle = '#0f172a';
-      ctx.font = '600 18px Inter';
-      ctx.fillText(`F = ${d.F.toFixed(1)} N`, 60, 56);
-      ctx.fillText(`s = ${d.s.toFixed(1)} m`, 60, 84);
-      ctx.fillText(`t = ${d.t.toFixed(1)} s`, 60, 112);
-
-      drawEnergyBar('Input W', d.W, 9000, '#DC2626', 785, 170);
-      drawEnergyBar('Useful W', d.useful, 9000, '#9333EA', 785, 240);
-      drawEnergyBar('Power P', d.P, 1300, '#2563EB', 785, 310);
-      drawEnergyBar('Kinetic Ek', d.Ek, 900, '#16A34A', 785, 380);
-
-      requestAnimationFrame(drawScene);
+      resizeRenderer();
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
     }
 
     function updateLanguage(lang) {
@@ -407,15 +244,14 @@
         btn.classList.toggle('text-white', active);
         btn.classList.toggle('text-slate-600', !active);
       });
-      updateOutputs();
     }
 
     Object.values(controls).forEach((el) => el.addEventListener('input', updateOutputs));
-    controls.mode.addEventListener('change', updateOutputs);
+    window.addEventListener('resize', resizeRenderer);
 
     updateOutputs();
-    drawScene();
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
+    animate();
   </script>
 </body>
 </html>

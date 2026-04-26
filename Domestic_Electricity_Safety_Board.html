@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Domestic Electricity Safety Trainer (HKDSE)</title>
+  <title>Domestic Electricity Safety Trainer 3D (HKDSE)</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; }
     mjx-container { display: inline-block !important; }
-    .glass { background: rgba(255,255,255,0.86); backdrop-filter: blur(10px); }
+    .glass { background: rgba(255,255,255,0.88); backdrop-filter: blur(10px); }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
@@ -21,67 +22,52 @@
         <span>←</span><span data-i18n="back">Back to Topics</span>
       </a>
       <div class="flex gap-2">
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" data-lang="en" onclick="updateLanguage('en')">EN</button>
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" data-lang="zh-hk" onclick="updateLanguage('zh-hk')">繁</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm bg-blue-600 text-white" data-lang="en" onclick="updateLanguage('en')">EN</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm text-slate-600 hover:bg-blue-100" data-lang="zh-hk" onclick="updateLanguage('zh-hk')">繁</button>
       </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 pb-12">
     <section class="glass rounded-3xl border border-white/70 p-6 md:p-8 shadow-xl shadow-blue-100/40">
-      <div class="grid lg:grid-cols-[1.4fr_1fr] gap-6">
-        <div>
-          <p class="text-sm uppercase tracking-wide font-semibold text-blue-600" data-i18n="tag">HKDSE Electricity Safety Lab</p>
-          <h1 class="mt-2 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">Domestic Electricity Safety Trainer</h1>
-          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="subtitle">Practice fault diagnosis with fuse, MCB and earth-wire behavior under realistic household scenarios.</p>
-          <div class="mt-4 flex flex-wrap gap-2 text-xs">
-            <span class="px-3 py-1.5 rounded-full bg-red-100 text-red-700 font-semibold" data-i18n="chipLive">Live (L)</span>
-            <span class="px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 font-semibold" data-i18n="chipNeutral">Neutral (N)</span>
-            <span class="px-3 py-1.5 rounded-full bg-green-100 text-green-700 font-semibold" data-i18n="chipEarth">Earth (E)</span>
-          </div>
-        </div>
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
-          <h2 class="font-bold text-lg" data-i18n="focusTitle">Safety Focus</h2>
-          <ul class="mt-3 space-y-2 text-sm leading-relaxed">
-            <li data-i18n="focus1">• Overcurrent protection by fuse/MCB.</li>
-            <li data-i18n="focus2">• Earth leakage path and rapid trip.</li>
-            <li data-i18n="focus3">• Human-body shock risk conditions.</li>
-          </ul>
-          <p class="mt-4 text-xs text-blue-100" data-i18n="focusTip">Exam tip: explain the current path explicitly.</p>
-        </div>
-      </div>
+      <h1 class="text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">Domestic Electricity Safety Trainer (3D)</h1>
+      <p class="mt-3 text-slate-600" data-i18n="subtitle">3D wiring-board animation for fuse, MCB, earth leakage and shock-risk scenarios.</p>
     </section>
 
-    <section class="mt-6 grid xl:grid-cols-[1.45fr_1fr] gap-5">
-      <article class="glass rounded-3xl border border-white/70 p-4 md:p-5 shadow-lg shadow-blue-100/30">
-        <canvas id="boardCanvas" width="1200" height="640" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
+    <section class="mt-6 grid xl:grid-cols-[1.5fr_1fr] gap-5">
+      <article class="glass rounded-3xl border border-white/70 p-4">
+        <canvas id="board3d" width="1220" height="650" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
       </article>
 
       <aside class="space-y-4">
         <div class="glass rounded-2xl border border-white/70 p-4">
           <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Control Panel</h2>
-          <label class="block text-sm text-slate-700" for="scenario" data-i18n="scenario">Scenario</label>
+          <label class="block text-sm text-slate-700 mb-1" data-i18n="scenario">Scenario</label>
           <select id="scenario" class="w-full rounded-lg border border-slate-300 px-3 py-2 mb-3 bg-white">
             <option value="normal">Normal operation</option>
             <option value="overload">Overload</option>
-            <option value="short">Live-neutral short circuit</option>
-            <option value="leak-earth">Live-case leakage with earth</option>
-            <option value="leak-no-earth">Live-case leakage without earth</option>
+            <option value="short">Live-neutral short</option>
+            <option value="leak-earth">Leakage with earth</option>
+            <option value="leak-no-earth">Leakage without earth</option>
           </select>
 
           <label class="block text-sm text-slate-700 mb-1"><span data-i18n="load">Load current demand (A)</span>: <span id="loadOut" class="font-semibold text-blue-600">12.0</span></label>
           <input id="load" type="range" min="1" max="60" step="0.5" value="12" class="w-full accent-blue-600 mb-3" />
 
           <label class="block text-sm text-slate-700 mb-1"><span data-i18n="fuse">Fuse rating (A)</span>: <span id="fuseOut" class="font-semibold text-blue-600">13</span></label>
-          <input id="fuse" type="range" min="5" max="32" step="1" value="13" class="w-full accent-blue-600 mb-3" />
+          <input id="fuse" type="range" min="5" max="40" step="1" value="13" class="w-full accent-blue-600 mb-3" />
 
           <label class="block text-sm text-slate-700 mb-1"><span data-i18n="mcb">MCB rating (A)</span>: <span id="mcbOut" class="font-semibold text-blue-600">20</span></label>
           <input id="mcb" type="range" min="6" max="63" step="1" value="20" class="w-full accent-blue-600 mb-3" />
 
-          <div class="space-y-2 text-sm">
-            <label class="flex items-center gap-2"><input id="earthConnected" type="checkbox" class="accent-blue-600" checked /> <span data-i18n="earthConnected">Earth wire connected</span></label>
-            <label class="flex items-center gap-2"><input id="touchingCase" type="checkbox" class="accent-blue-600" /> <span data-i18n="touchingCase">Person touching metal case</span></label>
-          </div>
+          <label class="flex items-center gap-2 text-sm">
+            <input id="earthConnected" type="checkbox" class="accent-blue-600" checked />
+            <span data-i18n="earthConnected">Earth wire connected</span>
+          </label>
+          <label class="flex items-center gap-2 text-sm mt-2">
+            <input id="touchingCase" type="checkbox" class="accent-blue-600" />
+            <span data-i18n="touchingCase">Person touching case</span>
+          </label>
         </div>
 
         <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
@@ -93,15 +79,6 @@
             <div class="flex justify-between"><span class="text-slate-600" data-i18n="shockRisk">Shock risk</span><span id="riskOut" class="font-semibold text-green-600">Low</span></div>
           </div>
           <p id="statusMsg" class="mt-2 text-xs text-slate-600"></p>
-        </div>
-
-        <div class="glass rounded-2xl border border-white/70 p-4 text-sm text-slate-700">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="checkTitle">HKDSE Answer Checklist</h2>
-          <ul class="list-disc ml-5 space-y-1">
-            <li data-i18n="check1">State whether overcurrent or leakage fault occurs.</li>
-            <li data-i18n="check2">Identify which protective device operates first.</li>
-            <li data-i18n="check3">Explain how earth wire lowers case voltage.</li>
-          </ul>
         </div>
       </aside>
     </section>
@@ -126,72 +103,128 @@
       riskOut: document.getElementById('riskOut'),
       statusMsg: document.getElementById('statusMsg')
     };
-    const canvas = document.getElementById('boardCanvas');
-    const ctx = canvas.getContext('2d');
-    let pulse = 0;
 
     const translations = {
       en: {
         back: 'Back to Topics',
-        tag: 'HKDSE Electricity Safety Lab',
-        title: 'Domestic Electricity Safety Trainer',
-        subtitle: 'Practice fault diagnosis with fuse, MCB and earth-wire behavior under realistic household scenarios.',
-        chipLive: 'Live (L)',
-        chipNeutral: 'Neutral (N)',
-        chipEarth: 'Earth (E)',
-        focusTitle: 'Safety Focus',
-        focus1: '• Overcurrent protection by fuse/MCB.',
-        focus2: '• Earth leakage path and rapid trip.',
-        focus3: '• Human-body shock risk conditions.',
-        focusTip: 'Exam tip: explain the current path explicitly.',
+        title: 'Domestic Electricity Safety Trainer (3D)',
+        subtitle: '3D wiring-board animation for fuse, MCB, earth leakage and shock-risk scenarios.',
         controls: 'Control Panel',
         scenario: 'Scenario',
         load: 'Load current demand (A)',
         fuse: 'Fuse rating (A)',
         mcb: 'MCB rating (A)',
         earthConnected: 'Earth wire connected',
-        touchingCase: 'Person touching metal case',
+        touchingCase: 'Person touching case',
         statusTitle: 'Safety Status',
         lineCurrent: 'Line current',
         tripDevice: 'Trip device',
         touchVoltage: 'Case touch voltage',
-        shockRisk: 'Shock risk',
-        checkTitle: 'HKDSE Answer Checklist',
-        check1: 'State whether overcurrent or leakage fault occurs.',
-        check2: 'Identify which protective device operates first.',
-        check3: 'Explain how earth wire lowers case voltage.'
+        shockRisk: 'Shock risk'
       },
       'zh-hk': {
         back: '返回主題頁',
-        tag: 'HKDSE 電學安全實驗室',
-        title: '家居用電安全訓練器',
-        subtitle: '以真實情境演練保險絲、MCB 及地線在故障時的保護作用。',
-        chipLive: '火線 (L)',
-        chipNeutral: '中線 (N)',
-        chipEarth: '地線 (E)',
-        focusTitle: '學習重點',
-        focus1: '• 保險絲/MCB 的過流保護。',
-        focus2: '• 漏電時地線分流與快速跳掣。',
-        focus3: '• 人體觸電風險條件判斷。',
-        focusTip: '考試提示：必須說明電流路徑。',
+        title: '家居用電安全訓練器（3D）',
+        subtitle: '以 3D 配線板動畫展示保險絲、MCB、漏電與觸電風險情境。',
         controls: '控制面板',
         scenario: '情境',
         load: '負載需求電流 (A)',
         fuse: '保險絲額定值 (A)',
         mcb: 'MCB 額定值 (A)',
         earthConnected: '已接駁地線',
-        touchingCase: '人體觸碰金屬外殼',
+        touchingCase: '人體觸碰外殼',
         statusTitle: '安全狀態',
         lineCurrent: '線路電流',
         tripDevice: '跳掣裝置',
         touchVoltage: '外殼觸碰電壓',
-        shockRisk: '觸電風險',
-        checkTitle: 'HKDSE 作答清單',
-        check1: '先判斷是過流故障還是漏電故障。',
-        check2: '指出哪個保護裝置會先動作。',
-        check3: '解釋地線如何降低外殼電壓。'
+        shockRisk: '觸電風險'
       }
     };
+
+    const canvas = document.getElementById('board3d');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf8fafc);
+    const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 200);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    camera.position.set(0, 9, 18);
+    camera.lookAt(0, 2.2, 0);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+    const key = new THREE.DirectionalLight(0xffffff, 0.95);
+    key.position.set(12, 14, 10);
+    scene.add(key);
+
+    const board = new THREE.Mesh(
+      new THREE.BoxGeometry(22, 0.6, 10),
+      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.95 })
+    );
+    board.position.y = 1.2;
+    scene.add(board);
+
+    const lineMatLive = new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x220000 });
+    const lineMatNeutral = new THREE.MeshStandardMaterial({ color: 0x2563eb, emissive: 0x001122 });
+    const lineMatEarth = new THREE.MeshStandardMaterial({ color: 0x16a34a, emissive: 0x001a08 });
+    const cableGeom = new THREE.CylinderGeometry(0.11, 0.11, 8.5, 20);
+
+    const live = new THREE.Mesh(cableGeom, lineMatLive);
+    live.rotation.z = Math.PI / 2;
+    live.position.set(0, 2.05, -2.6);
+    scene.add(live);
+
+    const neutral = new THREE.Mesh(cableGeom, lineMatNeutral);
+    neutral.rotation.z = Math.PI / 2;
+    neutral.position.set(0, 2.05, 0);
+    scene.add(neutral);
+
+    const earth = new THREE.Mesh(cableGeom, lineMatEarth);
+    earth.rotation.z = Math.PI / 2;
+    earth.position.set(0, 2.05, 2.6);
+    scene.add(earth);
+
+    const fuseMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(2.1, 1.35, 1.15),
+      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 })
+    );
+    fuseMesh.position.set(-5.8, 2.35, -2.6);
+    scene.add(fuseMesh);
+
+    const mcbMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(2.4, 1.35, 1.15),
+      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 })
+    );
+    mcbMesh.position.set(-2.1, 2.35, -2.6);
+    scene.add(mcbMesh);
+
+    const caseMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(4.7, 3.4, 2.8),
+      new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.75, metalness: 0.2 })
+    );
+    caseMesh.position.set(6.8, 2.8, -0.2);
+    scene.add(caseMesh);
+
+    const person = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 2.2, 16), new THREE.MeshStandardMaterial({ color: 0x111827 }));
+    body.position.y = 2;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+    head.position.y = 3.5;
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.25, 12), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+    arm.rotation.z = -0.95;
+    arm.position.set(0.65, 2.35, 0);
+    person.add(body, head, arm);
+    person.position.set(10.2, 0.8, -0.2);
+    person.visible = false;
+    scene.add(person);
+
+    const spark = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 12, 12),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0x7c2d12, emissiveIntensity: 0.7 })
+    );
+    spark.position.set(8.95, 2.55, -0.2);
+    spark.visible = false;
+    scene.add(spark);
+
+    let pulse = 0;
 
     function applyScenario() {
       const s = controls.scenario.value;
@@ -199,10 +232,10 @@
         controls.load.value = '12';
         controls.earthConnected.checked = true;
       } else if (s === 'overload') {
-        controls.load.value = '32';
+        controls.load.value = '34';
         controls.earthConnected.checked = true;
       } else if (s === 'short') {
-        controls.load.value = '55';
+        controls.load.value = '58';
         controls.earthConnected.checked = true;
       } else if (s === 'leak-earth') {
         controls.load.value = '10';
@@ -217,181 +250,103 @@
       const load = Number(controls.load.value);
       const fuse = Number(controls.fuse.value);
       const mcb = Number(controls.mcb.value);
-      const earth = controls.earthConnected.checked;
+      const earthConnected = controls.earthConnected.checked;
       const touch = controls.touchingCase.checked;
       const scenario = controls.scenario.value;
 
-      let lineCurrent = load;
+      let current = load;
       let touchV = 0;
       let trip = 'None';
       let risk = 'Low';
-      let msgEn = 'Normal operation: current flows through live and neutral.';
-      let msgHk = '正常運作：電流經火線流入並由中線返回。';
+      let msgEn = 'Normal supply path.';
+      let msgHk = '正常供電路徑。';
 
       const leakage = scenario === 'leak-earth' || scenario === 'leak-no-earth';
-      const shortCircuit = scenario === 'short';
+      const short = scenario === 'short';
 
-      if (shortCircuit) {
-        lineCurrent = load + 120;
-        msgEn = 'Short circuit causes very large current and immediate disconnection.';
-        msgHk = '短路令電流急增，保護裝置會即時斷路。';
+      if (short) {
+        current = load + 120;
+        msgEn = 'Short circuit causes very high current.';
+        msgHk = '短路導致極大電流。';
       } else if (leakage) {
-        if (earth) {
-          lineCurrent = load + 26;
-          touchV = 18;
-          msgEn = 'Leakage current is diverted by earth wire; touch voltage stays low.';
-          msgHk = '漏電電流經地線分流，外殼觸碰電壓較低。';
+        if (earthConnected) {
+          current = load + 26;
+          touchV = 22;
+          msgEn = 'Earth wire drains leakage current.';
+          msgHk = '地線把漏電電流導走。';
         } else {
-          lineCurrent = load + 4;
+          current = load + 4;
           touchV = 220;
-          msgEn = 'No earth return path: appliance case may remain near live potential.';
-          msgHk = '沒有地線回路，外殼可能接近火線電位。';
+          msgEn = 'No earth path, case can stay live.';
+          msgHk = '沒有地線回路，外殼可帶電。';
         }
       } else if (scenario === 'overload') {
-        lineCurrent = load;
-        msgEn = 'Overload condition: thermal protection should eventually trip.';
-        msgHk = '過載情況：熱保護機制將會跳掣。';
+        current = load;
+        msgEn = 'Overload: current above normal usage.';
+        msgHk = '過載：電流超出正常使用。';
       }
 
-      if (lineCurrent > fuse || lineCurrent > mcb) {
-        if (lineCurrent > fuse && lineCurrent > mcb) trip = fuse <= mcb ? 'Fuse first' : 'MCB first';
-        else trip = lineCurrent > fuse ? 'Fuse' : 'MCB';
+      if (current > fuse || current > mcb) {
+        if (current > fuse && fuse <= mcb) trip = 'Fuse';
+        else if (current > mcb && mcb < fuse) trip = 'MCB';
+        else trip = 'Fuse/MCB';
       }
 
-      if (touch && touchV > 120) risk = 'High';
-      else if (touch && touchV > 40) risk = 'Medium';
-      else if (touch) risk = 'Low';
-      else risk = leakage && !earth ? 'Medium' : 'Low';
+      if (touch && touchV > 150) risk = 'High';
+      else if (touch && touchV > 30) risk = 'Medium';
+      else risk = 'Low';
 
-      return { load, fuse, mcb, earth, touch, scenario, lineCurrent, touchV, trip, risk, msgEn, msgHk, leakage, shortCircuit };
+      return { current, touchV, trip, risk, msgEn, msgHk, leakage, short, earthConnected, touch };
     }
 
-    function wire(x1, y1, x2, y2, color, width = 4) {
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width;
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-    }
+    function updateOutputs() {
+      const d = evaluate();
+      out.loadOut.textContent = Number(controls.load.value).toFixed(1);
+      out.fuseOut.textContent = Number(controls.fuse.value).toFixed(0);
+      out.mcbOut.textContent = Number(controls.mcb.value).toFixed(0);
+      out.lineCurrentOut.textContent = `${d.current.toFixed(1)} A`;
+      out.tripOut.textContent = d.trip;
+      out.touchVOut.textContent = `${d.touchV.toFixed(0)} V`;
+      out.riskOut.textContent = d.risk;
 
-    function drawBoard(s) {
-      pulse += 0.1;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      bg.addColorStop(0, '#e2e8f0');
-      bg.addColorStop(1, '#f8fafc');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const zh = document.documentElement.lang === 'zh-HK';
+      out.statusMsg.textContent = zh ? d.msgHk : d.msgEn;
 
-      const yLive = 155;
-      const yNeutral = 285;
-      const yEarth = 420;
-
-      wire(80, yLive, 1130, yLive, '#dc2626');
-      wire(80, yNeutral, 1130, yNeutral, '#2563eb');
-      wire(80, yEarth, 1130, yEarth, '#16a34a');
-
-      ctx.fillStyle = '#dc2626'; ctx.font = 'bold 14px Inter'; ctx.fillText('LIVE', 80, yLive - 12);
-      ctx.fillStyle = '#2563eb'; ctx.fillText('NEUTRAL', 80, yNeutral - 12);
-      ctx.fillStyle = '#16a34a'; ctx.fillText('EARTH', 80, yEarth - 12);
-
-      ctx.fillStyle = '#334155';
-      ctx.fillRect(210, 105, 90, 100);
-      ctx.fillRect(350, 105, 110, 100);
-      ctx.fillStyle = '#fff';
-      ctx.font = '600 14px Inter';
-      ctx.fillText('FUSE', 235, 161);
-      ctx.fillText('MCB', 388, 161);
-
-      const fuseOn = s.lineCurrent <= s.fuse;
-      const mcbOn = s.lineCurrent <= s.mcb;
-      ctx.fillStyle = fuseOn ? '#16a34a' : '#ef4444';
-      ctx.beginPath(); ctx.arc(284, 122, 9, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = mcbOn ? '#16a34a' : '#ef4444';
-      ctx.beginPath(); ctx.arc(442, 122, 9, 0, Math.PI * 2); ctx.fill();
-
-      ctx.fillStyle = '#f8fafc';
-      ctx.strokeStyle = '#475569';
-      ctx.lineWidth = 3;
-      ctx.fillRect(730, 110, 280, 290);
-      ctx.strokeRect(730, 110, 280, 290);
-      ctx.fillStyle = '#0f172a';
-      ctx.font = '600 17px Inter';
-      ctx.fillText('METAL APPLIANCE', 785, 140);
-
-      wire(730, yLive, 660, yLive, '#dc2626');
-      wire(660, yLive, 660, 225, '#dc2626');
-      wire(660, 225, 730, 225, '#dc2626');
-
-      wire(730, yNeutral, 660, yNeutral, '#2563eb');
-      wire(660, yNeutral, 660, 265, '#2563eb');
-      wire(660, 265, 730, 265, '#2563eb');
-
-      if (s.earth) {
-        wire(730, yEarth, 660, yEarth, '#16a34a');
-        wire(660, yEarth, 660, 305, '#16a34a');
-        wire(660, 305, 730, 305, '#16a34a');
-      } else {
-        ctx.fillStyle = '#ef4444';
-        ctx.font = '13px Inter';
-        ctx.fillText('Earth disconnected', 760, 382);
-      }
-
-      if (s.leakage) {
-        wire(860, yLive, 860, 270, '#ef4444', 5);
-        ctx.fillStyle = '#ef4444';
-        ctx.fillText('Leakage path', 872, 232);
-      }
-      if (s.shortCircuit) {
-        wire(620, yLive, 620, yNeutral, '#ef4444', 6);
-        ctx.fillStyle = '#ef4444';
-        ctx.fillText('L-N short', 634, 224);
-      }
-
-      if (s.touch) {
-        ctx.fillStyle = '#0f172a';
-        ctx.beginPath(); ctx.arc(1080, 260, 12, 0, Math.PI * 2); ctx.fill();
-        ctx.fillRect(1075, 272, 10, 34);
-        ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(1080, 280); ctx.lineTo(1052, 246);
-        ctx.moveTo(1080, 280); ctx.lineTo(1052, 316);
-        ctx.stroke();
-        const glow = (Math.sin(pulse) + 1) / 2;
-        if (s.touchV > 40) {
-          ctx.fillStyle = `rgba(239, 68, 68, ${0.2 + glow * 0.5})`;
-          ctx.beginPath();
-          ctx.arc(1060, 255, 26 + glow * 8, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      ctx.fillStyle = '#334155';
-      ctx.font = '600 16px Inter';
-      ctx.fillText(`I = ${s.lineCurrent.toFixed(1)} A`, 90, 70);
-      ctx.fillText(`Fuse ${s.fuse.toFixed(0)} A | MCB ${s.mcb.toFixed(0)} A`, 250, 70);
-      ctx.fillText(`Touch V = ${s.touchV.toFixed(0)} V`, 580, 70);
-    }
-
-    function updateView() {
-      const s = evaluate();
-      out.loadOut.textContent = s.load.toFixed(1);
-      out.fuseOut.textContent = s.fuse.toFixed(0);
-      out.mcbOut.textContent = s.mcb.toFixed(0);
-      out.lineCurrentOut.textContent = `${s.lineCurrent.toFixed(1)} A`;
-      out.tripOut.textContent = s.trip;
-      out.touchVOut.textContent = `${s.touchV.toFixed(0)} V`;
-      out.riskOut.textContent = s.risk;
-
-      if (s.risk === 'High') out.riskOut.className = 'font-semibold text-red-600';
-      else if (s.risk === 'Medium') out.riskOut.className = 'font-semibold text-amber-600';
+      if (d.risk === 'High') out.riskOut.className = 'font-semibold text-red-600';
+      else if (d.risk === 'Medium') out.riskOut.className = 'font-semibold text-amber-600';
       else out.riskOut.className = 'font-semibold text-green-600';
 
-      const lang = document.documentElement.lang === 'zh-HK' ? 'zh-hk' : 'en';
-      out.statusMsg.textContent = lang === 'zh-hk' ? s.msgHk : s.msgEn;
-      drawBoard(s);
+      earth.visible = d.earthConnected;
+      person.visible = d.touch;
+      spark.visible = d.touch && d.touchV > 30;
+      lineMatLive.emissiveIntensity = d.trip === 'None' ? 0.55 : 0.12;
+      lineMatNeutral.emissiveIntensity = d.trip === 'None' ? 0.42 : 0.08;
+      lineMatEarth.emissiveIntensity = d.earthConnected ? (d.leakage ? 0.8 : 0.35) : 0.06;
+      fuseMesh.material.color.set(d.trip.includes('Fuse') ? 0xef4444 : 0x334155);
+      mcbMesh.material.color.set(d.trip.includes('MCB') ? 0xef4444 : 0x334155);
+      caseMesh.material.emissive.set(d.touchV > 150 ? 0x7c2d12 : d.touchV > 20 ? 0x78350f : 0x000000);
+      caseMesh.material.emissiveIntensity = d.touchV > 0 ? 0.5 : 0;
+    }
+
+    function resizeRenderer() {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      const w = Math.floor(rect.width);
+      const h = Math.floor(rect.height);
+      if (canvas.width !== w || canvas.height !== h) {
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+    }
+
+    function animate() {
+      resizeRenderer();
+      pulse += 0.06;
+      board.rotation.y = Math.sin(pulse * 0.25) * 0.08;
+      spark.scale.setScalar(0.8 + Math.abs(Math.sin(pulse * 6)) * 1.2);
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
     }
 
     function updateLanguage(lang) {
@@ -408,23 +363,14 @@
         btn.classList.toggle('text-white', active);
         btn.classList.toggle('text-slate-600', !active);
       });
-      updateView();
+      updateOutputs();
     }
 
-    controls.scenario.addEventListener('change', () => {
-      applyScenario();
-      updateView();
-    });
-    Object.values(controls).forEach((control) => {
-      if (control !== controls.scenario) control.addEventListener('input', updateView);
-    });
-
-    function animate() {
-      updateView();
-      requestAnimationFrame(animate);
-    }
+    controls.scenario.addEventListener('change', () => { applyScenario(); updateOutputs(); });
+    Object.values(controls).forEach((ctrl) => ctrl.addEventListener('input', updateOutputs));
 
     applyScenario();
+    updateOutputs();
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
     requestAnimationFrame(animate);
   </script>
