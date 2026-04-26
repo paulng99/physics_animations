@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inclined Plane and Newton's Laws (HKDSE)</title>
+  <title>Inclined Plane Newton's Laws Lab (HKDSE)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,172 +11,331 @@
   <style>
     body { font-family: 'Inter', sans-serif; }
     mjx-container { display: inline-block !important; }
+    .glass { background: rgba(255, 255, 255, 0.86); backdrop-filter: blur(10px); }
+    .panel-title { letter-spacing: 0.01em; }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
-  <header class="max-w-6xl mx-auto px-4 py-4">
-    <div class="flex items-center justify-between gap-3">
+  <header class="max-w-7xl mx-auto px-4 py-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
       <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
-        <span>←</span><span data-i18n="back">Back to Topics</span>
+        <span>←</span>
+        <span data-i18n="back">Back to Topics</span>
       </a>
-      <div class="flex gap-2">
+      <div class="flex items-center gap-2">
         <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" data-lang="en" onclick="updateLanguage('en')">EN</button>
         <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" data-lang="zh-hk" onclick="updateLanguage('zh-hk')">繁</button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 pb-10">
-    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-5 md:p-7 shadow-sm">
-      <h1 class="text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">Inclined Plane: Newton's Laws</h1>
-      <p class="mt-2 text-slate-600" data-i18n="subtitle">Resolve forces along the slope and observe acceleration direction.</p>
+  <main class="max-w-7xl mx-auto px-4 pb-12">
+    <section class="glass rounded-3xl border border-white/70 p-6 md:p-8 shadow-xl shadow-blue-100/40">
+      <div class="grid lg:grid-cols-[1.4fr_1fr] gap-6">
+        <div>
+          <p class="text-sm font-semibold text-blue-600 uppercase tracking-wide" data-i18n="tag">HKDSE Mechanics Pro Lab</p>
+          <h1 class="mt-2 text-2xl md:text-4xl font-extrabold text-slate-900 leading-tight" data-i18n="title">Inclined Plane Newton's Laws Studio</h1>
+          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="subtitle">
+            Resolve all forces, verify acceleration from Newton's second law, and compare dynamic readings with exam-style derivation.
+          </p>
+          <div class="mt-4 flex flex-wrap gap-2 text-xs">
+            <span class="px-3 py-1.5 rounded-full bg-red-100 text-red-700 font-semibold">Force F</span>
+            <span class="px-3 py-1.5 rounded-full bg-green-100 text-green-700 font-semibold">Velocity v</span>
+            <span class="px-3 py-1.5 rounded-full bg-purple-100 text-purple-700 font-semibold">Acceleration a</span>
+            <span class="px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 font-semibold">Displacement s</span>
+          </div>
+        </div>
+        <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl p-5">
+          <h2 class="font-bold text-lg panel-title" data-i18n="focusTitle">Lesson Focus</h2>
+          <ul class="mt-3 space-y-2 text-sm leading-relaxed">
+            <li data-i18n="focus1">• Resolve weight into parallel and perpendicular components.</li>
+            <li data-i18n="focus2">• Model static/kinetic friction direction correctly.</li>
+            <li data-i18n="focus3">• Relate net force to motion trend in real time.</li>
+          </ul>
+          <p class="mt-4 text-xs text-blue-100" data-i18n="focusFoot">Tip: Check sign convention before substituting values in the exam.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-6 grid xl:grid-cols-[1.45fr_1fr] gap-5">
+      <article class="glass rounded-3xl border border-white/70 p-4 md:p-5 shadow-lg shadow-blue-100/30">
+        <canvas id="simCanvas" width="1180" height="620" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
+        <div class="mt-4 grid sm:grid-cols-4 gap-3 text-sm">
+          <div class="rounded-xl border border-red-200 bg-red-50 px-3 py-2">
+            <div class="text-red-700 font-semibold" data-i18n="cardForce">Net Force</div>
+            <div id="cardNet" class="text-red-600 text-lg font-bold">0.00 N</div>
+          </div>
+          <div class="rounded-xl border border-purple-200 bg-purple-50 px-3 py-2">
+            <div class="text-purple-700 font-semibold" data-i18n="cardAcc">Acceleration</div>
+            <div id="cardAcc" class="text-purple-600 text-lg font-bold">0.00 m/s²</div>
+          </div>
+          <div class="rounded-xl border border-green-200 bg-green-50 px-3 py-2">
+            <div class="text-green-700 font-semibold" data-i18n="cardVel">Velocity</div>
+            <div id="cardVel" class="text-green-600 text-lg font-bold">0.00 m/s</div>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <div class="text-slate-700 font-semibold" data-i18n="cardDisp">Displacement</div>
+            <div id="cardDisp" class="text-slate-700 text-lg font-bold">0.00 m</div>
+          </div>
+        </div>
+      </article>
+
+      <aside class="space-y-4">
+        <div class="glass rounded-2xl border border-white/70 p-4">
+          <h2 class="font-semibold text-slate-900 mb-3 panel-title" data-i18n="controls">Experiment Controls</h2>
+
+          <label class="block text-sm text-slate-700" for="preset">
+            <span data-i18n="preset">Scenario Preset</span>
+          </label>
+          <select id="preset" class="w-full rounded-lg border border-slate-300 px-3 py-2 mb-3 bg-white">
+            <option value="custom">Custom</option>
+            <option value="frictionless">Frictionless slope</option>
+            <option value="near-equilibrium">Near equilibrium</option>
+            <option value="high-friction">High friction climb</option>
+          </select>
+
+          <label class="block text-sm text-slate-700" for="mass"><span data-i18n="mass">Mass m (kg)</span>: <span id="massValue" class="font-semibold text-blue-600">3.0</span></label>
+          <input id="mass" type="range" min="0.5" max="12" step="0.1" value="3" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm text-slate-700" for="angle"><span data-i18n="angle">Angle θ (°)</span>: <span id="angleValue" class="font-semibold text-blue-600">28.0</span></label>
+          <input id="angle" type="range" min="5" max="75" step="0.5" value="28" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm text-slate-700" for="mu"><span data-i18n="mu">Friction coefficient μ</span>: <span id="muValue" class="font-semibold text-blue-600">0.22</span></label>
+          <input id="mu" type="range" min="0" max="1" step="0.01" value="0.22" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm text-slate-700" for="push"><span data-i18n="push">Push up slope (N)</span>: <span id="pushValue" class="font-semibold text-blue-600">5.0</span></label>
+          <input id="push" type="range" min="-80" max="120" step="0.5" value="5" class="w-full accent-blue-600 mb-4" />
+
+          <div class="grid grid-cols-3 gap-2">
+            <button id="playBtn" class="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2" data-i18n="play">Start</button>
+            <button id="pauseBtn" class="rounded-xl bg-slate-700 hover:bg-slate-800 text-white font-semibold py-2" data-i18n="pause">Pause</button>
+            <button id="resetBtn" class="rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2" data-i18n="reset">Reset</button>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
+          <h2 class="font-semibold text-slate-900 mb-2 panel-title" data-i18n="readings">Detailed Readings</h2>
+          <div class="space-y-1.5">
+            <div class="flex justify-between"><span class="text-slate-600">mg sinθ</span><span id="downslopeOut" class="font-semibold text-red-600">13.80 N</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">N = mg cosθ</span><span id="normalOut" class="font-semibold text-slate-700">25.98 N</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">f = μN</span><span id="frictionOut" class="font-semibold text-red-600">5.72 N</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="netForce">ΣF (down-slope +)</span><span id="netOut" class="font-semibold text-red-600">3.08 N</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">a = ΣF/m</span><span id="accOut" class="font-semibold text-purple-600">1.03 m/s²</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="motionState">Motion state</span><span id="stateOut" class="font-semibold text-green-700">Accelerating down slope</span></div>
+          </div>
+        </div>
+      </aside>
     </section>
 
     <section class="mt-5 grid lg:grid-cols-3 gap-4">
-      <article class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
-        <canvas id="simCanvas" width="960" height="520" class="w-full rounded-xl border border-slate-200 bg-slate-50"></canvas>
+      <article class="glass rounded-2xl border border-white/70 p-4">
+        <h3 class="font-bold text-slate-900 panel-title" data-i18n="deriveTitle">Step-by-step Derivation</h3>
+        <ol class="mt-2 list-decimal ml-5 text-sm text-slate-700 space-y-1 leading-relaxed">
+          <li data-i18n="derive1">Choose down-slope as positive direction.</li>
+          <li data-i18n="derive2">Resolve weight: parallel = mg sinθ, normal = mg cosθ.</li>
+          <li data-i18n="derive3">Friction magnitude is μN and opposes relative motion.</li>
+          <li data-i18n="derive4">Apply ΣF = ma to obtain acceleration and direction.</li>
+        </ol>
       </article>
-      <aside class="space-y-4">
-        <div class="bg-white rounded-2xl border border-slate-200 p-4">
-          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
 
-          <label class="block text-sm text-slate-700" for="mass">
-            <span data-i18n="mass">Mass m (kg)</span>: <span id="massValue" class="font-semibold text-blue-600">2.0</span>
-          </label>
-          <input id="mass" type="range" min="0.5" max="8" step="0.1" value="2" class="w-full accent-blue-600 mb-3">
+      <article class="glass rounded-2xl border border-white/70 p-4">
+        <h3 class="font-bold text-slate-900 panel-title" data-i18n="examTitle">HKDSE Exam Checklist</h3>
+        <ul class="mt-2 text-sm text-slate-700 space-y-1 leading-relaxed">
+          <li data-i18n="exam1">• Include sign for each force component clearly.</li>
+          <li data-i18n="exam2">• State friction direction based on intended motion.</li>
+          <li data-i18n="exam3">• Quote unit for acceleration and force.</li>
+          <li data-i18n="exam4">• Mention if object is at limiting equilibrium.</li>
+        </ul>
+      </article>
 
-          <label class="block text-sm text-slate-700" for="angle">
-            <span data-i18n="angle">Incline angle θ (°)</span>: <span id="angleValue" class="font-semibold text-blue-600">30.0</span>
-          </label>
-          <input id="angle" type="range" min="5" max="70" step="0.5" value="30" class="w-full accent-blue-600 mb-3">
-
-          <label class="block text-sm text-slate-700" for="mu">
-            <span data-i18n="mu">Friction coefficient μ</span>: <span id="muValue" class="font-semibold text-blue-600">0.20</span>
-          </label>
-          <input id="mu" type="range" min="0" max="1" step="0.01" value="0.2" class="w-full accent-blue-600 mb-3">
-
-          <label class="block text-sm text-slate-700" for="push">
-            <span data-i18n="push">Applied force up slope (N)</span>: <span id="pushValue" class="font-semibold text-blue-600">0.0</span>
-          </label>
-          <input id="push" type="range" min="0" max="80" step="0.5" value="0" class="w-full accent-blue-600 mb-4">
-
-          <div class="flex gap-2">
-            <button id="playBtn" class="flex-1 px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition" data-i18n="play">Start</button>
-            <button id="resetBtn" class="flex-1 px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition" data-i18n="reset">Reset</button>
-          </div>
+      <article class="glass rounded-2xl border border-white/70 p-4">
+        <h3 class="font-bold text-slate-900 panel-title" data-i18n="formulaTitle">Formula Bank</h3>
+        <div class="mt-2 text-sm text-slate-700 space-y-1">
+          <p><strong>ΣF = mg sinθ - μmg cosθ - F<sub>push</sub></strong></p>
+          <p><strong>a = ΣF / m</strong></p>
+          <p><strong>v² = u² + 2as</strong></p>
         </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Readings</h2>
-          <div class="space-y-1">
-            <div class="flex justify-between"><span class="text-slate-600">mg sinθ</span><span id="downslopeOut" class="font-semibold text-red-600">9.81 N</span></div>
-            <div class="flex justify-between"><span class="text-slate-600">μN</span><span id="frictionOut" class="font-semibold text-red-600">3.40 N</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="netForce">Net force</span><span id="netOut" class="font-semibold text-red-600">6.41 N</span></div>
-            <div class="flex justify-between"><span class="text-slate-600">a</span><span id="accOut" class="font-semibold text-purple-600">3.21 m/s²</span></div>
-            <div class="flex justify-between"><span class="text-slate-600">v</span><span id="velOut" class="font-semibold text-green-600">0.00 m/s</span></div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE Formula Focus</h2>
-          <ul class="list-disc ml-5 space-y-1">
-            <li>F∥ = mg sinθ − μmg cosθ − F<sub>push</sub></li>
-            <li>a = F<sub>net</sub> / m</li>
-            <li>N = mg cosθ</li>
-          </ul>
-        </div>
-      </aside>
+      </article>
     </section>
   </main>
 
   <script>
     const g = 9.81;
     const controls = {
+      preset: document.getElementById('preset'),
       mass: document.getElementById('mass'),
       angle: document.getElementById('angle'),
       mu: document.getElementById('mu'),
       push: document.getElementById('push')
     };
-    const out = {
+    const outputs = {
       massValue: document.getElementById('massValue'),
       angleValue: document.getElementById('angleValue'),
       muValue: document.getElementById('muValue'),
       pushValue: document.getElementById('pushValue'),
       downslopeOut: document.getElementById('downslopeOut'),
+      normalOut: document.getElementById('normalOut'),
       frictionOut: document.getElementById('frictionOut'),
       netOut: document.getElementById('netOut'),
       accOut: document.getElementById('accOut'),
-      velOut: document.getElementById('velOut')
+      cardNet: document.getElementById('cardNet'),
+      cardAcc: document.getElementById('cardAcc'),
+      cardVel: document.getElementById('cardVel'),
+      cardDisp: document.getElementById('cardDisp'),
+      stateOut: document.getElementById('stateOut')
     };
-
+    const playBtn = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
     const canvas = document.getElementById('simCanvas');
     const ctx = canvas.getContext('2d');
-    const playBtn = document.getElementById('playBtn');
-    const resetBtn = document.getElementById('resetBtn');
 
-    const state = { s: 0, v: 0, running: false };
+    const state = {
+      running: false,
+      distance: 2.2,
+      velocity: 0,
+      trail: [],
+      lastTime: performance.now()
+    };
 
     const translations = {
       en: {
         back: 'Back to Topics',
-        title: "Inclined Plane: Newton's Laws",
-        subtitle: 'Resolve forces along the slope and observe acceleration direction.',
-        controls: 'Controls',
+        tag: 'HKDSE Mechanics Pro Lab',
+        title: "Inclined Plane Newton's Laws Studio",
+        subtitle: 'Resolve all forces, verify acceleration from Newton\'s second law, and compare dynamic readings with exam-style derivation.',
+        focusTitle: 'Lesson Focus',
+        focus1: '• Resolve weight into parallel and perpendicular components.',
+        focus2: '• Model static/kinetic friction direction correctly.',
+        focus3: '• Relate net force to motion trend in real time.',
+        focusFoot: 'Tip: Check sign convention before substituting values in the exam.',
+        controls: 'Experiment Controls',
+        preset: 'Scenario Preset',
         mass: 'Mass m (kg)',
-        angle: 'Incline angle θ (°)',
+        angle: 'Angle θ (°)',
         mu: 'Friction coefficient μ',
-        push: 'Applied force up slope (N)',
+        push: 'Push up slope (N)',
         play: 'Start',
+        pause: 'Pause',
         reset: 'Reset',
-        readings: 'Readings',
-        netForce: 'Net force',
-        formulaTitle: 'HKDSE Formula Focus'
+        readings: 'Detailed Readings',
+        netForce: 'ΣF (down-slope +)',
+        motionState: 'Motion state',
+        cardForce: 'Net Force',
+        cardAcc: 'Acceleration',
+        cardVel: 'Velocity',
+        cardDisp: 'Displacement',
+        deriveTitle: 'Step-by-step Derivation',
+        derive1: 'Choose down-slope as positive direction.',
+        derive2: 'Resolve weight: parallel = mg sinθ, normal = mg cosθ.',
+        derive3: 'Friction magnitude is μN and opposes relative motion.',
+        derive4: 'Apply ΣF = ma to obtain acceleration and direction.',
+        examTitle: 'HKDSE Exam Checklist',
+        exam1: '• Include sign for each force component clearly.',
+        exam2: '• State friction direction based on intended motion.',
+        exam3: '• Quote unit for acceleration and force.',
+        exam4: '• Mention if object is at limiting equilibrium.',
+        formulaTitle: 'Formula Bank'
       },
       'zh-hk': {
         back: '返回主題頁',
-        title: '斜面運動：牛頓定律',
-        subtitle: '把沿斜面方向分力後，觀察加速度方向及大小。',
-        controls: '控制面板',
+        tag: 'HKDSE 力學進階實驗室',
+        title: '斜面牛頓定律專業模擬',
+        subtitle: '完整分解各力，實時驗證牛頓第二定律，並連接考試常見演算步驟。',
+        focusTitle: '課堂焦點',
+        focus1: '• 把重力分解為平行及垂直斜面的分量。',
+        focus2: '• 正確判斷靜摩擦/動摩擦方向。',
+        focus3: '• 以即時數據連接合力與運動趨勢。',
+        focusFoot: '提示：代入數值前先寫明方向正負號。',
+        controls: '實驗控制',
+        preset: '情境預設',
         mass: '質量 m (kg)',
-        angle: '斜面角度 θ (°)',
+        angle: '角度 θ (°)',
         mu: '摩擦系數 μ',
-        push: '沿斜面向上外力 (N)',
+        push: '沿斜面向上推力 (N)',
         play: '開始',
+        pause: '暫停',
         reset: '重設',
-        readings: '讀數',
-        netForce: '合力',
-        formulaTitle: 'HKDSE 重點公式'
+        readings: '詳細讀數',
+        netForce: 'ΣF（沿斜面向下為正）',
+        motionState: '運動狀態',
+        cardForce: '合力',
+        cardAcc: '加速度',
+        cardVel: '速度',
+        cardDisp: '位移',
+        deriveTitle: '推導步驟',
+        derive1: '先定義沿斜面向下為正方向。',
+        derive2: '分解重力：平行分量 mg sinθ，法向分量 mg cosθ。',
+        derive3: '摩擦力大小為 μN，方向與相對運動相反。',
+        derive4: '套用 ΣF = ma 求加速度大小及方向。',
+        examTitle: 'HKDSE 作答清單',
+        exam1: '• 每個分力都要清楚寫正負號。',
+        exam2: '• 摩擦方向要按實際趨勢判斷。',
+        exam3: '• 加速度和力必須附上單位。',
+        exam4: '• 若臨界平衡需說明條件。',
+        formulaTitle: '公式庫'
       }
     };
 
-    function params() {
+    function getParams() {
       const m = Number(controls.mass.value);
       const thetaDeg = Number(controls.angle.value);
       const theta = thetaDeg * Math.PI / 180;
       const mu = Number(controls.mu.value);
       const push = Number(controls.push.value);
-      const downslope = m * g * Math.sin(theta);
+      const mgSin = m * g * Math.sin(theta);
       const normal = m * g * Math.cos(theta);
-      const friction = mu * normal;
-      const net = downslope - friction - push;
-      const a = net / m;
-      return { m, thetaDeg, theta, mu, push, downslope, normal, friction, net, a };
+      const friction = mu * normal * Math.sign(state.velocity || mgSin - push || 1);
+      const net = mgSin - friction - push;
+      const acc = net / m;
+      return { m, thetaDeg, theta, mu, push, mgSin, normal, friction, net, acc };
+    }
+
+    function setPreset(value) {
+      if (value === 'frictionless') {
+        controls.mass.value = '2.5';
+        controls.angle.value = '35';
+        controls.mu.value = '0';
+        controls.push.value = '0';
+      } else if (value === 'near-equilibrium') {
+        controls.mass.value = '3';
+        controls.angle.value = '24';
+        controls.mu.value = '0.32';
+        controls.push.value = '4';
+      } else if (value === 'high-friction') {
+        controls.mass.value = '4';
+        controls.angle.value = '40';
+        controls.mu.value = '0.55';
+        controls.push.value = '35';
+      }
+    }
+
+    function motionText(acc) {
+      if (Math.abs(acc) < 0.03 && Math.abs(state.velocity) < 0.05) return document.documentElement.lang === 'zh-HK' ? '接近平衡' : 'Near equilibrium';
+      if (acc > 0) return document.documentElement.lang === 'zh-HK' ? '沿斜面向下加速' : 'Accelerating down slope';
+      if (acc < 0) return document.documentElement.lang === 'zh-HK' ? '沿斜面向上加速' : 'Accelerating up slope';
+      return document.documentElement.lang === 'zh-HK' ? '勻速' : 'Constant speed';
     }
 
     function updateOutputs() {
-      const p = params();
-      out.massValue.textContent = p.m.toFixed(1);
-      out.angleValue.textContent = p.thetaDeg.toFixed(1);
-      out.muValue.textContent = p.mu.toFixed(2);
-      out.pushValue.textContent = p.push.toFixed(1);
-      out.downslopeOut.textContent = `${p.downslope.toFixed(2)} N`;
-      out.frictionOut.textContent = `${p.friction.toFixed(2)} N`;
-      out.netOut.textContent = `${p.net.toFixed(2)} N`;
-      out.accOut.textContent = `${p.a.toFixed(2)} m/s²`;
-      out.velOut.textContent = `${state.v.toFixed(2)} m/s`;
+      const p = getParams();
+      outputs.massValue.textContent = p.m.toFixed(1);
+      outputs.angleValue.textContent = p.thetaDeg.toFixed(1);
+      outputs.muValue.textContent = p.mu.toFixed(2);
+      outputs.pushValue.textContent = p.push.toFixed(1);
+      outputs.downslopeOut.textContent = `${p.mgSin.toFixed(2)} N`;
+      outputs.normalOut.textContent = `${p.normal.toFixed(2)} N`;
+      outputs.frictionOut.textContent = `${Math.abs(p.friction).toFixed(2)} N`;
+      outputs.netOut.textContent = `${p.net.toFixed(2)} N`;
+      outputs.accOut.textContent = `${p.acc.toFixed(2)} m/s²`;
+      outputs.cardNet.textContent = `${p.net.toFixed(2)} N`;
+      outputs.cardAcc.textContent = `${p.acc.toFixed(2)} m/s²`;
+      outputs.cardVel.textContent = `${state.velocity.toFixed(2)} m/s`;
+      outputs.cardDisp.textContent = `${state.distance.toFixed(2)} m`;
+      outputs.stateOut.textContent = motionText(p.acc);
     }
 
-    function drawArrow(x1, y1, x2, y2, color) {
+    function drawArrow(x1, y1, x2, y2, color, label) {
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
       ctx.lineWidth = 3;
@@ -187,88 +346,127 @@
       const ang = Math.atan2(y2 - y1, x2 - x1);
       ctx.beginPath();
       ctx.moveTo(x2, y2);
-      ctx.lineTo(x2 - 12 * Math.cos(ang - 0.35), y2 - 12 * Math.sin(ang - 0.35));
-      ctx.lineTo(x2 - 12 * Math.cos(ang + 0.35), y2 - 12 * Math.sin(ang + 0.35));
+      ctx.lineTo(x2 - 14 * Math.cos(ang - 0.35), y2 - 14 * Math.sin(ang - 0.35));
+      ctx.lineTo(x2 - 14 * Math.cos(ang + 0.35), y2 - 14 * Math.sin(ang + 0.35));
       ctx.closePath();
       ctx.fill();
+      ctx.font = 'bold 14px Inter';
+      ctx.fillText(label, x2 + 6, y2 - 6);
     }
 
     function drawScene() {
-      const p = params();
+      const p = getParams();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#f8fafc';
+
+      const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      sky.addColorStop(0, '#e0f2fe');
+      sky.addColorStop(1, '#f8fafc');
+      ctx.fillStyle = sky;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const originX = 140;
-      const originY = 430;
-      const slopeLen = 620;
-      const topX = originX + slopeLen;
-      const topY = originY - slopeLen * Math.tan(p.theta) * 0.45;
+      const baseX = 120;
+      const baseY = 520;
+      const slopeLength = 860;
+      const rise = slopeLength * Math.sin(p.theta) * 0.62;
+      const topX = baseX + slopeLength;
+      const topY = baseY - rise;
+      const ux = (topX - baseX) / slopeLength;
+      const uy = (topY - baseY) / slopeLength;
 
-      ctx.fillStyle = '#e2e8f0';
+      ctx.fillStyle = '#dbeafe';
       ctx.beginPath();
-      ctx.moveTo(originX, originY);
+      ctx.moveTo(baseX, baseY);
       ctx.lineTo(topX, topY);
-      ctx.lineTo(topX, originY);
+      ctx.lineTo(topX, baseY);
       ctx.closePath();
       ctx.fill();
-      ctx.strokeStyle = '#64748b';
-      ctx.lineWidth = 2;
-      ctx.stroke();
 
-      const maxS = slopeLen * 0.7;
-      state.s = Math.max(0, Math.min(maxS, state.s));
-      const ux = (topX - originX) / slopeLen;
-      const uy = (topY - originY) / slopeLen;
-      const blockX = originX + ux * state.s;
-      const blockY = originY + uy * state.s;
+      for (let i = 0; i <= 12; i += 1) {
+        const t = i / 12;
+        const px = baseX + (topX - baseX) * t;
+        const py = baseY + (topY - baseY) * t;
+        ctx.strokeStyle = 'rgba(71, 85, 105, 0.28)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(px - uy * 10, py + ux * 10);
+        ctx.lineTo(px + uy * 10, py - ux * 10);
+        ctx.stroke();
+      }
+
+      const maxDist = 8;
+      state.distance = Math.max(0.2, Math.min(maxDist, state.distance));
+      const ratio = state.distance / maxDist;
+      const blockX = baseX + ux * (ratio * slopeLength * 0.78);
+      const blockY = baseY + uy * (ratio * slopeLength * 0.78);
+
+      state.trail.push({ x: blockX, y: blockY });
+      if (state.trail.length > 36) state.trail.shift();
+      state.trail.forEach((pt, idx) => {
+        const alpha = (idx + 1) / state.trail.length;
+        ctx.fillStyle = `rgba(37, 99, 235, ${alpha * 0.35})`;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 5 * alpha + 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
       ctx.save();
       ctx.translate(blockX, blockY);
       ctx.rotate(Math.atan2(uy, ux));
-      ctx.fillStyle = '#2563eb';
-      ctx.fillRect(-24, -24, 48, 48);
+      const blockGrad = ctx.createLinearGradient(-34, -24, 34, 24);
+      blockGrad.addColorStop(0, '#1d4ed8');
+      blockGrad.addColorStop(1, '#60a5fa');
+      ctx.fillStyle = blockGrad;
+      ctx.fillRect(-34, -24, 68, 48);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-34, 24, 68, 7);
       ctx.restore();
 
-      drawArrow(blockX, blockY, blockX + ux * 80, blockY + uy * 80, '#DC2626');
-      drawArrow(blockX, blockY, blockX + ux * 60, blockY + uy * 60, '#16A34A');
-      drawArrow(blockX, blockY, blockX + ux * 50, blockY + uy * 50, '#9333EA');
-      ctx.fillStyle = '#334155';
-      ctx.font = '14px Inter';
-      ctx.fillText('F', blockX + ux * 85, blockY + uy * 85);
-      ctx.fillText('v', blockX + ux * 65, blockY + uy * 65);
-      ctx.fillText('a', blockX + ux * 55, blockY + uy * 55);
+      const magnitudeScale = 7.5;
+      drawArrow(blockX, blockY, blockX + ux * (p.mgSin * magnitudeScale), blockY + uy * (p.mgSin * magnitudeScale), '#DC2626', 'F∥');
+      drawArrow(blockX, blockY, blockX - uy * (Math.abs(p.normal) * 2.4), blockY + ux * (Math.abs(p.normal) * 2.4), '#475569', 'N');
+      drawArrow(blockX, blockY, blockX - ux * (Math.abs(p.friction) * magnitudeScale), blockY - uy * (Math.abs(p.friction) * magnitudeScale), '#f59e0b', 'f');
+      drawArrow(blockX, blockY, blockX + ux * (p.acc * 24), blockY + uy * (p.acc * 24), '#9333EA', 'a');
+      drawArrow(blockX, blockY + 18, blockX + ux * (state.velocity * 16), blockY + uy * (state.velocity * 16) + 18, '#16A34A', 'v');
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '600 18px Inter';
+      ctx.fillText(`θ = ${p.thetaDeg.toFixed(1)}°`, 58, 58);
+      ctx.fillText(`m = ${p.m.toFixed(1)} kg`, 58, 86);
+      ctx.fillText(`μ = ${p.mu.toFixed(2)}`, 58, 114);
     }
 
-    let last = performance.now();
-    function animate(now) {
-      const dt = Math.min(0.03, (now - last) / 1000);
-      last = now;
+    function resetSimulation() {
+      state.running = false;
+      state.velocity = 0;
+      state.distance = 2.2;
+      state.trail = [];
+      updateOutputs();
+      drawScene();
+    }
+
+    function step(now) {
+      const dt = Math.min(0.035, (now - state.lastTime) / 1000);
+      state.lastTime = now;
       if (state.running) {
-        const p = params();
-        state.v += p.a * dt;
-        state.s += state.v * 90 * dt;
+        const p = getParams();
+        state.velocity += p.acc * dt;
+        state.distance += state.velocity * dt;
+        if (state.distance <= 0.2 || state.distance >= 8) {
+          state.velocity *= -0.22;
+          state.distance = Math.max(0.2, Math.min(8, state.distance));
+        }
       }
       drawScene();
       updateOutputs();
-      requestAnimationFrame(animate);
-    }
-
-    function reset() {
-      state.running = false;
-      state.s = 40;
-      state.v = 0;
-      updateOutputs();
-      drawScene();
+      requestAnimationFrame(step);
     }
 
     function updateLanguage(lang) {
       localStorage.setItem('preferred_language', lang);
       document.querySelectorAll('[data-i18n]').forEach((el) => {
         const key = el.getAttribute('data-i18n');
-        if (translations[lang] && translations[lang][key]) {
-          el.innerText = translations[lang][key];
-        }
+        const text = translations[lang] && translations[lang][key];
+        if (text) el.textContent = text;
       });
       document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
       document.querySelectorAll('.lang-btn').forEach((btn) => {
@@ -277,15 +475,31 @@
         btn.classList.toggle('text-white', active);
         btn.classList.toggle('text-slate-600', !active);
       });
+      updateOutputs();
     }
 
-    Object.values(controls).forEach((input) => input.addEventListener('input', () => { state.running = false; updateOutputs(); }));
-    playBtn.addEventListener('click', () => { state.running = true; });
-    resetBtn.addEventListener('click', reset);
+    controls.preset.addEventListener('change', () => {
+      setPreset(controls.preset.value);
+      state.running = false;
+      state.velocity = 0;
+      updateOutputs();
+    });
 
-    reset();
+    [controls.mass, controls.angle, controls.mu, controls.push].forEach((input) => {
+      input.addEventListener('input', () => {
+        controls.preset.value = 'custom';
+        state.running = false;
+        updateOutputs();
+      });
+    });
+
+    playBtn.addEventListener('click', () => { state.running = true; });
+    pauseBtn.addEventListener('click', () => { state.running = false; });
+    resetBtn.addEventListener('click', resetSimulation);
+
+    resetSimulation();
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
-    requestAnimationFrame(animate);
+    requestAnimationFrame(step);
   </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Transformer and Power Transmission (HKDSE)</title>
+  <title>Transformer and Transmission Studio (HKDSE)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,232 +11,341 @@
   <style>
     body { font-family: 'Inter', sans-serif; }
     mjx-container { display: inline-block !important; }
+    .glass { background: rgba(255,255,255,0.88); backdrop-filter: blur(10px); }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
-  <header class="max-w-6xl mx-auto px-4 py-4">
-    <div class="flex items-center justify-between gap-3">
-      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+  <header class="max-w-7xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between">
+      <a href="index.html" class="inline-flex items-center gap-2 text-blue-600 text-sm font-semibold hover:text-blue-700">
         <span>←</span><span data-i18n="back">Back to Topics</span>
       </a>
       <div class="flex gap-2">
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="updateLanguage('en')" data-lang="en">EN</button>
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm bg-blue-600 text-white" data-lang="en" onclick="updateLanguage('en')">EN</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm text-slate-600 hover:bg-blue-100" data-lang="zh-hk" onclick="updateLanguage('zh-hk')">繁</button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 pb-10">
-    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-5 md:p-7 shadow-sm">
-      <h1 class="text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">Transformer & Power Transmission</h1>
-      <p class="mt-2 text-slate-600" data-i18n="subtitle">Explore turns ratio, current changes, and transmission line loss.</p>
+  <main class="max-w-7xl mx-auto px-4 pb-12">
+    <section class="glass rounded-3xl border border-white/70 p-6 md:p-8 shadow-xl shadow-blue-100/40">
+      <div class="grid lg:grid-cols-[1.45fr_1fr] gap-6">
+        <div>
+          <p class="text-blue-600 font-semibold text-sm uppercase tracking-wide" data-i18n="tag">HKDSE Electricity & Magnetism Pro Lab</p>
+          <h1 class="mt-2 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">Transformer and Power Transmission Studio</h1>
+          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="subtitle">Visualize station-to-home delivery, compare step-up ratios, and quantify why high-voltage transmission reduces I²R line loss.</p>
+        </div>
+        <div class="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-5">
+          <h2 class="font-bold text-lg" data-i18n="focusTitle">Lesson Targets</h2>
+          <ul class="mt-3 text-sm space-y-2">
+            <li data-i18n="focus1">• Apply Vp/Vs = Np/Ns for transformer design.</li>
+            <li data-i18n="focus2">• Connect power conservation with current scaling.</li>
+            <li data-i18n="focus3">• Evaluate transmission efficiency using line resistance.</li>
+          </ul>
+        </div>
+      </div>
     </section>
 
-    <section class="mt-5 grid lg:grid-cols-3 gap-4">
-      <article class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
-        <canvas id="canvas" width="980" height="520" class="w-full rounded-xl border border-slate-200 bg-slate-50"></canvas>
+    <section class="mt-6 grid xl:grid-cols-[1.5fr_1fr] gap-5">
+      <article class="glass rounded-3xl border border-white/70 p-4">
+        <canvas id="gridCanvas" width="1220" height="640" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
+        <div class="mt-4 grid sm:grid-cols-4 gap-3">
+          <div class="rounded-xl bg-purple-50 border border-purple-200 px-3 py-2">
+            <div class="text-xs text-purple-700 font-semibold" data-i18n="cardVs">Transmission Voltage</div>
+            <div id="cardVs" class="text-lg font-bold text-purple-700">11.5 kV</div>
+          </div>
+          <div class="rounded-xl bg-green-50 border border-green-200 px-3 py-2">
+            <div class="text-xs text-green-700 font-semibold" data-i18n="cardIs">Line Current</div>
+            <div id="cardIs" class="text-lg font-bold text-green-700">4.3 A</div>
+          </div>
+          <div class="rounded-xl bg-red-50 border border-red-200 px-3 py-2">
+            <div class="text-xs text-red-700 font-semibold" data-i18n="cardLoss">Line Loss</div>
+            <div id="cardLoss" class="text-lg font-bold text-red-700">0.74 kW</div>
+          </div>
+          <div class="rounded-xl bg-blue-50 border border-blue-200 px-3 py-2">
+            <div class="text-xs text-blue-700 font-semibold" data-i18n="cardEff">Overall Efficiency</div>
+            <div id="cardEff" class="text-lg font-bold text-blue-700">97.1%</div>
+          </div>
+        </div>
       </article>
 
       <aside class="space-y-4">
-        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+        <div class="glass rounded-2xl border border-white/70 p-4">
           <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
-          <label class="block text-sm text-slate-700"><span data-i18n="vp">Primary voltage Vp (V)</span>: <span id="vpOut" class="font-semibold text-blue-600">240</span></label>
-          <input id="vp" type="range" min="100" max="500" step="5" value="240" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm text-slate-700" for="plantV"><span data-i18n="plantV">Generator output Vp (kV)</span>: <span id="plantVOut" class="text-blue-600 font-semibold">11.0</span></label>
+          <input id="plantV" type="range" min="3" max="25" step="0.1" value="11" class="w-full accent-blue-600 mb-3" />
 
-          <label class="block text-sm text-slate-700"><span data-i18n="np">Primary turns Np</span>: <span id="npOut" class="font-semibold text-blue-600">200</span></label>
-          <input id="np" type="range" min="50" max="500" step="10" value="200" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm text-slate-700" for="loadMW"><span data-i18n="loadMW">Demand power (MW)</span>: <span id="loadMWOut" class="text-blue-600 font-semibold">3.5</span></label>
+          <input id="loadMW" type="range" min="0.5" max="12" step="0.1" value="3.5" class="w-full accent-blue-600 mb-3" />
 
-          <label class="block text-sm text-slate-700"><span data-i18n="ns">Secondary turns Ns</span>: <span id="nsOut" class="font-semibold text-blue-600">800</span></label>
-          <input id="ns" type="range" min="50" max="2000" step="10" value="800" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm text-slate-700" for="stepRatio"><span data-i18n="stepRatio">Step-up turns ratio Ns/Np</span>: <span id="stepRatioOut" class="text-blue-600 font-semibold">20.0</span></label>
+          <input id="stepRatio" type="range" min="2" max="60" step="0.5" value="20" class="w-full accent-blue-600 mb-3" />
 
-          <label class="block text-sm text-slate-700"><span data-i18n="loadPower">Load power (kW)</span>: <span id="loadOut" class="font-semibold text-blue-600">20</span></label>
-          <input id="loadPower" type="range" min="2" max="80" step="1" value="20" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm text-slate-700" for="lineR"><span data-i18n="lineR">Line resistance (Ω)</span>: <span id="lineROut" class="text-blue-600 font-semibold">5.0</span></label>
+          <input id="lineR" type="range" min="0.5" max="30" step="0.1" value="5" class="w-full accent-blue-600 mb-3" />
 
-          <label class="block text-sm text-slate-700"><span data-i18n="lineR">Line resistance (Ω)</span>: <span id="lineROut" class="font-semibold text-blue-600">8.0</span></label>
-          <input id="lineR" type="range" min="0.5" max="30" step="0.1" value="8" class="w-full accent-blue-600" />
+          <label class="block text-sm text-slate-700" for="mode"><span data-i18n="mode">Comparison mode</span></label>
+          <select id="mode" class="w-full rounded-lg border border-slate-300 px-3 py-2 bg-white">
+            <option value="normal">With step-up transformer</option>
+            <option value="no-stepup">Without step-up (baseline)</option>
+          </select>
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Readings</h2>
-          <div class="space-y-1">
-            <div class="flex justify-between"><span class="text-slate-600">Vs</span><span id="vsOut" class="font-semibold text-purple-600">960 V</span></div>
-            <div class="flex justify-between"><span class="text-slate-600">Ip</span><span id="ipOut" class="font-semibold text-green-600">83.3 A</span></div>
-            <div class="flex justify-between"><span class="text-slate-600">Is</span><span id="isOut" class="font-semibold text-green-600">20.8 A</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="lineLoss">Line loss</span><span id="lossOut" class="font-semibold text-red-600">3.46 kW</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="efficiency">Transmission efficiency</span><span id="effOut" class="font-semibold text-amber-600">85.2%</span></div>
+        <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Detailed Readings</h2>
+          <div class="space-y-1.5">
+            <div class="flex justify-between"><span class="text-slate-600">Vs (line)</span><span id="vsLineOut" class="font-semibold text-purple-700">220.0 kV</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">Iline</span><span id="ilineOut" class="font-semibold text-green-700">15.9 A</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">P_loss</span><span id="lossOut" class="font-semibold text-red-700">12.6 kW</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">P_delivered</span><span id="deliveredOut" class="font-semibold text-blue-700">3.49 MW</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="efficiency">Efficiency</span><span id="effOut" class="font-semibold text-amber-700">99.6%</span></div>
           </div>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE Formula Focus</h2>
-          <ul class="list-disc ml-5 space-y-1">
-            <li>Vp / Vs = Np / Ns</li>
-            <li>Ideal: VpIp ≈ VsIs</li>
-            <li>P<sub>loss</sub> = I²R (line)</li>
-          </ul>
         </div>
       </aside>
     </section>
   </main>
 
   <script>
-    const ids = ['vp', 'np', 'ns', 'loadPower', 'lineR'];
-    const el = {};
-    ids.forEach((id) => { el[id] = document.getElementById(id); });
-    const out = {
-      vpOut: document.getElementById('vpOut'),
-      npOut: document.getElementById('npOut'),
-      nsOut: document.getElementById('nsOut'),
-      loadOut: document.getElementById('loadOut'),
-      lineROut: document.getElementById('lineROut'),
-      vsOut: document.getElementById('vsOut'),
-      ipOut: document.getElementById('ipOut'),
-      isOut: document.getElementById('isOut'),
-      lossOut: document.getElementById('lossOut'),
-      effOut: document.getElementById('effOut')
+    const controls = {
+      plantV: document.getElementById('plantV'),
+      loadMW: document.getElementById('loadMW'),
+      stepRatio: document.getElementById('stepRatio'),
+      lineR: document.getElementById('lineR'),
+      mode: document.getElementById('mode')
     };
-    const canvas = document.getElementById('canvas');
+    const out = {
+      plantVOut: document.getElementById('plantVOut'),
+      loadMWOut: document.getElementById('loadMWOut'),
+      stepRatioOut: document.getElementById('stepRatioOut'),
+      lineROut: document.getElementById('lineROut'),
+      vsLineOut: document.getElementById('vsLineOut'),
+      ilineOut: document.getElementById('ilineOut'),
+      lossOut: document.getElementById('lossOut'),
+      deliveredOut: document.getElementById('deliveredOut'),
+      effOut: document.getElementById('effOut'),
+      cardVs: document.getElementById('cardVs'),
+      cardIs: document.getElementById('cardIs'),
+      cardLoss: document.getElementById('cardLoss'),
+      cardEff: document.getElementById('cardEff')
+    };
+    const canvas = document.getElementById('gridCanvas');
     const ctx = canvas.getContext('2d');
     let phase = 0;
 
     const translations = {
       en: {
         back: 'Back to Topics',
-        title: 'Transformer & Power Transmission',
-        subtitle: 'Explore turns ratio, current changes, and transmission line loss.',
+        tag: 'HKDSE Electricity & Magnetism Pro Lab',
+        title: 'Transformer and Power Transmission Studio',
+        subtitle: 'Visualize station-to-home delivery, compare step-up ratios, and quantify why high-voltage transmission reduces I²R line loss.',
+        focusTitle: 'Lesson Targets',
+        focus1: '• Apply Vp/Vs = Np/Ns for transformer design.',
+        focus2: '• Connect power conservation with current scaling.',
+        focus3: '• Evaluate transmission efficiency using line resistance.',
         controls: 'Controls',
-        vp: 'Primary voltage Vp (V)',
-        np: 'Primary turns Np',
-        ns: 'Secondary turns Ns',
-        loadPower: 'Load power (kW)',
+        plantV: 'Generator output Vp (kV)',
+        loadMW: 'Demand power (MW)',
+        stepRatio: 'Step-up turns ratio Ns/Np',
         lineR: 'Line resistance (Ω)',
-        readings: 'Readings',
-        lineLoss: 'Line loss',
-        efficiency: 'Transmission efficiency',
-        formulaTitle: 'HKDSE Formula Focus'
+        mode: 'Comparison mode',
+        readings: 'Detailed Readings',
+        efficiency: 'Efficiency',
+        cardVs: 'Transmission Voltage',
+        cardIs: 'Line Current',
+        cardLoss: 'Line Loss',
+        cardEff: 'Overall Efficiency'
       },
       'zh-hk': {
         back: '返回主題頁',
-        title: '變壓器與輸電模擬',
-        subtitle: '探究匝數比、電流變化及輸電線損耗。',
+        tag: 'HKDSE 電與磁進階實驗室',
+        title: '變壓器與輸電專業模擬',
+        subtitle: '完整展示電站到住戶輸電流程，比較升壓比並量化高壓輸電如何降低 I²R 損耗。',
+        focusTitle: '學習目標',
+        focus1: '• 用 Vp/Vs = Np/Ns 設計變壓器。',
+        focus2: '• 由功率守恆理解電流縮放。',
+        focus3: '• 以線路電阻評估輸電效率。',
         controls: '控制面板',
-        vp: '一次側電壓 Vp (V)',
-        np: '一次側匝數 Np',
-        ns: '二次側匝數 Ns',
-        loadPower: '負載功率 (kW)',
+        plantV: '發電端輸出 Vp (kV)',
+        loadMW: '需求功率 (MW)',
+        stepRatio: '升壓匝數比 Ns/Np',
         lineR: '輸電線電阻 (Ω)',
-        readings: '讀數',
-        lineLoss: '線路損耗',
-        efficiency: '輸電效率',
-        formulaTitle: 'HKDSE 重點公式'
+        mode: '比較模式',
+        readings: '詳細讀數',
+        efficiency: '效率',
+        cardVs: '輸電電壓',
+        cardIs: '線路電流',
+        cardLoss: '線路損耗',
+        cardEff: '整體效率'
       }
     };
 
-    function calc() {
-      const Vp = Number(el.vp.value);
-      const Np = Number(el.np.value);
-      const Ns = Number(el.ns.value);
-      const Pload = Number(el.loadPower.value) * 1000;
-      const Rline = Number(el.lineR.value);
-      const ratio = Ns / Np;
-      const Vs = Vp * ratio;
-      const Is = Pload / Math.max(1, Vs);
-      const Ip = Pload / Math.max(1, Vp);
-      const Ploss = Is * Is * Rline;
-      const eff = (Pload / (Pload + Ploss)) * 100;
-      return { Vp, Np, Ns, Pload, Rline, Vs, Is, Ip, Ploss, eff };
+    function compute() {
+      const plantV = Number(controls.plantV.value) * 1000;
+      const loadP = Number(controls.loadMW.value) * 1e6;
+      const ratio = Number(controls.stepRatio.value);
+      const lineR = Number(controls.lineR.value);
+      const modeNoStep = controls.mode.value === 'no-stepup';
+      const lineV = modeNoStep ? plantV : plantV * ratio;
+      const lineI = loadP / Math.max(lineV, 1);
+      const loss = lineI * lineI * lineR;
+      const delivered = Math.max(0, loadP - loss);
+      const eff = (delivered / loadP) * 100;
+      return { plantV, loadP, ratio, lineR, lineV, lineI, loss, delivered, eff, modeNoStep };
     }
 
-    function update() {
-      const c = calc();
-      out.vpOut.textContent = `${c.Vp.toFixed(0)}`;
-      out.npOut.textContent = `${c.Np.toFixed(0)}`;
-      out.nsOut.textContent = `${c.Ns.toFixed(0)}`;
-      out.loadOut.textContent = `${(c.Pload / 1000).toFixed(0)}`;
-      out.lineROut.textContent = `${c.Rline.toFixed(1)}`;
-      out.vsOut.textContent = `${c.Vs.toFixed(1)} V`;
-      out.ipOut.textContent = `${c.Ip.toFixed(1)} A`;
-      out.isOut.textContent = `${c.Is.toFixed(1)} A`;
-      out.lossOut.textContent = `${(c.Ploss / 1000).toFixed(2)} kW`;
-      out.effOut.textContent = `${c.eff.toFixed(1)}%`;
+    function updateOutputs() {
+      const d = compute();
+      out.plantVOut.textContent = (d.plantV / 1000).toFixed(1);
+      out.loadMWOut.textContent = (d.loadP / 1e6).toFixed(1);
+      out.stepRatioOut.textContent = d.ratio.toFixed(1);
+      out.lineROut.textContent = d.lineR.toFixed(1);
+      out.vsLineOut.textContent = `${(d.lineV / 1000).toFixed(1)} kV`;
+      out.ilineOut.textContent = `${d.lineI.toFixed(1)} A`;
+      out.lossOut.textContent = `${(d.loss / 1000).toFixed(1)} kW`;
+      out.deliveredOut.textContent = `${(d.delivered / 1e6).toFixed(2)} MW`;
+      out.effOut.textContent = `${d.eff.toFixed(1)}%`;
+
+      out.cardVs.textContent = `${(d.lineV / 1000).toFixed(1)} kV`;
+      out.cardIs.textContent = `${d.lineI.toFixed(1)} A`;
+      out.cardLoss.textContent = `${(d.loss / 1000).toFixed(2)} kW`;
+      out.cardEff.textContent = `${d.eff.toFixed(1)}%`;
     }
 
-    function drawCoil(cx, cy, turns, color) {
+    function drawArrow(x1, y1, x2, y2, color) {
       ctx.strokeStyle = color;
+      ctx.fillStyle = color;
       ctx.lineWidth = 3;
-      const loops = Math.max(6, Math.round(turns / 40));
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      const ang = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - 12 * Math.cos(ang - 0.3), y2 - 12 * Math.sin(ang - 0.3));
+      ctx.lineTo(x2 - 12 * Math.cos(ang + 0.3), y2 - 12 * Math.sin(ang + 0.3));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawCoil(x, y, turns, color) {
+      const loops = Math.max(5, Math.min(20, Math.round(turns / 30)));
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
       for (let i = 0; i < loops; i += 1) {
-        const x = cx + i * 10;
+        const cx = x + i * 12;
         ctx.beginPath();
-        ctx.arc(x, cy, 8, 0, Math.PI, true);
+        ctx.arc(cx, y, 9, 0, Math.PI, true);
         ctx.stroke();
       }
+      return loops * 12;
     }
 
-    function draw() {
-      const c = calc();
-      phase += 0.06;
+    function drawScene() {
+      const d = compute();
+      phase += 0.08;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#f8fafc';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = '#dbeafe';
-      ctx.fillRect(420, 80, 140, 340);
-      ctx.strokeStyle = '#1e3a8a';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(420, 80, 140, 340);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '600 15px Inter';
+      ctx.fillText(d.modeNoStep ? 'Baseline: no step-up' : 'High-voltage step-up transmission', 24, 34);
 
-      drawCoil(250, 250, c.Np, '#2563eb');
-      drawCoil(620, 250, c.Ns, '#16a34a');
+      const yTop = 220;
+      const yBottom = 360;
+      const xPlant = 90;
+      const xT1 = 250;
+      const xLineStart = 430;
+      const xLineEnd = 860;
+      const xLoad = 980;
+
+      ctx.fillStyle = '#1d4ed8';
+      ctx.fillRect(xPlant - 40, 180, 70, 90);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 12px Inter';
+      ctx.fillText('GEN', xPlant - 26, 230);
 
       ctx.strokeStyle = '#334155';
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(170, 250);
-      ctx.lineTo(420, 250);
-      ctx.moveTo(560, 250);
-      ctx.lineTo(860, 250);
+      ctx.moveTo(xPlant + 30, yTop);
+      ctx.lineTo(xT1 - 20, yTop);
+      ctx.moveTo(xPlant + 30, yBottom);
+      ctx.lineTo(xT1 - 20, yBottom);
       ctx.stroke();
 
-      const amp = 26;
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 2;
+      const w1 = drawCoil(xT1, yTop, 140, '#2563eb');
+      const w2 = drawCoil(xT1 + 95, yTop, 140 * d.ratio, '#16a34a');
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(xT1 + 64, 145, 30, 220);
+
+      ctx.strokeStyle = '#7c3aed';
+      ctx.lineWidth = 5;
       ctx.beginPath();
-      for (let x = 170; x <= 860; x += 4) {
-        const y = 250 + Math.sin((x / 40) + phase) * amp;
-        if (x === 170) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+      ctx.moveTo(xT1 + 100 + w2, yTop);
+      ctx.lineTo(xLineStart, yTop);
+      ctx.lineTo(xLineEnd, yTop);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(xT1 + 100 + w2, yBottom);
+      ctx.lineTo(xLineStart, yBottom);
+      ctx.lineTo(xLineEnd, yBottom);
+      ctx.stroke();
+
+      const packetCount = 22;
+      for (let i = 0; i < packetCount; i += 1) {
+        const t = (i / packetCount + phase * 0.08) % 1;
+        const x = xLineStart + (xLineEnd - xLineStart) * t;
+        ctx.beginPath();
+        ctx.fillStyle = '#9333ea';
+        ctx.arc(x, yTop, 3.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x, yBottom, 3.4, 0, Math.PI * 2);
+        ctx.fill();
       }
+
+      drawArrow(xT1 + 80, 118, xT1 + 170, 118, '#16a34a');
+      drawArrow(xLineStart + 10, 92, xLineEnd - 10, 92, '#9333ea');
+
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(xLoad - 35, 190, 70, 90);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 12px Inter';
+      ctx.fillText('LOAD', xLoad - 22, 240);
+
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(xLineEnd, yTop);
+      ctx.lineTo(xLoad - 35, yTop);
+      ctx.lineTo(xLoad - 35, 218);
+      ctx.moveTo(xLineEnd, yBottom);
+      ctx.lineTo(xLoad - 35, yBottom);
+      ctx.lineTo(xLoad - 35, 252);
       ctx.stroke();
 
       ctx.fillStyle = '#0f172a';
-      ctx.font = '600 16px Inter';
-      ctx.fillText(`Vp = ${c.Vp.toFixed(0)} V`, 120, 180);
-      ctx.fillText(`Ip = ${c.Ip.toFixed(1)} A`, 120, 205);
-      ctx.fillText(`Np = ${c.Np}`, 120, 230);
-      ctx.fillText(`Vs = ${c.Vs.toFixed(1)} V`, 690, 180);
-      ctx.fillText(`Is = ${c.Is.toFixed(1)} A`, 690, 205);
-      ctx.fillText(`Ns = ${c.Ns}`, 690, 230);
+      ctx.font = '600 14px Inter';
+      ctx.fillText(`Line voltage: ${(d.lineV / 1000).toFixed(1)} kV`, 450, 430);
+      ctx.fillText(`Line current: ${d.lineI.toFixed(1)} A`, 450, 454);
+      ctx.fillText(`Line loss: ${(d.loss / 1000).toFixed(2)} kW`, 450, 478);
+      ctx.fillText(`Efficiency: ${d.eff.toFixed(1)}%`, 450, 502);
+    }
 
-      ctx.fillStyle = '#dc2626';
-      ctx.fillRect(860, 220, 70, 60);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 14px Inter';
-      ctx.fillText('LOAD', 871, 255);
-
-      ctx.fillStyle = '#7c3aed';
-      ctx.font = '600 15px Inter';
-      ctx.fillText(`P_loss = ${(c.Ploss / 1000).toFixed(2)} kW`, 610, 330);
-      ctx.fillText(`Efficiency = ${c.eff.toFixed(1)}%`, 610, 355);
-
-      requestAnimationFrame(draw);
+    function tick() {
+      updateOutputs();
+      drawScene();
+      requestAnimationFrame(tick);
     }
 
     function updateLanguage(lang) {
       localStorage.setItem('preferred_language', lang);
       document.querySelectorAll('[data-i18n]').forEach((node) => {
         const key = node.getAttribute('data-i18n');
-        if (translations[lang] && translations[lang][key]) node.innerText = translations[lang][key];
+        const text = translations[lang] && translations[lang][key];
+        if (text) node.textContent = text;
       });
       document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
       document.querySelectorAll('.lang-btn').forEach((btn) => {
@@ -245,12 +354,12 @@
         btn.classList.toggle('text-white', active);
         btn.classList.toggle('text-slate-600', !active);
       });
+      updateOutputs();
     }
 
-    ids.forEach((id) => el[id].addEventListener('input', update));
-    update();
-    draw();
+    Object.values(controls).forEach((input) => input.addEventListener('input', updateOutputs));
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
+    tick();
   </script>
 </body>
 </html>
