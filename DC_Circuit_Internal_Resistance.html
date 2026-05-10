@@ -293,5 +293,10 @@
     drawCircuit();
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
   </script>
+
+    <!-- Practice Questions Widget -->
+    <script src="practice_questions.js"></script>
+    <script src="practice_questions_data.js"></script>
+    <script>initPracticeQuestions('dc_circuit_internal_resistance');</script>
 </body>
 </html>
