@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bullet & Pumpkin Momentum (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+    .glass { background: rgba(255, 255, 255, 0.86); backdrop-filter: blur(10px); }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+  <header class="max-w-7xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between gap-3">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+        <span>←</span><span data-i18n="back">Back to Topics</span>
+      </a>
+      <div class="flex gap-2">
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="setLanguage('en')" data-lang="en">EN</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="setLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 pb-12">
+    <section class="glass rounded-3xl border border-white/70 p-6 md:p-8 shadow-xl shadow-blue-100/40">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <span class="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-2" data-i18n="badge">HKDSE Momentum</span>
+          <h1 class="text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">Bullet Penetrates a Pumpkin</h1>
+          <p class="mt-3 text-slate-600 max-w-3xl" data-i18n="subtitle">A 5 g bullet at 300 m s⁻¹ penetrates a 4 kg pumpkin at rest on a smooth horizontal plane and exits at 200 m s⁻¹. Explore momentum conservation and estimate the pumpkin's speed.</p>
+        </div>
+        <button id="explainBtn" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-blue-600 hover:bg-blue-50 transition" data-i18n="explainBtn">Show Answers (a)(b)</button>
+      </div>
+    </section>
+
+    <section class="mt-6 grid lg:grid-cols-12 gap-5">
+      <article class="lg:col-span-8 glass rounded-3xl border border-white/70 p-4 md:p-5 shadow-lg shadow-blue-100/30">
+        <div class="relative rounded-2xl border-2 border-slate-200 overflow-hidden bg-slate-900">
+          <canvas id="simCanvas" class="w-full block" width="1100" height="420"></canvas>
+          <div id="phaseLabel" class="absolute top-4 left-4 px-4 py-2 rounded-full bg-gray-900/80 backdrop-blur text-white text-sm font-medium" data-i18n="phaseReady">Ready</div>
+          <div class="absolute bottom-4 left-4 flex flex-wrap gap-2">
+            <span class="px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-medium text-green-600" data-i18n="legend.velocity">v — Velocity</span>
+            <span class="px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-medium text-purple-600" data-i18n="legend.momentum">p — Momentum</span>
+          </div>
+          <div class="absolute bottom-4 right-4 bg-gray-900/80 backdrop-blur text-white px-4 py-2 rounded-full text-xs pointer-events-none" data-i18n="hint">Tap Play to run the textbook scenario</div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="playBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition" data-i18n="play">Play</button>
+          <button id="resetBtn" class="px-5 py-2.5 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition" data-i18n="reset">Reset</button>
+          <button id="presetBtn" class="px-5 py-2.5 rounded-xl bg-orange-100 text-orange-700 font-semibold hover:bg-orange-200 transition" data-i18n="preset">Textbook Values</button>
+        </div>
+      </article>
+
+      <aside class="lg:col-span-4 space-y-4">
+        <div class="glass rounded-2xl border border-white/70 p-4">
+          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+
+          <label class="block text-sm font-medium text-slate-700" for="mb">
+            <span data-i18n="mb">Bullet mass m<sub>b</sub> (g)</span>:
+            <span id="mbVal" class="font-semibold text-blue-600">5</span>
+          </label>
+          <input id="mb" type="range" min="1" max="20" step="1" value="5" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm font-medium text-slate-700" for="mp">
+            <span data-i18n="mp">Pumpkin mass m<sub>p</sub> (kg)</span>:
+            <span id="mpVal" class="font-semibold text-blue-600">4.0</span>
+          </label>
+          <input id="mp" type="range" min="1" max="10" step="0.5" value="4" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm font-medium text-slate-700" for="ub">
+            <span data-i18n="ub">Bullet initial speed u<sub>b</sub> (m/s)</span>:
+            <span id="ubVal" class="font-semibold text-green-600">300</span>
+          </label>
+          <input id="ub" type="range" min="50" max="500" step="10" value="300" class="w-full accent-green-600 mb-3" />
+
+          <label class="block text-sm font-medium text-slate-700" for="vb">
+            <span data-i18n="vb">Bullet exit speed v<sub>b</sub> (m/s)</span>:
+            <span id="vbVal" class="font-semibold text-green-600">200</span>
+          </label>
+          <input id="vb" type="range" min="50" max="500" step="10" value="200" class="w-full accent-green-600 mb-3" />
+
+          <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+            <input id="boostPumpkin" type="checkbox" checked class="accent-blue-600 rounded" />
+            <span data-i18n="boost">Boost pumpkin motion for visibility (true value shown)</span>
+          </label>
+        </div>
+
+        <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readouts">Live Readouts</h2>
+          <div class="space-y-1.5">
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="pBefore">System p before</span><span id="pBefore" class="font-semibold text-purple-600">1.50 kg·m/s</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="pAfter">System p after</span><span id="pAfter" class="font-semibold text-purple-600">1.50 kg·m/s</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="ppBefore">Pumpkin p before</span><span id="ppBefore" class="font-semibold text-purple-600">0.00 kg·m/s</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="ppAfter">Pumpkin p after</span><span id="ppAfter" class="font-semibold text-purple-600">0.50 kg·m/s</span></div>
+            <div class="flex justify-between border-t border-slate-200 pt-2 mt-2"><span class="text-slate-600" data-i18n="vpCalc">Pumpkin speed v<sub>p</sub></span><span id="vpCalc" class="font-semibold text-green-600">0.125 m/s</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="keLost">KE lost</span><span id="keLost" class="font-semibold text-red-600">125 J</span></div>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl border border-white/70 p-4 text-sm text-slate-700">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">Key Formula</h2>
+          <p class="text-center text-base font-medium text-slate-800">\(m_b u_b + m_p u_p = m_b v_b + m_p v_p\)</p>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <!-- Explain Modal -->
+  <div id="explainModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8">
+      <div class="flex justify-between items-start gap-4 mb-4">
+        <h2 class="text-xl font-bold text-slate-900" data-i18n="modalTitle">Textbook Solutions</h2>
+        <button id="closeModal" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+      </div>
+      <div class="space-y-5 text-sm text-slate-700">
+        <div>
+          <h3 class="font-semibold text-blue-600 mb-1" data-i18n="qA">(a) Is the momentum of the pumpkin conserved?</h3>
+          <p data-i18n="ansA">No. The pumpkin alone is not an isolated system — the bullet exerts a large horizontal impulse during penetration. Its momentum changes from 0 to about 0.50 kg·m/s. However, the <b>total momentum of bullet + pumpkin</b> is conserved (smooth plane, neglect flying debris).</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-blue-600 mb-1" data-i18n="qB">(b) Estimate the pumpkin speed after the bullet leaves</h3>
+          <p data-i18n="ansB">Using conservation of momentum with \(m_b = 0.005\,\text{kg}\), \(m_p = 4\,\text{kg}\), \(u_b = 300\,\text{m s}^{-1}\), \(v_b = 200\,\text{m s}^{-1}\), \(u_p = 0\):</p>
+          <p class="my-2 text-center">\[v_p = \frac{m_b(u_b - v_b)}{m_p} = \frac{0.005 \times 100}{4} = 0.125\,\text{m s}^{-1}\]</p>
+        </div>
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3">
+          <p class="text-xs text-slate-500 mb-1" data-i18n="check">Check:</p>
+          <p>\(p_\text{before} = 0.005 \times 300 = 1.50\,\text{kg·m/s}\)</p>
+          <p>\(p_\text{after} = 0.005 \times 200 + 4 \times 0.125 = 1.50\,\text{kg·m/s}\) ✓</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PHYSICS_COLORS = {
+      force: '#DC2626',
+      velocity: '#16A34A',
+      momentum: '#9333EA',
+      pumpkin: '#EA580C'
+    };
+
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    const phaseLabel = document.getElementById('phaseLabel');
+
+    const sliders = {
+      mb: document.getElementById('mb'),
+      mp: document.getElementById('mp'),
+      ub: document.getElementById('ub'),
+      vb: document.getElementById('vb')
+    };
+
+    const outputs = {
+      mbVal: document.getElementById('mbVal'),
+      mpVal: document.getElementById('mpVal'),
+      ubVal: document.getElementById('ubVal'),
+      vbVal: document.getElementById('vbVal'),
+      pBefore: document.getElementById('pBefore'),
+      pAfter: document.getElementById('pAfter'),
+      ppBefore: document.getElementById('ppBefore'),
+      ppAfter: document.getElementById('ppAfter'),
+      vpCalc: document.getElementById('vpCalc'),
+      keLost: document.getElementById('keLost')
+    };
+
+    const boostPumpkin = document.getElementById('boostPumpkin');
+    const playBtn = document.getElementById('playBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const presetBtn = document.getElementById('presetBtn');
+    const explainBtn = document.getElementById('explainBtn');
+    const explainModal = document.getElementById('explainModal');
+    const closeModal = document.getElementById('closeModal');
+
+    const defaults = { mb: 5, mp: 4, ub: 300, vb: 200 };
+
+    const state = {
+      phase: 'ready', // ready | approach | penetrate | after | done
+      t: 0,
+      bulletX: 80,
+      pumpkinX: 520,
+      bulletV: 0,
+      pumpkinV: 0,
+      penetrateT: 0,
+      debris: [],
+      running: false,
+      groundY: 320,
+      pumpkinR: 70
+    };
+
+    const translations = {
+      en: {
+        back: 'Back to Topics',
+        badge: 'HKDSE Momentum',
+        title: 'Bullet Penetrates a Pumpkin',
+        subtitle: 'A 5 g bullet at 300 m s⁻¹ penetrates a 4 kg pumpkin at rest on a smooth horizontal plane and exits at 200 m s⁻¹. Explore momentum conservation and estimate the pumpkin\'s speed.',
+        explainBtn: 'Show Answers (a)(b)',
+        phaseReady: 'Ready',
+        phaseApproach: 'Approach — bullet incoming',
+        phasePenetrate: 'Penetration — impulse exchange',
+        phaseAfter: 'After exit — pumpkin recoils slowly',
+        phaseDone: 'Complete',
+        legend: { velocity: 'v — Velocity', momentum: 'p — Momentum' },
+        hint: 'Tap Play to run the textbook scenario',
+        play: 'Play',
+        reset: 'Reset',
+        preset: 'Textbook Values',
+        controls: 'Controls',
+        mb: 'Bullet mass m\u2091 (g)',
+        mp: 'Pumpkin mass m\u209A (kg)',
+        ub: 'Bullet initial speed u\u2091 (m/s)',
+        vb: 'Bullet exit speed v\u2091 (m/s)',
+        boost: 'Boost pumpkin motion for visibility (true value shown)',
+        readouts: 'Live Readouts',
+        pBefore: 'System p before',
+        pAfter: 'System p after',
+        ppBefore: 'Pumpkin p before',
+        ppAfter: 'Pumpkin p after',
+        vpCalc: 'Pumpkin speed v\u209A',
+        keLost: 'KE lost',
+        formulaTitle: 'Key Formula',
+        modalTitle: 'Textbook Solutions',
+        qA: '(a) Is the momentum of the pumpkin conserved?',
+        ansA: 'No. The pumpkin alone is not an isolated system — the bullet exerts a large horizontal impulse during penetration. Its momentum changes from 0 to about 0.50 kg·m/s. However, the <b>total momentum of bullet + pumpkin</b> is conserved (smooth plane, neglect flying debris).',
+        qB: '(b) Estimate the pumpkin speed after the bullet leaves',
+        ansB: 'Using conservation of momentum with m<sub>b</sub> = 0.005 kg, m<sub>p</sub> = 4 kg, u<sub>b</sub> = 300 m s⁻¹, v<sub>b</sub> = 200 m s⁻¹, u<sub>p</sub> = 0:',
+        check: 'Check:'
+      },
+      'zh-hk': {
+        back: '返回主題頁',
+        badge: 'HKDSE 動量',
+        title: '子彈穿透南瓜',
+        subtitle: '質量 5 g 的子彈以 300 m s⁻¹ 水平射向靜止在光滑水平面上的 4 kg 南瓜，穿透後以 200 m s⁻¹ 離開。探索動量守恆並估算南瓜速度。',
+        explainBtn: '顯示答案 (a)(b)',
+        phaseReady: '準備就緒',
+        phaseApproach: '接近 — 子彈飛來',
+        phasePenetrate: '穿透 — 衝量交換',
+        phaseAfter: '穿出後 — 南瓜緩慢移動',
+        phaseDone: '完成',
+        legend: { velocity: 'v — 速度', momentum: 'p — 動量' },
+        hint: '按「播放」運行課本情境',
+        play: '播放',
+        reset: '重設',
+        preset: '課本數值',
+        controls: '控制面板',
+        mb: '子彈質量 m\u2091 (g)',
+        mp: '南瓜質量 m\u209A (kg)',
+        ub: '子彈初速 u\u2091 (m/s)',
+        vb: '子彈穿出速度 v\u2091 (m/s)',
+        boost: '放大南瓜運動以便觀察（顯示真實數值）',
+        readouts: '即時數據',
+        pBefore: '系統碰前動量',
+        pAfter: '系統碰後動量',
+        ppBefore: '南瓜碰前動量',
+        ppAfter: '南瓜碰後動量',
+        vpCalc: '南瓜速度 v\u209A',
+        keLost: '動能損失',
+        formulaTitle: '重點公式',
+        modalTitle: '課本解答',
+        qA: '(a) 南瓜的動量是否守恆？',
+        ansA: '否。南瓜本身不是孤立系統——穿透期間子彈對其施加很大的水平衝量，動量由 0 變為約 0.50 kg·m/s。但<b>子彈 + 南瓜的總動量</b>守恆（光滑平面，忽略飛出碎屑）。',
+        qB: '(b) 估算子彈離開後南瓜的速度',
+        ansB: '由動量守恆，m<sub>b</sub> = 0.005 kg、m<sub>p</sub> = 4 kg、u<sub>b</sub> = 300 m s⁻¹、v<sub>b</sub> = 200 m s⁻¹、u<sub>p</sub> = 0：',
+        check: '驗算：'
+      }
+    };
+
+    let currentLang = localStorage.getItem('preferred_language') || 'en';
+
+    function t(key) {
+      const parts = key.split('.');
+      let val = translations[currentLang];
+      for (const p of parts) val = val?.[p];
+      return val ?? key;
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('preferred_language', lang);
+      document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        const val = key.includes('.') ? t(key) : translations[lang]?.[key];
+        if (!val) return;
+        if (key.startsWith('ans') || key === 'subtitle') {
+          el.innerHTML = val;
+        } else {
+          el.textContent = val;
+        }
+      });
+      document.querySelectorAll('.lang-btn').forEach((btn) => {
+        const active = btn.dataset.lang === lang;
+        btn.classList.toggle('bg-blue-600', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('text-slate-600', !active);
+      });
+      updatePhaseLabel();
+      if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+    }
+
+    function getParams() {
+      const mbKg = Number(sliders.mb.value) / 1000;
+      const mp = Number(sliders.mp.value);
+      const ub = Number(sliders.ub.value);
+      const vb = Number(sliders.vb.value);
+      return { mbKg, mp, ub, vb, mbG: Number(sliders.mb.value) };
+    }
+
+    function calculate() {
+      const { mbKg, mp, ub, vb } = getParams();
+      const up = 0;
+      const pBefore = mbKg * ub + mp * up;
+      const vp = (pBefore - mbKg * vb) / mp;
+      const pAfter = mbKg * vb + mp * vp;
+      const keBefore = 0.5 * mbKg * ub * ub;
+      const keAfter = 0.5 * mbKg * vb * vb + 0.5 * mp * vp * vp;
+      const keLost = keBefore - keAfter;
+      const ppAfter = mp * vp;
+      return { mbKg, mp, ub, vb, up, vp, pBefore, pAfter, ppBefore: 0, ppAfter, keLost };
+    }
+
+    function updateReadouts() {
+      const r = calculate();
+      outputs.mbVal.textContent = sliders.mb.value;
+      outputs.mpVal.textContent = r.mp.toFixed(1);
+      outputs.ubVal.textContent = r.ub.toFixed(0);
+      outputs.vbVal.textContent = r.vb.toFixed(0);
+      outputs.pBefore.textContent = `${r.pBefore.toFixed(2)} kg·m/s`;
+      outputs.pAfter.textContent = `${r.pAfter.toFixed(2)} kg·m/s`;
+      outputs.ppBefore.textContent = `${r.ppBefore.toFixed(2)} kg·m/s`;
+      outputs.ppAfter.textContent = `${r.ppAfter.toFixed(2)} kg·m/s`;
+      outputs.vpCalc.textContent = `${r.vp.toFixed(3)} m/s`;
+      outputs.keLost.textContent = `${r.keLost.toFixed(1)} J`;
+    }
+
+    function animSpeed(vMs) {
+      // Map physics m/s to px/s for readable animation
+      return vMs * 1.2;
+    }
+
+    function pumpkinAnimSpeed(vp) {
+      if (boostPumpkin.checked) return Math.max(animSpeed(vp), 25);
+      return animSpeed(vp);
+    }
+
+    function spawnDebris(x, y, count, burstRight) {
+      for (let i = 0; i < count; i += 1) {
+        const angle = burstRight
+          ? (Math.random() * 0.8 - 0.2)
+          : (Math.PI + Math.random() * 0.8 - 0.6);
+        const speed = 2 + Math.random() * 6;
+        state.debris.push({
+          x, y: y + (Math.random() - 0.5) * 40,
+          vx: Math.cos(angle) * speed,
+          vy: -Math.abs(Math.sin(angle)) * speed - Math.random() * 2,
+          life: 1,
+          size: 3 + Math.random() * 5,
+          color: Math.random() > 0.3 ? '#EA580C' : '#FED7AA'
+        });
+      }
+    }
+
+    function drawGround() {
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, '#0f172a');
+      grad.addColorStop(1, '#1e293b');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(0, state.groundY, canvas.width, canvas.height - state.groundY);
+
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, state.groundY);
+      ctx.lineTo(canvas.width, state.groundY);
+      ctx.stroke();
+
+      for (let i = 0; i < 12; i += 1) {
+        const x = 40 + i * 90;
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, state.groundY);
+        ctx.lineTo(x, state.groundY + 14);
+        ctx.stroke();
+      }
+    }
+
+    function drawPumpkin(x, y, r, holeLeft, holeRight) {
+      ctx.save();
+      ctx.translate(x, y);
+
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath();
+      ctx.ellipse(0, r * 0.55, r * 1.1, r * 0.25, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Body
+      const bodyGrad = ctx.createRadialGradient(-r * 0.2, -r * 0.2, r * 0.2, 0, 0, r);
+      bodyGrad.addColorStop(0, '#FB923C');
+      bodyGrad.addColorStop(0.6, '#EA580C');
+      bodyGrad.addColorStop(1, '#C2410C');
+      ctx.fillStyle = bodyGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r, r * 0.88, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ridges
+      ctx.strokeStyle = 'rgba(120, 53, 15, 0.35)';
+      ctx.lineWidth = 2;
+      for (let i = -3; i <= 3; i += 1) {
+        ctx.beginPath();
+        ctx.ellipse(i * r * 0.22, 0, r * 0.12, r * 0.82, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Stem
+      ctx.fillStyle = '#166534';
+      ctx.fillRect(-8, -r - 18, 16, 22);
+      ctx.beginPath();
+      ctx.arc(0, -r - 18, 10, 0, Math.PI, true);
+      ctx.fill();
+
+      // Entry / exit holes
+      if (holeLeft) {
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        ctx.arc(-r * 0.85, 0, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.beginPath();
+        ctx.arc(-r * 0.85 - 20, 0, 18, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (holeRight) {
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        ctx.arc(r * 0.85, 0, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,200,120,0.45)';
+        ctx.beginPath();
+        ctx.arc(r * 0.95 + 25, -5, 28, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawBullet(x, y, showTrail) {
+      if (showTrail) {
+        ctx.strokeStyle = 'rgba(22, 163, 74, 0.25)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x - 40, y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.ellipse(x, y, 14, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.moveTo(x + 14, y);
+      ctx.lineTo(x + 24, y - 3);
+      ctx.lineTo(x + 24, y + 3);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawArrow(x, y, length, color, label) {
+      if (length < 4) return;
+      const dir = length >= 0 ? 1 : -1;
+      const len = Math.min(Math.abs(length), 120);
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + dir * len, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + dir * len, y);
+      ctx.lineTo(x + dir * (len - 8), y - 5);
+      ctx.lineTo(x + dir * (len - 8), y + 5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.font = 'bold 12px Inter';
+      ctx.fillText(label, x + dir * (len + 6), y + 4);
+    }
+
+    function drawDebris(dt) {
+      state.debris = state.debris.filter((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.15;
+        p.life -= dt * 0.8;
+        if (p.life <= 0 || p.y > state.groundY) return false;
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+        ctx.globalAlpha = 1;
+        return true;
+      });
+    }
+
+    function drawHud(r) {
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.fillRect(16, 52, 280, 88);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.strokeRect(16, 52, 280, 88);
+      ctx.fillStyle = '#334155';
+      ctx.font = '13px Inter';
+      ctx.fillText(`u_b = ${r.ub} m/s`, 28, 74);
+      ctx.fillStyle = PHYSICS_COLORS.velocity;
+      ctx.fillText(`v_b = ${state.phase === 'after' || state.phase === 'done' ? r.vb : '—'} m/s`, 28, 94);
+      ctx.fillStyle = PHYSICS_COLORS.velocity;
+      ctx.fillText(`v_p = ${state.phase === 'after' || state.phase === 'done' ? r.vp.toFixed(3) : '0.000'} m/s`, 28, 114);
+      ctx.fillStyle = PHYSICS_COLORS.momentum;
+      ctx.fillText(`p_sys = ${r.pBefore.toFixed(2)} kg·m/s`, 150, 74);
+      ctx.fillText(`p_p = ${(state.phase === 'after' || state.phase === 'done' ? r.ppAfter : 0).toFixed(2)}`, 150, 94);
+    }
+
+    function updatePhaseLabel() {
+      const keys = {
+        ready: 'phaseReady',
+        approach: 'phaseApproach',
+        penetrate: 'phasePenetrate',
+        after: 'phaseAfter',
+        done: 'phaseDone'
+      };
+      phaseLabel.textContent = t(keys[state.phase] || 'phaseReady');
+    }
+
+    function resetSimulation() {
+      state.phase = 'ready';
+      state.t = 0;
+      state.bulletX = 80;
+      state.pumpkinX = 520;
+      state.bulletV = 0;
+      state.pumpkinV = 0;
+      state.penetrateT = 0;
+      state.debris = [];
+      state.running = false;
+      playBtn.disabled = false;
+      updatePhaseLabel();
+      updateReadouts();
+    }
+
+    function startSimulation() {
+      if (state.running) return;
+      resetSimulation();
+      state.running = true;
+      state.phase = 'approach';
+      const r = calculate();
+      state.bulletV = animSpeed(r.ub);
+      updatePhaseLabel();
+      playBtn.disabled = true;
+    }
+
+    let lastTs = 0;
+
+    function step(ts) {
+      requestAnimationFrame(step);
+      const dt = Math.min((ts - lastTs) / 1000, 0.05) || 0;
+      lastTs = ts;
+
+      const r = calculate();
+      const y = state.groundY - state.pumpkinR * 0.5 - 8;
+      const hitX = state.pumpkinX - state.pumpkinR * 0.85;
+
+      if (state.running) {
+        if (state.phase === 'approach') {
+          state.bulletX += state.bulletV * dt;
+          if (state.bulletX >= hitX) {
+            state.bulletX = hitX;
+            state.phase = 'penetrate';
+            state.penetrateT = 0;
+            spawnDebris(state.pumpkinX - state.pumpkinR * 0.7, y, 18, false);
+            updatePhaseLabel();
+          }
+        } else if (state.phase === 'penetrate') {
+          state.penetrateT += dt;
+          state.bulletX += state.bulletV * 0.35 * dt;
+          if (state.penetrateT > 0.15 && state.penetrateT < 0.2) {
+            spawnDebris(state.pumpkinX + state.pumpkinR * 0.8, y, 28, true);
+          }
+          if (state.penetrateT >= 0.55) {
+            state.phase = 'after';
+            state.bulletV = animSpeed(r.vb);
+            state.pumpkinV = pumpkinAnimSpeed(r.vp);
+            spawnDebris(state.pumpkinX + state.pumpkinR, y, 12, true);
+            updatePhaseLabel();
+          }
+        } else if (state.phase === 'after') {
+          state.bulletX += state.bulletV * dt;
+          state.pumpkinX += state.pumpkinV * dt;
+          if (state.bulletX > canvas.width + 40 && state.t > 2) {
+            state.phase = 'done';
+            state.running = false;
+            playBtn.disabled = false;
+            updatePhaseLabel();
+          }
+        }
+        if (state.phase === 'after') state.t += dt;
+      }
+
+      drawGround();
+      const showHoles = state.phase === 'penetrate' || state.phase === 'after' || state.phase === 'done';
+      drawPumpkin(state.pumpkinX, y, state.pumpkinR, showHoles, showHoles && state.penetrateT > 0.2);
+
+      const bulletVisible = state.phase !== 'done' || state.bulletX < canvas.width;
+      if (bulletVisible && state.bulletX < canvas.width + 30) {
+        drawBullet(state.bulletX, y, state.phase === 'approach' || state.phase === 'after');
+      }
+
+      if (state.phase === 'approach') {
+        drawArrow(state.bulletX + 30, y - 35, r.ub * 0.25, PHYSICS_COLORS.velocity, 'u_b');
+      }
+      if (state.phase === 'after' || state.phase === 'done') {
+        drawArrow(state.bulletX + 30, y - 35, r.vb * 0.2, PHYSICS_COLORS.velocity, 'v_b');
+        drawArrow(state.pumpkinX, y - state.pumpkinR - 20, r.vp * 200, PHYSICS_COLORS.velocity, 'v_p');
+        drawArrow(state.pumpkinX, y + state.pumpkinR + 30, r.ppAfter * 40, PHYSICS_COLORS.momentum, 'p_p');
+      }
+
+      drawDebris(dt);
+      drawHud(r);
+    }
+
+    Object.values(sliders).forEach((slider) => {
+      slider.addEventListener('input', () => {
+        updateReadouts();
+        if (!state.running) resetSimulation();
+      });
+    });
+
+    boostPumpkin.addEventListener('change', () => {
+      const r = calculate();
+      if (state.phase === 'after') state.pumpkinV = pumpkinAnimSpeed(r.vp);
+    });
+
+    playBtn.addEventListener('click', startSimulation);
+    resetBtn.addEventListener('click', resetSimulation);
+    presetBtn.addEventListener('click', () => {
+      sliders.mb.value = defaults.mb;
+      sliders.mp.value = defaults.mp;
+      sliders.ub.value = defaults.ub;
+      sliders.vb.value = defaults.vb;
+      updateReadouts();
+      resetSimulation();
+    });
+
+    explainBtn.addEventListener('click', () => {
+      explainModal.classList.remove('hidden');
+      explainModal.classList.add('flex');
+      if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+    });
+    closeModal.addEventListener('click', () => {
+      explainModal.classList.add('hidden');
+      explainModal.classList.remove('flex');
+    });
+    explainModal.addEventListener('click', (e) => {
+      if (e.target === explainModal) closeModal.click();
+    });
+
+    window.addEventListener('resize', () => {
+      // Canvas scales via CSS width; internal resolution fixed
+    });
+
+    setLanguage(currentLang);
+    updateReadouts();
+    resetSimulation();
+    requestAnimationFrame(step);
+  </script>
+
+  <script src="practice_questions.js"></script>
+  <script src="practice_questions_data.js"></script>
+  <script>initPracticeQuestions('bullet_pumpkin');</script>
+</body>
+</html>
