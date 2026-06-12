@@ -229,6 +229,33 @@
     ],
   };
 
+  B.bullet_pumpkin = {
+    en: [
+      { q: "A bullet of mass \\(5\\,\\text{g}\\) at \\(300\\,\\text{m s}^{-1}\\) penetrates a \\(4\\,\\text{kg}\\) pumpkin at rest on a smooth horizontal plane and leaves at \\(200\\,\\text{m s}^{-1}\\). Is the momentum of the pumpkin conserved? Explain.",
+        sol: "<p><b>No.</b> The pumpkin alone is not an isolated system. The bullet exerts a large horizontal impulse during penetration, so the pumpkin's momentum changes from \\(0\\) to about \\(0.50\\,\\text{kg·m/s}\\).</p><p>However, the <b>total momentum of bullet + pumpkin</b> is conserved (smooth plane; debris neglected).</p>" },
+      { q: "Using the data in Q1, estimate the speed of the pumpkin just after the bullet has left it.",
+        sol: "<p>Conservation of momentum:</p><p>\\[ m_b u_b + m_p u_p = m_b v_b + m_p v_p \\]</p><p>\\( v_p = \\dfrac{m_b(u_b - v_b)}{m_p} = \\dfrac{0.005 \\times (300 - 200)}{4} = 0.125\\,\\text{m s}^{-1}.\\)</p>" },
+      { q: "Verify that total momentum is conserved in Q1 before and after penetration.",
+        sol: "<p>Before: \\(p = 0.005 \\times 300 = 1.50\\,\\text{kg·m/s}\\).</p><p>After: \\(p = 0.005 \\times 200 + 4 \\times 0.125 = 1.00 + 0.50 = 1.50\\,\\text{kg·m/s}\\). ✓</p>" },
+      { q: "Why is kinetic energy <b>not</b> conserved in this collision even though momentum is?",
+        sol: "<p>Momentum is conserved when the net external impulse is zero. KE is only conserved in <b>elastic</b> collisions.</p><p>Here the bullet does work deforming the pumpkin and ejecting debris (neglected in the model). Much of the bullet's initial KE becomes internal energy, sound and fragmentation — a <b>highly inelastic</b> interaction.</p>" },
+      { q: "If the bullet stuck inside the pumpkin instead of exiting, would the pumpkin's final speed be greater or less than \\(0.125\\,\\text{m s}^{-1}\\)? Explain briefly.",
+        sol: "<p><b>Greater.</b> If the bullet remains inside, the final speed of the combined mass is:</p><p>\\[ v = \\frac{m_b u_b}{m_b + m_p} = \\frac{0.005 \\times 300}{4.005} \\approx 0.374\\,\\text{m s}^{-1}.\\]</p><p>When the bullet exits at \\(200\\,\\text{m s}^{-1}\\), it carries away more momentum, leaving less for the pumpkin.</p>" },
+    ],
+    zh: [
+      { q: "質量 \\(5\\,\\text{g}\\) 的子彈以 \\(300\\,\\text{m s}^{-1}\\) 射入靜止在光滑水平面上的 \\(4\\,\\text{kg}\\) 南瓜，穿出時速度為 \\(200\\,\\text{m s}^{-1}\\)。南瓜的動量是否守恆？解釋。",
+        sol: "<p><b>否。</b>南瓜本身不是孤立系統。穿透期間子彈對其施加很大的水平衝量，南瓜動量由 \\(0\\) 變為約 \\(0.50\\,\\text{kg·m/s}\\)。</p><p>但<b>子彈 + 南瓜的總動量</b>守恆（光滑平面；忽略飛出碎屑）。</p>" },
+      { q: "利用第 1 題數據，估算子彈離開後南瓜的速度。",
+        sol: "<p>動量守恆：</p><p>\\[ v_p = \\dfrac{m_b(u_b - v_b)}{m_p} = \\dfrac{0.005 \\times 100}{4} = 0.125\\,\\text{m s}^{-1}.\\]</p>" },
+      { q: "驗證第 1 題穿透前後總動量守恆。",
+        sol: "<p>碰前：\\(p = 0.005 \\times 300 = 1.50\\,\\text{kg·m/s}\\)。</p><p>碰後：\\(p = 0.005 \\times 200 + 4 \\times 0.125 = 1.50\\,\\text{kg·m/s}\\)。✓</p>" },
+      { q: "為何動量守恆但動能不守恆？",
+        sol: "<p>無淨外力衝量時動量守恆；動能僅在<b>彈性碰撞</b>中守恆。</p><p>子彈對南瓜做功使其形變並噴出碎屑，大量初動能轉為內能、聲能及碎裂——屬<b>高度非彈性</b>相互作用。</p>" },
+      { q: "若子彈留在南瓜內而非穿出，南瓜最終速度會大於還是小於 \\(0.125\\,\\text{m s}^{-1}\\)？",
+        sol: "<p><b>較大。</b>若子彈留在內：</p><p>\\[ v = \\frac{m_b u_b}{m_b + m_p} \\approx 0.374\\,\\text{m s}^{-1}.\\]</p><p>子彈以 \\(200\\,\\text{m s}^{-1}\\) 穿出時帶走較多動量，南瓜所得較少。</p>" },
+    ],
+  };
+
   B.momentum_collision = {
     en: [
       { q: "Cart A (mass 2.0 kg) at \\(3.0\\,\\text{m s}^{-1}\\) collides with stationary cart B (mass 1.0 kg) and sticks to it. Find the common velocity after collision.",
