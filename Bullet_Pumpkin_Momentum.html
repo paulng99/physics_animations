@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bullet & Pumpkin Momentum (HKDSE)</title>
+  <title>Bullet & Pumpkin Momentum 3D (HKDSE)</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,6 +14,17 @@
     body { font-family: 'Inter', sans-serif; }
     mjx-container { display: inline-block !important; }
     .glass { background: rgba(255, 255, 255, 0.86); backdrop-filter: blur(10px); }
+    #three-container {
+      width: 100%;
+      height: 500px;
+      min-height: 320px;
+      background: #0f172a;
+      cursor: grab;
+      border-radius: 1rem;
+      overflow: hidden;
+      touch-action: none;
+    }
+    #three-container:active { cursor: grabbing; }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
@@ -32,33 +44,16 @@
     <section class="glass rounded-3xl border border-white/70 p-6 md:p-8 shadow-xl shadow-blue-100/40">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <span class="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-2" data-i18n="badge">HKDSE Momentum</span>
-          <h1 class="text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">Bullet Penetrates a Pumpkin</h1>
-          <p class="mt-3 text-slate-600 max-w-3xl" data-i18n="subtitle">A 5 g bullet at 300 m s⁻¹ penetrates a 4 kg pumpkin at rest on a smooth horizontal plane and exits at 200 m s⁻¹. Explore momentum conservation and estimate the pumpkin's speed.</p>
+          <span class="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-2" data-i18n="badge">HKDSE Momentum · 3D</span>
+          <h1 class="text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">Bullet Penetrates a Pumpkin (3D)</h1>
+          <p class="mt-3 text-slate-600 max-w-3xl" data-i18n="subtitle">A 5 g bullet at 300 m s⁻¹ penetrates a 4 kg pumpkin at rest on a smooth horizontal plane and exits at 200 m s⁻¹. Rotate the 3D scene and explore momentum conservation.</p>
         </div>
         <button id="explainBtn" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-blue-600 hover:bg-blue-50 transition" data-i18n="explainBtn">Show Answers (a)(b)</button>
       </div>
     </section>
 
     <section class="mt-6 grid lg:grid-cols-12 gap-5">
-      <article class="lg:col-span-8 glass rounded-3xl border border-white/70 p-4 md:p-5 shadow-lg shadow-blue-100/30">
-        <div class="relative rounded-2xl border-2 border-slate-200 overflow-hidden bg-slate-900">
-          <canvas id="simCanvas" class="w-full block" width="1100" height="420"></canvas>
-          <div id="phaseLabel" class="absolute top-4 left-4 px-4 py-2 rounded-full bg-gray-900/80 backdrop-blur text-white text-sm font-medium" data-i18n="phaseReady">Ready</div>
-          <div class="absolute bottom-4 left-4 flex flex-wrap gap-2">
-            <span class="px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-medium text-green-600" data-i18n="legend.velocity">v — Velocity</span>
-            <span class="px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-medium text-purple-600" data-i18n="legend.momentum">p — Momentum</span>
-          </div>
-          <div class="absolute bottom-4 right-4 bg-gray-900/80 backdrop-blur text-white px-4 py-2 rounded-full text-xs pointer-events-none" data-i18n="hint">Tap Play to run the textbook scenario</div>
-        </div>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <button id="playBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition" data-i18n="play">Play</button>
-          <button id="resetBtn" class="px-5 py-2.5 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition" data-i18n="reset">Reset</button>
-          <button id="presetBtn" class="px-5 py-2.5 rounded-xl bg-orange-100 text-orange-700 font-semibold hover:bg-orange-200 transition" data-i18n="preset">Textbook Values</button>
-        </div>
-      </article>
-
-      <aside class="lg:col-span-4 space-y-4">
+      <aside class="lg:col-span-4 space-y-4 order-2 lg:order-1">
         <div class="glass rounded-2xl border border-white/70 p-4">
           <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
 
@@ -109,10 +104,27 @@
           <p class="text-center text-base font-medium text-slate-800">\(m_b u_b + m_p u_p = m_b v_b + m_p v_p\)</p>
         </div>
       </aside>
+
+      <article class="lg:col-span-8 order-1 lg:order-2 glass rounded-3xl border border-white/70 p-4 md:p-5 shadow-lg shadow-blue-100/30">
+        <div class="relative rounded-2xl border-2 border-slate-200 overflow-hidden">
+          <div id="three-container"></div>
+          <div id="phaseLabel" class="absolute top-4 left-4 px-4 py-2 rounded-full bg-gray-900/80 backdrop-blur text-white text-sm font-medium pointer-events-none" data-i18n="phaseReady">Ready</div>
+          <div class="absolute bottom-4 left-4 flex flex-wrap gap-2 pointer-events-none">
+            <span class="px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-medium text-green-600" data-i18n="legend.velocity">v — Velocity</span>
+            <span class="px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-medium text-purple-600" data-i18n="legend.momentum">p — Momentum</span>
+          </div>
+          <div class="absolute bottom-4 right-4 bg-gray-900/80 backdrop-blur text-white px-4 py-2 rounded-full text-xs pointer-events-none" data-i18n="hint">Drag to rotate · Scroll/pinch to zoom</div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="playBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition" data-i18n="play">Play</button>
+          <button id="resetBtn" class="px-5 py-2.5 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition" data-i18n="reset">Reset</button>
+          <button id="presetBtn" class="px-5 py-2.5 rounded-xl bg-orange-100 text-orange-700 font-semibold hover:bg-orange-200 transition" data-i18n="preset">Textbook Values</button>
+          <button id="resetCamBtn" class="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition" data-i18n="resetCam">Reset Camera</button>
+        </div>
+      </article>
     </section>
   </main>
 
-  <!-- Explain Modal -->
   <div id="explainModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
     <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8">
       <div class="flex justify-between items-start gap-4 mb-4">
@@ -140,14 +152,13 @@
 
   <script>
     const PHYSICS_COLORS = {
-      force: '#DC2626',
-      velocity: '#16A34A',
-      momentum: '#9333EA',
-      pumpkin: '#EA580C'
+      force: 0xdc2626,
+      velocity: 0x16a34a,
+      momentum: 0x9333ea,
+      pumpkin: 0xea580c
     };
 
-    const canvas = document.getElementById('simCanvas');
-    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('three-container');
     const phaseLabel = document.getElementById('phaseLabel');
 
     const sliders = {
@@ -174,32 +185,39 @@
     const playBtn = document.getElementById('playBtn');
     const resetBtn = document.getElementById('resetBtn');
     const presetBtn = document.getElementById('presetBtn');
+    const resetCamBtn = document.getElementById('resetCamBtn');
     const explainBtn = document.getElementById('explainBtn');
     const explainModal = document.getElementById('explainModal');
     const closeModal = document.getElementById('closeModal');
 
     const defaults = { mb: 5, mp: 4, ub: 300, vb: 200 };
 
-    const state = {
-      phase: 'ready', // ready | approach | penetrate | after | done
+    const sim = {
+      phase: 'ready',
       t: 0,
-      bulletX: 80,
-      pumpkinX: 520,
+      bulletX: -7,
+      pumpkinX: 0,
       bulletV: 0,
       pumpkinV: 0,
       penetrateT: 0,
-      debris: [],
       running: false,
-      groundY: 320,
-      pumpkinR: 70
+      pumpkinRadius: 1.15,
+      hitOffset: 0.95
     };
+
+    let scene, camera, renderer;
+    let pumpkinGroup, bulletMesh, groundMesh;
+    let entryFlash, exitFlash;
+    let debrisMeshes = [];
+    let arrowUb, arrowVb, arrowVp, arrowPp;
+    let defaultCam = { theta: 0.35, phi: 1.05, radius: 11 };
 
     const translations = {
       en: {
         back: 'Back to Topics',
-        badge: 'HKDSE Momentum',
-        title: 'Bullet Penetrates a Pumpkin',
-        subtitle: 'A 5 g bullet at 300 m s⁻¹ penetrates a 4 kg pumpkin at rest on a smooth horizontal plane and exits at 200 m s⁻¹. Explore momentum conservation and estimate the pumpkin\'s speed.',
+        badge: 'HKDSE Momentum · 3D',
+        title: 'Bullet Penetrates a Pumpkin (3D)',
+        subtitle: 'A 5 g bullet at 300 m s⁻¹ penetrates a 4 kg pumpkin at rest on a smooth horizontal plane and exits at 200 m s⁻¹. Rotate the 3D scene and explore momentum conservation.',
         explainBtn: 'Show Answers (a)(b)',
         phaseReady: 'Ready',
         phaseApproach: 'Approach — bullet incoming',
@@ -207,10 +225,11 @@
         phaseAfter: 'After exit — pumpkin recoils slowly',
         phaseDone: 'Complete',
         legend: { velocity: 'v — Velocity', momentum: 'p — Momentum' },
-        hint: 'Tap Play to run the textbook scenario',
+        hint: 'Drag to rotate · Scroll/pinch to zoom',
         play: 'Play',
         reset: 'Reset',
         preset: 'Textbook Values',
+        resetCam: 'Reset Camera',
         controls: 'Controls',
         mb: 'Bullet mass m\u2091 (g)',
         mp: 'Pumpkin mass m\u209A (kg)',
@@ -234,9 +253,9 @@
       },
       'zh-hk': {
         back: '返回主題頁',
-        badge: 'HKDSE 動量',
-        title: '子彈穿透南瓜',
-        subtitle: '質量 5 g 的子彈以 300 m s⁻¹ 水平射向靜止在光滑水平面上的 4 kg 南瓜，穿透後以 200 m s⁻¹ 離開。探索動量守恆並估算南瓜速度。',
+        badge: 'HKDSE 動量 · 3D',
+        title: '子彈穿透南瓜（3D）',
+        subtitle: '質量 5 g 的子彈以 300 m s⁻¹ 水平射向靜止在光滑水平面上的 4 kg 南瓜，穿透後以 200 m s⁻¹ 離開。旋轉 3D 場景，探索動量守恆。',
         explainBtn: '顯示答案 (a)(b)',
         phaseReady: '準備就緒',
         phaseApproach: '接近 — 子彈飛來',
@@ -244,10 +263,11 @@
         phaseAfter: '穿出後 — 南瓜緩慢移動',
         phaseDone: '完成',
         legend: { velocity: 'v — 速度', momentum: 'p — 動量' },
-        hint: '按「播放」運行課本情境',
+        hint: '拖曳旋轉 · 滾輪/雙指縮放',
         play: '播放',
         reset: '重設',
         preset: '課本數值',
+        resetCam: '重設視角',
         controls: '控制面板',
         mb: '子彈質量 m\u2091 (g)',
         mp: '南瓜質量 m\u209A (kg)',
@@ -288,11 +308,8 @@
         const key = el.getAttribute('data-i18n');
         const val = key.includes('.') ? t(key) : translations[lang]?.[key];
         if (!val) return;
-        if (key.startsWith('ans') || key === 'subtitle') {
-          el.innerHTML = val;
-        } else {
-          el.textContent = val;
-        }
+        if (key.startsWith('ans') || key === 'subtitle') el.innerHTML = val;
+        else el.textContent = val;
       });
       document.querySelectorAll('.lang-btn').forEach((btn) => {
         const active = btn.dataset.lang === lang;
@@ -320,9 +337,7 @@
       const pAfter = mbKg * vb + mp * vp;
       const keBefore = 0.5 * mbKg * ub * ub;
       const keAfter = 0.5 * mbKg * vb * vb + 0.5 * mp * vp * vp;
-      const keLost = keBefore - keAfter;
-      const ppAfter = mp * vp;
-      return { mbKg, mp, ub, vb, up, vp, pBefore, pAfter, ppBefore: 0, ppAfter, keLost };
+      return { mbKg, mp, ub, vb, up, vp, pBefore, pAfter, ppBefore: 0, ppAfter: mp * vp, keLost: keBefore - keAfter };
     }
 
     function updateReadouts() {
@@ -340,316 +355,452 @@
     }
 
     function animSpeed(vMs) {
-      // Map physics m/s to px/s for readable animation
-      return vMs * 1.2;
+      return vMs * 0.012;
     }
 
     function pumpkinAnimSpeed(vp) {
-      if (boostPumpkin.checked) return Math.max(animSpeed(vp), 25);
+      if (boostPumpkin.checked) return Math.max(animSpeed(vp), 0.35);
       return animSpeed(vp);
     }
 
-    function spawnDebris(x, y, count, burstRight) {
+    function createPumpkin() {
+      pumpkinGroup = new THREE.Group();
+
+      const bodyGeo = new THREE.SphereGeometry(1, 32, 24);
+      bodyGeo.scale(1, 0.82, 1);
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: PHYSICS_COLORS.pumpkin,
+        roughness: 0.65,
+        metalness: 0.05
+      });
+      const body = new THREE.Mesh(bodyGeo, bodyMat);
+      body.castShadow = true;
+      body.receiveShadow = true;
+      pumpkinGroup.add(body);
+
+      for (let i = -2; i <= 2; i += 1) {
+        const ridge = new THREE.Mesh(
+          new THREE.TorusGeometry(0.92, 0.04, 8, 32),
+          new THREE.MeshStandardMaterial({ color: 0xc2410c, roughness: 0.8 })
+        );
+        ridge.rotation.y = (i * Math.PI) / 10;
+        ridge.scale.y = 0.82;
+        pumpkinGroup.add(ridge);
+      }
+
+      const stem = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.16, 0.45, 12),
+        new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.9 })
+      );
+      stem.position.y = 0.95;
+      stem.castShadow = true;
+      pumpkinGroup.add(stem);
+
+      entryFlash = new THREE.PointLight(0xffffff, 0, 3);
+      entryFlash.position.set(-sim.pumpkinRadius * 0.9, 0.2, 0);
+      pumpkinGroup.add(entryFlash);
+
+      exitFlash = new THREE.PointLight(0xffaa55, 0, 4);
+      exitFlash.position.set(sim.pumpkinRadius * 0.9, 0.2, 0);
+      pumpkinGroup.add(exitFlash);
+
+      scene.add(pumpkinGroup);
+    }
+
+    function createBullet() {
+      const bulletGroup = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, 0.35, 16),
+        new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.7, roughness: 0.3 })
+      );
+      body.rotation.z = Math.PI / 2;
+      bulletGroup.add(body);
+
+      const tip = new THREE.Mesh(
+        new THREE.ConeGeometry(0.08, 0.18, 16),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 })
+      );
+      tip.rotation.z = -Math.PI / 2;
+      tip.position.x = 0.26;
+      bulletGroup.add(tip);
+
+      bulletMesh = bulletGroup;
+      bulletMesh.castShadow = true;
+      scene.add(bulletMesh);
+    }
+
+    function clearDebris() {
+      debrisMeshes.forEach((m) => {
+        scene.remove(m);
+        m.geometry.dispose();
+        m.material.dispose();
+      });
+      debrisMeshes = [];
+    }
+
+    function spawnDebris(origin, count, burstRight) {
       for (let i = 0; i < count; i += 1) {
-        const angle = burstRight
-          ? (Math.random() * 0.8 - 0.2)
-          : (Math.PI + Math.random() * 0.8 - 0.6);
-        const speed = 2 + Math.random() * 6;
-        state.debris.push({
-          x, y: y + (Math.random() - 0.5) * 40,
+        const mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.08 + Math.random() * 0.12, 0.08 + Math.random() * 0.1, 0.08 + Math.random() * 0.1),
+          new THREE.MeshStandardMaterial({
+            color: Math.random() > 0.35 ? 0xea580c : 0xfed7aa,
+            roughness: 0.9
+          })
+        );
+        mesh.position.copy(origin);
+        mesh.position.x += (Math.random() - 0.5) * 0.4;
+        mesh.position.y += Math.random() * 0.6;
+        mesh.position.z += (Math.random() - 0.5) * 0.5;
+        const angle = burstRight ? (Math.random() * 0.6 + 0.1) : (Math.PI + Math.random() * 0.6 - 0.3);
+        const speed = 1.5 + Math.random() * 3;
+        mesh.userData = {
           vx: Math.cos(angle) * speed,
-          vy: -Math.abs(Math.sin(angle)) * speed - Math.random() * 2,
-          life: 1,
-          size: 3 + Math.random() * 5,
-          color: Math.random() > 0.3 ? '#EA580C' : '#FED7AA'
-        });
+          vy: 1.5 + Math.random() * 2.5,
+          vz: (Math.random() - 0.5) * 1.5,
+          life: 1
+        };
+        mesh.castShadow = true;
+        scene.add(mesh);
+        debrisMeshes.push(mesh);
       }
     }
 
-    function drawGround() {
-      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      grad.addColorStop(0, '#0f172a');
-      grad.addColorStop(1, '#1e293b');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = '#334155';
-      ctx.fillRect(0, state.groundY, canvas.width, canvas.height - state.groundY);
-
-      ctx.strokeStyle = '#64748b';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, state.groundY);
-      ctx.lineTo(canvas.width, state.groundY);
-      ctx.stroke();
-
-      for (let i = 0; i < 12; i += 1) {
-        const x = 40 + i * 90;
-        ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x, state.groundY);
-        ctx.lineTo(x, state.groundY + 14);
-        ctx.stroke();
-      }
-    }
-
-    function drawPumpkin(x, y, r, holeLeft, holeRight) {
-      ctx.save();
-      ctx.translate(x, y);
-
-      // Shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
-      ctx.beginPath();
-      ctx.ellipse(0, r * 0.55, r * 1.1, r * 0.25, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Body
-      const bodyGrad = ctx.createRadialGradient(-r * 0.2, -r * 0.2, r * 0.2, 0, 0, r);
-      bodyGrad.addColorStop(0, '#FB923C');
-      bodyGrad.addColorStop(0.6, '#EA580C');
-      bodyGrad.addColorStop(1, '#C2410C');
-      ctx.fillStyle = bodyGrad;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, r, r * 0.88, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Ridges
-      ctx.strokeStyle = 'rgba(120, 53, 15, 0.35)';
-      ctx.lineWidth = 2;
-      for (let i = -3; i <= 3; i += 1) {
-        ctx.beginPath();
-        ctx.ellipse(i * r * 0.22, 0, r * 0.12, r * 0.82, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      // Stem
-      ctx.fillStyle = '#166534';
-      ctx.fillRect(-8, -r - 18, 16, 22);
-      ctx.beginPath();
-      ctx.arc(0, -r - 18, 10, 0, Math.PI, true);
-      ctx.fill();
-
-      // Entry / exit holes
-      if (holeLeft) {
-        ctx.fillStyle = '#1e293b';
-        ctx.beginPath();
-        ctx.arc(-r * 0.85, 0, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.beginPath();
-        ctx.arc(-r * 0.85 - 20, 0, 18, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      if (holeRight) {
-        ctx.fillStyle = '#1e293b';
-        ctx.beginPath();
-        ctx.arc(r * 0.85, 0, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = 'rgba(255,200,120,0.45)';
-        ctx.beginPath();
-        ctx.arc(r * 0.95 + 25, -5, 28, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      ctx.restore();
-    }
-
-    function drawBullet(x, y, showTrail) {
-      if (showTrail) {
-        ctx.strokeStyle = 'rgba(22, 163, 74, 0.25)';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(x - 40, y);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-      }
-      ctx.fillStyle = '#334155';
-      ctx.beginPath();
-      ctx.ellipse(x, y, 14, 5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#94a3b8';
-      ctx.beginPath();
-      ctx.moveTo(x + 14, y);
-      ctx.lineTo(x + 24, y - 3);
-      ctx.lineTo(x + 24, y + 3);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    function drawArrow(x, y, length, color, label) {
-      if (length < 4) return;
-      const dir = length >= 0 ? 1 : -1;
-      const len = Math.min(Math.abs(length), 120);
-      ctx.strokeStyle = color;
-      ctx.fillStyle = color;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + dir * len, y);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(x + dir * len, y);
-      ctx.lineTo(x + dir * (len - 8), y - 5);
-      ctx.lineTo(x + dir * (len - 8), y + 5);
-      ctx.closePath();
-      ctx.fill();
-      ctx.font = 'bold 12px Inter';
-      ctx.fillText(label, x + dir * (len + 6), y + 4);
-    }
-
-    function drawDebris(dt) {
-      state.debris = state.debris.filter((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.15;
-        p.life -= dt * 0.8;
-        if (p.life <= 0 || p.y > state.groundY) return false;
-        ctx.globalAlpha = p.life;
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, p.size, p.size);
-        ctx.globalAlpha = 1;
+    function updateDebris(dt) {
+      debrisMeshes = debrisMeshes.filter((mesh) => {
+        const d = mesh.userData;
+        d.vy -= 9.8 * dt * 0.35;
+        mesh.position.x += d.vx * dt;
+        mesh.position.y += d.vy * dt;
+        mesh.position.z += d.vz * dt;
+        mesh.rotation.x += dt * 3;
+        mesh.rotation.y += dt * 2;
+        d.life -= dt * 0.7;
+        mesh.material.opacity = Math.max(0, d.life);
+        mesh.material.transparent = true;
+        if (d.life <= 0 || mesh.position.y < 0) {
+          scene.remove(mesh);
+          mesh.geometry.dispose();
+          mesh.material.dispose();
+          return false;
+        }
         return true;
       });
     }
 
-    function drawHud(r) {
-      ctx.fillStyle = 'rgba(255,255,255,0.92)';
-      ctx.fillRect(16, 52, 280, 88);
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.strokeRect(16, 52, 280, 88);
-      ctx.fillStyle = '#334155';
-      ctx.font = '13px Inter';
-      ctx.fillText(`u_b = ${r.ub} m/s`, 28, 74);
-      ctx.fillStyle = PHYSICS_COLORS.velocity;
-      ctx.fillText(`v_b = ${state.phase === 'after' || state.phase === 'done' ? r.vb : '—'} m/s`, 28, 94);
-      ctx.fillStyle = PHYSICS_COLORS.velocity;
-      ctx.fillText(`v_p = ${state.phase === 'after' || state.phase === 'done' ? r.vp.toFixed(3) : '0.000'} m/s`, 28, 114);
-      ctx.fillStyle = PHYSICS_COLORS.momentum;
-      ctx.fillText(`p_sys = ${r.pBefore.toFixed(2)} kg·m/s`, 150, 74);
-      ctx.fillText(`p_p = ${(state.phase === 'after' || state.phase === 'done' ? r.ppAfter : 0).toFixed(2)}`, 150, 94);
+    function removeArrow(arrow) {
+      if (arrow) {
+        scene.remove(arrow);
+        arrow.line?.geometry?.dispose();
+        arrow.cone?.geometry?.dispose();
+      }
+    }
+
+    function setArrow(arrowRef, origin, dir, length, color, headLen = 0.25, headWidth = 0.15) {
+      removeArrow(arrowRef.current);
+      if (length < 0.05) {
+        arrowRef.current = null;
+        return;
+      }
+      const direction = dir.clone().normalize();
+      arrowRef.current = new THREE.ArrowHelper(direction, origin, length, color, headLen, headWidth);
+      scene.add(arrowRef.current);
+    }
+
+    function updateVectors(r) {
+      const ubRef = { current: arrowUb };
+      const vbRef = { current: arrowVb };
+      const vpRef = { current: arrowVp };
+      const ppRef = { current: arrowPp };
+
+      removeArrow(arrowUb);
+      removeArrow(arrowVb);
+      removeArrow(arrowVp);
+      removeArrow(arrowPp);
+      arrowUb = arrowVb = arrowVp = arrowPp = null;
+
+      const bulletY = 0.35;
+      const pumpkinCenter = new THREE.Vector3(sim.pumpkinX, sim.pumpkinRadius * 0.65, 0);
+
+      if (sim.phase === 'approach') {
+        setArrow(ubRef, new THREE.Vector3(sim.bulletX, bulletY + 0.8, 0), new THREE.Vector3(1, 0, 0), Math.min(r.ub * 0.008, 2.5), PHYSICS_COLORS.velocity);
+        arrowUb = ubRef.current;
+      }
+      if (sim.phase === 'after' || sim.phase === 'done') {
+        setArrow(vbRef, new THREE.Vector3(sim.bulletX, bulletY + 0.8, 0.3), new THREE.Vector3(1, 0, 0), Math.min(r.vb * 0.008, 2.2), PHYSICS_COLORS.velocity);
+        arrowVb = vbRef.current;
+        setArrow(vpRef, new THREE.Vector3(sim.pumpkinX, sim.pumpkinRadius * 1.6, -0.5), new THREE.Vector3(1, 0, 0), Math.max(r.vp * 12, 0.4), PHYSICS_COLORS.velocity);
+        arrowVp = vpRef.current;
+        setArrow(ppRef, new THREE.Vector3(pumpkinCenter.x, 0.15, 0.6), new THREE.Vector3(1, 0, 0), Math.max(r.ppAfter * 1.2, 0.35), PHYSICS_COLORS.momentum);
+        arrowPp = ppRef.current;
+      }
+    }
+
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0f172a);
+      scene.fog = new THREE.Fog(0x0f172a, 18, 35);
+
+      camera = new THREE.PerspectiveCamera(45, container.offsetWidth / container.offsetHeight, 0.1, 100);
+      updateCameraFromSpherical();
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+      const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+      sun.position.set(6, 12, 8);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(1024, 1024);
+      sun.shadow.camera.near = 0.5;
+      sun.shadow.camera.far = 40;
+      sun.shadow.camera.left = -12;
+      sun.shadow.camera.right = 12;
+      sun.shadow.camera.top = 12;
+      sun.shadow.camera.bottom = -12;
+      scene.add(sun);
+
+      const rim = new THREE.DirectionalLight(0x93c5fd, 0.35);
+      rim.position.set(-8, 4, -6);
+      scene.add(rim);
+
+      groundMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(30, 12),
+        new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.95, metalness: 0.05 })
+      );
+      groundMesh.rotation.x = -Math.PI / 2;
+      groundMesh.receiveShadow = true;
+      scene.add(groundMesh);
+
+      const grid = new THREE.GridHelper(24, 24, 0x475569, 0x1e293b);
+      grid.position.y = 0.01;
+      scene.add(grid);
+
+      for (let i = -10; i <= 10; i += 2) {
+        const tick = new THREE.Mesh(
+          new THREE.BoxGeometry(0.05, 0.08, 0.3),
+          new THREE.MeshStandardMaterial({ color: 0x64748b })
+        );
+        tick.position.set(i, 0.04, 0);
+        scene.add(tick);
+      }
+
+      createPumpkin();
+      createBullet();
+      setupCameraControls();
+    }
+
+    let isCameraDrag = false;
+    let startCamX = 0;
+    let startCamY = 0;
+    let theta = defaultCam.theta;
+    let phi = defaultCam.phi;
+    let radius = defaultCam.radius;
+
+    function updateCameraFromSpherical() {
+      const lookAt = new THREE.Vector3(sim.pumpkinX * 0.4, sim.pumpkinRadius * 0.5, 0);
+      camera.position.x = lookAt.x + radius * Math.sin(phi) * Math.sin(theta);
+      camera.position.y = lookAt.y + radius * Math.cos(phi);
+      camera.position.z = lookAt.z + radius * Math.sin(phi) * Math.cos(theta);
+      camera.lookAt(lookAt);
+    }
+
+    function resetCamera() {
+      theta = defaultCam.theta;
+      phi = defaultCam.phi;
+      radius = defaultCam.radius;
+      updateCameraFromSpherical();
+    }
+
+    function setupCameraControls() {
+      container.addEventListener('mousedown', (e) => {
+        if (e.target.closest('input, button')) return;
+        isCameraDrag = true;
+        startCamX = e.clientX;
+        startCamY = e.clientY;
+      });
+      window.addEventListener('mouseup', () => { isCameraDrag = false; });
+      window.addEventListener('mousemove', (e) => {
+        if (!isCameraDrag) return;
+        theta -= (e.clientX - startCamX) * 0.005;
+        phi -= (e.clientY - startCamY) * 0.005;
+        phi = Math.max(0.25, Math.min(Math.PI / 2 - 0.08, phi));
+        startCamX = e.clientX;
+        startCamY = e.clientY;
+        updateCameraFromSpherical();
+      });
+      container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        radius = Math.max(5, Math.min(18, radius + e.deltaY * 0.012));
+        updateCameraFromSpherical();
+      }, { passive: false });
+
+      let lastTouchDist = null;
+      let lastTouchX = null;
+      let lastTouchY = null;
+
+      container.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          lastTouchX = e.touches[0].clientX;
+          lastTouchY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+          lastTouchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+        }
+      }, { passive: true });
+
+      container.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1 && lastTouchX !== null) {
+          const dx = (e.touches[0].clientX - lastTouchX) * 0.008;
+          const dy = (e.touches[0].clientY - lastTouchY) * 0.008;
+          lastTouchX = e.touches[0].clientX;
+          lastTouchY = e.touches[0].clientY;
+          theta -= dx;
+          phi -= dy;
+          phi = Math.max(0.25, Math.min(Math.PI / 2 - 0.08, phi));
+          updateCameraFromSpherical();
+        } else if (e.touches.length === 2 && lastTouchDist !== null) {
+          const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          radius += (lastTouchDist - dist) * 0.02;
+          radius = Math.max(5, Math.min(18, radius));
+          lastTouchDist = dist;
+          updateCameraFromSpherical();
+        }
+      }, { passive: false });
+
+      container.addEventListener('touchend', () => {
+        lastTouchX = lastTouchY = lastTouchDist = null;
+      });
     }
 
     function updatePhaseLabel() {
-      const keys = {
-        ready: 'phaseReady',
-        approach: 'phaseApproach',
-        penetrate: 'phasePenetrate',
-        after: 'phaseAfter',
-        done: 'phaseDone'
-      };
-      phaseLabel.textContent = t(keys[state.phase] || 'phaseReady');
+      const keys = { ready: 'phaseReady', approach: 'phaseApproach', penetrate: 'phasePenetrate', after: 'phaseAfter', done: 'phaseDone' };
+      phaseLabel.textContent = t(keys[sim.phase] || 'phaseReady');
+    }
+
+    function syncMeshes() {
+      pumpkinGroup.position.set(sim.pumpkinX, sim.pumpkinRadius * 0.65, 0);
+      const scale = 0.85 + Number(sliders.mp.value) * 0.04;
+      pumpkinGroup.scale.setScalar(scale);
+
+      bulletMesh.position.set(sim.bulletX, 0.35, 0);
+      bulletMesh.visible = sim.phase !== 'done' || sim.bulletX < 14;
+
+      const showFlash = sim.phase === 'penetrate' || sim.phase === 'after';
+      entryFlash.intensity = showFlash ? 1.2 + Math.sin(sim.penetrateT * 20) * 0.4 : 0;
+      exitFlash.intensity = (sim.phase === 'penetrate' && sim.penetrateT > 0.2) || sim.phase === 'after' ? 2.5 : 0;
     }
 
     function resetSimulation() {
-      state.phase = 'ready';
-      state.t = 0;
-      state.bulletX = 80;
-      state.pumpkinX = 520;
-      state.bulletV = 0;
-      state.pumpkinV = 0;
-      state.penetrateT = 0;
-      state.debris = [];
-      state.running = false;
+      sim.phase = 'ready';
+      sim.t = 0;
+      sim.bulletX = -7;
+      sim.pumpkinX = 0;
+      sim.bulletV = 0;
+      sim.pumpkinV = 0;
+      sim.penetrateT = 0;
+      sim.running = false;
       playBtn.disabled = false;
+      clearDebris();
       updatePhaseLabel();
       updateReadouts();
+      updateVectors(calculate());
+      syncMeshes();
     }
 
     function startSimulation() {
-      if (state.running) return;
+      if (sim.running) return;
       resetSimulation();
-      state.running = true;
-      state.phase = 'approach';
-      const r = calculate();
-      state.bulletV = animSpeed(r.ub);
+      sim.running = true;
+      sim.phase = 'approach';
+      sim.bulletV = animSpeed(calculate().ub);
       updatePhaseLabel();
       playBtn.disabled = true;
     }
 
     let lastTs = 0;
 
-    function step(ts) {
-      requestAnimationFrame(step);
+    function animate(ts) {
+      requestAnimationFrame(animate);
       const dt = Math.min((ts - lastTs) / 1000, 0.05) || 0;
       lastTs = ts;
 
       const r = calculate();
-      const y = state.groundY - state.pumpkinR * 0.5 - 8;
-      const hitX = state.pumpkinX - state.pumpkinR * 0.85;
+      const hitX = sim.pumpkinX - sim.pumpkinRadius * sim.hitOffset * pumpkinGroup.scale.x;
 
-      if (state.running) {
-        if (state.phase === 'approach') {
-          state.bulletX += state.bulletV * dt;
-          if (state.bulletX >= hitX) {
-            state.bulletX = hitX;
-            state.phase = 'penetrate';
-            state.penetrateT = 0;
-            spawnDebris(state.pumpkinX - state.pumpkinR * 0.7, y, 18, false);
+      if (sim.running) {
+        if (sim.phase === 'approach') {
+          sim.bulletX += sim.bulletV * dt;
+          if (sim.bulletX >= hitX) {
+            sim.bulletX = hitX;
+            sim.phase = 'penetrate';
+            sim.penetrateT = 0;
+            spawnDebris(new THREE.Vector3(sim.pumpkinX - sim.pumpkinRadius * 0.7, 0.5, 0), 22, false);
             updatePhaseLabel();
           }
-        } else if (state.phase === 'penetrate') {
-          state.penetrateT += dt;
-          state.bulletX += state.bulletV * 0.35 * dt;
-          if (state.penetrateT > 0.15 && state.penetrateT < 0.2) {
-            spawnDebris(state.pumpkinX + state.pumpkinR * 0.8, y, 28, true);
+        } else if (sim.phase === 'penetrate') {
+          sim.penetrateT += dt;
+          sim.bulletX += sim.bulletV * 0.25 * dt;
+          if (sim.penetrateT > 0.15 && sim.penetrateT < 0.22) {
+            spawnDebris(new THREE.Vector3(sim.pumpkinX + sim.pumpkinRadius * 0.75, 0.55, 0), 32, true);
           }
-          if (state.penetrateT >= 0.55) {
-            state.phase = 'after';
-            state.bulletV = animSpeed(r.vb);
-            state.pumpkinV = pumpkinAnimSpeed(r.vp);
-            spawnDebris(state.pumpkinX + state.pumpkinR, y, 12, true);
+          if (sim.penetrateT >= 0.55) {
+            sim.phase = 'after';
+            sim.bulletV = animSpeed(r.vb);
+            sim.pumpkinV = pumpkinAnimSpeed(r.vp);
+            spawnDebris(new THREE.Vector3(sim.pumpkinX + sim.pumpkinRadius, 0.5, 0), 14, true);
             updatePhaseLabel();
           }
-        } else if (state.phase === 'after') {
-          state.bulletX += state.bulletV * dt;
-          state.pumpkinX += state.pumpkinV * dt;
-          if (state.bulletX > canvas.width + 40 && state.t > 2) {
-            state.phase = 'done';
-            state.running = false;
+        } else if (sim.phase === 'after') {
+          sim.bulletX += sim.bulletV * dt;
+          sim.pumpkinX += sim.pumpkinV * dt;
+          sim.t += dt;
+          if (sim.bulletX > 14 && sim.t > 2) {
+            sim.phase = 'done';
+            sim.running = false;
             playBtn.disabled = false;
             updatePhaseLabel();
           }
         }
-        if (state.phase === 'after') state.t += dt;
       }
 
-      drawGround();
-      const showHoles = state.phase === 'penetrate' || state.phase === 'after' || state.phase === 'done';
-      drawPumpkin(state.pumpkinX, y, state.pumpkinR, showHoles, showHoles && state.penetrateT > 0.2);
+      updateDebris(dt);
+      updateVectors(r);
+      syncMeshes();
+      updateCameraFromSpherical();
+      renderer.render(scene, camera);
+    }
 
-      const bulletVisible = state.phase !== 'done' || state.bulletX < canvas.width;
-      if (bulletVisible && state.bulletX < canvas.width + 30) {
-        drawBullet(state.bulletX, y, state.phase === 'approach' || state.phase === 'after');
-      }
-
-      if (state.phase === 'approach') {
-        drawArrow(state.bulletX + 30, y - 35, r.ub * 0.25, PHYSICS_COLORS.velocity, 'u_b');
-      }
-      if (state.phase === 'after' || state.phase === 'done') {
-        drawArrow(state.bulletX + 30, y - 35, r.vb * 0.2, PHYSICS_COLORS.velocity, 'v_b');
-        drawArrow(state.pumpkinX, y - state.pumpkinR - 20, r.vp * 200, PHYSICS_COLORS.velocity, 'v_p');
-        drawArrow(state.pumpkinX, y + state.pumpkinR + 30, r.ppAfter * 40, PHYSICS_COLORS.momentum, 'p_p');
-      }
-
-      drawDebris(dt);
-      drawHud(r);
+    function onResize() {
+      if (!container || !camera || !renderer) return;
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
     }
 
     Object.values(sliders).forEach((slider) => {
       slider.addEventListener('input', () => {
         updateReadouts();
-        if (!state.running) resetSimulation();
+        if (!sim.running) resetSimulation();
       });
     });
 
     boostPumpkin.addEventListener('change', () => {
-      const r = calculate();
-      if (state.phase === 'after') state.pumpkinV = pumpkinAnimSpeed(r.vp);
+      if (sim.phase === 'after') sim.pumpkinV = pumpkinAnimSpeed(calculate().vp);
     });
 
     playBtn.addEventListener('click', startSimulation);
     resetBtn.addEventListener('click', resetSimulation);
+    resetCamBtn.addEventListener('click', resetCamera);
     presetBtn.addEventListener('click', () => {
       sliders.mb.value = defaults.mb;
       sliders.mp.value = defaults.mp;
@@ -672,14 +823,13 @@
       if (e.target === explainModal) closeModal.click();
     });
 
-    window.addEventListener('resize', () => {
-      // Canvas scales via CSS width; internal resolution fixed
-    });
+    window.addEventListener('resize', onResize);
 
+    initThree();
     setLanguage(currentLang);
     updateReadouts();
     resetSimulation();
-    requestAnimationFrame(step);
+    animate(0);
   </script>
 
   <script src="practice_questions.js"></script>
