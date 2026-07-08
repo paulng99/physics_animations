@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Analytics Dashboard - Physics Animations</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
   <script>
@@ -14,6 +15,7 @@
     gtag('config', 'G-RJQ61GJDVS');
   </script>
   <style>
+    body { font-family: 'Inter', sans-serif; }
     .stat-card {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       transition: transform 0.2s;
@@ -38,8 +40,7 @@
 
         <!-- Language Switcher -->
         <div class="flex bg-white rounded-lg p-1 shadow-sm border border-slate-200">
-            <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded text-xs font-bold transition hover:bg-slate-100 text-slate-600" data-lang="zh">繁</button>
-            <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded text-xs font-bold transition hover:bg-slate-100 text-slate-600" data-lang="cn">简</button>
+            <button onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-1 rounded text-xs font-bold transition hover:bg-slate-100 text-slate-600" data-lang="zh-hk">繁體</button>
             <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded text-xs font-bold transition hover:bg-slate-100 text-slate-600" data-lang="en">EN</button>
         </div>
     </div>
@@ -184,7 +185,7 @@
         "how.tip": "💡 Tip: If you cannot access, ensure your Google account has permission for this property.",
         "tracked.title": "✅ Tracked Pages"
       },
-      zh: {
+      'zh-hk': {
         "btn.back": "返回首頁",
         "analytics.title": "Analytics Dashboard",
         "analytics.subtitle": "查看您的網站統計數據",
@@ -205,32 +206,11 @@
         "how.step3": "即可查看完整的訪客數據、流量來源、使用者行為等統計資訊",
         "how.tip": "💡 提示： 如果您無法訪問，請確保您的 Google 帳號已被授予此 Analytics 屬性的查看權限。",
         "tracked.title": "✅ 已追蹤的頁面"
-      },
-      cn: {
-        "btn.back": "返回首页",
-        "analytics.title": "Analytics Dashboard",
-        "analytics.subtitle": "查看您的网站统计数据",
-        "card.ga.title": "Google Analytics",
-        "card.ga.id": "追踪 ID: G-RJQ61GJDVS",
-        "btn.openGA": "🚀 开启 Google Analytics 仪表板",
-        "btn.realtime": "📊 查看即时报告",
-        "btn.engagement": "👥 用户参与度",
-        "stat.realtime": "即时访客",
-        "stat.realtime.desc": "查看当前正在访问您网站的用户数量",
-        "stat.source": "流量来源",
-        "stat.source.desc": "了解访客从哪里来到您的网站",
-        "stat.pages": "热门页面",
-        "stat.pages.desc": "查看最受欢迎的实验和工具",
-        "how.title": "📚 如何使用",
-        "how.step1": "点击上方「开启 Google Analytics 仪表板」按钮",
-        "how.step2": "使用您的 Google 账号登入（需要有该 GA 属性的访问权限）",
-        "how.step3": "即可查看完整的访客数据、流量来源、使用者行为等统计资讯",
-        "how.tip": "💡 提示： 如果您无法访问，请确保您的 Google 账号已被授予此 Analytics 属性的查看权限。",
-        "tracked.title": "✅ 已追踪的页面"
       }
     };
 
     let currentLang = localStorage.getItem('preferred_language') || 'en';
+    if (currentLang === 'zh' || currentLang === 'cn') currentLang = 'zh-hk';
 
     function setLanguage(lang) {
       currentLang = lang;
@@ -253,7 +233,7 @@
         }
       });
       
-      document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+      document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
     }
 
     window.addEventListener('DOMContentLoaded', () => {
