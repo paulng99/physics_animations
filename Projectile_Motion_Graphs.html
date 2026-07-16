@@ -11,6 +11,7 @@
   <style>
     body { font-family: 'Inter', sans-serif; }
     mjx-container { display: inline-block !important; }
+    canvas { display: block; width: 100%; touch-action: none; }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
@@ -21,8 +22,8 @@
         <span data-i18n="back">Back to Topics</span>
       </a>
       <div class="flex gap-2">
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="updateLanguage('en')" data-lang="en">EN</button>
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+        <button class="lang-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="updateLanguage('en')" data-lang="en">EN</button>
+        <button class="lang-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
       </div>
     </div>
   </header>
@@ -34,9 +35,34 @@
     </section>
 
     <section class="mt-5 grid lg:grid-cols-3 gap-4">
-      <article class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
-        <canvas id="trajectoryCanvas" class="w-full rounded-xl bg-slate-50 border border-slate-200" width="960" height="440"></canvas>
-        <canvas id="graphCanvas" class="w-full mt-4 rounded-xl bg-slate-50 border border-slate-200" width="960" height="240"></canvas>
+      <article class="lg:col-span-2 space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <h2 class="font-semibold text-slate-900" data-i18n="trajectoryTitle">Trajectory (equal scale)</h2>
+            <div class="flex flex-wrap gap-2 text-[11px]">
+              <span class="bg-green-50 text-green-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.v">v</span>
+              <span class="bg-slate-100 text-slate-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.path">Path</span>
+            </div>
+          </div>
+          <canvas id="trajectoryCanvas" class="rounded-xl bg-slate-50 border border-slate-200 h-64 md:h-80"></canvas>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="bg-white rounded-2xl border border-slate-200 p-4">
+            <h2 class="font-semibold text-slate-900 mb-2">
+              <span class="text-green-600">x–t</span>
+              <span class="text-slate-500 text-sm font-medium" data-i18n="xtHint">horizontal displacement</span>
+            </h2>
+            <canvas id="xtCanvas" class="rounded-xl bg-slate-50 border border-slate-200 h-48"></canvas>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4">
+            <h2 class="font-semibold text-slate-900 mb-2">
+              <span class="text-purple-600">y–t</span>
+              <span class="text-slate-500 text-sm font-medium" data-i18n="ytHint">vertical displacement</span>
+            </h2>
+            <canvas id="ytCanvas" class="rounded-xl bg-slate-50 border border-slate-200 h-48"></canvas>
+          </div>
+        </div>
       </article>
 
       <aside class="space-y-4">
@@ -64,27 +90,30 @@
           <input id="gravity" type="range" min="1.6" max="15" step="0.01" value="9.81" class="w-full accent-blue-600 mb-4" />
 
           <div class="flex gap-2">
-            <button id="launchBtn" class="flex-1 px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition" data-i18n="launch">Launch</button>
-            <button id="resetBtn" class="flex-1 px-4 py-2 rounded-xl bg-slate-100 text-slate-800 font-semibold hover:bg-slate-200 transition" data-i18n="reset">Reset</button>
+            <button id="launchBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all" data-i18n="launch">Launch</button>
+            <button id="resetBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-800 font-semibold hover:bg-slate-200 transition-all" data-i18n="reset">Reset</button>
           </div>
+          <p class="mt-2 text-xs text-slate-500" data-i18n="liveHint">Path updates live with sliders. Press Launch to animate.</p>
         </div>
 
         <div class="bg-white rounded-2xl border border-slate-200 p-4">
           <h2 class="font-semibold text-slate-900 mb-3" data-i18n="readings">Calculated Readings</h2>
           <div class="grid gap-2 text-sm">
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="timeFlight">Time of flight</span><span id="timeOut" class="font-semibold text-purple-600">3.41 s</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="range">Horizontal range</span><span id="rangeOut" class="font-semibold text-green-600">65.32 m</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="maxHeight">Maximum height</span><span id="maxHeightOut" class="font-semibold text-red-600">14.95 m</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="vx">Horizontal speed vx</span><span id="vxOut" class="font-semibold text-blue-600">19.15 m/s</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="timeFlight">Time of flight</span><span id="timeOut" class="font-semibold text-purple-600">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="range">Horizontal range</span><span id="rangeOut" class="font-semibold text-slate-700">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="maxHeight">Maximum height</span><span id="maxHeightOut" class="font-semibold text-slate-700">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="vx">Horizontal velocity vx</span><span id="vxOut" class="font-semibold text-green-600">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="vy">Vertical velocity vy</span><span id="vyOut" class="font-semibold text-green-600">—</span></div>
           </div>
         </div>
 
         <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">
           <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE Formula Focus</h2>
-          <ul class="list-disc ml-5 space-y-1">
-            <li>x = (u cosθ)t</li>
-            <li>y = h + (u sinθ)t - 1/2 gt²</li>
-            <li>vᵧ = u sinθ - gt</li>
+          <ul class="list-disc ml-5 space-y-1 font-mono text-[13px]">
+            <li>x = (u cos θ) t</li>
+            <li>y = h + (u sin θ) t − ½ g t²</li>
+            <li>v<sub>y</sub> = u sin θ − g t</li>
+            <li>v<sub>x</sub> = u cos θ (constant)</li>
           </ul>
         </div>
       </aside>
@@ -92,6 +121,14 @@
   </main>
 
   <script>
+    const PHYSICS_COLORS = {
+      velocity: '#16A34A',
+      accel: '#9333EA',
+      path: '#2563EB',
+      displacement: '#475569',
+      ground: '#94A3B8'
+    };
+
     const controls = {
       speed: document.getElementById('speed'),
       angle: document.getElementById('angle'),
@@ -107,13 +144,16 @@
       timeOut: document.getElementById('timeOut'),
       rangeOut: document.getElementById('rangeOut'),
       maxHeightOut: document.getElementById('maxHeightOut'),
-      vxOut: document.getElementById('vxOut')
+      vxOut: document.getElementById('vxOut'),
+      vyOut: document.getElementById('vyOut')
     };
 
     const trajectoryCanvas = document.getElementById('trajectoryCanvas');
+    const xtCanvas = document.getElementById('xtCanvas');
+    const ytCanvas = document.getElementById('ytCanvas');
     const tCtx = trajectoryCanvas.getContext('2d');
-    const graphCanvas = document.getElementById('graphCanvas');
-    const gCtx = graphCanvas.getContext('2d');
+    const xtCtx = xtCanvas.getContext('2d');
+    const ytCtx = ytCanvas.getContext('2d');
 
     const launchBtn = document.getElementById('launchBtn');
     const resetBtn = document.getElementById('resetBtn');
@@ -121,6 +161,8 @@
     let animating = false;
     let t = 0;
     let lastTime = 0;
+    let currentLang = localStorage.getItem('preferred_language') || 'en';
+    if (currentLang === 'zh' || currentLang === 'cn') currentLang = 'zh-hk';
 
     const translations = {
       en: {
@@ -138,8 +180,15 @@
         timeFlight: 'Time of flight',
         range: 'Horizontal range',
         maxHeight: 'Maximum height',
-        vx: 'Horizontal speed vx',
-        formulaTitle: 'HKDSE Formula Focus'
+        vx: 'Horizontal velocity vx',
+        vy: 'Vertical velocity vy',
+        formulaTitle: 'HKDSE Formula Focus',
+        trajectoryTitle: 'Trajectory (equal scale)',
+        xtHint: 'horizontal displacement',
+        ytHint: 'vertical displacement',
+        liveHint: 'Path updates live with sliders. Press Launch to animate.',
+        'legend.v': 'v',
+        'legend.path': 'Path'
       },
       'zh-hk': {
         back: '返回主題頁',
@@ -157,9 +206,28 @@
         range: '水平射程',
         maxHeight: '最高高度',
         vx: '水平速度 vx',
-        formulaTitle: 'HKDSE 重點公式'
+        vy: '垂直速度 vy',
+        formulaTitle: 'HKDSE 重點公式',
+        trajectoryTitle: '軌跡（等比例尺）',
+        xtHint: '水平位移',
+        ytHint: '垂直位移',
+        liveHint: '滑桿會即時更新軌跡；按「發射」播放動畫。',
+        'legend.v': 'v',
+        'legend.path': '軌跡'
       }
     };
+
+    function resizeCanvas(canvas) {
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = canvas.getBoundingClientRect();
+      const cssW = Math.max(rect.width, 280);
+      const cssH = Math.max(rect.height, 160);
+      canvas.width = Math.round(cssW * ratio);
+      canvas.height = Math.round(cssH * ratio);
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      return { width: cssW, height: cssH, ctx };
+    }
 
     function getParameters() {
       const u = Number(controls.speed.value);
@@ -170,22 +238,35 @@
       const ux = u * Math.cos(theta);
       const uy = u * Math.sin(theta);
 
+      // Land at y = 0: 0 = h + uy t - ½ g t²
+      // t = [uy + sqrt(uy² + 2 g h)] / g
       const discriminant = uy * uy + 2 * g * h;
-      const timeFlight = (uy + Math.sqrt(discriminant)) / g;
+      const timeFlight = (uy + Math.sqrt(Math.max(discriminant, 0))) / g;
       const range = ux * timeFlight;
       const maxHeight = h + (uy * uy) / (2 * g);
+      const tApex = uy / g;
 
-      return { u, thetaDeg, theta, h, g, ux, uy, timeFlight, range, maxHeight };
+      return { u, thetaDeg, theta, h, g, ux, uy, timeFlight, range, maxHeight, tApex };
     }
 
-    function worldPositionAtTime(params, time) {
-      const x = params.ux * time;
-      const y = params.h + params.uy * time - 0.5 * params.g * time * time;
+    function worldPositionAtTime(p, time) {
+      const x = p.ux * time;
+      const y = p.h + p.uy * time - 0.5 * p.g * time * time;
       return { x, y };
+    }
+
+    function velocityAtTime(p, time) {
+      return {
+        vx: p.ux,
+        vy: p.uy - p.g * time
+      };
     }
 
     function updateOutputs() {
       const p = getParameters();
+      const activeTime = Math.min(t, p.timeFlight);
+      const vel = velocityAtTime(p, activeTime);
+
       outputs.speedValue.textContent = p.u.toFixed(1);
       outputs.angleValue.textContent = p.thetaDeg.toFixed(1);
       outputs.heightValue.textContent = p.h.toFixed(1);
@@ -193,160 +274,209 @@
       outputs.timeOut.textContent = `${p.timeFlight.toFixed(2)} s`;
       outputs.rangeOut.textContent = `${p.range.toFixed(2)} m`;
       outputs.maxHeightOut.textContent = `${p.maxHeight.toFixed(2)} m`;
-      outputs.vxOut.textContent = `${p.ux.toFixed(2)} m/s`;
-      drawScene();
+      outputs.vxOut.textContent = `${vel.vx.toFixed(2)} m/s`;
+      outputs.vyOut.textContent = `${vel.vy.toFixed(2)} m/s`;
+      drawAll();
     }
 
-    function drawTrajectoryAxes(p, scaleX, scaleY, margin, groundY) {
-      tCtx.strokeStyle = '#94a3b8';
-      tCtx.lineWidth = 1.5;
-      tCtx.beginPath();
-      tCtx.moveTo(margin, groundY);
-      tCtx.lineTo(trajectoryCanvas.width - margin, groundY);
-      tCtx.moveTo(margin, trajectoryCanvas.height - margin);
-      tCtx.lineTo(margin, margin);
-      tCtx.stroke();
-
-      tCtx.fillStyle = '#475569';
-      tCtx.font = '13px Inter';
-      tCtx.fillText('x (m)', trajectoryCanvas.width - margin - 28, groundY - 10);
-      tCtx.fillText('y (m)', margin + 8, margin + 15);
-
-      tCtx.strokeStyle = '#bfdbfe';
-      tCtx.lineWidth = 2;
-      tCtx.beginPath();
-      const sampleCount = 150;
-      for (let i = 0; i <= sampleCount; i += 1) {
-        const time = (i / sampleCount) * p.timeFlight;
-        const point = worldPositionAtTime(p, time);
-        const px = margin + point.x * scaleX;
-        const py = groundY - point.y * scaleY;
-        if (i === 0) tCtx.moveTo(px, py);
-        else tCtx.lineTo(px, py);
-      }
-      tCtx.stroke();
+    function drawArrow(ctx, x0, y0, x1, y1, color) {
+      const dx = x1 - x0;
+      const dy = y1 - y0;
+      const len = Math.hypot(dx, dy);
+      if (len < 2) return;
+      const ux = dx / len;
+      const uy = dy / len;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+      const head = 8;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x1 - ux * head - uy * 5, y1 - uy * head + ux * 5);
+      ctx.lineTo(x1 - ux * head + uy * 5, y1 - uy * head - ux * 5);
+      ctx.closePath();
+      ctx.fill();
     }
 
-    function drawGraph(p, activeTime) {
-      gCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
-      gCtx.fillStyle = '#f8fafc';
-      gCtx.fillRect(0, 0, graphCanvas.width, graphCanvas.height);
+    function drawTrajectory(p) {
+      const { width, height, ctx } = resizeCanvas(trajectoryCanvas);
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, width, height);
 
-      const margin = 45;
-      const w = graphCanvas.width - margin * 2;
-      const h = graphCanvas.height - margin * 2;
-      const maxY = Math.max(p.maxHeight, p.range * 0.3, 1);
-      const scaleX = w / Math.max(p.timeFlight, 0.5);
-      const scaleY = h / maxY;
+      const margin = { left: 48, right: 20, top: 20, bottom: 36 };
+      const plotW = width - margin.left - margin.right;
+      const plotH = height - margin.top - margin.bottom;
 
-      gCtx.strokeStyle = '#94a3b8';
-      gCtx.lineWidth = 1.5;
-      gCtx.beginPath();
-      gCtx.moveTo(margin, margin);
-      gCtx.lineTo(margin, graphCanvas.height - margin);
-      gCtx.lineTo(graphCanvas.width - margin, graphCanvas.height - margin);
-      gCtx.stroke();
+      // Equal metres-per-pixel so the parabola shape is correct.
+      const worldW = Math.max(p.range * 1.12, 8);
+      const worldH = Math.max(p.maxHeight * 1.18, p.h + 4, 6);
+      const scale = Math.min(plotW / worldW, plotH / worldH);
+      const originX = margin.left;
+      const originY = margin.top + plotH;
 
-      gCtx.font = '12px Inter';
-      gCtx.fillStyle = '#475569';
-      gCtx.fillText('t (s)', graphCanvas.width - margin - 18, graphCanvas.height - margin - 10);
-      gCtx.fillText('x, y (m)', margin + 5, margin - 12);
+      const toPx = (x, y) => ({
+        x: originX + x * scale,
+        y: originY - y * scale
+      });
 
-      gCtx.strokeStyle = '#16a34a';
-      gCtx.lineWidth = 2.5;
-      gCtx.beginPath();
-      for (let i = 0; i <= 140; i += 1) {
-        const time = (i / 140) * p.timeFlight;
-        const x = p.ux * time;
-        const px = margin + time * scaleX;
-        const py = graphCanvas.height - margin - x * scaleY;
-        if (i === 0) gCtx.moveTo(px, py);
-        else gCtx.lineTo(px, py);
+      // Ground
+      ctx.strokeStyle = PHYSICS_COLORS.ground;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      const g0 = toPx(0, 0);
+      const g1 = toPx(worldW, 0);
+      ctx.moveTo(margin.left, g0.y);
+      ctx.lineTo(margin.left + plotW, g1.y);
+      ctx.stroke();
+
+      // Axes
+      ctx.beginPath();
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(originX + plotW, originY);
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(originX, margin.top);
+      ctx.stroke();
+
+      ctx.fillStyle = PHYSICS_COLORS.displacement;
+      ctx.font = '12px Inter';
+      ctx.fillText('x (m)', width - margin.right - 36, originY - 8);
+      ctx.fillText('y (m)', originX + 6, margin.top + 12);
+
+      // Full path
+      ctx.strokeStyle = PHYSICS_COLORS.path;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      const samples = 200;
+      for (let i = 0; i <= samples; i += 1) {
+        const time = (i / samples) * p.timeFlight;
+        const pos = worldPositionAtTime(p, time);
+        const pt = toPx(pos.x, Math.max(pos.y, 0));
+        if (i === 0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
       }
-      gCtx.stroke();
+      ctx.stroke();
 
-      gCtx.strokeStyle = '#9333ea';
-      gCtx.beginPath();
-      for (let i = 0; i <= 140; i += 1) {
-        const time = (i / 140) * p.timeFlight;
-        const y = Math.max(0, p.h + p.uy * time - 0.5 * p.g * time * time);
-        const px = margin + time * scaleX;
-        const py = graphCanvas.height - margin - y * scaleY;
-        if (i === 0) gCtx.moveTo(px, py);
-        else gCtx.lineTo(px, py);
+      // Apex marker
+      if (p.tApex > 0 && p.tApex < p.timeFlight) {
+        const apex = worldPositionAtTime(p, p.tApex);
+        const ap = toPx(apex.x, apex.y);
+        ctx.fillStyle = PHYSICS_COLORS.displacement;
+        ctx.beginPath();
+        ctx.arc(ap.x, ap.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
       }
-      gCtx.stroke();
 
-      gCtx.fillStyle = '#16a34a';
-      gCtx.fillText('x-t', margin + 6, margin + 14);
-      gCtx.fillStyle = '#9333ea';
-      gCtx.fillText('y-t', margin + 45, margin + 14);
+      // Projectile + real velocity vector
+      const activeTime = Math.min(t, p.timeFlight);
+      const pos = worldPositionAtTime(p, activeTime);
+      const vel = velocityAtTime(p, activeTime);
+      const pp = toPx(pos.x, Math.max(pos.y, 0));
 
-      const clampedTime = Math.min(activeTime, p.timeFlight);
-      const pointX = p.ux * clampedTime;
-      const pointY = Math.max(0, p.h + p.uy * clampedTime - 0.5 * p.g * clampedTime * clampedTime);
-      const markerX = margin + clampedTime * scaleX;
-      const markerYx = graphCanvas.height - margin - pointX * scaleY;
-      const markerYy = graphCanvas.height - margin - pointY * scaleY;
+      ctx.fillStyle = PHYSICS_COLORS.path;
+      ctx.beginPath();
+      ctx.arc(pp.x, pp.y, 7, 0, Math.PI * 2);
+      ctx.fill();
 
-      gCtx.beginPath();
-      gCtx.fillStyle = '#16a34a';
-      gCtx.arc(markerX, markerYx, 4, 0, Math.PI * 2);
-      gCtx.fill();
-      gCtx.beginPath();
-      gCtx.fillStyle = '#9333ea';
-      gCtx.arc(markerX, markerYy, 4, 0, Math.PI * 2);
-      gCtx.fill();
+      // Arrow length ~ proportional to speed (pixels)
+      const vScale = 2.2;
+      drawArrow(ctx, pp.x, pp.y, pp.x + vel.vx * vScale, pp.y - vel.vy * vScale, PHYSICS_COLORS.velocity);
+
+      // Launch height guide
+      if (p.h > 0.05) {
+        const launch = toPx(0, p.h);
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.beginPath();
+        ctx.moveTo(originX, launch.y);
+        ctx.lineTo(launch.x + 8, launch.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
     }
 
-    function drawScene() {
-      const p = getParameters();
-      const margin = 45;
-      const groundY = trajectoryCanvas.height - margin;
-      const availableW = trajectoryCanvas.width - margin * 2;
-      const availableH = trajectoryCanvas.height - margin * 2;
-      const maxX = Math.max(p.range * 1.08, 10);
-      const maxY = Math.max(p.maxHeight * 1.15, p.h + 5);
-      const scaleX = availableW / maxX;
-      const scaleY = availableH / maxY;
+    function drawTimeGraph(canvas, ctxApi, p, series, color, yMax, yLabel) {
+      const { width, height, ctx } = resizeCanvas(canvas);
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, width, height);
 
-      tCtx.clearRect(0, 0, trajectoryCanvas.width, trajectoryCanvas.height);
-      tCtx.fillStyle = '#f8fafc';
-      tCtx.fillRect(0, 0, trajectoryCanvas.width, trajectoryCanvas.height);
-      drawTrajectoryAxes(p, scaleX, scaleY, margin, groundY);
+      const margin = { left: 44, right: 14, top: 16, bottom: 32 };
+      const plotW = width - margin.left - margin.right;
+      const plotH = height - margin.top - margin.bottom;
+      const tMax = Math.max(p.timeFlight, 0.5);
+      const yTop = Math.max(yMax * 1.1, 1);
+
+      const tx = (time) => margin.left + (time / tMax) * plotW;
+      const ty = (val) => margin.top + plotH - (val / yTop) * plotH;
+
+      // Axes
+      ctx.strokeStyle = PHYSICS_COLORS.ground;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(margin.left, margin.top);
+      ctx.lineTo(margin.left, margin.top + plotH);
+      ctx.lineTo(margin.left + plotW, margin.top + plotH);
+      ctx.stroke();
+
+      ctx.fillStyle = PHYSICS_COLORS.displacement;
+      ctx.font = '11px Inter';
+      ctx.fillText('t (s)', width - margin.right - 24, height - 10);
+      ctx.fillText(yLabel, margin.left + 4, margin.top + 10);
+      ctx.fillText('0', margin.left - 12, margin.top + plotH + 4);
+      ctx.fillText(yTop.toFixed(0), margin.left - 36, margin.top + 10);
+      ctx.fillText(tMax.toFixed(1), margin.left + plotW - 18, margin.top + plotH + 14);
+
+      // Zero line for y-t if needed
+      if (series === 'y') {
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.beginPath();
+        ctx.moveTo(margin.left, ty(0));
+        ctx.lineTo(margin.left + plotW, ty(0));
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      const n = 160;
+      for (let i = 0; i <= n; i += 1) {
+        const time = (i / n) * p.timeFlight;
+        const val = series === 'x'
+          ? p.ux * time
+          : Math.max(0, p.h + p.uy * time - 0.5 * p.g * time * time);
+        const x = tx(time);
+        const y = ty(val);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
 
       const activeTime = Math.min(t, p.timeFlight);
-      const point = worldPositionAtTime(p, activeTime);
-      const px = margin + point.x * scaleX;
-      const py = groundY - Math.max(0, point.y) * scaleY;
+      const markerVal = series === 'x'
+        ? p.ux * activeTime
+        : Math.max(0, p.h + p.uy * activeTime - 0.5 * p.g * activeTime * activeTime);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(tx(activeTime), ty(markerVal), 4.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
-      tCtx.beginPath();
-      tCtx.fillStyle = '#2563eb';
-      tCtx.arc(px, py, 8, 0, Math.PI * 2);
-      tCtx.fill();
-
-      tCtx.strokeStyle = '#16a34a';
-      tCtx.lineWidth = 2;
-      tCtx.beginPath();
-      tCtx.moveTo(px, py);
-      tCtx.lineTo(px + 45, py);
-      tCtx.stroke();
-
-      tCtx.beginPath();
-      tCtx.fillStyle = '#16a34a';
-      tCtx.moveTo(px + 45, py);
-      tCtx.lineTo(px + 36, py - 5);
-      tCtx.lineTo(px + 36, py + 5);
-      tCtx.closePath();
-      tCtx.fill();
-
-      drawGraph(p, activeTime);
+    function drawAll() {
+      const p = getParameters();
+      drawTrajectory(p);
+      drawTimeGraph(xtCanvas, xtCtx, p, 'x', PHYSICS_COLORS.velocity, p.range, 'x (m)');
+      drawTimeGraph(ytCanvas, ytCtx, p, 'y', PHYSICS_COLORS.accel, p.maxHeight, 'y (m)');
     }
 
     function animateFrame(ts) {
       if (!animating) return;
       if (!lastTime) lastTime = ts;
-      const delta = (ts - lastTime) / 1000;
+      const delta = Math.min((ts - lastTime) / 1000, 0.05);
       lastTime = ts;
       t += delta;
       const p = getParameters();
@@ -354,7 +484,7 @@
         t = p.timeFlight;
         animating = false;
       }
-      drawScene();
+      updateOutputs();
       if (animating) requestAnimationFrame(animateFrame);
     }
 
@@ -368,23 +498,30 @@
     resetBtn.addEventListener('click', () => {
       animating = false;
       t = 0;
-      drawScene();
+      lastTime = 0;
+      controls.speed.value = 25;
+      controls.angle.value = 40;
+      controls.height.value = 2;
+      controls.gravity.value = 9.81;
+      updateOutputs();
     });
 
     Object.values(controls).forEach((input) => {
       input.addEventListener('input', () => {
         animating = false;
         t = 0;
+        lastTime = 0;
         updateOutputs();
       });
     });
 
     function updateLanguage(lang) {
+      currentLang = lang;
       localStorage.setItem('preferred_language', lang);
       document.querySelectorAll('[data-i18n]').forEach((el) => {
         const key = el.getAttribute('data-i18n');
         const text = translations[lang] && translations[lang][key];
-        if (text) el.innerText = text;
+        if (text) el.textContent = text;
       });
       document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
       document.querySelectorAll('.lang-btn').forEach((btn) => {
@@ -395,13 +532,17 @@
       });
     }
 
+    window.addEventListener('resize', () => {
+      drawAll();
+    });
+
+    updateLanguage(currentLang);
     updateOutputs();
-    updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
   </script>
 
-    <!-- Practice Questions Widget -->
-    <script src="practice_questions.js"></script>
-    <script src="practice_questions_data.js"></script>
-    <script>initPracticeQuestions('projectile_motion');</script>
+  <!-- Practice Questions Widget -->
+  <script src="practice_questions.js"></script>
+  <script src="practice_questions_data.js"></script>
+  <script>initPracticeQuestions('projectile_motion');</script>
 </body>
 </html>
