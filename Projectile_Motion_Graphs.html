@@ -40,7 +40,8 @@
           <div class="flex items-center justify-between gap-2 mb-2">
             <h2 class="font-semibold text-slate-900" data-i18n="trajectoryTitle">Trajectory (equal scale)</h2>
             <div class="flex flex-wrap gap-2 text-[11px]">
-              <span class="bg-green-50 text-green-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.v">v</span>
+              <span class="bg-green-50 text-green-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.vx">vx</span>
+              <span class="bg-emerald-50 text-emerald-800 px-2 py-1 rounded-full font-semibold" data-i18n="legend.vy">vy</span>
               <span class="bg-slate-100 text-slate-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.path">Path</span>
             </div>
           </div>
@@ -123,6 +124,7 @@
   <script>
     const PHYSICS_COLORS = {
       velocity: '#16A34A',
+      velocityY: '#059669',
       accel: '#9333EA',
       path: '#2563EB',
       displacement: '#475569',
@@ -187,7 +189,8 @@
         xtHint: 'horizontal displacement',
         ytHint: 'vertical displacement',
         liveHint: 'Path updates live with sliders. Press Launch to animate.',
-        'legend.v': 'v',
+        'legend.vx': 'vx',
+        'legend.vy': 'vy',
         'legend.path': 'Path'
       },
       'zh-hk': {
@@ -212,7 +215,8 @@
         xtHint: '水平位移',
         ytHint: '垂直位移',
         liveHint: '滑桿會即時更新軌跡；按「發射」播放動畫。',
-        'legend.v': 'v',
+        'legend.vx': 'vx',
+        'legend.vy': 'vy',
         'legend.path': '軌跡'
       }
     };
@@ -279,11 +283,11 @@
       drawAll();
     }
 
-    function drawArrow(ctx, x0, y0, x1, y1, color) {
+    function drawArrow(ctx, x0, y0, x1, y1, color, label) {
       const dx = x1 - x0;
       const dy = y1 - y0;
       const len = Math.hypot(dx, dy);
-      if (len < 2) return;
+      if (len < 4) return;
       const ux = dx / len;
       const uy = dy / len;
       ctx.strokeStyle = color;
@@ -300,6 +304,11 @@
       ctx.lineTo(x1 - ux * head + uy * 5, y1 - uy * head - ux * 5);
       ctx.closePath();
       ctx.fill();
+      if (label) {
+        ctx.font = 'bold 12px Inter';
+        ctx.fillStyle = color;
+        ctx.fillText(label, x1 + ux * 8 + 2, y1 + uy * 8 + 4);
+      }
     }
 
     function drawTrajectory(p) {
@@ -377,14 +386,28 @@
       const vel = velocityAtTime(p, activeTime);
       const pp = toPx(pos.x, Math.max(pos.y, 0));
 
+      // Component velocity arrows at the ball (vx horizontal, vy vertical).
+      const vScale = 2.4;
+      const vxLen = vel.vx * vScale;
+      const vyLen = vel.vy * vScale; // canvas y is up when we subtract
+      drawArrow(ctx, pp.x, pp.y, pp.x + vxLen, pp.y, PHYSICS_COLORS.velocity, 'vx');
+      drawArrow(ctx, pp.x, pp.y, pp.x, pp.y - vyLen, PHYSICS_COLORS.velocityY, 'vy');
+
+      // Light dashed resultant for composition (optional teaching cue).
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = 'rgba(22, 163, 74, 0.45)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(pp.x + vxLen, pp.y);
+      ctx.lineTo(pp.x + vxLen, pp.y - vyLen);
+      ctx.lineTo(pp.x, pp.y - vyLen);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
       ctx.fillStyle = PHYSICS_COLORS.path;
       ctx.beginPath();
       ctx.arc(pp.x, pp.y, 7, 0, Math.PI * 2);
       ctx.fill();
-
-      // Arrow length ~ proportional to speed (pixels)
-      const vScale = 2.2;
-      drawArrow(ctx, pp.x, pp.y, pp.x + vel.vx * vScale, pp.y - vel.vy * vScale, PHYSICS_COLORS.velocity);
 
       // Launch height guide
       if (p.h > 0.05) {
