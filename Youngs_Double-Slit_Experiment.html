@@ -610,15 +610,27 @@
             bench.receiveShadow = true;
             scene.add(bench);
 
-            sourceMesh = new THREE.Mesh(
-                new THREE.SphereGeometry(0.16, 24, 24),
+            // Horizontal laser (cylinder along +X), not a glowing sphere.
+            sourceMesh = new THREE.Group();
+            const laserBody = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.11, 0.13, 0.7, 20),
+                new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.55, roughness: 0.35 })
+            );
+            laserBody.rotation.z = Math.PI / 2; // lie horizontal along X
+            const laserTip = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.075, 0.075, 0.14, 16),
                 new THREE.MeshStandardMaterial({
                     color: PHYSICS_COLORS.force,
                     emissive: PHYSICS_COLORS.force,
                     emissiveIntensity: 0.9
                 })
             );
-            sourceMesh.position.set(-4, 0, 0);
+            laserTip.rotation.z = Math.PI / 2;
+            laserTip.position.x = 0.38;
+            laserTip.name = 'laserTip';
+            sourceMesh.add(laserBody);
+            sourceMesh.add(laserTip);
+            sourceMesh.position.set(-4.25, 0, 0);
             scene.add(sourceMesh);
 
             // Barrier built from three plates with two horizontal slit gaps between them.
@@ -715,10 +727,13 @@
 
             screenMesh.position.x = screenX;
 
-            sourceMesh.material.color.setHex(colorObj.hex);
-            sourceMesh.material.emissive.setHex(colorObj.hex);
+            const laserTip = sourceMesh.getObjectByName('laserTip');
+            if (laserTip) {
+                laserTip.material.color.setHex(colorObj.hex);
+                laserTip.material.emissive.setHex(colorObj.hex);
+            }
 
-            const source = new THREE.Vector3(-4, 0, 0);
+            const source = new THREE.Vector3(-3.85, 0, 0);
             const topSlit = new THREE.Vector3(0, halfSlit, 0);
             const bottomSlit = new THREE.Vector3(0, -halfSlit, 0);
             const screenTop = new THREE.Vector3(screenX, fringeSpread, 0);
@@ -741,9 +756,10 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            if (sourceMesh) {
+            const laserTip = sourceMesh && sourceMesh.getObjectByName('laserTip');
+            if (laserTip) {
                 const pulse = 0.8 + (Math.sin(Date.now() * 0.004) * 0.16);
-                sourceMesh.material.emissiveIntensity = pulse;
+                laserTip.material.emissiveIntensity = pulse;
             }
             if (renderer && scene && camera) {
                 renderer.render(scene, camera);
