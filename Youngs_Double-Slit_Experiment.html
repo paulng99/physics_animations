@@ -322,11 +322,11 @@
         let camera;
         let renderer;
         let sourceMesh;
-        let slitTopMesh;
-        let slitBottomMesh;
-        let barrierTopMesh;
+        let slitLeftMesh;
+        let slitRightMesh;
+        let barrierLeftMesh;
         let barrierMidMesh;
-        let barrierBottomMesh;
+        let barrierRightMesh;
         let screenMesh;
         let centerRay;
         let topRay;
@@ -446,25 +446,25 @@
             screenPatternCtx.fillStyle = '#020617';
             screenPatternCtx.fillRect(0, 0, w, h);
 
-            // Horizontal slits → horizontal fringes (vary along screen height / local Y).
+            // Vertical slits (side-by-side) → vertical fringes across the screen width.
             const screenRange_m = 0.02;
-            const pixelsPerMeter = (h / 2) / screenRange_m;
+            const pixelsPerMeter = (w / 2) / screenRange_m;
 
-            for (let j = 0; j < h; j += 1) {
-                const y_m = ((h / 2) - j) / pixelsPerMeter;
+            for (let i = 0; i < w; i += 1) {
+                const y_m = (i - (w / 2)) / pixelsPerMeter;
                 const phase = (Math.PI * a_m * y_m) / (lambda_m * D_m);
                 const intensity = Math.pow(Math.cos(phase), 2);
                 const alpha = 0.05 + intensity * 0.95;
                 screenPatternCtx.fillStyle = toRgba(colorObj, alpha);
-                screenPatternCtx.fillRect(0, j, w, 1);
+                screenPatternCtx.fillRect(i, 0, 1, h);
             }
 
             // Mark central bright fringe for orientation.
             screenPatternCtx.strokeStyle = 'rgba(255,255,255,0.35)';
             screenPatternCtx.lineWidth = 2;
             screenPatternCtx.beginPath();
-            screenPatternCtx.moveTo(0, h / 2);
-            screenPatternCtx.lineTo(w, h / 2);
+            screenPatternCtx.moveTo(w / 2, 0);
+            screenPatternCtx.lineTo(w / 2, h);
             screenPatternCtx.stroke();
 
             screenPatternTexture.needsUpdate = true;
@@ -633,36 +633,35 @@
             sourceMesh.position.set(-4.25, 0, 0);
             scene.add(sourceMesh);
 
-            // Barrier built from three plates with two horizontal slit gaps between them.
+            // Barrier rotated 90° vs previous build: vertical slits side-by-side (match top-down schematic).
             const barrierMat = new THREE.MeshStandardMaterial({
                 color: 0x1e293b,
                 metalness: 0.35,
                 roughness: 0.55
             });
-            barrierTopMesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.7, 1.5), barrierMat);
-            barrierMidMesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.35, 1.5), barrierMat.clone());
-            barrierBottomMesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.7, 1.5), barrierMat.clone());
-            [barrierTopMesh, barrierMidMesh, barrierBottomMesh].forEach((mesh) => {
+            barrierLeftMesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 2.2, 0.55), barrierMat);
+            barrierMidMesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 2.2, 0.35), barrierMat.clone());
+            barrierRightMesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 2.2, 0.55), barrierMat.clone());
+            [barrierLeftMesh, barrierMidMesh, barrierRightMesh].forEach((mesh) => {
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
                 scene.add(mesh);
             });
 
-            // Horizontal slit openings (wide in Z, thin in Y).
+            // Vertical slit openings (tall in Y, thin in Z) — like the page schematic.
             const slitMat = new THREE.MeshStandardMaterial({
                 color: PHYSICS_COLORS.velocity,
                 emissive: PHYSICS_COLORS.velocity,
                 emissiveIntensity: 0.55
             });
-            slitTopMesh = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.07, 1.15), slitMat);
-            slitBottomMesh = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.07, 1.15), slitMat.clone());
-            scene.add(slitTopMesh);
-            scene.add(slitBottomMesh);
+            slitLeftMesh = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.2, 0.08), slitMat);
+            slitRightMesh = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.2, 0.08), slitMat.clone());
+            scene.add(slitLeftMesh);
+            scene.add(slitRightMesh);
 
             screenPatternCanvas = document.createElement('canvas');
-            // Taller canvas so horizontal fringe bands stay sharp on the screen.
-            screenPatternCanvas.width = 512;
-            screenPatternCanvas.height = 768;
+            screenPatternCanvas.width = 1024;
+            screenPatternCanvas.height = 512;
             screenPatternCtx = screenPatternCanvas.getContext('2d');
             screenPatternTexture = new THREE.CanvasTexture(screenPatternCanvas);
             if ('encoding' in screenPatternTexture && THREE.sRGBEncoding) {
@@ -698,32 +697,31 @@
         function updateThreeScene(colorObj, deltaYMM) {
             const slitSeparation = getWorldSlitSeparation();
             const halfSlit = slitSeparation / 2;
-            const slitGap = 0.09;
-            const barrierTopY = 1.15;
-            const barrierBottomY = -1.15;
+            const slitGap = 0.1;
+            const barrierOuterZ = 1.15;
             const screenX = getWorldScreenX();
             const fringeSpread = THREE.MathUtils.clamp(deltaYMM * 0.055, 0.08, 1.2);
 
-            // Two horizontal slits stacked vertically (separated along Y).
-            slitTopMesh.position.set(0, halfSlit, 0);
-            slitBottomMesh.position.set(0, -halfSlit, 0);
+            // Two vertical slits side-by-side (separated along Z) — 90° from the stacked layout.
+            slitLeftMesh.position.set(0, 0, halfSlit);
+            slitRightMesh.position.set(0, 0, -halfSlit);
 
-            // Resize barrier plates so the gaps stay aligned with the horizontal slits.
-            const topHeight = Math.max(0.18, barrierTopY - (halfSlit + slitGap / 2));
-            const midHeight = Math.max(0.12, (halfSlit - slitGap / 2) - (-halfSlit + slitGap / 2));
-            const bottomHeight = Math.max(0.18, (-halfSlit - slitGap / 2) - barrierBottomY);
+            // Resize barrier plates so vertical gaps stay aligned with the slits.
+            const leftDepth = Math.max(0.18, barrierOuterZ - (halfSlit + slitGap / 2));
+            const midDepth = Math.max(0.12, (halfSlit - slitGap / 2) - (-halfSlit + slitGap / 2));
+            const rightDepth = Math.max(0.18, (-halfSlit - slitGap / 2) + barrierOuterZ);
 
-            barrierTopMesh.geometry.dispose();
-            barrierTopMesh.geometry = new THREE.BoxGeometry(0.22, topHeight, 1.5);
-            barrierTopMesh.position.set(0, barrierTopY - topHeight / 2, 0);
+            barrierLeftMesh.geometry.dispose();
+            barrierLeftMesh.geometry = new THREE.BoxGeometry(0.22, 2.2, leftDepth);
+            barrierLeftMesh.position.set(0, 0, barrierOuterZ - leftDepth / 2);
 
             barrierMidMesh.geometry.dispose();
-            barrierMidMesh.geometry = new THREE.BoxGeometry(0.22, midHeight, 1.5);
+            barrierMidMesh.geometry = new THREE.BoxGeometry(0.22, 2.2, midDepth);
             barrierMidMesh.position.set(0, 0, 0);
 
-            barrierBottomMesh.geometry.dispose();
-            barrierBottomMesh.geometry = new THREE.BoxGeometry(0.22, bottomHeight, 1.5);
-            barrierBottomMesh.position.set(0, barrierBottomY + bottomHeight / 2, 0);
+            barrierRightMesh.geometry.dispose();
+            barrierRightMesh.geometry = new THREE.BoxGeometry(0.22, 2.2, rightDepth);
+            barrierRightMesh.position.set(0, 0, -barrierOuterZ + rightDepth / 2);
 
             screenMesh.position.x = screenX;
 
@@ -734,14 +732,14 @@
             }
 
             const source = new THREE.Vector3(-3.85, 0, 0);
-            const topSlit = new THREE.Vector3(0, halfSlit, 0);
-            const bottomSlit = new THREE.Vector3(0, -halfSlit, 0);
-            const screenTop = new THREE.Vector3(screenX, fringeSpread, 0);
-            const screenBottom = new THREE.Vector3(screenX, -fringeSpread, 0);
+            const leftSlit = new THREE.Vector3(0, 0, halfSlit);
+            const rightSlit = new THREE.Vector3(0, 0, -halfSlit);
+            const screenLeft = new THREE.Vector3(screenX, 0, fringeSpread);
+            const screenRight = new THREE.Vector3(screenX, 0, -fringeSpread);
             const screenCenter = new THREE.Vector3(screenX, 0, 0);
 
-            updateRay(topRay, [source, topSlit, screenTop]);
-            updateRay(bottomRay, [source, bottomSlit, screenBottom]);
+            updateRay(topRay, [source, leftSlit, screenLeft]);
+            updateRay(bottomRay, [source, rightSlit, screenRight]);
             updateRay(centerRay, [source, new THREE.Vector3(0, 0, 0), screenCenter]);
         }
 
