@@ -283,6 +283,17 @@
       drawAll();
     }
 
+    function niceStep(span, targetTicks) {
+      const raw = span / targetTicks;
+      const pow = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1e-6))));
+      const norm = raw / pow;
+      let stepNorm = 1;
+      if (norm > 5) stepNorm = 10;
+      else if (norm > 2) stepNorm = 5;
+      else if (norm > 1) stepNorm = 2;
+      return stepNorm * pow;
+    }
+
     function drawArrow(ctx, x0, y0, x1, y1, color, label) {
       const dx = x1 - x0;
       const dy = y1 - y0;
@@ -333,17 +344,52 @@
         y: originY - y * scale
       });
 
-      // Ground
+      // Visible world extents actually drawn (equal scale may leave unused plot area).
+      const drawnW = plotW / scale;
+      const drawnH = plotH / scale;
+
+      // Light grid + numbered ticks (same metres on both axes).
+      const step = niceStep(Math.max(drawnW, drawnH), 6);
+      ctx.font = '11px Inter';
+      ctx.fillStyle = PHYSICS_COLORS.displacement;
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+
+      for (let x = 0; x <= drawnW + 1e-6; x += step) {
+        const pt = toPx(x, 0);
+        ctx.beginPath();
+        ctx.moveTo(pt.x, originY);
+        ctx.lineTo(pt.x, margin.top);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.strokeStyle = PHYSICS_COLORS.ground;
+        ctx.moveTo(pt.x, originY - 4);
+        ctx.lineTo(pt.x, originY + 4);
+        ctx.stroke();
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(Math.round(x * 10) / 10), pt.x, originY + 16);
+      }
+
+      for (let y = 0; y <= drawnH + 1e-6; y += step) {
+        const pt = toPx(0, y);
+        ctx.beginPath();
+        ctx.moveTo(originX, pt.y);
+        ctx.lineTo(originX + plotW, pt.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.strokeStyle = PHYSICS_COLORS.ground;
+        ctx.moveTo(originX - 4, pt.y);
+        ctx.lineTo(originX + 4, pt.y);
+        ctx.stroke();
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.textAlign = 'right';
+        ctx.fillText(String(Math.round(y * 10) / 10), originX - 8, pt.y + 4);
+      }
+
+      // Axes on top of grid
       ctx.strokeStyle = PHYSICS_COLORS.ground;
       ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      const g0 = toPx(0, 0);
-      const g1 = toPx(worldW, 0);
-      ctx.moveTo(margin.left, g0.y);
-      ctx.lineTo(margin.left + plotW, g1.y);
-      ctx.stroke();
-
-      // Axes
       ctx.beginPath();
       ctx.moveTo(originX, originY);
       ctx.lineTo(originX + plotW, originY);
@@ -351,10 +397,36 @@
       ctx.lineTo(originX, margin.top);
       ctx.stroke();
 
+      ctx.textAlign = 'left';
       ctx.fillStyle = PHYSICS_COLORS.displacement;
       ctx.font = '12px Inter';
       ctx.fillText('x (m)', width - margin.right - 36, originY - 8);
       ctx.fillText('y (m)', originX + 6, margin.top + 12);
+
+      // Scale bar: one step in metres (equal on both axes).
+      const barMetres = step;
+      const barPx = barMetres * scale;
+      const barX = originX + plotW - barPx - 8;
+      const barY = margin.top + 18;
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillRect(barX - 8, barY - 14, barPx + 40, 28);
+      ctx.strokeStyle = '#0f172a';
+      ctx.fillStyle = '#0f172a';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(barX, barY);
+      ctx.lineTo(barX + barPx, barY);
+      ctx.moveTo(barX, barY - 5);
+      ctx.lineTo(barX, barY + 5);
+      ctx.moveTo(barX + barPx, barY - 5);
+      ctx.lineTo(barX + barPx, barY + 5);
+      ctx.stroke();
+      ctx.font = 'bold 11px Inter';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${barMetres} m`, barX + barPx + 6, barY + 4);
+      ctx.font = '10px Inter';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('scale', barX, barY - 8);
 
       // Full path
       ctx.strokeStyle = PHYSICS_COLORS.path;
