@@ -314,7 +314,8 @@
         };
 
         // Camera state (spherical controls)
-        const defaultCamera = { radius: 9.5, theta: 0.85, phi: 1.18 };
+        // Slight top-side view so horizontal light sheets read clearly.
+        const defaultCamera = { radius: 9.8, theta: 0.72, phi: 1.05 };
         const cameraState = { ...defaultCamera };
 
         // Three.js objects
@@ -328,9 +329,9 @@
         let barrierMidMesh;
         let barrierBottomMesh;
         let screenMesh;
-        let centerRay;
-        let topRay;
-        let bottomRay;
+        let incidentLightSheet;
+        let topLightSheet;
+        let bottomLightSheet;
         let screenPatternCanvas;
         let screenPatternCtx;
         let screenPatternTexture;
@@ -425,18 +426,29 @@
             setCameraFromState();
         }
 
-        function buildRay(colorHex) {
-            const geometry = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(0, 0, 0),
-                new THREE.Vector3(0, 0, 0),
-                new THREE.Vector3(0, 0, 0)
-            ]);
-            const material = new THREE.LineBasicMaterial({ color: colorHex, transparent: true, opacity: 0.9 });
-            return new THREE.Line(geometry, material);
+        // Flat horizontal light ribbon lying in the XZ plane (wide left–right, thin up–down).
+        function buildLightSheet(colorHex, opacity) {
+            const geometry = new THREE.PlaneGeometry(1, 1);
+            const material = new THREE.MeshBasicMaterial({
+                color: colorHex,
+                transparent: true,
+                opacity: opacity,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            const sheet = new THREE.Mesh(geometry, material);
+            sheet.rotation.x = -Math.PI / 2; // horizontal
+            return sheet;
         }
 
-        function updateRay(line, points) {
-            line.geometry.setFromPoints(points);
+        function updateLightSheet(sheet, fromX, toX, y, widthZ) {
+            const length = Math.max(toX - fromX, 0.01);
+            sheet.geometry.dispose();
+            sheet.geometry = new THREE.PlaneGeometry(length, widthZ);
+            sheet.position.set((fromX + toX) / 2, y, 0);
+            sheet.rotation.x = -Math.PI / 2;
+            sheet.rotation.y = 0;
+            sheet.rotation.z = 0;
         }
 
         function drawInterferenceTexture(lambda_m, a_m, D_m, colorObj) {
@@ -610,15 +622,26 @@
             bench.receiveShadow = true;
             scene.add(bench);
 
-            sourceMesh = new THREE.Mesh(
-                new THREE.SphereGeometry(0.16, 24, 24),
+            // Laser body aimed along +X (horizontal beam).
+            sourceMesh = new THREE.Group();
+            const laserBody = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.1, 0.12, 0.55, 20),
+                new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.55, roughness: 0.35 })
+            );
+            laserBody.rotation.z = Math.PI / 2;
+            laserBody.position.set(-4.15, 0, 0);
+            const laserTip = new THREE.Mesh(
+                new THREE.SphereGeometry(0.12, 20, 20),
                 new THREE.MeshStandardMaterial({
                     color: PHYSICS_COLORS.force,
                     emissive: PHYSICS_COLORS.force,
                     emissiveIntensity: 0.9
                 })
             );
-            sourceMesh.position.set(-4, 0, 0);
+            laserTip.position.set(-3.85, 0, 0);
+            laserTip.name = 'laserTip';
+            sourceMesh.add(laserBody);
+            sourceMesh.add(laserTip);
             scene.add(sourceMesh);
 
             // Barrier built from three plates with two horizontal slit gaps between them.
@@ -672,12 +695,13 @@
             screenMesh.position.set(getWorldScreenX(), 0, 0);
             scene.add(screenMesh);
 
-            centerRay = buildRay(PHYSICS_COLORS.force);
-            topRay = buildRay(PHYSICS_COLORS.force);
-            bottomRay = buildRay(PHYSICS_COLORS.force);
-            scene.add(centerRay);
-            scene.add(topRay);
-            scene.add(bottomRay);
+            // Horizontal light sheets (ribbons) through each slit — not vertical line rays.
+            incidentLightSheet = buildLightSheet(PHYSICS_COLORS.force, 0.28);
+            topLightSheet = buildLightSheet(PHYSICS_COLORS.force, 0.42);
+            bottomLightSheet = buildLightSheet(PHYSICS_COLORS.force, 0.42);
+            scene.add(incidentLightSheet);
+            scene.add(topLightSheet);
+            scene.add(bottomLightSheet);
 
             attachCameraControls();
             resetCameraView();
@@ -690,7 +714,9 @@
             const barrierTopY = 1.15;
             const barrierBottomY = -1.15;
             const screenX = getWorldScreenX();
-            const fringeSpread = THREE.MathUtils.clamp(deltaYMM * 0.055, 0.08, 1.2);
+            const sheetWidthZ = 1.05;
+            const sourceX = -3.85;
+            const barrierX = -0.12;
 
             // Two horizontal slits stacked vertically (separated along Y).
             slitTopMesh.position.set(0, halfSlit, 0);
@@ -715,19 +741,22 @@
 
             screenMesh.position.x = screenX;
 
-            sourceMesh.material.color.setHex(colorObj.hex);
-            sourceMesh.material.emissive.setHex(colorObj.hex);
+            const laserTip = sourceMesh.getObjectByName('laserTip');
+            if (laserTip) {
+                laserTip.material.color.setHex(colorObj.hex);
+                laserTip.material.emissive.setHex(colorObj.hex);
+            }
 
-            const source = new THREE.Vector3(-4, 0, 0);
-            const topSlit = new THREE.Vector3(0, halfSlit, 0);
-            const bottomSlit = new THREE.Vector3(0, -halfSlit, 0);
-            const screenTop = new THREE.Vector3(screenX, fringeSpread, 0);
-            const screenBottom = new THREE.Vector3(screenX, -fringeSpread, 0);
-            const screenCenter = new THREE.Vector3(screenX, 0, 0);
+            // Incident beam: one horizontal sheet that reaches both slits.
+            updateLightSheet(incidentLightSheet, sourceX, barrierX, 0, sheetWidthZ);
+            // Post-slit beams: stay horizontal at each slit height out to the screen.
+            updateLightSheet(topLightSheet, 0.12, screenX, halfSlit, sheetWidthZ);
+            updateLightSheet(bottomLightSheet, 0.12, screenX, -halfSlit, sheetWidthZ);
 
-            updateRay(topRay, [source, topSlit, screenTop]);
-            updateRay(bottomRay, [source, bottomSlit, screenBottom]);
-            updateRay(centerRay, [source, new THREE.Vector3(0, 0, 0), screenCenter]);
+            [incidentLightSheet, topLightSheet, bottomLightSheet].forEach((sheet) => {
+                sheet.material.color.setHex(colorObj.hex);
+            });
+
         }
 
         function resizeThreeRenderer() {
@@ -741,9 +770,10 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            if (sourceMesh) {
+            const laserTip = sourceMesh && sourceMesh.getObjectByName('laserTip');
+            if (laserTip) {
                 const pulse = 0.8 + (Math.sin(Date.now() * 0.004) * 0.16);
-                sourceMesh.material.emissiveIntensity = pulse;
+                laserTip.material.emissiveIntensity = pulse;
             }
             if (renderer && scene && camera) {
                 renderer.render(scene, camera);
