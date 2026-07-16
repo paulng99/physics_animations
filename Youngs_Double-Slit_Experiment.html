@@ -195,6 +195,35 @@
                     </div>
                 </div>
 
+                <!-- Challenge: increase Δy -->
+                <div id="challenge-card" class="bg-white p-6 rounded-xl border-2 border-blue-200 shadow-sm space-y-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wider text-blue-600" data-i18n="challenge.badge">Challenge</p>
+                            <h3 class="font-semibold text-slate-800 mt-1" data-i18n="challenge.title">Make $\Delta y &gt; 3.00\,\mathrm{mm}$</h3>
+                            <p class="text-sm text-slate-600 mt-1" data-i18n="challenge.desc">Use only the sliders. Reach the target fringe separation.</p>
+                        </div>
+                        <span id="challenge-status" class="shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600" data-i18n="challenge.statusIdle">Not started</span>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-slate-600" data-i18n="challenge.current">Current $\Delta y$</span>
+                            <span id="challenge-dy" class="font-mono font-bold text-slate-800">2.28 mm</span>
+                        </div>
+                        <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                            <div id="challenge-bar" class="h-full rounded-full bg-blue-600 transition-all duration-200" style="width: 0%"></div>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="challenge.target">Target: 3.00 mm</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="challenge-start-btn" class="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all" data-i18n="challenge.start">Start Challenge</button>
+                        <button id="challenge-hint-btn" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-all" data-i18n="challenge.hint">Show Hint</button>
+                        <button id="challenge-reset-btn" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-all" data-i18n="challenge.reset">Reset Params</button>
+                    </div>
+                    <div id="challenge-hint-box" class="hidden text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-lg p-3 leading-relaxed"></div>
+                    <div id="challenge-success" class="hidden text-sm text-green-800 bg-green-50 border border-green-200 rounded-lg p-3 leading-relaxed"></div>
+                </div>
+
             </div>
 
             <!-- Right Column: Screen & Graph -->
@@ -228,10 +257,39 @@
                     </button>
                 </div>
 
-                <!-- Intensity Graph -->
-                <div class="bg-white p-4 rounded-xl border border-slate-200 h-64 relative">
-                    <h3 class="text-sm font-bold text-slate-500 absolute top-4 left-4" data-i18n="graph.title">Intensity Profile</h3>
-                    <canvas id="graph-canvas" class="w-full h-full"></canvas>
+                <!-- Intensity Graph + Probe -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 relative">
+                    <h3 class="text-sm font-bold text-slate-500 mb-2" data-i18n="graph.title">Intensity Profile</h3>
+                    <p class="text-xs text-slate-500 mb-2" data-i18n="probe.hint">Drag the purple marker to probe a point on the screen.</p>
+                    <div class="relative h-56">
+                        <canvas id="graph-canvas" class="w-full h-full cursor-ew-resize touch-none"></canvas>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                        <div class="rounded-lg bg-slate-50 border border-slate-100 p-3">
+                            <p class="text-xs text-slate-500" data-i18n="probe.y">Position $y$</p>
+                            <p id="probe-y" class="font-mono font-bold text-purple-600">0.00 mm</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-50 border border-slate-100 p-3">
+                            <p class="text-xs text-slate-500" data-i18n="probe.path">Path difference $\Delta L$</p>
+                            <p id="probe-path" class="font-mono font-bold text-slate-800">0.00 nm</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-50 border border-slate-100 p-3">
+                            <p class="text-xs text-slate-500" data-i18n="probe.phase">Phase difference</p>
+                            <p id="probe-phase" class="font-mono font-bold text-slate-800">0.00 π</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-50 border border-slate-100 p-3">
+                            <p class="text-xs text-slate-500" data-i18n="probe.intensity">Intensity $I/I_0$</p>
+                            <p id="probe-intensity" class="font-mono font-bold text-slate-800">1.00</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-50 border border-slate-100 p-3">
+                            <p class="text-xs text-slate-500" data-i18n="probe.order">Nearest order $n$</p>
+                            <p id="probe-order" class="font-mono font-bold text-slate-800">0</p>
+                        </div>
+                        <div class="rounded-lg bg-slate-50 border border-slate-100 p-3">
+                            <p class="text-xs text-slate-500" data-i18n="probe.type">Fringe type</p>
+                            <p id="probe-type" class="font-bold text-green-600">Bright</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Physics Formula Card -->
@@ -284,12 +342,26 @@
         const presetWideBtn = document.getElementById('preset-wide-btn');
         const presetDenseBtn = document.getElementById('preset-dense-btn');
         const threeContainer = document.getElementById('three-container');
+        const challengeStartBtn = document.getElementById('challenge-start-btn');
+        const challengeHintBtn = document.getElementById('challenge-hint-btn');
+        const challengeResetBtn = document.getElementById('challenge-reset-btn');
+        const challengeStatusEl = document.getElementById('challenge-status');
+        const challengeDyEl = document.getElementById('challenge-dy');
+        const challengeBarEl = document.getElementById('challenge-bar');
+        const challengeHintBox = document.getElementById('challenge-hint-box');
+        const challengeSuccessEl = document.getElementById('challenge-success');
 
         const lambdaVal = document.getElementById('lambda-val');
         const aVal = document.getElementById('a-val');
         const DVal = document.getElementById('D-val');
         const deltaYVal = document.getElementById('delta-y-val');
         const graphCanvas = document.getElementById('graph-canvas');
+        const probeYEl = document.getElementById('probe-y');
+        const probePathEl = document.getElementById('probe-path');
+        const probePhaseEl = document.getElementById('probe-phase');
+        const probeIntensityEl = document.getElementById('probe-intensity');
+        const probeOrderEl = document.getElementById('probe-order');
+        const probeTypeEl = document.getElementById('probe-type');
 
         const incidentRay = document.getElementById('incident-ray');
         const sourceDot = document.getElementById('source-dot');
@@ -306,12 +378,25 @@
             displacement: 0x475569
         };
 
+        // Screen half-width used for graph / texture / probe (metres).
+        const SCREEN_RANGE_M = 0.02;
+        const CHALLENGE_TARGET_MM = 3.0;
+
         // State
         const state = {
             lambda: 650, // nm
             a: 0.40,     // mm
-            D: 1.40      // m
+            D: 1.40,     // m
+            probeY_m: 0.002 // probe position from centre (m)
         };
+
+        const challenge = {
+            active: false,
+            solved: false,
+            hintShown: false
+        };
+        let isProbeDragging = false;
+        let probeMesh = null;
 
         // Camera state (spherical controls)
         const defaultCamera = { radius: 9.5, theta: 0.85, phi: 1.18 };
@@ -400,6 +485,144 @@
             return deltaY_m * 1e3;
         }
 
+        function getProbePhysics() {
+            const lambda_m = state.lambda * 1e-9;
+            const a_m = state.a * 1e-3;
+            const D_m = state.D;
+            const y_m = state.probeY_m;
+            // Small-angle path difference: ΔL ≈ a y / D
+            const path_m = (a_m * y_m) / D_m;
+            const phaseRad = (2 * Math.PI * path_m) / lambda_m;
+            const intensity = Math.pow(Math.cos((Math.PI * a_m * y_m) / (lambda_m * D_m)), 2);
+            const orderExact = path_m / lambda_m;
+            const nearestOrder = Math.round(orderExact);
+            const frac = Math.abs(orderExact - nearestOrder);
+            const isBright = frac < 0.25 || intensity > 0.5;
+            return {
+                y_m,
+                path_m,
+                phaseRad,
+                intensity,
+                nearestOrder,
+                isBright
+            };
+        }
+
+        function probeWorldZ() {
+            // Map probe y onto the 3D screen's horizontal axis (world Z).
+            return (state.probeY_m / SCREEN_RANGE_M) * 1.6;
+        }
+
+        function updateProbeReadouts() {
+            const p = getProbePhysics();
+            const t = translations[currentLang] || translations.en;
+            probeYEl.textContent = `${(p.y_m * 1e3).toFixed(2)} mm`;
+            probePathEl.textContent = `${(p.path_m * 1e9).toFixed(1)} nm`;
+            probePhaseEl.textContent = `${(p.phaseRad / Math.PI).toFixed(2)} π`;
+            probeIntensityEl.textContent = p.intensity.toFixed(2);
+            probeOrderEl.textContent = `${p.nearestOrder}`;
+            probeTypeEl.textContent = p.isBright ? t['probe.bright'] : t['probe.dark'];
+            probeTypeEl.className = `font-bold ${p.isBright ? 'text-green-600' : 'text-slate-700'}`;
+
+            if (probeMesh) {
+                probeMesh.position.set(getWorldScreenX() + 0.02, 0, probeWorldZ());
+                probeMesh.material.color.setHex(p.isBright ? 0x16a34a : 0x9333ea);
+                probeMesh.material.emissive.setHex(p.isBright ? 0x16a34a : 0x9333ea);
+            }
+        }
+
+        function setProbeFromCanvasEvent(event) {
+            const rect = graphCanvas.getBoundingClientRect();
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+            const x = clientX - rect.left;
+            const frac = Math.min(Math.max(x / rect.width, 0), 1);
+            state.probeY_m = (frac - 0.5) * 2 * SCREEN_RANGE_M;
+            updateSimulation();
+        }
+
+        function attachProbeControls() {
+            graphCanvas.addEventListener('mousedown', (event) => {
+                isProbeDragging = true;
+                setProbeFromCanvasEvent(event);
+            });
+            window.addEventListener('mousemove', (event) => {
+                if (!isProbeDragging) return;
+                setProbeFromCanvasEvent(event);
+            });
+            window.addEventListener('mouseup', () => {
+                isProbeDragging = false;
+            });
+            graphCanvas.addEventListener('touchstart', (event) => {
+                isProbeDragging = true;
+                setProbeFromCanvasEvent(event);
+            }, { passive: true });
+            graphCanvas.addEventListener('touchmove', (event) => {
+                if (!isProbeDragging) return;
+                event.preventDefault();
+                setProbeFromCanvasEvent(event);
+            }, { passive: false });
+            graphCanvas.addEventListener('touchend', () => {
+                isProbeDragging = false;
+            }, { passive: true });
+        }
+
+        function updateChallengeUI() {
+            const dy = getDeltaYMM();
+            const t = translations[currentLang] || translations.en;
+            challengeDyEl.textContent = `${dy.toFixed(2)} mm`;
+            const progress = Math.min(dy / CHALLENGE_TARGET_MM, 1) * 100;
+            challengeBarEl.style.width = `${progress}%`;
+
+            if (challenge.solved || (challenge.active && dy > CHALLENGE_TARGET_MM)) {
+                challenge.solved = true;
+                challenge.active = true;
+                challengeStatusEl.textContent = t['challenge.statusSolved'];
+                challengeStatusEl.className = 'shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg bg-green-100 text-green-700';
+                challengeBarEl.className = 'h-full rounded-full bg-green-500 transition-all duration-200';
+                challengeSuccessEl.classList.remove('hidden');
+                challengeSuccessEl.innerHTML = t['challenge.successHtml'];
+                if (window.MathJax?.typesetPromise) MathJax.typesetPromise([challengeSuccessEl]);
+            } else if (challenge.active) {
+                challengeStatusEl.textContent = t['challenge.statusActive'];
+                challengeStatusEl.className = 'shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700';
+                challengeBarEl.className = 'h-full rounded-full bg-blue-600 transition-all duration-200';
+                challengeSuccessEl.classList.add('hidden');
+            } else {
+                challengeStatusEl.textContent = t['challenge.statusIdle'];
+                challengeStatusEl.className = 'shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600';
+                challengeBarEl.className = 'h-full rounded-full bg-blue-600 transition-all duration-200';
+                challengeSuccessEl.classList.add('hidden');
+            }
+
+            if (challenge.hintShown) {
+                challengeHintBox.classList.remove('hidden');
+                challengeHintBox.innerHTML = t['challenge.hintHtml'];
+                if (window.MathJax?.typesetPromise) MathJax.typesetPromise([challengeHintBox]);
+            }
+        }
+
+        function startChallenge() {
+            challenge.active = true;
+            challenge.solved = false;
+            challenge.hintShown = false;
+            challengeHintBox.classList.add('hidden');
+            // Start from a mid-range setup below the target (~2.28 mm).
+            lambdaSlider.value = 650;
+            aSlider.value = 0.40;
+            DSlider.value = 1.40;
+            updateSimulation();
+        }
+
+        function resetChallengeParams() {
+            lambdaSlider.value = 650;
+            aSlider.value = 0.40;
+            DSlider.value = 1.40;
+            if (challenge.solved) {
+                challenge.solved = false;
+            }
+            updateSimulation();
+        }
+
         function getWorldSlitSeparation() {
             return THREE.MathUtils.mapLinear(state.a, 0.1, 1.0, 0.45, 2.0);
         }
@@ -447,8 +670,7 @@
             screenPatternCtx.fillRect(0, 0, w, h);
 
             // Vertical slits (side-by-side) → vertical fringes across the screen width.
-            const screenRange_m = 0.02;
-            const pixelsPerMeter = (w / 2) / screenRange_m;
+            const pixelsPerMeter = (w / 2) / SCREEN_RANGE_M;
 
             for (let i = 0; i < w; i += 1) {
                 const y_m = (i - (w / 2)) / pixelsPerMeter;
@@ -466,6 +688,17 @@
             screenPatternCtx.moveTo(w / 2, 0);
             screenPatternCtx.lineTo(w / 2, h);
             screenPatternCtx.stroke();
+
+            // Probe marker on the interference texture (purple dashed).
+            const probeX = (w / 2) + (state.probeY_m / SCREEN_RANGE_M) * (w / 2);
+            screenPatternCtx.strokeStyle = 'rgba(147, 51, 234, 0.95)';
+            screenPatternCtx.lineWidth = 3;
+            screenPatternCtx.setLineDash([8, 6]);
+            screenPatternCtx.beginPath();
+            screenPatternCtx.moveTo(probeX, 0);
+            screenPatternCtx.lineTo(probeX, h);
+            screenPatternCtx.stroke();
+            screenPatternCtx.setLineDash([]);
 
             screenPatternTexture.needsUpdate = true;
         }
@@ -488,8 +721,7 @@
             ctx.lineWidth = 3;
             ctx.beginPath();
 
-            const screenRange_m = 0.02;
-            const pixelsPerMeter = (w / 2) / screenRange_m;
+            const pixelsPerMeter = (w / 2) / SCREEN_RANGE_M;
             const samples = 1000;
             for (let i = 0; i <= samples; i += 1) {
                 const px = (i / samples) * w;
@@ -506,6 +738,29 @@
             ctx.lineTo(0, h - 20);
             ctx.fillStyle = toRgba(colorObj, 0.12);
             ctx.fill();
+
+            // Draggable probe marker (purple).
+            const probePx = (w / 2) + (state.probeY_m * pixelsPerMeter);
+            const probePhase = (Math.PI * a_m * state.probeY_m) / (lambda_m * D_m);
+            const probeI = Math.pow(Math.cos(probePhase), 2);
+            const probePy = (h - 20) - (probeI * (h - 40));
+
+            ctx.strokeStyle = '#9333EA';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 8]);
+            ctx.beginPath();
+            ctx.moveTo(probePx, 8);
+            ctx.lineTo(probePx, h - 12);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#9333EA';
+            ctx.beginPath();
+            ctx.arc(probePx, probePy, 9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
         }
 
         function attachCameraControls() {
@@ -690,6 +945,17 @@
             scene.add(topRay);
             scene.add(bottomRay);
 
+            probeMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 16, 16),
+                new THREE.MeshStandardMaterial({
+                    color: PHYSICS_COLORS.accel,
+                    emissive: PHYSICS_COLORS.accel,
+                    emissiveIntensity: 0.75
+                })
+            );
+            probeMesh.position.set(getWorldScreenX() + 0.02, 0, 0);
+            scene.add(probeMesh);
+
             attachCameraControls();
             resetCameraView();
         }
@@ -793,6 +1059,8 @@
             drawInterferenceTexture(lambda_m, a_m, D_m, colorObj);
             drawGraph(lambda_m, a_m, D_m, colorObj);
             updateThreeScene(colorObj, deltaYMM);
+            updateProbeReadouts();
+            updateChallengeUI();
         }
 
         // --- Gemini AI ---
@@ -851,7 +1119,29 @@
                 'legend.screen': 'Screen',
                 'controls.resetView': 'Reset View',
                 'controls.presetWide': 'Wide Fringes',
-                'controls.presetDense': 'Dense Fringes'
+                'controls.presetDense': 'Dense Fringes',
+                'probe.hint': 'Drag the purple marker to probe a point on the screen.',
+                'probe.y': 'Position $y$',
+                'probe.path': 'Path difference $\\Delta L$',
+                'probe.phase': 'Phase difference',
+                'probe.intensity': 'Intensity $I/I_0$',
+                'probe.order': 'Nearest order $n$',
+                'probe.type': 'Fringe type',
+                'probe.bright': 'Bright',
+                'probe.dark': 'Dark',
+                'challenge.badge': 'Challenge',
+                'challenge.title': 'Make $\\Delta y > 3.00\\,\\mathrm{mm}$',
+                'challenge.desc': 'Use only the sliders. Reach the target fringe separation.',
+                'challenge.current': 'Current $\\Delta y$',
+                'challenge.target': 'Target: 3.00 mm',
+                'challenge.start': 'Start Challenge',
+                'challenge.hint': 'Show Hint',
+                'challenge.reset': 'Reset Params',
+                'challenge.statusIdle': 'Not started',
+                'challenge.statusActive': 'In progress',
+                'challenge.statusSolved': 'Solved!',
+                'challenge.hintHtml': '<p>Use $\\Delta y = \\lambda D / a$. To <b>increase</b> $\\Delta y$: raise $\\lambda$ (redder), raise $D$, or <b>lower</b> $a$.</p>',
+                'challenge.successHtml': '<p><b>Well done!</b> You made $\\Delta y &gt; 3\\,\\mathrm{mm}$.</p><p>From $\\Delta y = \\lambda D / a$: larger wavelength, larger screen distance, or smaller slit separation all widen the fringes.</p>'
             },
             'zh-hk': {
                 'nav.back': '返回首頁',
@@ -874,7 +1164,29 @@
                 'legend.screen': '屏幕',
                 'controls.resetView': '重置視角',
                 'controls.presetWide': '寬條紋',
-                'controls.presetDense': '密條紋'
+                'controls.presetDense': '密條紋',
+                'probe.hint': '拖曳紫色標記，探測屏幕上某一點。',
+                'probe.y': '位置 $y$',
+                'probe.path': '路徑差 $\\Delta L$',
+                'probe.phase': '相位差',
+                'probe.intensity': '強度 $I/I_0$',
+                'probe.order': '最接近級數 $n$',
+                'probe.type': '條紋類型',
+                'probe.bright': '亮紋',
+                'probe.dark': '暗紋',
+                'challenge.badge': '挑戰',
+                'challenge.title': '令 $\\Delta y > 3.00\\,\\mathrm{mm}$',
+                'challenge.desc': '只用滑桿調校參數，使條紋間距達標。',
+                'challenge.current': '目前 $\\Delta y$',
+                'challenge.target': '目標：3.00 mm',
+                'challenge.start': '開始挑戰',
+                'challenge.hint': '顯示提示',
+                'challenge.reset': '重設參數',
+                'challenge.statusIdle': '未開始',
+                'challenge.statusActive': '進行中',
+                'challenge.statusSolved': '完成！',
+                'challenge.hintHtml': '<p>使用 $\\Delta y = \\lambda D / a$。要<b>增大</b> $\\Delta y$：增大 $\\lambda$（偏紅）、增大 $D$，或<b>減小</b> $a$。</p>',
+                'challenge.successHtml': '<p><b>做得好！</b>你已令 $\\Delta y &gt; 3\\,\\mathrm{mm}$。</p><p>由 $\\Delta y = \\lambda D / a$：波長愈長、屏距愈大、縫距愈小，條紋都會愈寬。</p>'
             }
         };
 
@@ -894,6 +1206,8 @@
                 btn.classList.toggle('text-slate-600', !active);
             });
             document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+            updateProbeReadouts();
+            updateChallengeUI();
             if (window.MathJax) MathJax.typesetPromise();
         }
 
@@ -914,6 +1228,12 @@
             DSlider.value = 1.1;
             updateSimulation();
         });
+        challengeStartBtn.addEventListener('click', startChallenge);
+        challengeHintBtn.addEventListener('click', () => {
+            challenge.hintShown = true;
+            updateChallengeUI();
+        });
+        challengeResetBtn.addEventListener('click', resetChallengeParams);
 
         window.addEventListener('resize', () => {
             resizeThreeRenderer();
@@ -922,6 +1242,7 @@
 
         // Initialize
         initThreeScene();
+        attachProbeControls();
         updateSimulation();
         setLanguage(currentLang);
         animate();
