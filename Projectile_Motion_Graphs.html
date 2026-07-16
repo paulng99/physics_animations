@@ -3,49 +3,76 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Projectile Motion and Graphs (HKDSE)</title>
+  <title>Projectile Motion 3D + Graphs (HKDSE)</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; }
     mjx-container { display: inline-block !important; }
-    canvas { display: block; width: 100%; touch-action: none; }
+    #three-container {
+      width: 100%;
+      height: 320px;
+      min-height: 280px;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      touch-action: none;
+      cursor: grab;
+      background: #0f172a;
+    }
+    #three-container:active { cursor: grabbing; }
+    @media (min-width: 768px) {
+      #three-container { height: 420px; }
+    }
+    canvas.graph-canvas { display: block; width: 100%; touch-action: none; }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
-  <header class="max-w-6xl mx-auto px-4 py-4">
+  <header class="max-w-7xl mx-auto px-4 py-4">
     <div class="flex items-center justify-between gap-3">
-      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 min-h-[44px]">
         <span>←</span>
         <span data-i18n="back">Back to Topics</span>
       </a>
       <div class="flex gap-2">
-        <button class="lang-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="updateLanguage('en')" data-lang="en">EN</button>
-        <button class="lang-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+        <button class="lang-btn px-3 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white min-h-[44px]" onclick="updateLanguage('en')" data-lang="en">EN</button>
+        <button class="lang-btn px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100 min-h-[44px]" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 pb-10">
+  <main class="max-w-7xl mx-auto px-4 pb-10">
     <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-5 md:p-7 shadow-sm">
-      <h1 class="text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">Projectile Motion + Graph Analysis</h1>
-      <p class="mt-2 text-slate-600" data-i18n="subtitle">Connect trajectory, kinematics equations, and x-t / y-t graphs in one simulation.</p>
+      <h1 class="text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">Projectile Motion 3D + Graph Analysis</h1>
+      <p class="mt-2 text-slate-600" data-i18n="subtitle">3D solid-ball animation with vx / vy vectors, plus x–t and y–t graphs.</p>
     </section>
 
-    <section class="mt-5 grid lg:grid-cols-3 gap-4">
-      <article class="lg:col-span-2 space-y-4">
+    <section class="mt-5 grid lg:grid-cols-12 gap-4">
+      <article class="lg:col-span-8 space-y-4">
+        <!-- 3D scene -->
         <div class="bg-white rounded-2xl border border-slate-200 p-4">
           <div class="flex items-center justify-between gap-2 mb-2">
-            <h2 class="font-semibold text-slate-900" data-i18n="trajectoryTitle">Trajectory (equal scale)</h2>
+            <h2 class="font-semibold text-slate-900" data-i18n="threeTitle">3D Trajectory</h2>
             <div class="flex flex-wrap gap-2 text-[11px]">
               <span class="bg-green-50 text-green-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.vx">vx</span>
               <span class="bg-emerald-50 text-emerald-800 px-2 py-1 rounded-full font-semibold" data-i18n="legend.vy">vy</span>
-              <span class="bg-slate-100 text-slate-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.path">Path</span>
+              <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.path">Path</span>
+              <span class="bg-purple-50 text-purple-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.g">g</span>
             </div>
           </div>
-          <canvas id="trajectoryCanvas" class="rounded-xl bg-slate-50 border border-slate-200 h-64 md:h-80"></canvas>
+          <div class="relative rounded-xl border-2 border-slate-200 overflow-hidden">
+            <div id="three-container"></div>
+            <div class="absolute top-3 left-3 bg-slate-900/75 text-white text-xs font-semibold px-3 py-1 rounded-full" data-i18n="three.badge">3D Ball</div>
+            <div class="absolute bottom-3 right-3 bg-slate-900/75 text-white text-xs px-3 py-1 rounded-full pointer-events-none" data-i18n="three.hint">Drag to rotate • Scroll / pinch to zoom</div>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button id="launchBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="launch">Launch</button>
+            <button id="resetViewBtn" class="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-all min-h-[44px]" data-i18n="resetView">Reset View</button>
+            <button id="preset45Btn" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-all min-h-[44px]" data-i18n="preset45">45° Max Range</button>
+            <button id="presetHighBtn" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-all min-h-[44px]" data-i18n="presetHigh">High Lob</button>
+          </div>
         </div>
 
         <div class="grid md:grid-cols-2 gap-4">
@@ -54,19 +81,19 @@
               <span class="text-green-600">x–t</span>
               <span class="text-slate-500 text-sm font-medium" data-i18n="xtHint">horizontal displacement</span>
             </h2>
-            <canvas id="xtCanvas" class="rounded-xl bg-slate-50 border border-slate-200 h-48"></canvas>
+            <canvas id="xtCanvas" class="graph-canvas rounded-xl bg-slate-50 border border-slate-200 h-48"></canvas>
           </div>
           <div class="bg-white rounded-2xl border border-slate-200 p-4">
             <h2 class="font-semibold text-slate-900 mb-2">
               <span class="text-purple-600">y–t</span>
               <span class="text-slate-500 text-sm font-medium" data-i18n="ytHint">vertical displacement</span>
             </h2>
-            <canvas id="ytCanvas" class="rounded-xl bg-slate-50 border border-slate-200 h-48"></canvas>
+            <canvas id="ytCanvas" class="graph-canvas rounded-xl bg-slate-50 border border-slate-200 h-48"></canvas>
           </div>
         </div>
       </article>
 
-      <aside class="space-y-4">
+      <aside class="lg:col-span-4 space-y-4">
         <div class="bg-white rounded-2xl border border-slate-200 p-4">
           <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
 
@@ -90,11 +117,8 @@
           </label>
           <input id="gravity" type="range" min="1.6" max="15" step="0.01" value="9.81" class="w-full accent-blue-600 mb-4" />
 
-          <div class="flex gap-2">
-            <button id="launchBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all" data-i18n="launch">Launch</button>
-            <button id="resetBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-800 font-semibold hover:bg-slate-200 transition-all" data-i18n="reset">Reset</button>
-          </div>
-          <p class="mt-2 text-xs text-slate-500" data-i18n="liveHint">Path updates live with sliders. Press Launch to animate.</p>
+          <button id="resetBtn" class="w-full px-4 py-2.5 rounded-xl bg-slate-100 text-slate-800 font-semibold hover:bg-slate-200 transition-all min-h-[44px]" data-i18n="reset">Reset Params</button>
+          <p class="mt-2 text-xs text-slate-500" data-i18n="liveHint">Path updates live with sliders. Press Launch to animate the 3D ball.</p>
         </div>
 
         <div class="bg-white rounded-2xl border border-slate-200 p-4">
@@ -123,12 +147,14 @@
 
   <script>
     const PHYSICS_COLORS = {
-      velocity: '#16A34A',
-      velocityY: '#059669',
-      accel: '#9333EA',
-      path: '#2563EB',
-      displacement: '#475569',
-      ground: '#94A3B8'
+      force: 0xdc2626,
+      velocity: 0x16a34a,
+      velocityY: 0x059669,
+      accel: 0x9333ea,
+      path: 0x3b82f6,
+      displacement: 0x475569,
+      ball: 0xf97316,
+      ground: 0x334155
     };
 
     const controls = {
@@ -150,34 +176,45 @@
       vyOut: document.getElementById('vyOut')
     };
 
-    const trajectoryCanvas = document.getElementById('trajectoryCanvas');
+    const container = document.getElementById('three-container');
     const xtCanvas = document.getElementById('xtCanvas');
     const ytCanvas = document.getElementById('ytCanvas');
-    const tCtx = trajectoryCanvas.getContext('2d');
     const xtCtx = xtCanvas.getContext('2d');
     const ytCtx = ytCanvas.getContext('2d');
 
-    const launchBtn = document.getElementById('launchBtn');
-    const resetBtn = document.getElementById('resetBtn');
+    let scene, camera, renderer;
+    let ballMesh, trailLine, pathLine;
+    let vxArrow, vyArrow, gArrow;
+    let groundMesh, launcherMesh;
+    let trailPositions = [];
+
+    const defaultCamera = { radius: 55, theta: 0.85, phi: 1.15 };
+    const cameraState = { ...defaultCamera };
+    let isDragging = false;
+    let lastPointer = { x: 0, y: 0 };
+    let pinchDistance = null;
 
     let animating = false;
     let t = 0;
-    let lastTime = 0;
+    let lastFrame = 0;
     let currentLang = localStorage.getItem('preferred_language') || 'en';
     if (currentLang === 'zh' || currentLang === 'cn') currentLang = 'zh-hk';
 
     const translations = {
       en: {
         back: 'Back to Topics',
-        title: 'Projectile Motion + Graph Analysis',
-        subtitle: 'Connect trajectory, kinematics equations, and x-t / y-t graphs in one simulation.',
+        title: 'Projectile Motion 3D + Graph Analysis',
+        subtitle: '3D solid-ball animation with vx / vy vectors, plus x–t and y–t graphs.',
         controls: 'Controls',
         speed: 'Initial speed (u, m/s)',
         angle: 'Launch angle (°)',
         height: 'Launch height (m)',
         gravity: 'Gravity (m/s²)',
         launch: 'Launch',
-        reset: 'Reset',
+        reset: 'Reset Params',
+        resetView: 'Reset View',
+        preset45: '45° Max Range',
+        presetHigh: 'High Lob',
         readings: 'Calculated Readings',
         timeFlight: 'Time of flight',
         range: 'Horizontal range',
@@ -185,25 +222,31 @@
         vx: 'Horizontal velocity vx',
         vy: 'Vertical velocity vy',
         formulaTitle: 'HKDSE Formula Focus',
-        trajectoryTitle: 'Trajectory (equal scale)',
+        threeTitle: '3D Trajectory',
+        'three.badge': '3D Ball',
+        'three.hint': 'Drag to rotate • Scroll / pinch to zoom',
         xtHint: 'horizontal displacement',
         ytHint: 'vertical displacement',
-        liveHint: 'Path updates live with sliders. Press Launch to animate.',
+        liveHint: 'Path updates live with sliders. Press Launch to animate the 3D ball.',
         'legend.vx': 'vx',
         'legend.vy': 'vy',
-        'legend.path': 'Path'
+        'legend.path': 'Path',
+        'legend.g': 'g'
       },
       'zh-hk': {
         back: '返回主題頁',
-        title: '拋體運動與圖像分析',
-        subtitle: '把拋物線軌跡、運動方程及 x-t / y-t 圖像結合於同一模擬。',
+        title: '拋體運動 3D + 圖像分析',
+        subtitle: '立體實心球動畫，顯示 vx / vy 向量，並附 x–t、y–t 圖像。',
         controls: '控制面板',
         speed: '初速度 (u, m/s)',
         angle: '發射角度 (°)',
         height: '發射高度 (m)',
         gravity: '重力加速度 (m/s²)',
         launch: '發射',
-        reset: '重設',
+        reset: '重設參數',
+        resetView: '重置視角',
+        preset45: '45° 最大射程',
+        presetHigh: '高拋',
         readings: '計算讀數',
         timeFlight: '飛行時間',
         range: '水平射程',
@@ -211,27 +254,18 @@
         vx: '水平速度 vx',
         vy: '垂直速度 vy',
         formulaTitle: 'HKDSE 重點公式',
-        trajectoryTitle: '軌跡（等比例尺）',
+        threeTitle: '3D 軌跡',
+        'three.badge': '3D 實心球',
+        'three.hint': '拖曳旋轉 • 滾輪／雙指縮放',
         xtHint: '水平位移',
         ytHint: '垂直位移',
-        liveHint: '滑桿會即時更新軌跡；按「發射」播放動畫。',
+        liveHint: '滑桿會即時更新軌跡；按「發射」播放 3D 球體動畫。',
         'legend.vx': 'vx',
         'legend.vy': 'vy',
-        'legend.path': '軌跡'
+        'legend.path': '軌跡',
+        'legend.g': 'g'
       }
     };
-
-    function resizeCanvas(canvas) {
-      const ratio = Math.min(window.devicePixelRatio || 1, 2);
-      const rect = canvas.getBoundingClientRect();
-      const cssW = Math.max(rect.width, 280);
-      const cssH = Math.max(rect.height, 160);
-      canvas.width = Math.round(cssW * ratio);
-      canvas.height = Math.round(cssH * ratio);
-      const ctx = canvas.getContext('2d');
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      return { width: cssW, height: cssH, ctx };
-    }
 
     function getParameters() {
       const u = Number(controls.speed.value);
@@ -241,286 +275,301 @@
       const g = Number(controls.gravity.value);
       const ux = u * Math.cos(theta);
       const uy = u * Math.sin(theta);
-
-      // Land at y = 0: 0 = h + uy t - ½ g t²
-      // t = [uy + sqrt(uy² + 2 g h)] / g
       const discriminant = uy * uy + 2 * g * h;
       const timeFlight = (uy + Math.sqrt(Math.max(discriminant, 0))) / g;
       const range = ux * timeFlight;
       const maxHeight = h + (uy * uy) / (2 * g);
       const tApex = uy / g;
-
       return { u, thetaDeg, theta, h, g, ux, uy, timeFlight, range, maxHeight, tApex };
     }
 
     function worldPositionAtTime(p, time) {
-      const x = p.ux * time;
-      const y = p.h + p.uy * time - 0.5 * p.g * time * time;
-      return { x, y };
-    }
-
-    function velocityAtTime(p, time) {
       return {
-        vx: p.ux,
-        vy: p.uy - p.g * time
+        x: p.ux * time,
+        y: p.h + p.uy * time - 0.5 * p.g * time * time
       };
     }
 
-    function updateOutputs() {
-      const p = getParameters();
-      const activeTime = Math.min(t, p.timeFlight);
-      const vel = velocityAtTime(p, activeTime);
-
-      outputs.speedValue.textContent = p.u.toFixed(1);
-      outputs.angleValue.textContent = p.thetaDeg.toFixed(1);
-      outputs.heightValue.textContent = p.h.toFixed(1);
-      outputs.gravityValue.textContent = p.g.toFixed(2);
-      outputs.timeOut.textContent = `${p.timeFlight.toFixed(2)} s`;
-      outputs.rangeOut.textContent = `${p.range.toFixed(2)} m`;
-      outputs.maxHeightOut.textContent = `${p.maxHeight.toFixed(2)} m`;
-      outputs.vxOut.textContent = `${vel.vx.toFixed(2)} m/s`;
-      outputs.vyOut.textContent = `${vel.vy.toFixed(2)} m/s`;
-      drawAll();
+    function velocityAtTime(p, time) {
+      return { vx: p.ux, vy: p.uy - p.g * time };
     }
 
-    function niceStep(span, targetTicks) {
-      const raw = span / targetTicks;
-      const pow = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1e-6))));
-      const norm = raw / pow;
-      let stepNorm = 1;
-      if (norm > 5) stepNorm = 10;
-      else if (norm > 2) stepNorm = 5;
-      else if (norm > 1) stepNorm = 2;
-      return stepNorm * pow;
+    function setCameraFromState() {
+      const lookX = Math.max(getParameters().range * 0.35, 8);
+      const sinPhi = Math.sin(cameraState.phi);
+      camera.position.set(
+        lookX + cameraState.radius * sinPhi * Math.cos(cameraState.theta),
+        cameraState.radius * Math.cos(cameraState.phi) + 6,
+        cameraState.radius * sinPhi * Math.sin(cameraState.theta)
+      );
+      camera.lookAt(lookX, Math.max(getParameters().maxHeight * 0.35, 4), 0);
     }
 
-    function drawArrow(ctx, x0, y0, x1, y1, color, label) {
-      const dx = x1 - x0;
-      const dy = y1 - y0;
-      const len = Math.hypot(dx, dy);
-      if (len < 4) return;
-      const ux = dx / len;
-      const uy = dy / len;
-      ctx.strokeStyle = color;
-      ctx.fillStyle = color;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(x1, y1);
-      ctx.stroke();
-      const head = 8;
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x1 - ux * head - uy * 5, y1 - uy * head + ux * 5);
-      ctx.lineTo(x1 - ux * head + uy * 5, y1 - uy * head - ux * 5);
-      ctx.closePath();
-      ctx.fill();
-      if (label) {
-        ctx.font = 'bold 12px Inter';
-        ctx.fillStyle = color;
-        ctx.fillText(label, x1 + ux * 8 + 2, y1 + uy * 8 + 4);
-      }
+    function resetCameraView() {
+      Object.assign(cameraState, defaultCamera);
+      setCameraFromState();
     }
 
-    function drawTrajectory(p) {
-      const { width, height, ctx } = resizeCanvas(trajectoryCanvas);
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(0, 0, width, height);
+    function makeArrow(hex) {
+      const dir = new THREE.Vector3(1, 0, 0);
+      const origin = new THREE.Vector3(0, 0, 0);
+      const arrow = new THREE.ArrowHelper(dir, origin, 1, hex, 0.8, 0.45);
+      return arrow;
+    }
 
-      const margin = { left: 56, right: 28, top: 28, bottom: 48 };
-      const plotW = width - margin.left - margin.right;
-      const plotH = height - margin.top - margin.bottom;
+    function updateArrow(arrow, origin, dir, length) {
+      const len = Math.max(length, 0.01);
+      arrow.position.copy(origin);
+      arrow.setDirection(dir.clone().normalize());
+      arrow.setLength(len, Math.min(0.9, len * 0.28), Math.min(0.55, len * 0.16));
+      arrow.visible = length > 0.15;
+    }
 
-      // Equal metres-per-pixel so the parabola shape is correct.
-      const worldW = Math.max(p.range * 1.12, 8);
-      const worldH = Math.max(p.maxHeight * 1.18, p.h + 4, 6);
-      const scale = Math.min(plotW / worldW, plotH / worldH);
-      const originX = margin.left;
-      const originY = margin.top + plotH;
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0f172a);
+      scene.fog = new THREE.Fog(0x0f172a, 80, 180);
 
-      const toPx = (x, y) => ({
-        x: originX + x * scale,
-        y: originY - y * scale
+      const w = Math.max(container.clientWidth, 320);
+      const h = Math.max(container.clientHeight, 280);
+      camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 500);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(w, h);
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+      const key = new THREE.DirectionalLight(0xffffff, 0.95);
+      key.position.set(30, 50, 25);
+      key.castShadow = true;
+      scene.add(key);
+      const fill = new THREE.DirectionalLight(0x93c5fd, 0.35);
+      fill.position.set(-20, 20, -15);
+      scene.add(fill);
+
+      groundMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(200, 80),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.92, metalness: 0.05 })
+      );
+      groundMesh.rotation.x = -Math.PI / 2;
+      groundMesh.position.set(40, 0, 0);
+      groundMesh.receiveShadow = true;
+      scene.add(groundMesh);
+
+      const grid = new THREE.GridHelper(120, 24, 0x475569, 0x334155);
+      grid.position.set(40, 0.02, 0);
+      scene.add(grid);
+
+      // Launch platform
+      launcherMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(3, 0.4, 3),
+        new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.3, roughness: 0.6 })
+      );
+      launcherMesh.castShadow = true;
+      scene.add(launcherMesh);
+
+      // Solid ball
+      ballMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.85, 32, 24),
+        new THREE.MeshStandardMaterial({
+          color: PHYSICS_COLORS.ball,
+          roughness: 0.35,
+          metalness: 0.25,
+          emissive: 0x7c2d12,
+          emissiveIntensity: 0.15
+        })
+      );
+      ballMesh.castShadow = true;
+      scene.add(ballMesh);
+
+      // Full predicted path
+      const pathGeo = new THREE.BufferGeometry();
+      pathGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(201 * 3), 3));
+      pathLine = new THREE.Line(
+        pathGeo,
+        new THREE.LineBasicMaterial({ color: PHYSICS_COLORS.path, transparent: true, opacity: 0.85 })
+      );
+      scene.add(pathLine);
+
+      // Animated trail behind the ball
+      const trailGeo = new THREE.BufferGeometry();
+      trailGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(120 * 3), 3));
+      trailLine = new THREE.Line(
+        trailGeo,
+        new THREE.LineBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.9 })
+      );
+      scene.add(trailLine);
+
+      vxArrow = makeArrow(PHYSICS_COLORS.velocity);
+      vyArrow = makeArrow(PHYSICS_COLORS.velocityY);
+      gArrow = makeArrow(PHYSICS_COLORS.accel);
+      scene.add(vxArrow);
+      scene.add(vyArrow);
+      scene.add(gArrow);
+
+      attachCameraControls();
+      resetCameraView();
+    }
+
+    function attachCameraControls() {
+      const dom = renderer.domElement;
+
+      dom.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        lastPointer.x = e.clientX;
+        lastPointer.y = e.clientY;
+      });
+      window.addEventListener('mouseup', () => { isDragging = false; });
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        cameraState.theta -= (e.clientX - lastPointer.x) * 0.0055;
+        cameraState.phi = THREE.MathUtils.clamp(
+          cameraState.phi + (e.clientY - lastPointer.y) * 0.0055,
+          0.2,
+          Math.PI - 0.2
+        );
+        lastPointer.x = e.clientX;
+        lastPointer.y = e.clientY;
+        setCameraFromState();
       });
 
-      // Visible world extents actually drawn (equal scale may leave unused plot area).
-      const drawnW = plotW / scale;
-      const drawnH = plotH / scale;
+      dom.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        cameraState.radius = THREE.MathUtils.clamp(cameraState.radius + e.deltaY * 0.04, 20, 120);
+        setCameraFromState();
+      }, { passive: false });
 
-      // Same metre step on both axes; denser ticks so numbers are easy to read.
-      const step = niceStep(Math.max(drawnW, drawnH), 8);
-      const formatTick = (v) => (Math.abs(v - Math.round(v)) < 1e-6 ? String(Math.round(v)) : v.toFixed(1));
+      dom.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          isDragging = true;
+          lastPointer.x = e.touches[0].clientX;
+          lastPointer.y = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+          isDragging = false;
+          pinchDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+        }
+      }, { passive: true });
 
-      // Light grid
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.lineWidth = 1;
-      const nX = Math.floor(drawnW / step + 1e-9);
-      const nY = Math.floor(drawnH / step + 1e-9);
-      for (let i = 0; i <= nX; i += 1) {
-        const pt = toPx(i * step, 0);
-        ctx.beginPath();
-        ctx.moveTo(pt.x, originY);
-        ctx.lineTo(pt.x, margin.top);
-        ctx.stroke();
-      }
-      for (let j = 0; j <= nY; j += 1) {
-        const pt = toPx(0, j * step);
-        ctx.beginPath();
-        ctx.moveTo(originX, pt.y);
-        ctx.lineTo(originX + plotW, pt.y);
-        ctx.stroke();
-      }
+      dom.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1 && isDragging) {
+          e.preventDefault();
+          cameraState.theta -= (e.touches[0].clientX - lastPointer.x) * 0.0055;
+          cameraState.phi = THREE.MathUtils.clamp(
+            cameraState.phi + (e.touches[0].clientY - lastPointer.y) * 0.0055,
+            0.2,
+            Math.PI - 0.2
+          );
+          lastPointer.x = e.touches[0].clientX;
+          lastPointer.y = e.touches[0].clientY;
+          setCameraFromState();
+        } else if (e.touches.length === 2) {
+          e.preventDefault();
+          const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          if (pinchDistance !== null) {
+            cameraState.radius = THREE.MathUtils.clamp(
+              cameraState.radius - (dist - pinchDistance) * 0.05,
+              20,
+              120
+            );
+            setCameraFromState();
+          }
+          pinchDistance = dist;
+        }
+      }, { passive: false });
 
-      // Axes
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(originX, originY);
-      ctx.lineTo(originX + plotW, originY);
-      ctx.moveTo(originX, originY);
-      ctx.lineTo(originX, margin.top);
-      ctx.stroke();
+      dom.addEventListener('touchend', () => {
+        isDragging = false;
+        pinchDistance = null;
+      }, { passive: true });
+    }
 
-      // X-axis numbers (below axis)
-      ctx.fillStyle = '#0f172a';
-      ctx.font = 'bold 12px Inter';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      for (let i = 0; i <= nX; i += 1) {
-        const xVal = i * step;
-        const pt = toPx(xVal, 0);
-        ctx.beginPath();
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 1.5;
-        ctx.moveTo(pt.x, originY);
-        ctx.lineTo(pt.x, originY + 6);
-        ctx.stroke();
-        ctx.fillStyle = '#0f172a';
-        ctx.fillText(formatTick(xVal), pt.x, originY + 9);
-      }
-      ctx.font = '12px Inter';
-      ctx.fillStyle = '#475569';
-      ctx.textAlign = 'right';
-      ctx.fillText('x (m)', originX + plotW, originY + 28);
-
-      // Y-axis numbers (left of axis)
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      ctx.font = 'bold 12px Inter';
-      for (let j = 0; j <= nY; j += 1) {
-        const yVal = j * step;
-        const pt = toPx(0, yVal);
-        ctx.beginPath();
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 1.5;
-        ctx.moveTo(originX - 6, pt.y);
-        ctx.lineTo(originX, pt.y);
-        ctx.stroke();
-        ctx.fillStyle = '#0f172a';
-        ctx.fillText(formatTick(yVal), originX - 10, pt.y);
-      }
-      ctx.save();
-      ctx.translate(14, margin.top + plotH / 2);
-      ctx.rotate(-Math.PI / 2);
-      ctx.font = '12px Inter';
-      ctx.fillStyle = '#475569';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('y (m)', 0, 0);
-      ctx.restore();
-      ctx.textBaseline = 'alphabetic';
-
-      // Scale bar: one step in metres (equal on both axes).
-      const barMetres = step;
-      const barPx = barMetres * scale;
-      const barX = originX + plotW - barPx - 8;
-      const barY = margin.top + 18;
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.fillRect(barX - 8, barY - 14, barPx + 44, 30);
-      ctx.strokeStyle = '#0f172a';
-      ctx.fillStyle = '#0f172a';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(barX, barY);
-      ctx.lineTo(barX + barPx, barY);
-      ctx.moveTo(barX, barY - 5);
-      ctx.lineTo(barX, barY + 5);
-      ctx.moveTo(barX + barPx, barY - 5);
-      ctx.lineTo(barX + barPx, barY + 5);
-      ctx.stroke();
-      ctx.font = 'bold 11px Inter';
-      ctx.textAlign = 'left';
-      ctx.fillText(`${formatTick(barMetres)} m`, barX + barPx + 6, barY + 4);
-
-      // Full path
-      ctx.strokeStyle = PHYSICS_COLORS.path;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      const samples = 200;
-      for (let i = 0; i <= samples; i += 1) {
-        const time = (i / samples) * p.timeFlight;
+    function rebuildPath(p) {
+      const arr = pathLine.geometry.attributes.position.array;
+      const n = 200;
+      for (let i = 0; i <= n; i += 1) {
+        const time = (i / n) * p.timeFlight;
         const pos = worldPositionAtTime(p, time);
-        const pt = toPx(pos.x, Math.max(pos.y, 0));
-        if (i === 0) ctx.moveTo(pt.x, pt.y);
-        else ctx.lineTo(pt.x, pt.y);
+        arr[i * 3] = pos.x;
+        arr[i * 3 + 1] = Math.max(pos.y, 0);
+        arr[i * 3 + 2] = 0;
       }
-      ctx.stroke();
+      pathLine.geometry.attributes.position.needsUpdate = true;
+      pathLine.geometry.setDrawRange(0, n + 1);
+    }
 
-      // Apex marker
-      if (p.tApex > 0 && p.tApex < p.timeFlight) {
-        const apex = worldPositionAtTime(p, p.tApex);
-        const ap = toPx(apex.x, apex.y);
-        ctx.fillStyle = PHYSICS_COLORS.displacement;
-        ctx.beginPath();
-        ctx.arc(ap.x, ap.y, 3.5, 0, Math.PI * 2);
-        ctx.fill();
+    function updateTrail() {
+      const arr = trailLine.geometry.attributes.position.array;
+      const max = 120;
+      const count = Math.min(trailPositions.length, max);
+      for (let i = 0; i < count; i += 1) {
+        const p = trailPositions[trailPositions.length - count + i];
+        arr[i * 3] = p.x;
+        arr[i * 3 + 1] = p.y;
+        arr[i * 3 + 2] = p.z;
       }
+      trailLine.geometry.attributes.position.needsUpdate = true;
+      trailLine.geometry.setDrawRange(0, count);
+      trailLine.visible = count > 1;
+    }
 
-      // Projectile + real velocity vector
+    function updateThreeScene() {
+      const p = getParameters();
       const activeTime = Math.min(t, p.timeFlight);
       const pos = worldPositionAtTime(p, activeTime);
       const vel = velocityAtTime(p, activeTime);
-      const pp = toPx(pos.x, Math.max(pos.y, 0));
+      const y = Math.max(pos.y, 0);
 
-      // Component velocity arrows at the ball (vx horizontal, vy vertical).
-      const vScale = 2.4;
-      const vxLen = vel.vx * vScale;
-      const vyLen = vel.vy * vScale; // canvas y is up when we subtract
-      drawArrow(ctx, pp.x, pp.y, pp.x + vxLen, pp.y, PHYSICS_COLORS.velocity, 'vx');
-      drawArrow(ctx, pp.x, pp.y, pp.x, pp.y - vyLen, PHYSICS_COLORS.velocityY, 'vy');
+      launcherMesh.position.set(0, Math.max(p.h * 0.5, 0.2), 0);
+      launcherMesh.scale.set(1, Math.max(p.h / 0.4, 0.5), 1);
 
-      // Light dashed resultant for composition (optional teaching cue).
-      ctx.setLineDash([3, 3]);
-      ctx.strokeStyle = 'rgba(22, 163, 74, 0.45)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(pp.x + vxLen, pp.y);
-      ctx.lineTo(pp.x + vxLen, pp.y - vyLen);
-      ctx.lineTo(pp.x, pp.y - vyLen);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      ctx.fillStyle = PHYSICS_COLORS.path;
-      ctx.beginPath();
-      ctx.arc(pp.x, pp.y, 7, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Launch height guide
-      if (p.h > 0.05) {
-        const launch = toPx(0, p.h);
-        ctx.setLineDash([4, 4]);
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.beginPath();
-        ctx.moveTo(originX, launch.y);
-        ctx.lineTo(launch.x + 8, launch.y);
-        ctx.stroke();
-        ctx.setLineDash([]);
+      ballMesh.position.set(pos.x, y + 0.85, 0);
+      // Spin the solid ball while flying
+      if (animating || activeTime > 0) {
+        ballMesh.rotation.z -= 0.12;
+        ballMesh.rotation.x += 0.04;
       }
+
+      const origin = new THREE.Vector3(pos.x, y + 0.85, 0);
+      const vScale = 0.35;
+      updateArrow(vxArrow, origin, new THREE.Vector3(1, 0, 0), Math.abs(vel.vx) * vScale);
+      updateArrow(
+        vyArrow,
+        origin,
+        new THREE.Vector3(0, vel.vy >= 0 ? 1 : -1, 0),
+        Math.abs(vel.vy) * vScale
+      );
+      updateArrow(
+        gArrow,
+        new THREE.Vector3(pos.x, y + 0.85, 0),
+        new THREE.Vector3(0, -1, 0),
+        Math.min(p.g * 0.35, 6)
+      );
+
+      rebuildPath(p);
+      setCameraFromState();
     }
 
-    function drawTimeGraph(canvas, ctxApi, p, series, color, yMax, yLabel) {
-      const { width, height, ctx } = resizeCanvas(canvas);
+    function resizeGraphCanvas(canvas) {
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = canvas.getBoundingClientRect();
+      const cssW = Math.max(rect.width, 240);
+      const cssH = Math.max(rect.height, 140);
+      canvas.width = Math.round(cssW * ratio);
+      canvas.height = Math.round(cssH * ratio);
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      return { width: cssW, height: cssH, ctx };
+    }
+
+    function drawTimeGraph(canvas, p, series, color, yMax, yLabel) {
+      const { width, height, ctx } = resizeGraphCanvas(canvas);
       ctx.clearRect(0, 0, width, height);
       ctx.fillStyle = '#f8fafc';
       ctx.fillRect(0, 0, width, height);
@@ -530,12 +579,10 @@
       const plotH = height - margin.top - margin.bottom;
       const tMax = Math.max(p.timeFlight, 0.5);
       const yTop = Math.max(yMax * 1.1, 1);
-
       const tx = (time) => margin.left + (time / tMax) * plotW;
       const ty = (val) => margin.top + plotH - (val / yTop) * plotH;
 
-      // Axes
-      ctx.strokeStyle = PHYSICS_COLORS.ground;
+      ctx.strokeStyle = '#94a3b8';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(margin.left, margin.top);
@@ -543,29 +590,16 @@
       ctx.lineTo(margin.left + plotW, margin.top + plotH);
       ctx.stroke();
 
-      ctx.fillStyle = PHYSICS_COLORS.displacement;
+      ctx.fillStyle = '#475569';
       ctx.font = '11px Inter';
       ctx.fillText('t (s)', width - margin.right - 24, height - 10);
       ctx.fillText(yLabel, margin.left + 4, margin.top + 10);
-      ctx.fillText('0', margin.left - 12, margin.top + plotH + 4);
-      ctx.fillText(yTop.toFixed(0), margin.left - 36, margin.top + 10);
-      ctx.fillText(tMax.toFixed(1), margin.left + plotW - 18, margin.top + plotH + 14);
-
-      // Zero line for y-t if needed
-      if (series === 'y') {
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.beginPath();
-        ctx.moveTo(margin.left, ty(0));
-        ctx.lineTo(margin.left + plotW, ty(0));
-        ctx.stroke();
-      }
 
       ctx.strokeStyle = color;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      const n = 160;
-      for (let i = 0; i <= n; i += 1) {
-        const time = (i / n) * p.timeFlight;
+      for (let i = 0; i <= 160; i += 1) {
+        const time = (i / 160) * p.timeFlight;
         const val = series === 'x'
           ? p.ux * time
           : Math.max(0, p.h + p.uy * time - 0.5 * p.g * time * time);
@@ -586,39 +620,61 @@
       ctx.fill();
     }
 
-    function drawAll() {
+    function updateOutputs() {
       const p = getParameters();
-      drawTrajectory(p);
-      drawTimeGraph(xtCanvas, xtCtx, p, 'x', PHYSICS_COLORS.velocity, p.range, 'x (m)');
-      drawTimeGraph(ytCanvas, ytCtx, p, 'y', PHYSICS_COLORS.accel, p.maxHeight, 'y (m)');
+      const activeTime = Math.min(t, p.timeFlight);
+      const vel = velocityAtTime(p, activeTime);
+
+      outputs.speedValue.textContent = p.u.toFixed(1);
+      outputs.angleValue.textContent = p.thetaDeg.toFixed(1);
+      outputs.heightValue.textContent = p.h.toFixed(1);
+      outputs.gravityValue.textContent = p.g.toFixed(2);
+      outputs.timeOut.textContent = `${p.timeFlight.toFixed(2)} s`;
+      outputs.rangeOut.textContent = `${p.range.toFixed(2)} m`;
+      outputs.maxHeightOut.textContent = `${p.maxHeight.toFixed(2)} m`;
+      outputs.vxOut.textContent = `${vel.vx.toFixed(2)} m/s`;
+      outputs.vyOut.textContent = `${vel.vy.toFixed(2)} m/s`;
+
+      updateThreeScene();
+      drawTimeGraph(xtCanvas, p, 'x', '#16a34a', p.range, 'x (m)');
+      drawTimeGraph(ytCanvas, p, 'y', '#9333ea', p.maxHeight, 'y (m)');
     }
 
-    function animateFrame(ts) {
-      if (!animating) return;
-      if (!lastTime) lastTime = ts;
-      const delta = Math.min((ts - lastTime) / 1000, 0.05);
-      lastTime = ts;
-      t += delta;
-      const p = getParameters();
-      if (t >= p.timeFlight) {
-        t = p.timeFlight;
-        animating = false;
+    function animate(ts) {
+      requestAnimationFrame(animate);
+      if (animating) {
+        if (!lastFrame) lastFrame = ts;
+        const delta = Math.min((ts - lastFrame) / 1000, 0.05);
+        lastFrame = ts;
+        // Slightly sped-up for classroom pacing
+        t += delta * 1.15;
+        const p = getParameters();
+        if (t >= p.timeFlight) {
+          t = p.timeFlight;
+          animating = false;
+        }
+        const pos = worldPositionAtTime(p, t);
+        trailPositions.push({ x: pos.x, y: Math.max(pos.y, 0) + 0.85, z: 0 });
+        if (trailPositions.length > 120) trailPositions.shift();
+        updateTrail();
+        updateOutputs();
       }
-      updateOutputs();
-      if (animating) requestAnimationFrame(animateFrame);
+      if (renderer && scene && camera) renderer.render(scene, camera);
     }
 
-    launchBtn.addEventListener('click', () => {
+    document.getElementById('launchBtn').addEventListener('click', () => {
       t = 0;
-      lastTime = 0;
+      lastFrame = 0;
+      trailPositions = [];
       animating = true;
-      requestAnimationFrame(animateFrame);
+      updateOutputs();
     });
 
-    resetBtn.addEventListener('click', () => {
+    document.getElementById('resetBtn').addEventListener('click', () => {
       animating = false;
       t = 0;
-      lastTime = 0;
+      lastFrame = 0;
+      trailPositions = [];
       controls.speed.value = 25;
       controls.angle.value = 40;
       controls.height.value = 2;
@@ -626,11 +682,36 @@
       updateOutputs();
     });
 
+    document.getElementById('resetViewBtn').addEventListener('click', resetCameraView);
+
+    document.getElementById('preset45Btn').addEventListener('click', () => {
+      controls.speed.value = 30;
+      controls.angle.value = 45;
+      controls.height.value = 0;
+      controls.gravity.value = 9.81;
+      animating = false;
+      t = 0;
+      trailPositions = [];
+      updateOutputs();
+    });
+
+    document.getElementById('presetHighBtn').addEventListener('click', () => {
+      controls.speed.value = 28;
+      controls.angle.value = 70;
+      controls.height.value = 5;
+      controls.gravity.value = 9.81;
+      animating = false;
+      t = 0;
+      trailPositions = [];
+      updateOutputs();
+    });
+
     Object.values(controls).forEach((input) => {
       input.addEventListener('input', () => {
         animating = false;
         t = 0;
-        lastTime = 0;
+        lastFrame = 0;
+        trailPositions = [];
         updateOutputs();
       });
     });
@@ -652,15 +733,24 @@
       });
     }
 
-    window.addEventListener('resize', () => {
-      drawAll();
-    });
+    function onResize() {
+      if (!renderer || !camera) return;
+      const w = Math.max(container.clientWidth, 320);
+      const h = Math.max(container.clientHeight, 280);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      updateOutputs();
+    }
 
+    window.addEventListener('resize', onResize);
+
+    initThree();
     updateLanguage(currentLang);
     updateOutputs();
+    requestAnimationFrame(animate);
   </script>
 
-  <!-- Practice Questions Widget -->
   <script src="practice_questions.js"></script>
   <script src="practice_questions_data.js"></script>
   <script>initPracticeQuestions('projectile_motion');</script>
