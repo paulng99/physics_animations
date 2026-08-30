@@ -3,41 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diffraction Grating Simulation</title>
-    <!-- Load Tailwind CSS -->
+    <title>Diffraction Grating 3D Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Add MathJax configuration and script -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
         MathJax = {
           tex: {
             inlineMath: [['$', '$'], ['\\(', '\\)']],
             displayMath: [['$$', '$$'], ['\\[', '\\]']]
           },
-          svg: {
-            fontCache: 'global'
-          }
+          svg: { fontCache: 'global' }
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script"></script>
     <style>
         :root { color-scheme: light; }
-        .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); }
-        /* Use Inter font */
-        body {
-            font-family: 'Inter', sans-serif;
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); }
+        #three-container {
+            width: 100%;
+            height: 420px;
+            background: #020617;
+            cursor: grab;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            touch-action: none;
         }
-        /* Custom styles for sliders */
+        #three-container:active { cursor: grabbing; }
         input[type="range"] {
             -webkit-appearance: none;
             appearance: none;
             width: 100%;
             height: 8px;
             border-radius: 4px;
-            background: #d1d5db; /* gray-300 */
+            background: #d1d5db;
             outline: none;
-            opacity: 0.9;
-            -webkit-transition: .2s;
-            transition: opacity .2s;
         }
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -45,148 +47,67 @@
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background: #2563eb; /* blue-600 */
+            background: #2563eb;
             cursor: pointer;
             border: 2px solid white;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        
-        /* Loading spinner */
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #2563eb; /* blue-600 */
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        
-        canvas {
-            image-rendering: pixelated;
-        }
-        
-        /* Fix MathJax layout */
-        mjx-container {
-            display: inline-block !important;
-        }
+        mjx-container { display: inline-block !important; }
     </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
-    
-    <!-- Header -->
-    <header class="max-w-6xl mx-auto px-6 pt-6 pb-4">
-        <nav class="flex items-center justify-between">
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+
+    <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
                 <span class="font-medium" data-i18n="nav.back">Back to Home</span>
             </a>
-            
-            <!-- Language Switcher -->
-            <div class="flex gap-2">
-                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
-                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="cn">简</button>
-                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
+            <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                <button onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white" data-lang="zh-hk">繁</button>
+                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white bg-white shadow-sm text-blue-600" data-lang="en">EN</button>
             </div>
-        </nav>
-    </header>
+        </div>
+    </nav>
 
-    <div class="w-full max-w-5xl mx-auto px-6 pb-16">
-        <div class="glass rounded-3xl p-6 md:p-8 border border-white/60 space-y-8">
-        
-        <!-- Title -->
-        <h1 class="text-2xl md:text-3xl font-bold text-center text-slate-800" data-i18n="title">
-            Diffraction Grating
-        </h1>
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-6 w-full">
+        <header class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2" data-i18n="page.title">Diffraction Grating</h1>
+            <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="page.description">
+                Explore multi-slit interference in 3D. Adjust wavelength, grating spacing and slit count to see how spectral orders form on the screen.
+            </p>
+        </header>
 
-        <!-- Main Visualization Area -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            <!-- Left Column: Schematic & Controls -->
-            <div class="space-y-6">
-                
-                <!-- Schematic -->
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative h-64 flex flex-col items-center justify-center overflow-hidden">
-                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
-                        <!-- Background Grid -->
-                        <div class="w-full h-full" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px;"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Controls -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                    <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800" data-i18n="controls.title">Parameters</h3>
+                        <button id="reset-btn" class="text-xs text-blue-600 font-bold hover:text-blue-700 transition" data-i18n="controls.reset">Reset</button>
                     </div>
-                    
-                    <!-- Simplified Top-Down View -->
-                    <div class="flex items-center w-full max-w-sm justify-between relative z-10">
-                        <!-- Light Source -->
-                        <div class="flex flex-col items-center gap-2">
-                            <div class="w-4 h-4 rounded-full bg-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.6)]"></div>
-                            <span class="text-xs text-slate-500 font-medium">Source</span>
-                        </div>
-                        
-                        <!-- Rays -->
-                        <div class="flex-1 h-32 relative mx-4">
-                            <!-- Incident Rays -->
-                            <div class="absolute top-1/2 left-0 w-1/2 h-0.5 -translate-y-1/2" id="incident-ray" style="background-color: #ef4444;"></div>
-                            
-                            <!-- Grating Element -->
-                            <div class="absolute top-1/2 left-1/2 w-1 h-16 bg-slate-800 -translate-x-1/2 -translate-y-1/2 rounded-full flex flex-col justify-evenly">
-                                <div class="w-full h-px bg-white/50"></div>
-                                <div class="w-full h-px bg-white/50"></div>
-                                <div class="w-full h-px bg-white/50"></div>
-                            </div>
-                            
-                            <!-- Diffracted Rays (Fan out) -->
-                            <div id="diffracted-rays" class="absolute top-1/2 left-1/2 w-1/2 h-full -translate-y-1/2 pointer-events-none">
-                                <!-- Dynamic rays will be injected here via JS -->
-                            </div>
-                        </div>
-                        
-                        <!-- Screen -->
-                        <div class="w-2 h-32 bg-slate-300 rounded shadow-inner flex flex-col items-center justify-center">
-                            <!-- Screen -->
-                        </div>
-                    </div>
-                    
-                    <div class="absolute bottom-2 right-4 text-xs text-slate-400">
-                        Top-down View (Not to Scale)
-                    </div>
-                </div>
 
-                <!-- Controls -->
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-                    <h3 class="font-semibold text-slate-700 border-b pb-2" data-i18n="controls.title">Parameters</h3>
-                    
-                    <!-- Wavelength -->
                     <div>
                         <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
                             <span data-i18n="controls.wavelength">Wavelength ($\lambda$)</span>
                             <span id="lambda-val" class="text-blue-600 font-bold font-mono">650 nm</span>
                         </label>
                         <input type="range" id="lambda-slider" min="400" max="700" value="650" class="w-full">
-                        <div class="flex justify-between text-xs text-slate-400 mt-1">
-                            <span>400 nm (Violet)</span>
-                            <span>700 nm (Red)</span>
-                        </div>
                     </div>
 
-                    <!-- Slit Spacing (d) -->
                     <div>
                         <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
                             <span data-i18n="controls.spacing">Grating Spacing ($d$)</span>
                             <span id="d-val" class="text-blue-600 font-bold font-mono">2.00 μm</span>
                         </label>
                         <input type="range" id="d-slider" min="1.0" max="5.0" step="0.05" value="2.0" class="w-full">
-                        <div class="flex justify-between text-xs text-slate-400 mt-1">
-                            <span>1.0 μm (Dense)</span>
-                            <span>5.0 μm (Sparse)</span>
-                        </div>
                         <p class="text-xs text-slate-500 mt-2">
                             <span data-i18n="controls.lines">Lines per mm:</span> <span id="lines-per-mm" class="font-mono font-bold">500</span>
                         </p>
                     </div>
 
-                    <!-- Number of Slits (N) - For Intensity Profile -->
                     <div>
                         <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
                             <span data-i18n="controls.N">Number of Slits ($N$)</span>
@@ -195,34 +116,57 @@
                         <input type="range" id="N-slider" min="2" max="50" step="1" value="10" class="w-full">
                         <div class="text-xs text-slate-500 mt-1" data-i18n="controls.N_hint">Affects sharpness of maxima.</div>
                     </div>
-                </div>
 
-                <!-- Data Panel -->
-                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="font-semibold text-slate-700 border-b pb-2 mb-4" data-i18n="data.title">Results</h3>
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-slate-600" data-i18n="data.n_max">Max Order ($n_{max}$)</span>
-                        <span id="n-max-val" class="text-2xl font-bold text-slate-800 font-mono">3</span>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="preset-dense-btn" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition" data-i18n="controls.presetDense">Dense Grating</button>
+                        <button id="preset-red-btn" class="px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition" data-i18n="controls.presetRed">Red Laser</button>
+                        <button id="preset-green-btn" class="px-3 py-2 rounded-xl bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold transition" data-i18n="controls.presetGreen">Green Laser</button>
                     </div>
-                    <p class="text-xs text-slate-500 mt-2" data-i18n="data.n_max_hint">Theoretical maximum number of orders observable on one side.</p>
                 </div>
 
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide" data-i18n="data.title">Results</h3>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.n_max">Max Order ($n_{max}$)</span>
+                        <span id="n-max-val" class="text-xl font-bold text-slate-800 font-mono">3</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.theta1">1st Order $\theta_1$</span>
+                        <span id="theta1-val" class="text-xl font-bold text-green-600 font-mono">—</span>
+                    </div>
+                    <p class="text-xs text-slate-500" data-i18n="data.n_max_hint">Theoretical maximum orders on one side ($d/\lambda$).</p>
+                </div>
+
+                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3" data-i18n="formula.title">Grating Equation</h3>
+                    <div class="text-center text-xl font-serif mb-4">$$ d \sin \theta = n \lambda $$</div>
+                    <div class="grid grid-cols-2 gap-3 text-sm text-slate-300">
+                        <div><span class="text-blue-400 font-bold">$d$:</span> <span data-i18n="formula.d">Slit spacing</span></div>
+                        <div><span class="text-blue-400 font-bold">$\theta$:</span> <span data-i18n="formula.theta">Diffraction angle</span></div>
+                        <div><span class="text-blue-400 font-bold">$n$:</span> <span data-i18n="formula.n">Order (0, 1, 2...)</span></div>
+                        <div><span class="text-blue-400 font-bold">$\lambda$:</span> <span data-i18n="formula.lambda">Wavelength</span></div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Right Column: Screen & Graph -->
-            <div class="space-y-6">
-                
-                <!-- Screen Visualization -->
+            <!-- 3D + charts -->
+            <div class="lg:col-span-8 space-y-6">
+                <div class="relative">
+                    <div id="three-container"></div>
+                    <div class="absolute top-3 left-3 bg-slate-900/75 text-white text-xs font-semibold px-3 py-1 rounded-full pointer-events-none" data-i18n="three.title">3D Grating Bench</div>
+                    <div class="absolute bottom-3 right-3 bg-slate-900/75 text-white text-xs px-3 py-1 rounded-full pointer-events-none" data-i18n="three.hint">Drag to rotate • Scroll / pinch to zoom</div>
+                    <div class="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
+                        <span class="bg-white/90 text-red-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.light">Light</span>
+                        <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.grating">Grating</span>
+                        <span class="bg-white/90 text-amber-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.screen">Screen</span>
+                    </div>
+                </div>
+
                 <div class="bg-black rounded-xl p-1 shadow-lg border-4 border-slate-800">
-                    <div class="relative w-full h-32 bg-black overflow-hidden rounded-lg">
+                    <div class="relative w-full h-28 bg-black overflow-hidden rounded-lg">
                         <canvas id="screen-canvas" class="w-full h-full"></canvas>
-                        <!-- Scale Overlay -->
-                        <div class="absolute bottom-0 left-0 w-full h-6 border-t border-white/30 flex justify-between px-2 text-[10px] text-white/50 font-mono">
-                            <span>-90°</span>
-                            <span>-45°</span>
-                            <span>0°</span>
-                            <span>+45°</span>
-                            <span>+90°</span>
+                        <div class="absolute bottom-0 left-0 w-full h-5 border-t border-white/30 flex justify-between px-2 text-[10px] text-white/50 font-mono">
+                            <span>−90°</span><span>−45°</span><span>0°</span><span>+45°</span><span>+90°</span>
                         </div>
                     </div>
                     <div class="text-center text-slate-400 text-xs py-2 uppercase tracking-widest font-bold">
@@ -230,347 +174,485 @@
                     </div>
                 </div>
 
-                <!-- Intensity Graph -->
                 <div class="bg-white p-4 rounded-xl border border-slate-200 h-64 relative">
-                    <h3 class="text-sm font-bold text-slate-500 absolute top-4 left-4" data-i18n="graph.title">Intensity Profile</h3>
+                    <h3 class="text-sm font-bold text-slate-500 absolute top-4 left-4 z-10" data-i18n="graph.title">Intensity Profile</h3>
                     <canvas id="graph-canvas" class="w-full h-full"></canvas>
                 </div>
-
-                <!-- Physics Formula Card -->
-                <div class="bg-slate-900 text-white p-6 rounded-xl shadow-md">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3" data-i18n="formula.title">Grating Equation</h3>
-                    <div class="text-center text-xl font-serif mb-4">
-                        $$ d \sin \theta = n \lambda $$
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 text-sm text-slate-300">
-                        <div>
-                            <span class="text-blue-400 font-bold">$d$:</span> <span data-i18n="formula.d">Slit spacing</span>
-                        </div>
-                        <div>
-                            <span class="text-blue-400 font-bold">$\theta$:</span> <span data-i18n="formula.theta">Diffraction angle</span>
-                        </div>
-                        <div>
-                            <span class="text-blue-400 font-bold">$n$:</span> <span data-i18n="formula.n">Order (0, 1, 2...)</span>
-                        </div>
-                        <div>
-                            <span class="text-blue-400 font-bold">$\lambda$:</span> <span data-i18n="formula.lambda">Wavelength</span>
-                        </div>
-                    </div>
-                </div>
-
             </div>
         </div>
 
-        <!-- AI Explanation -->
-        <div class="mt-8 bg-blue-50 p-6 rounded-2xl border border-blue-100">
+        <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
             <div class="flex items-start gap-4">
-                <div class="p-3 bg-blue-600 rounded-xl text-white">
+                <div class="p-3 bg-blue-600 rounded-xl text-white shrink-0">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-lg font-bold text-slate-800 mb-2" data-i18n="ai.title">AI Physics Tutor</h3>
-                    <p class="text-slate-600 text-sm mb-4" data-i18n="ai.desc">
-                        Ask the AI to explain why increasing the number of slits ($N$) makes the maxima sharper and brighter.
+                    <h3 class="text-lg font-bold text-slate-800 mb-2" data-i18n="ai.title">Physics Note</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed" data-i18n="ai.desc">
+                        Increasing $N$ raises principal-maxima intensity as $N^2$ and narrows peak width as $1/N$, producing the sharp spectral lines of a diffraction grating.
                     </p>
-                    <button id="explain-button" class="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm flex items-center gap-2">
-                        <span>✨</span> <span data-i18n="ai.btn">Explain Intensity Profile</span>
-                    </button>
-                    
-                    <div id="gemini-loading" class="hidden mt-4 flex items-center text-sm text-blue-600">
-                        <div class="spinner mr-2"></div> Generating explanation...
-                    </div>
-                    <div id="gemini-explanation" class="hidden mt-4 text-sm text-slate-700 leading-relaxed prose prose-blue max-w-none bg-white p-4 rounded-lg border border-blue-100"></div>
                 </div>
             </div>
         </div>
+    </main>
 
-    </div>
-    </div>
-
-    <!-- Script Logic -->
     <script>
-        // DOM Elements
+        const PHYSICS_COLORS = {
+            force: 0xdc2626,
+            velocity: 0x16a34a,
+            accel: 0x9333ea,
+            bField: 0xd97706,
+            displacement: 0x475569
+        };
+
         const lambdaSlider = document.getElementById('lambda-slider');
         const dSlider = document.getElementById('d-slider');
         const NSlider = document.getElementById('N-slider');
-        
         const lambdaVal = document.getElementById('lambda-val');
         const dVal = document.getElementById('d-val');
         const NVal = document.getElementById('N-val');
         const linesPerMm = document.getElementById('lines-per-mm');
         const nMaxVal = document.getElementById('n-max-val');
-        
+        const theta1Val = document.getElementById('theta1-val');
         const screenCanvas = document.getElementById('screen-canvas');
         const graphCanvas = document.getElementById('graph-canvas');
-        
-        const incidentRay = document.getElementById('incident-ray');
-        const diffractedRaysContainer = document.getElementById('diffracted-rays');
+        const threeContainer = document.getElementById('three-container');
 
-        // State
-        const state = {
-            lambda: 650, // nm
-            d: 2.0,      // um
-            N: 10        // Slits
-        };
+        const defaults = { lambda: 650, d: 2.0, N: 10 };
+        const state = { ...defaults };
 
-        // Helpers
+        let scene, camera, renderer;
+        let sourceMesh, gratingGroup, screenMesh, rayGroup;
+        let screenPatternCanvas, screenPatternCtx, screenPatternTexture;
+        let isDragging = false;
+        let pinchDistance = null;
+        const lastPointer = { x: 0, y: 0 };
+        const defaultCamera = { radius: 11, theta: 0.55, phi: 1.15 };
+        const cameraState = { ...defaultCamera };
+        let animT = 0;
+
         function wavelengthToColor(lambda) {
             let r, g, b;
-            if (lambda >= 380 && lambda < 440) {
-                r = -1 * (lambda - 440) / (440 - 380);
-                g = 0;
-                b = 1;
-            } else if (lambda >= 440 && lambda < 490) {
-                r = 0;
-                g = (lambda - 440) / (490 - 440);
-                b = 1;
-            } else if (lambda >= 490 && lambda < 510) {
-                r = 0;
-                g = 1;
-                b = -1 * (lambda - 510) / (510 - 490);
-            } else if (lambda >= 510 && lambda < 580) {
-                r = (lambda - 510) / (580 - 510);
-                g = 1;
-                b = 0;
-            } else if (lambda >= 580 && lambda < 645) {
-                r = 1;
-                g = -1 * (lambda - 645) / (645 - 580);
-                b = 0;
-            } else if (lambda >= 645 && lambda <= 780) {
-                r = 1;
-                g = 0;
-                b = 0;
-            } else {
-                r = 0; g = 0; b = 0;
-            }
-            return `rgb(${Math.floor(r * 255)}, ${Math.floor(g * 255)}, ${Math.floor(b * 255)})`;
+            if (lambda >= 380 && lambda < 440) { r = -(lambda - 440) / 60; g = 0; b = 1; }
+            else if (lambda >= 440 && lambda < 490) { r = 0; g = (lambda - 440) / 50; b = 1; }
+            else if (lambda >= 490 && lambda < 510) { r = 0; g = 1; b = -(lambda - 510) / 20; }
+            else if (lambda >= 510 && lambda < 580) { r = (lambda - 510) / 70; g = 1; b = 0; }
+            else if (lambda >= 580 && lambda < 645) { r = 1; g = -(lambda - 645) / 65; b = 0; }
+            else if (lambda >= 645 && lambda <= 780) { r = 1; g = 0; b = 0; }
+            else { r = 0; g = 0; b = 0; }
+            const R = Math.floor(r * 255), G = Math.floor(g * 255), B = Math.floor(b * 255);
+            return {
+                css: `rgb(${R}, ${G}, ${B})`,
+                rgba: (a) => `rgba(${R}, ${G}, ${B}, ${a})`,
+                hex: (R << 16) | (G << 8) | B
+            };
         }
 
-        // Main Update Loop
-        function update() {
-            // Read Inputs
-            state.lambda = parseInt(lambdaSlider.value);
-            state.d = parseFloat(dSlider.value);
-            state.N = parseInt(NSlider.value);
-
-            // Update Text
-            lambdaVal.textContent = `${state.lambda} nm`;
-            dVal.textContent = `${state.d.toFixed(2)} μm`;
-            NVal.textContent = state.N;
-            
-            const lines = (1000 / state.d).toFixed(0);
-            linesPerMm.textContent = lines;
-
-            // Calculate n_max
-            // d * sin(90) = n_max * lambda => n_max = d / lambda
-            // d in um, lambda in nm. d_nm = d * 1000
-            const n_max = Math.floor((state.d * 1000) / state.lambda);
-            nMaxVal.textContent = n_max;
-
-            // Colors
-            const color = wavelengthToColor(state.lambda);
-            incidentRay.style.backgroundColor = color;
-
-            // Physics Calculation: Maxima Angles
-            // d * sin(theta) = n * lambda
-            // sin(theta) = n * lambda / d
-            // lambda in nm, d in um. Convert to same units.
-            const lambda_um = state.lambda / 1000;
-            const d_um = state.d;
-            
+        function getMaxima(lambda_um, d_um) {
             const maxima = [];
-            // Find valid orders
-            for (let n = 0; n < 10; n++) { // Check positive n
+            for (let n = 0; n < 12; n++) {
                 const sinTheta = (n * lambda_um) / d_um;
                 if (sinTheta <= 1) {
-                    maxima.push({ n: n, theta: Math.asin(sinTheta) });
+                    maxima.push({ n, theta: Math.asin(sinTheta) });
                     if (n > 0) maxima.push({ n: -n, theta: Math.asin(-sinTheta) });
-                } else {
-                    break; 
-                }
+                } else break;
             }
-
-            // Draw Schematic Rays
-            diffractedRaysContainer.innerHTML = '';
-            maxima.forEach(m => {
-                // Only draw low orders to avoid clutter
-                if (Math.abs(m.n) > 2) return;
-                
-                const ray = document.createElement('div');
-                ray.className = 'absolute top-1/2 left-0 h-0.5 origin-left opacity-60';
-                ray.style.backgroundColor = color;
-                ray.style.width = '150%'; // Extend past container
-                // Rotate. theta is in radians. 
-                // Schematic is top-down. 0 deg is right (0 rad).
-                // Rotation in CSS is clockwise positive.
-                // Physics theta: Counter-clockwise is positive? Usually.
-                // Let's assume standard math notation: CCW positive. CSS rotate is CW.
-                // So rotate by -theta.
-                ray.style.transform = `translateY(-50%) rotate(${-m.theta}rad)`;
-                diffractedRaysContainer.appendChild(ray);
-            });
-
-            // Draw Screen
-            drawScreen(maxima, color);
-
-            // Draw Graph
-            drawGraph(lambda_um, d_um, state.N, color);
+            return maxima;
         }
 
-        function drawScreen(maxima, color) {
-            const ctx = screenCanvas.getContext('2d');
-            const w = screenCanvas.width = screenCanvas.clientWidth * 2; // Retina
-            const h = screenCanvas.height = screenCanvas.clientHeight * 2;
-            
-            ctx.fillStyle = 'black';
+        function setCameraFromState() {
+            const sinPhi = Math.sin(cameraState.phi);
+            camera.position.set(
+                cameraState.radius * sinPhi * Math.cos(cameraState.theta),
+                cameraState.radius * Math.cos(cameraState.phi),
+                cameraState.radius * sinPhi * Math.sin(cameraState.theta)
+            );
+            camera.lookAt(1.2, 0.2, 0);
+        }
+
+        function resetCameraView() {
+            Object.assign(cameraState, defaultCamera);
+            setCameraFromState();
+        }
+
+        function attachCameraControls() {
+            const dom = renderer.domElement;
+            dom.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                lastPointer.x = e.clientX;
+                lastPointer.y = e.clientY;
+            });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - lastPointer.x;
+                const dy = e.clientY - lastPointer.y;
+                lastPointer.x = e.clientX;
+                lastPointer.y = e.clientY;
+                cameraState.theta -= dx * 0.0055;
+                cameraState.phi = THREE.MathUtils.clamp(cameraState.phi + dy * 0.0055, 0.2, Math.PI - 0.2);
+                setCameraFromState();
+            });
+            dom.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                cameraState.radius = THREE.MathUtils.clamp(cameraState.radius + e.deltaY * 0.01, 6, 18);
+                setCameraFromState();
+            }, { passive: false });
+
+            dom.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    lastPointer.x = e.touches[0].clientX;
+                    lastPointer.y = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    isDragging = false;
+                    pinchDistance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                }
+            }, { passive: true });
+
+            dom.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && isDragging) {
+                    e.preventDefault();
+                    const dx = e.touches[0].clientX - lastPointer.x;
+                    const dy = e.touches[0].clientY - lastPointer.y;
+                    lastPointer.x = e.touches[0].clientX;
+                    lastPointer.y = e.touches[0].clientY;
+                    cameraState.theta -= dx * 0.0055;
+                    cameraState.phi = THREE.MathUtils.clamp(cameraState.phi + dy * 0.0055, 0.2, Math.PI - 0.2);
+                    setCameraFromState();
+                } else if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const dist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    if (pinchDistance !== null) {
+                        cameraState.radius = THREE.MathUtils.clamp(
+                            cameraState.radius - (dist - pinchDistance) * 0.02, 6, 18
+                        );
+                        setCameraFromState();
+                    }
+                    pinchDistance = dist;
+                }
+            }, { passive: false });
+
+            dom.addEventListener('touchend', () => {
+                isDragging = false;
+                pinchDistance = null;
+            }, { passive: true });
+        }
+
+        function rebuildGrating(N) {
+            while (gratingGroup.children.length) {
+                const c = gratingGroup.children[0];
+                gratingGroup.remove(c);
+                if (c.geometry) c.geometry.dispose();
+            }
+            const plateMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.4, roughness: 0.5 });
+            const slitMat = new THREE.MeshStandardMaterial({
+                color: PHYSICS_COLORS.velocity,
+                emissive: PHYSICS_COLORS.velocity,
+                emissiveIntensity: 0.45
+            });
+            const showN = Math.min(N, 18);
+            const spacing = THREE.MathUtils.mapLinear(Math.min(N, 30), 2, 30, 0.28, 0.08);
+            const half = ((showN - 1) * spacing) / 2;
+            const plate = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.4, Math.max(2.2, showN * spacing + 0.6)), plateMat);
+            plate.castShadow = true;
+            gratingGroup.add(plate);
+            for (let i = 0; i < showN; i++) {
+                const slit = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.5, 0.04), slitMat.clone());
+                slit.position.set(0.02, 0, -half + i * spacing);
+                gratingGroup.add(slit);
+            }
+        }
+
+        function initThreeScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020617);
+
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            renderer.setSize(w, h);
+            renderer.shadowMap.enabled = true;
+            threeContainer.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+            const key = new THREE.DirectionalLight(0xffffff, 0.9);
+            key.position.set(6, 8, 4);
+            key.castShadow = true;
+            scene.add(key);
+
+            const bench = new THREE.Mesh(
+                new THREE.BoxGeometry(12, 0.16, 3.2),
+                new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 })
+            );
+            bench.position.set(1.0, -1.15, 0);
+            bench.receiveShadow = true;
+            scene.add(bench);
+
+            sourceMesh = new THREE.Group();
+            const body = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.12, 0.14, 0.75, 20),
+                new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.5, roughness: 0.35 })
+            );
+            body.rotation.z = Math.PI / 2;
+            const tip = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.07, 0.07, 0.14, 16),
+                new THREE.MeshStandardMaterial({
+                    color: PHYSICS_COLORS.force,
+                    emissive: PHYSICS_COLORS.force,
+                    emissiveIntensity: 0.9
+                })
+            );
+            tip.rotation.z = Math.PI / 2;
+            tip.position.x = 0.4;
+            tip.name = 'laserTip';
+            sourceMesh.add(body, tip);
+            sourceMesh.position.set(-4.4, 0, 0);
+            scene.add(sourceMesh);
+
+            gratingGroup = new THREE.Group();
+            gratingGroup.position.set(0, 0, 0);
+            scene.add(gratingGroup);
+            rebuildGrating(state.N);
+
+            screenPatternCanvas = document.createElement('canvas');
+            screenPatternCanvas.width = 1024;
+            screenPatternCanvas.height = 512;
+            screenPatternCtx = screenPatternCanvas.getContext('2d');
+            screenPatternTexture = new THREE.CanvasTexture(screenPatternCanvas);
+
+            screenMesh = new THREE.Mesh(
+                new THREE.PlaneGeometry(4.2, 2.0),
+                new THREE.MeshStandardMaterial({
+                    color: 0xffffff,
+                    map: screenPatternTexture,
+                    emissive: 0xffffff,
+                    emissiveMap: screenPatternTexture,
+                    emissiveIntensity: 1.0,
+                    side: THREE.DoubleSide
+                })
+            );
+            screenMesh.rotation.y = -Math.PI / 2;
+            screenMesh.position.set(5.2, 0, 0);
+            scene.add(screenMesh);
+
+            rayGroup = new THREE.Group();
+            scene.add(rayGroup);
+
+            attachCameraControls();
+            resetCameraView();
+        }
+
+        function drawScreenTexture(maxima, colorObj) {
+            const ctx = screenPatternCtx;
+            const w = screenPatternCanvas.width;
+            const h = screenPatternCanvas.height;
+            ctx.fillStyle = '#020617';
             ctx.fillRect(0, 0, w, h);
 
-            // Mapping: -90 deg to +90 deg maps to 0 to w
-            // x = (sin(theta) + 1) / 2 * w ? Or linear with theta?
-            // Usually screens are flat, so x = D * tan(theta).
-            // But here we want to visualize the full 180 degree field of view (fisheye style) or just -90 to 90 mapped linearly.
-            // Let's map Angle linearly to X for clarity.
-            
-            maxima.forEach(m => {
-                // Map theta (-PI/2 to PI/2) to (0 to w)
-                const x = ((m.theta / (Math.PI/2)) + 1) / 2 * w;
-                
-                // Draw a glowy line
-                const gradient = ctx.createRadialGradient(x, h/2, 0, x, h/2, w/20);
-                gradient.addColorStop(0, color);
-                gradient.addColorStop(0.2, color.replace(')', ', 0.5)').replace('rgb', 'rgba'));
-                gradient.addColorStop(1, 'transparent');
-                
-                ctx.fillStyle = gradient;
-                ctx.fillRect(x - w/20, 0, w/10, h);
-                
-                // Core
-                ctx.fillStyle = 'white';
-                ctx.globalAlpha = 0.8;
-                ctx.fillRect(x - 1, 10, 2, h-20);
-                ctx.globalAlpha = 1.0;
-                
-                // Label order
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 20px Inter, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(`n=${m.n}`, x, h - 10);
+            maxima.forEach((m) => {
+                const x = ((m.theta / (Math.PI / 2)) + 1) / 2 * w;
+                const sharpness = Math.min(state.N, 40) / 8;
+                const halfW = Math.max(4, 40 / sharpness);
+                const grad = ctx.createLinearGradient(x - halfW * 2, 0, x + halfW * 2, 0);
+                grad.addColorStop(0, 'transparent');
+                grad.addColorStop(0.45, colorObj.rgba(0.15));
+                grad.addColorStop(0.5, colorObj.rgba(0.95));
+                grad.addColorStop(0.55, colorObj.rgba(0.15));
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.fillRect(x - halfW * 2, 0, halfW * 4, h);
+                ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                ctx.fillRect(x - 1, 8, 2, h - 16);
+            });
+            screenPatternTexture.needsUpdate = true;
+        }
+
+        function updateRays(maxima, colorObj) {
+            while (rayGroup.children.length) {
+                const c = rayGroup.children[0];
+                rayGroup.remove(c);
+                if (c.geometry) c.geometry.dispose();
+            }
+            const source = new THREE.Vector3(-3.95, 0, 0);
+            const grating = new THREE.Vector3(0, 0, 0);
+            const screenX = 5.2;
+            const mat = new THREE.LineBasicMaterial({
+                color: colorObj.hex,
+                transparent: true,
+                opacity: 0.75
+            });
+
+            // Incident beam
+            const inc = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([source, grating]),
+                mat.clone()
+            );
+            rayGroup.add(inc);
+
+            maxima.filter((m) => Math.abs(m.n) <= 3).forEach((m) => {
+                const z = Math.tan(m.theta) * screenX * 0.55;
+                const end = new THREE.Vector3(screenX, 0, THREE.MathUtils.clamp(z, -1.9, 1.9));
+                const line = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints([grating, end]),
+                    mat.clone()
+                );
+                line.userData.pulse = true;
+                rayGroup.add(line);
             });
         }
 
-        function drawGraph(lambda, d, N, color) {
+        function drawFlatScreen(maxima, colorObj) {
+            const ctx = screenCanvas.getContext('2d');
+            const w = screenCanvas.width = screenCanvas.clientWidth * 2;
+            const h = screenCanvas.height = screenCanvas.clientHeight * 2;
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, w, h);
+            maxima.forEach((m) => {
+                const x = ((m.theta / (Math.PI / 2)) + 1) / 2 * w;
+                const grad = ctx.createRadialGradient(x, h / 2, 0, x, h / 2, w / 18);
+                grad.addColorStop(0, colorObj.css);
+                grad.addColorStop(0.25, colorObj.rgba(0.45));
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.fillRect(x - w / 18, 0, w / 9, h);
+                ctx.fillStyle = 'white';
+                ctx.globalAlpha = 0.85;
+                ctx.fillRect(x - 1, 8, 2, h - 24);
+                ctx.globalAlpha = 1;
+                ctx.font = 'bold 18px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`n=${m.n}`, x, h - 8);
+            });
+        }
+
+        function drawGraph(lambda_um, d_um, N, colorObj) {
             const ctx = graphCanvas.getContext('2d');
             const w = graphCanvas.width = graphCanvas.clientWidth * 2;
             const h = graphCanvas.height = graphCanvas.clientHeight * 2;
-            
             ctx.clearRect(0, 0, w, h);
-            
-            // Draw Axes
             ctx.strokeStyle = '#94a3b8';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(0, h - 20);
-            ctx.lineTo(w, h - 20); // X Axis
+            ctx.lineTo(w, h - 20);
             ctx.stroke();
 
-            // Plot I = I0 * [sin(N * beta) / sin(beta)]^2
-            // where beta = (pi * d * sin(theta)) / lambda
-            
-            ctx.strokeStyle = color;
+            ctx.strokeStyle = colorObj.css;
             ctx.lineWidth = 3;
             ctx.beginPath();
-
             const samples = 1000;
             for (let i = 0; i <= samples; i++) {
-                // x goes from 0 to w, representing theta -90 to +90
                 const pct = i / samples;
-                const theta = (pct * Math.PI) - (Math.PI / 2); // -PI/2 to PI/2
-                
-                const beta = (Math.PI * d * Math.sin(theta)) / lambda;
-                
+                const theta = pct * Math.PI - Math.PI / 2;
+                const beta = (Math.PI * d_um * Math.sin(theta)) / lambda_um;
                 let intensity;
-                if (Math.abs(beta) < 1e-6) {
-                    intensity = N * N; // Limit at 0 is N^2
-                } else {
+                if (Math.abs(beta) < 1e-6) intensity = N * N;
+                else {
                     const val = Math.sin(N * beta) / Math.sin(beta);
                     intensity = val * val;
                 }
-                
-                // Normalize intensity: Max is N^2
                 const normI = intensity / (N * N);
-                
                 const px = i * (w / samples);
-                const py = (h - 20) - (normI * (h - 40)); // Leave padding
-                
+                const py = (h - 20) - normI * (h - 50);
                 if (i === 0) ctx.moveTo(px, py);
                 else ctx.lineTo(px, py);
             }
             ctx.stroke();
-            
-            // Fill under curve
             ctx.lineTo(w, h - 20);
             ctx.lineTo(0, h - 20);
-            ctx.fillStyle = color.replace(')', ', 0.1)').replace('rgb', 'rgba');
+            ctx.fillStyle = colorObj.rgba(0.12);
             ctx.fill();
         }
 
-        // Listeners
-        lambdaSlider.addEventListener('input', update);
-        dSlider.addEventListener('input', update);
-        NSlider.addEventListener('input', update);
+        function updateSimulation() {
+            state.lambda = parseInt(lambdaSlider.value, 10);
+            state.d = parseFloat(dSlider.value);
+            state.N = parseInt(NSlider.value, 10);
 
-        // Initial call
-        update();
+            lambdaVal.textContent = `${state.lambda} nm`;
+            dVal.textContent = `${state.d.toFixed(2)} μm`;
+            NVal.textContent = state.N;
+            linesPerMm.textContent = (1000 / state.d).toFixed(0);
 
-        // --- Gemini AI ---
-        const explainBtn = document.getElementById('explain-button');
-        const loading = document.getElementById('gemini-loading');
-        const output = document.getElementById('gemini-explanation');
+            const lambda_um = state.lambda / 1000;
+            const d_um = state.d;
+            const n_max = Math.floor((state.d * 1000) / state.lambda);
+            nMaxVal.textContent = n_max;
 
-        async function callGeminiAPI(query) {
-            // Mock response for now (or replace with real key logic if env is set)
-            // In production, use backend proxy.
-            const explanation = `
-                <p class="mb-2"><strong>Intensity & Number of Slits ($N$):</strong></p>
-                <p class="mb-2">When you increase the number of slits ($N$), two main things happen to the diffraction pattern:</p>
-                <ul class="list-disc pl-5 mb-2">
-                    <li><strong>Brighter Maxima:</strong> The intensity of the principal maxima increases as $N^2$. This is because the waves from all $N$ slits interfere constructively perfectly at these angles.</li>
-                    <li><strong>Sharper Peaks:</strong> The width of the bright fringes decreases as $1/N$. This happens because even a small deviation from the perfect angle causes destructive interference between the many slits.</li>
-                </ul>
-                <p>This is why diffraction gratings (high $N$) produce much sharper spectral lines than a simple double-slit setup ($N=2$).</p>
-            `;
-            return new Promise(r => setTimeout(() => r(explanation), 1500));
+            const maxima = getMaxima(lambda_um, d_um);
+            const first = maxima.find((m) => m.n === 1);
+            theta1Val.textContent = first ? `${(first.theta * 180 / Math.PI).toFixed(1)}°` : '—';
+
+            const colorObj = wavelengthToColor(state.lambda);
+            const tip = sourceMesh && sourceMesh.getObjectByName('laserTip');
+            if (tip) {
+                tip.material.color.setHex(colorObj.hex);
+                tip.material.emissive.setHex(colorObj.hex);
+            }
+
+            rebuildGrating(state.N);
+            drawScreenTexture(maxima, colorObj);
+            updateRays(maxima, colorObj);
+            drawFlatScreen(maxima, colorObj);
+            drawGraph(lambda_um, d_um, state.N, colorObj);
         }
 
-        explainBtn.addEventListener('click', async () => {
-            explainBtn.disabled = true;
-            explainBtn.classList.add('opacity-50');
-            loading.classList.remove('hidden');
-            output.classList.add('hidden');
-            
-            const text = await callGeminiAPI();
-            output.innerHTML = text;
-            
-            loading.classList.add('hidden');
-            output.classList.remove('hidden');
-            explainBtn.disabled = false;
-            explainBtn.classList.remove('opacity-50');
-        });
+        function animate() {
+            requestAnimationFrame(animate);
+            animT += 0.016;
+            const tip = sourceMesh && sourceMesh.getObjectByName('laserTip');
+            if (tip) tip.material.emissiveIntensity = 0.75 + Math.sin(animT * 4) * 0.2;
+            rayGroup && rayGroup.children.forEach((line, i) => {
+                if (line.material && line.userData.pulse) {
+                    line.material.opacity = 0.45 + 0.4 * (0.5 + 0.5 * Math.sin(animT * 3 + i * 0.4));
+                }
+            });
+            if (renderer && scene && camera) renderer.render(scene, camera);
+        }
 
-        // --- Language ---
+        function resizeThree() {
+            if (!renderer || !camera) return;
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            updateSimulation();
+        }
+
         const translations = {
             en: {
                 'nav.back': 'Back to Home',
-                'title': 'Diffraction Grating Simulator',
+                'page.title': 'Diffraction Grating',
+                'page.description': 'Explore multi-slit interference in 3D. Adjust wavelength, grating spacing and slit count to see how spectral orders form on the screen.',
                 'controls.title': 'Parameters',
+                'controls.reset': 'Reset',
                 'controls.wavelength': 'Wavelength ($\\lambda$)',
                 'controls.spacing': 'Grating Spacing ($d$)',
                 'controls.lines': 'Lines per mm:',
                 'controls.N': 'Number of Slits ($N$)',
                 'controls.N_hint': 'Affects sharpness of maxima.',
+                'controls.presetDense': 'Dense Grating',
+                'controls.presetRed': 'Red Laser',
+                'controls.presetGreen': 'Green Laser',
                 'data.title': 'Results',
                 'data.n_max': 'Max Order ($n_{max}$)',
-                'data.n_max_hint': 'Theoretical maximum number of orders observable on one side.',
+                'data.theta1': '1st Order $\\theta_1$',
+                'data.n_max_hint': 'Theoretical maximum orders on one side ($d/\\lambda$).',
+                'three.title': '3D Grating Bench',
+                'three.hint': 'Drag to rotate • Scroll / pinch to zoom',
+                'legend.light': 'Light',
+                'legend.grating': 'Grating',
+                'legend.screen': 'Screen',
                 'screen.view': 'Diffraction Pattern (Angle $\\theta$)',
                 'graph.title': 'Intensity Profile',
                 'formula.title': 'Grating Equation',
@@ -578,70 +660,101 @@
                 'formula.theta': 'Diffraction angle',
                 'formula.n': 'Order (0, 1, 2...)',
                 'formula.lambda': 'Wavelength',
-                'ai.title': 'AI Physics Tutor',
-                'ai.desc': 'Ask the AI to explain why increasing the number of slits ($N$) makes the maxima sharper and brighter.',
-                'ai.btn': 'Explain Intensity Profile'
+                'ai.title': 'Physics Note',
+                'ai.desc': 'Increasing $N$ raises principal-maxima intensity as $N^2$ and narrows peak width as $1/N$, producing the sharp spectral lines of a diffraction grating.'
             },
-            zh: {
+            'zh-hk': {
                 'nav.back': '返回首頁',
-                'title': '繞射光柵模擬',
-                'controls.title': '參數設置',
+                'page.title': '繞射光柵',
+                'page.description': '以 3D 探索多狹縫干涉。調整波長、光柵間距與狹縫數，觀察光譜級數在螢幕上的形成。',
+                'controls.title': '參數',
+                'controls.reset': '重設',
                 'controls.wavelength': '波長 ($\\lambda$)',
                 'controls.spacing': '光柵間距 ($d$)',
                 'controls.lines': '每毫米線數：',
                 'controls.N': '狹縫數量 ($N$)',
-                'controls.N_hint': '影響主極大值的銳度。',
+                'controls.N_hint': '影響主極大的銳度。',
+                'controls.presetDense': '密集光柵',
+                'controls.presetRed': '紅激光',
+                'controls.presetGreen': '綠激光',
                 'data.title': '結果',
                 'data.n_max': '最大級數 ($n_{max}$)',
-                'data.n_max_hint': '單側可觀察到的最大級數理論值。',
-                'screen.view': '繞射圖樣 (角度 $\\theta$)',
+                'data.theta1': '第一級 $\\theta_1$',
+                'data.n_max_hint': '單側可觀察最大級數理論值 ($d/\\lambda$)。',
+                'three.title': '3D 光柵實驗台',
+                'three.hint': '拖曳旋轉 • 滾輪／雙指縮放',
+                'legend.light': '光線',
+                'legend.grating': '光柵',
+                'legend.screen': '螢幕',
+                'screen.view': '繞射圖樣（角度 $\\theta$）',
                 'graph.title': '強度分佈',
                 'formula.title': '光柵方程',
                 'formula.d': '狹縫間距',
                 'formula.theta': '繞射角',
                 'formula.n': '級數 (0, 1, 2...)',
                 'formula.lambda': '波長',
-                'ai.title': 'AI 物理導師',
-                'ai.desc': '詢問 AI 為什麼增加狹縫數量 ($N$) 會使極大值更銳利且更亮。',
-                'ai.btn': '解釋強度分佈'
-            },
-            cn: {
-                'nav.back': '返回首页',
-                'title': '衍射光栅模拟',
-                'controls.title': '参数设置',
-                'controls.wavelength': '波长 ($\\lambda$)',
-                'controls.spacing': '光栅间距 ($d$)',
-                'controls.lines': '每毫米线数：',
-                'controls.N': '狭缝数量 ($N$)',
-                'controls.N_hint': '影响主极大值的锐度。',
-                'data.title': '结果',
-                'data.n_max': '最大级数 ($n_{max}$)',
-                'data.n_max_hint': '单侧可观察到的最大级数理论值。',
-                'screen.view': '衍射图样 (角度 $\\theta$)',
-                'graph.title': '强度分布',
-                'formula.title': '光栅方程',
-                'formula.d': '狭缝间距',
-                'formula.theta': '衍射角',
-                'formula.n': '级数 (0, 1, 2...)',
-                'formula.lambda': '波长',
-                'ai.title': 'AI 物理导师',
-                'ai.desc': '询问 AI 为什么增加狭缝数量 ($N$) 会使极大值更锐利且更亮。',
-                'ai.btn': '解释强度分布'
+                'ai.title': '物理說明',
+                'ai.desc': '增加 $N$ 會使主極大強度按 $N^2$ 上升，峰寬按 $1/N$ 變窄，因而產生光柵清晰的譜線。'
             }
         };
 
+        let currentLang = localStorage.getItem('preferred_language') || 'en';
+        if (currentLang === 'zh') currentLang = 'zh-hk';
+
         function setLanguage(lang) {
-            document.querySelectorAll('[data-i18n]').forEach(el => {
+            if (lang === 'zh') lang = 'zh-hk';
+            currentLang = lang;
+            localStorage.setItem('preferred_language', lang);
+            document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+            document.querySelectorAll('[data-i18n]').forEach((el) => {
                 const key = el.getAttribute('data-i18n');
-                if (translations[lang] && translations[lang][key]) {
-                    el.textContent = translations[lang][key];
-                }
+                const val = translations[lang]?.[key];
+                if (!val) return;
+                if (key.includes('desc') || key.includes('hint') && key.startsWith('ai')) el.innerHTML = val;
+                else el.textContent = val;
             });
-            if (window.MathJax) MathJax.typesetPromise();
+            document.querySelectorAll('.lang-btn').forEach((btn) => {
+                const active = btn.dataset.lang === lang;
+                btn.classList.toggle('bg-white', active);
+                btn.classList.toggle('shadow-sm', active);
+                btn.classList.toggle('text-blue-600', active);
+            });
+            if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
         }
+
+        lambdaSlider.addEventListener('input', updateSimulation);
+        dSlider.addEventListener('input', updateSimulation);
+        NSlider.addEventListener('input', updateSimulation);
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            lambdaSlider.value = defaults.lambda;
+            dSlider.value = defaults.d;
+            NSlider.value = defaults.N;
+            resetCameraView();
+            updateSimulation();
+        });
+        document.getElementById('preset-dense-btn').addEventListener('click', () => {
+            dSlider.value = 1.2;
+            NSlider.value = 40;
+            updateSimulation();
+        });
+        document.getElementById('preset-red-btn').addEventListener('click', () => {
+            lambdaSlider.value = 650;
+            updateSimulation();
+        });
+        document.getElementById('preset-green-btn').addEventListener('click', () => {
+            lambdaSlider.value = 532;
+            updateSimulation();
+        });
+
+        window.addEventListener('resize', resizeThree);
+
+        initThreeScene();
+        updateSimulation();
+        setLanguage(currentLang === 'zh-hk' ? 'zh-hk' : 'en');
+        animate();
     </script>
 
-    <!-- Practice Questions Widget -->
     <script src="practice_questions.js"></script>
     <script src="practice_questions_data.js"></script>
     <script>initPracticeQuestions('diffraction_grating');</script>

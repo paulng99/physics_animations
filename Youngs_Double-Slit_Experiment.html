@@ -1018,12 +1018,26 @@
             camera.updateProjectionMatrix();
         }
 
+        let youngsAnimT = 0;
         function animate() {
             requestAnimationFrame(animate);
+            youngsAnimT += 0.016;
             const laserTip = sourceMesh && sourceMesh.getObjectByName('laserTip');
             if (laserTip) {
-                const pulse = 0.8 + (Math.sin(Date.now() * 0.004) * 0.16);
-                laserTip.material.emissiveIntensity = pulse;
+                laserTip.material.emissiveIntensity = 0.75 + Math.sin(youngsAnimT * 4) * 0.2;
+            }
+            // Pulse diffracted rays so the optical path feels alive
+            [centerRay, topRay, bottomRay].forEach((ray, i) => {
+                if (ray && ray.material) {
+                    ray.material.opacity = 0.55 + 0.35 * (0.5 + 0.5 * Math.sin(youngsAnimT * 3.2 + i * 0.7));
+                }
+            });
+            if (probeMesh) {
+                const s = 1 + 0.08 * Math.sin(youngsAnimT * 5);
+                probeMesh.scale.set(s, s, s);
+            }
+            if (screenMesh && screenMesh.material) {
+                screenMesh.material.emissiveIntensity = 0.85 + 0.15 * Math.sin(youngsAnimT * 2);
             }
             if (renderer && scene && camera) {
                 renderer.render(scene, camera);

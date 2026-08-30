@@ -716,8 +716,22 @@
             // addSegment(objTop, lensCenter, dashMat, false); 
         }
 
+        let concaveAnimT = 0;
         function animate() {
             requestAnimationFrame(animate);
+            concaveAnimT += 0.016;
+            if (raysGroup) {
+                raysGroup.children.forEach((child, i) => {
+                    if (child.material && 'opacity' in child.material) {
+                        child.material.transparent = true;
+                        const base = 0.6;
+                        child.material.opacity = base + 0.2 * Math.sin(concaveAnimT * 2.8 + i * 0.35);
+                    }
+                });
+            }
+            if (lensMesh && lensMesh.material) {
+                lensMesh.material.opacity = 0.28 + 0.06 * Math.sin(concaveAnimT * 1.5);
+            }
             renderer.render(scene, camera);
         }
 
@@ -814,6 +828,8 @@
             document.getElementById('val-u').textContent = "20.0 cm";
             document.getElementById('val-f').textContent = "-10.0 cm";
             document.getElementById('val-h').textContent = "5.0 cm";
+            radius = 51; theta = 0; phi = Math.acos(10 / 51);
+            updateCameraFromSpherical();
             updateSimulation();
         });
 
@@ -824,15 +840,87 @@
         let theta = 0;
         let phi = Math.acos(10/51);
 
+        function updateCameraFromSpherical() {
+            camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
+            camera.position.y = radius * Math.cos(phi);
+            camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
+            camera.lookAt(0, 0, 0);
+        }
+
         // Zoom
         container.addEventListener('wheel', (e) => {
             e.preventDefault();
             radius += e.deltaY * 0.05;
             radius = Math.max(10, Math.min(100, radius));
-            camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
-            camera.position.y = radius * Math.cos(phi);
-            camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
-            camera.lookAt(0, 0, 0);
+            updateCameraFromSpherical();
+        });
+
+        let lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+        container.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                const rect = container.getBoundingClientRect();
+                mouse.x = ((e.touches[0].clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((e.touches[0].clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const hits = raycaster.intersectObject(objectArrow, true);
+                if (hits.length > 0) {
+                    isDraggingObject = true;
+                    container.classList.add('dragging');
+                } else {
+                    lastTouchX = e.touches[0].clientX;
+                    lastTouchY = e.touches[0].clientY;
+                    isCameraDrag = true;
+                }
+            } else if (e.touches.length === 2) {
+                isDraggingObject = false;
+                isCameraDrag = false;
+                lastTouchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 1 && isDraggingObject) {
+                const rect = container.getBoundingClientRect();
+                mouse.x = ((e.touches[0].clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((e.touches[0].clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersect = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(plane, intersect)) {
+                    let newU = Math.max(5, Math.min(40, -intersect.x));
+                    state.u = newU;
+                    document.getElementById('slider-u').value = newU;
+                    document.getElementById('val-u').textContent = newU.toFixed(1) + " cm";
+                    updateSimulation();
+                }
+            } else if (e.touches.length === 1 && isCameraDrag && lastTouchX !== null) {
+                const dx = (e.touches[0].clientX - lastTouchX) * 0.008;
+                const dy = (e.touches[0].clientY - lastTouchY) * 0.008;
+                lastTouchX = e.touches[0].clientX;
+                lastTouchY = e.touches[0].clientY;
+                theta -= dx;
+                phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi - dy));
+                updateCameraFromSpherical();
+            } else if (e.touches.length === 2 && lastTouchDist !== null) {
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                radius = Math.max(10, Math.min(100, radius + (lastTouchDist - dist) * 0.1));
+                lastTouchDist = dist;
+                updateCameraFromSpherical();
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchend', () => {
+            isDraggingObject = false;
+            isCameraDrag = false;
+            lastTouchX = lastTouchY = lastTouchDist = null;
+            container.classList.remove('dragging');
         });
 
         // Initialize

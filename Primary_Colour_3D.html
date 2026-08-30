@@ -590,8 +590,38 @@
             document.getElementById('result-swatch').style.backgroundColor = `rgb(${rVal}, ${gVal}, ${bVal})`;
         }
 
+        let colourAnimT = 0;
+        const baseSpotPositions = { r: null, g: null, b: null };
+
+        function pulseBeam(beam, factor, phase) {
+            if (!beam) return;
+            beam.children.forEach((mesh, i) => {
+                const base = (0.04 - i * 0.01) * factor;
+                mesh.material.opacity = base * (0.8 + 0.2 * Math.sin(colourAnimT * 3 + phase + i));
+            });
+        }
+
         function animate() {
             requestAnimationFrame(animate);
+            colourAnimT += 0.016;
+            if (spotlightR && baseSpotPositions.r) {
+                const bob = Math.sin(colourAnimT * 1.2) * 0.12;
+                spotlightR.position.y = baseSpotPositions.r.y + bob;
+                if (spotlightHousingR?.group) spotlightHousingR.group.position.y = spotlightR.position.y;
+                pulseBeam(beamR, state.r / 100, 0);
+            }
+            if (spotlightG && baseSpotPositions.g) {
+                const bob = Math.sin(colourAnimT * 1.2 + 2.1) * 0.12;
+                spotlightG.position.y = baseSpotPositions.g.y + bob;
+                if (spotlightHousingG?.group) spotlightHousingG.group.position.y = spotlightG.position.y;
+                pulseBeam(beamG, state.g / 100, 1.2);
+            }
+            if (spotlightB && baseSpotPositions.b) {
+                const bob = Math.sin(colourAnimT * 1.2 + 4.2) * 0.12;
+                spotlightB.position.y = baseSpotPositions.b.y + bob;
+                if (spotlightHousingB?.group) spotlightHousingB.group.position.y = spotlightB.position.y;
+                pulseBeam(beamB, state.b / 100, 2.4);
+            }
             renderer.render(scene, camera);
         }
 

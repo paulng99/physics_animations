@@ -760,6 +760,8 @@
         btn.classList.toggle('text-white', active);
         btn.classList.toggle('text-slate-600', !active);
       });
+      const pauseEl = document.getElementById('pauseBtn');
+      if (pauseEl) pauseEl.textContent = paused ? translations[lang].resume : translations[lang].pause;
     }
 
     function onResize() {
