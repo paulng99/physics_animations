@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <script>
         window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, svg: { fontCache: 'global' } };
@@ -526,8 +525,6 @@ function draw() {
     else drawSolenoidScene();
 }
 
-setScene('wire');
-
 // --- i18n ---
 const translations = {
     en: {
@@ -644,6 +641,10 @@ function setLanguage(lang) {
     updateFormula();
     draw();
 }
+
+// Must run after `translations` and `currentLang` are declared: setScene() triggers
+// updateFormula()/draw(), which read translations[currentLang].
+setScene('wire');
 
 window.addEventListener('DOMContentLoaded', () => setLanguage(currentLang));
 </script>

@@ -29,11 +29,18 @@
             <div class="flex items-center gap-3">
                 <a href="index.html" class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition">Φ</a>
                 <div>
-                    <div class="font-semibold text-lg">AI Studio</div>
+                    <div class="font-semibold text-lg" data-i18n="header.title">AI Studio</div>
                     <div class="text-sm text-slate-500">Powered by fal.ai</div>
                 </div>
             </div>
-            <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-indigo-600">Back to Home</a>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1">
+                    <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-indigo-100 text-slate-600" data-lang="zh">繁</button>
+                    <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-indigo-100 text-slate-600" data-lang="cn">简</button>
+                    <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-indigo-100 bg-indigo-600 text-white" data-lang="en">EN</button>
+                </div>
+                <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-indigo-600" data-i18n="nav.back">Back to Home</a>
+            </div>
         </nav>
     </header>
 
@@ -43,11 +50,11 @@
         <section id="apiKeySection" class="mb-8 p-4 bg-white border border-yellow-200 rounded-xl shadow-sm flex items-center justify-between gap-4">
             <div class="flex items-center gap-3 text-sm text-slate-700">
                 <span class="text-xl">🔑</span>
-                <span>To generate images, you need a <strong>fal.ai API Key</strong>.</span>
+                <span data-i18n="apikey.msg">To generate images, you need a <strong>fal.ai API Key</strong>.</span>
             </div>
             <div class="flex gap-2">
-                <input type="password" id="apiKeyInput" placeholder="Paste your FAL_KEY here" class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <button onclick="saveKey()" class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">Save</button>
+                <input type="password" id="apiKeyInput" placeholder="Paste your FAL_KEY here" data-i18n-placeholder="apikey.placeholder" class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button onclick="saveKey()" class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition" data-i18n="apikey.save">Save</button>
             </div>
         </section>
 
@@ -56,7 +63,7 @@
             <!-- Sidebar: Model Selection -->
             <div class="lg:col-span-4 space-y-6">
                 <div class="glass rounded-2xl border border-slate-200 p-6 shadow-sm">
-                    <h2 class="text-lg font-bold mb-4">Select Model</h2>
+                    <h2 class="text-lg font-bold mb-4" data-i18n="model.select">Select Model</h2>
                     
                     <!-- Model Selection -->
                     <div class="space-y-3">
@@ -89,7 +96,7 @@
                         </select>
                         
                         <div class="flex gap-2">
-                            <button onclick="toggleCustomInput()" class="flex-1 py-2 px-3 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:text-indigo-600 hover:border-indigo-300 transition">
+                            <button onclick="toggleCustomInput()" class="flex-1 py-2 px-3 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:text-indigo-600 hover:border-indigo-300 transition" data-i18n="model.addCustom">
                                 ➕ Add Custom Model ID
                             </button>
                         </div>
@@ -98,7 +105,7 @@
                         <div id="customInputContainer" class="hidden mt-2">
                             <div class="flex gap-2">
                                 <input type="text" id="customModelId" placeholder="e.g. fal-ai/luma-dream-machine" class="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <button onclick="addCustomModel()" class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Use</button>
+                                <button onclick="addCustomModel()" class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700" data-i18n="model.use">Use</button>
                             </div>
                         </div>
                     </div>
@@ -118,13 +125,13 @@
                     <div id="dynamicForm" class="space-y-5">
                         <!-- Default Form Fields (will be replaced dynamically) -->
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Prompt</label>
-                            <textarea id="promptInput" rows="3" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" placeholder="Describe the image you want to create..."></textarea>
+                            <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.prompt">Prompt</label>
+                            <textarea id="promptInput" rows="3" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" placeholder="Describe the image you want to create..." data-i18n-placeholder="form.promptPlaceholder"></textarea>
                         </div>
                         
                         <div class="grid sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Image Size</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.size">Image Size</label>
                                 <select id="sizeInput" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                     <option value="landscape_4_3">Landscape (4:3)</option>
                                     <option value="landscape_16_9">Landscape (16:9)</option>
@@ -134,7 +141,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Inference Steps (Quality)</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.steps">Inference Steps (Quality)</label>
                                 <input type="number" id="stepsInput" value="28" min="1" max="50" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             </div>
                         </div>
@@ -143,20 +150,20 @@
                     <!-- JSON Fallback Toggle -->
                     <div class="mt-4 pt-4 border-t border-slate-100">
                         <button onclick="toggleJsonMode()" class="text-xs text-slate-500 hover:text-indigo-600 flex items-center gap-1">
-                            <span class="text-lg">⚙️</span> Advanced: Edit Raw JSON
+                            <span class="text-lg">⚙️</span> <span data-i18n="json.toggle">Advanced: Edit Raw JSON</span>
                         </button>
                         <div id="jsonEditorContainer" class="hidden mt-3">
                             <textarea id="jsonInput" rows="5" class="w-full font-mono text-xs px-4 py-3 bg-slate-900 text-green-400 rounded-xl focus:outline-none resize-none">{}</textarea>
-                            <div class="text-xs text-slate-400 mt-1">Overrides above settings.</div>
+                            <div class="text-xs text-slate-400 mt-1" data-i18n="json.note">Overrides above settings.</div>
                         </div>
                     </div>
 
                     <div class="mt-6">
                         <div class="flex items-center justify-between mb-2 px-1">
-                            <span class="text-xs font-medium text-slate-500">Estimated Cost</span>
+                            <span class="text-xs font-medium text-slate-500" data-i18n="cost.label">Estimated Cost</span>
                             <span id="costEstimate" class="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-md">--</span>
                         </div>
-                        <button onclick="generateImage()" id="generateBtn" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-[1.01] transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button onclick="generateImage()" id="generateBtn" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:scale-[1.01] transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed" data-i18n="generate">
                             Generate Image ✨
                         </button>
                         <div id="errorMsg" class="hidden mt-3 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100"></div>
@@ -169,14 +176,14 @@
                     <!-- Placeholder State -->
                     <div id="outputPlaceholder" class="text-center">
                         <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">🎨</div>
-                        <h3 class="text-lg font-medium text-slate-700">Ready to Create</h3>
-                        <p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Select a model, enter a prompt, and watch the magic happen.</p>
+                        <h3 class="text-lg font-medium text-slate-700" data-i18n="output.ready">Ready to Create</h3>
+                        <p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto" data-i18n="output.readyDesc">Select a model, enter a prompt, and watch the magic happen.</p>
                     </div>
 
                     <!-- Loading State -->
                     <div id="loadingState" class="hidden text-center absolute inset-0 bg-white/90 z-10 flex flex-col items-center justify-center">
                         <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-                        <div class="font-medium text-slate-700" id="loadingText">Generating...</div>
+                        <div class="font-medium text-slate-700" id="loadingText" data-i18n="output.generating">Generating...</div>
                         <div class="text-xs text-slate-500 mt-2" id="loadingTime">0.0s</div>
                     </div>
 
@@ -185,7 +192,7 @@
                         <img id="resultImage" src="" alt="Generated Image" class="w-full h-auto rounded-lg shadow-md object-contain max-h-[600px]">
                         <div class="mt-4 flex justify-between items-center">
                             <span class="text-xs text-slate-400" id="generationMeta"></span>
-                            <a id="downloadLink" href="#" target="_blank" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                            <a id="downloadLink" href="#" target="_blank" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1" data-i18n="output.download">
                                 Download High-Res ⬇️
                             </a>
                         </div>
@@ -205,6 +212,152 @@
         let isJsonMode = false;
         let generationStartTime = 0;
         let timerInterval;
+
+        // --- i18n ---
+        const translations = {
+            en: {
+                'header.title': 'AI Studio',
+                'nav.back': 'Back to Home',
+                'apikey.msg': 'To generate images, you need a <strong>fal.ai API Key</strong>.',
+                'apikey.placeholder': 'Paste your FAL_KEY here',
+                'apikey.save': 'Save',
+                'model.select': 'Select Model',
+                'model.addCustom': '➕ Add Custom Model ID',
+                'model.use': 'Use',
+                'form.prompt': 'Prompt',
+                'form.promptPlaceholder': 'Describe the image you want to create...',
+                'form.size': 'Image Size',
+                'form.steps': 'Inference Steps (Quality)',
+                'form.steps2': 'Inference Steps',
+                'form.style': 'Style',
+                'form.safety': 'Safety Tolerance',
+                'form.safety.strict': 'Strict',
+                'form.safety.medium': 'Medium',
+                'form.safety.permissive': 'Permissive',
+                'form.negative': 'Negative Prompt',
+                'form.extraJson': 'Additional JSON Parameters',
+                'form.genericNote': "This model doesn't have a custom preset. Using generic inputs.",
+                'json.toggle': 'Advanced: Edit Raw JSON',
+                'json.note': 'Overrides above settings.',
+                'cost.label': 'Estimated Cost',
+                'cost.check': 'Check Pricing ↗',
+                'generate': 'Generate Image ✨',
+                'output.ready': 'Ready to Create',
+                'output.readyDesc': 'Select a model, enter a prompt, and watch the magic happen.',
+                'output.generating': 'Generating...',
+                'output.queued': 'Queued...',
+                'output.download': 'Download High-Res ⬇️',
+                'alert.keySaved': 'Key saved securely in browser storage!',
+                'alert.needKey': 'Please enter your fal.ai API key first!'
+            },
+            zh: {
+                'header.title': 'AI 工作室',
+                'nav.back': '返回首頁',
+                'apikey.msg': '要生成圖像，你需要 <strong>fal.ai API Key</strong>。',
+                'apikey.placeholder': '在此貼上你的 FAL_KEY',
+                'apikey.save': '儲存',
+                'model.select': '選擇模型',
+                'model.addCustom': '➕ 加入自訂模型 ID',
+                'model.use': '使用',
+                'form.prompt': '提示詞',
+                'form.promptPlaceholder': '描述你想創作的圖像……',
+                'form.size': '圖像尺寸',
+                'form.steps': '推理步數（質素）',
+                'form.steps2': '推理步數',
+                'form.style': '風格',
+                'form.safety': '安全容忍度',
+                'form.safety.strict': '嚴格',
+                'form.safety.medium': '中等',
+                'form.safety.permissive': '寬鬆',
+                'form.negative': '負面提示詞',
+                'form.extraJson': '額外 JSON 參數',
+                'form.genericNote': '此模型未有自訂預設，使用通用輸入。',
+                'json.toggle': '進階：編輯原始 JSON',
+                'json.note': '會覆蓋上面的設定。',
+                'cost.label': '預計費用',
+                'cost.check': '查看價格 ↗',
+                'generate': '生成圖像 ✨',
+                'output.ready': '準備就緒',
+                'output.readyDesc': '選擇模型、輸入提示詞，見證魔法發生。',
+                'output.generating': '生成中……',
+                'output.queued': '排隊中……',
+                'output.download': '下載高清圖 ⬇️',
+                'alert.keySaved': '已將 Key 安全儲存於瀏覽器！',
+                'alert.needKey': '請先輸入你的 fal.ai API Key！'
+            },
+            cn: {
+                'header.title': 'AI 工作室',
+                'nav.back': '返回首页',
+                'apikey.msg': '要生成图像，你需要 <strong>fal.ai API Key</strong>。',
+                'apikey.placeholder': '在此粘贴你的 FAL_KEY',
+                'apikey.save': '保存',
+                'model.select': '选择模型',
+                'model.addCustom': '➕ 添加自定义模型 ID',
+                'model.use': '使用',
+                'form.prompt': '提示词',
+                'form.promptPlaceholder': '描述你想创作的图像……',
+                'form.size': '图像尺寸',
+                'form.steps': '推理步数（质量）',
+                'form.steps2': '推理步数',
+                'form.style': '风格',
+                'form.safety': '安全容忍度',
+                'form.safety.strict': '严格',
+                'form.safety.medium': '中等',
+                'form.safety.permissive': '宽松',
+                'form.negative': '负面提示词',
+                'form.extraJson': '额外 JSON 参数',
+                'form.genericNote': '此模型没有自定义预设，使用通用输入。',
+                'json.toggle': '高级：编辑原始 JSON',
+                'json.note': '会覆盖上面的设置。',
+                'cost.label': '预计费用',
+                'cost.check': '查看价格 ↗',
+                'generate': '生成图像 ✨',
+                'output.ready': '准备就绪',
+                'output.readyDesc': '选择模型、输入提示词，见证魔法发生。',
+                'output.generating': '生成中……',
+                'output.queued': '排队中……',
+                'output.download': '下载高清图 ⬇️',
+                'alert.keySaved': '已将 Key 安全存储于浏览器！',
+                'alert.needKey': '请先输入你的 fal.ai API Key！'
+            }
+        };
+
+        let currentLang = localStorage.getItem('preferred_language') || 'en';
+
+        function t(key) {
+            return (translations[currentLang] && translations[currentLang][key]) || translations.en[key] || key;
+        }
+
+        function applyTranslations(root = document) {
+            root.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                const text = translations[currentLang]?.[key];
+                if (!text) return;
+                if (el.tagName === 'OPTION') el.textContent = text;
+                else el.innerHTML = text;
+            });
+            root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                const text = translations[currentLang]?.[key];
+                if (text) el.setAttribute('placeholder', text);
+            });
+        }
+
+        window.setLanguage = (lang) => {
+            currentLang = lang;
+            localStorage.setItem('preferred_language', lang);
+            applyTranslations();
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.getAttribute('data-lang') === lang) {
+                    btn.classList.add('bg-indigo-600', 'text-white');
+                    btn.classList.remove('text-slate-600');
+                } else {
+                    btn.classList.remove('bg-indigo-600', 'text-white');
+                    btn.classList.add('text-slate-600');
+                }
+            });
+            document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+        };
 
         // Pricing Map (Approximate costs per image)
         const pricingMap = {
@@ -244,6 +397,8 @@
             
             // Initial Pricing
             updatePricing(currentModel);
+
+            setLanguage(currentLang);
         });
 
         // --- API Key Management ---
@@ -251,7 +406,7 @@
             const key = document.getElementById('apiKeyInput').value.trim();
             if (key) {
                 localStorage.setItem('fal_key', key);
-                alert('Key saved securely in browser storage!');
+                alert(t('alert.keySaved'));
                 document.getElementById('apiKeySection').classList.add('opacity-50');
             }
         };
@@ -303,7 +458,7 @@
                 el.textContent = pricingMap[modelId];
                 el.className = 'text-xs font-bold text-slate-700 bg-green-100 text-green-700 px-2 py-1 rounded-md';
             } else {
-                el.textContent = 'Check Pricing ↗';
+                el.textContent = t('cost.check');
                 el.className = 'text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md cursor-pointer hover:bg-indigo-100';
                 el.onclick = () => window.open('https://fal.ai/pricing', '_blank');
             }
@@ -328,11 +483,11 @@
             if (modelId.includes('recraft')) {
                 fieldsHtml = `
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Prompt</label>
-                        <textarea id="promptInput" rows="3" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">${existingPrompt}</textarea>
+                        <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.prompt">Prompt</label>
+                        <textarea id="promptInput" rows="3" placeholder="Describe the image you want to create..." data-i18n-placeholder="form.promptPlaceholder" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">${existingPrompt}</textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Style</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.style">Style</label>
                         <select id="styleInput" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             <option value="realistic_image">Realistic Image</option>
                             <option value="digital_illustration">Digital Illustration</option>
@@ -341,7 +496,7 @@
                         </select>
                     </div>
                     <div>
-                         <label class="block text-sm font-medium text-slate-700 mb-2">Image Size</label>
+                         <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.size">Image Size</label>
                          <select id="sizeInput" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             <option value="square_hd">Square</option>
                             <option value="landscape_16_9">Landscape</option>
@@ -352,12 +507,12 @@
             } else if (modelId.includes('flux')) {
                 fieldsHtml = `
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Prompt</label>
-                        <textarea id="promptInput" rows="3" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">${existingPrompt}</textarea>
+                        <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.prompt">Prompt</label>
+                        <textarea id="promptInput" rows="3" placeholder="Describe the image you want to create..." data-i18n-placeholder="form.promptPlaceholder" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">${existingPrompt}</textarea>
                     </div>
                     <div class="grid sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Image Size</label>
+                            <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.size">Image Size</label>
                             <select id="sizeInput" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="landscape_4_3">Landscape (4:3)</option>
                                 <option value="landscape_16_9">Landscape (16:9)</option>
@@ -367,32 +522,32 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Inference Steps</label>
+                            <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.steps2">Inference Steps</label>
                             <input type="number" id="stepsInput" value="28" min="1" max="50" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
                     </div>
                     <div>
-                         <label class="block text-sm font-medium text-slate-700 mb-2">Safety Tolerance</label>
+                         <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.safety">Safety Tolerance</label>
                          <select id="safetyInput" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="2">Strict</option>
-                            <option value="4">Medium</option>
-                            <option value="6">Permissive</option>
+                            <option value="2" data-i18n="form.safety.strict">Strict</option>
+                            <option value="4" data-i18n="form.safety.medium">Medium</option>
+                            <option value="6" data-i18n="form.safety.permissive">Permissive</option>
                         </select>
                     </div>
                 `;
             } else if (modelId.includes('sdxl')) {
                 fieldsHtml = `
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Prompt</label>
-                        <textarea id="promptInput" rows="3" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">${existingPrompt}</textarea>
+                        <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.prompt">Prompt</label>
+                        <textarea id="promptInput" rows="3" placeholder="Describe the image you want to create..." data-i18n-placeholder="form.promptPlaceholder" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">${existingPrompt}</textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Negative Prompt</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.negative">Negative Prompt</label>
                         <input type="text" id="negativePromptInput" placeholder="blurry, low quality, ugly..." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
                     <div class="grid sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Image Size</label>
+                            <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.size">Image Size</label>
                             <select id="sizeInput" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="square_hd">Square</option>
                                 <option value="landscape_16_9">Landscape</option>
@@ -404,21 +559,22 @@
             } else {
                 // Generic Fallback
                 fieldsHtml = `
-                     <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4 text-sm text-blue-700">
+                     <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4 text-sm text-blue-700" data-i18n="form.genericNote">
                         This model doesn't have a custom preset. Using generic inputs.
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Prompt</label>
-                        <textarea id="promptInput" rows="3" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">${existingPrompt}</textarea>
+                        <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.prompt">Prompt</label>
+                        <textarea id="promptInput" rows="3" placeholder="Describe the image you want to create..." data-i18n-placeholder="form.promptPlaceholder" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">${existingPrompt}</textarea>
                     </div>
                      <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Additional JSON Parameters</label>
+                        <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="form.extraJson">Additional JSON Parameters</label>
                         <textarea id="extraJsonInput" rows="3" class="w-full font-mono text-xs px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none" placeholder='{"image_size": "square_hd"}'></textarea>
                     </div>
                 `;
             }
 
             formContainer.innerHTML = fieldsHtml;
+            applyTranslations(formContainer);
             updateJsonPreview();
         }
 
@@ -491,7 +647,7 @@
         window.generateImage = async () => {
             const key = localStorage.getItem('fal_key');
             if (!key) {
-                alert('Please enter your fal.ai API key first!');
+                alert(t('alert.needKey'));
                 document.getElementById('apiKeyInput').focus();
                 return;
             }
@@ -532,9 +688,9 @@
                     logs: true,
                     onQueueUpdate: (update) => {
                         if (update.status === 'IN_QUEUE') {
-                            document.getElementById('loadingText').textContent = 'Queued...';
+                            document.getElementById('loadingText').textContent = t('output.queued');
                         } else if (update.status === 'IN_PROGRESS') {
-                            document.getElementById('loadingText').textContent = 'Generating...';
+                            document.getElementById('loadingText').textContent = t('output.generating');
                         }
                     }
                 });
