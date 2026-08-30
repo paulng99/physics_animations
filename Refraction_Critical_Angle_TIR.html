@@ -35,12 +35,23 @@
 
     <section class="mt-6 grid xl:grid-cols-[1.4fr_1fr] gap-5">
       <article class="bg-white rounded-3xl border border-slate-200 p-4 shadow-lg shadow-blue-100/30">
-        <canvas id="sceneCanvas" width="1180" height="640" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
+        <div class="relative rounded-2xl border border-slate-200 overflow-hidden" style="touch-action:none">
+          <canvas id="sceneCanvas" width="1180" height="640" class="w-full h-[340px] md:h-[480px] cursor-grab active:cursor-grabbing bg-slate-50"></canvas>
+          <div class="absolute bottom-3 right-3 bg-slate-900/75 text-white text-xs px-3 py-1.5 rounded-full pointer-events-none" data-i18n="camHint">Drag to rotate • Pinch to zoom</div>
+          <div class="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
+            <span class="bg-white/90 text-red-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.incident">Incident</span>
+            <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.refracted">Refracted</span>
+            <span class="bg-white/90 text-purple-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.reflected">Reflected</span>
+          </div>
+        </div>
       </article>
 
       <aside class="space-y-4">
         <div class="bg-white rounded-2xl border border-slate-200 p-4">
-          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="font-semibold text-slate-900" data-i18n="controls">Controls</h2>
+            <button id="resetBtn" class="text-xs font-bold text-blue-600 hover:text-blue-700" data-i18n="reset">Reset</button>
+          </div>
           <label class="block text-sm text-slate-700" for="n1"><span data-i18n="n1">Upper medium n₁</span>: <span id="n1Out" class="font-semibold text-blue-600">1.00</span></label>
           <input id="n1" type="range" min="1.00" max="2.20" step="0.01" value="1.00" class="w-full accent-blue-600 mb-3" />
           <label class="block text-sm text-slate-700" for="n2"><span data-i18n="n2">Lower medium n₂</span>: <span id="n2Out" class="font-semibold text-blue-600">1.50</span></label>
@@ -84,13 +95,24 @@
     };
 
     const canvas = document.getElementById('sceneCanvas');
+    const resetBtn = document.getElementById('resetBtn');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf8fafc);
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    camera.position.set(0, 6, 14);
-    camera.lookAt(0, 0, 0);
+
+    let camRadius = 15.2, camTheta = 0.4, camPhi = 1.05;
+    const defaultCam = { radius: 15.2, theta: 0.4, phi: 1.05 };
+    function updateCameraFromSpherical() {
+      camera.position.set(
+        camRadius * Math.sin(camPhi) * Math.sin(camTheta),
+        camRadius * Math.cos(camPhi),
+        camRadius * Math.sin(camPhi) * Math.cos(camTheta)
+      );
+      camera.lookAt(0, -0.5, 0);
+    }
+    updateCameraFromSpherical();
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.72));
     const key = new THREE.DirectionalLight(0xffffff, 0.85);
@@ -166,7 +188,12 @@
         critical: 'Critical c',
         tir: 'TIR',
         yes: 'Yes',
-        no: 'No'
+        no: 'No',
+        reset: 'Reset',
+        camHint: 'Drag to rotate • Pinch to zoom',
+        'legend.incident': 'Incident',
+        'legend.refracted': 'Refracted',
+        'legend.reflected': 'Reflected'
       },
       'zh-hk': {
         back: '返回主題頁',
@@ -182,7 +209,12 @@
         critical: '臨界角 c',
         tir: '全內反射',
         yes: '是',
-        no: '否'
+        no: '否',
+        reset: '重設',
+        camHint: '拖曳旋轉 • 雙指縮放',
+        'legend.incident': '入射',
+        'legend.refracted': '折射',
+        'legend.reflected': '反射'
       }
     };
 
@@ -298,6 +330,67 @@
 
     Object.values(controls).forEach((el) => el.addEventListener('input', updateOutputs));
     window.addEventListener('resize', updateSize);
+    resetBtn.addEventListener('click', () => {
+      controls.n1.value = 1.00;
+      controls.n2.value = 1.50;
+      controls.angle.value = 35;
+      controls.mode.value = 'interface';
+      camRadius = defaultCam.radius;
+      camTheta = defaultCam.theta;
+      camPhi = defaultCam.phi;
+      updateCameraFromSpherical();
+      updateOutputs();
+    });
+
+    let isCamDrag = false, lastX = 0, lastY = 0, pinchDist = null;
+    canvas.addEventListener('mousedown', (e) => {
+      isCamDrag = true; lastX = e.clientX; lastY = e.clientY;
+    });
+    window.addEventListener('mouseup', () => { isCamDrag = false; });
+    window.addEventListener('mousemove', (e) => {
+      if (!isCamDrag) return;
+      camTheta -= (e.clientX - lastX) * 0.006;
+      camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi + (e.clientY - lastY) * 0.006));
+      lastX = e.clientX; lastY = e.clientY;
+      updateCameraFromSpherical();
+    });
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      camRadius = Math.max(6, Math.min(28, camRadius + e.deltaY * 0.015));
+      updateCameraFromSpherical();
+    }, { passive: false });
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        isCamDrag = true;
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+      } else if (e.touches.length === 2) {
+        isCamDrag = false;
+        pinchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+    }, { passive: true });
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && isCamDrag) {
+        camTheta -= (e.touches[0].clientX - lastX) * 0.008;
+        camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi + (e.touches[0].clientY - lastY) * 0.008));
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+        updateCameraFromSpherical();
+      } else if (e.touches.length === 2 && pinchDist !== null) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        camRadius = Math.max(6, Math.min(28, camRadius - (dist - pinchDist) * 0.03));
+        pinchDist = dist;
+        updateCameraFromSpherical();
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchend', () => { isCamDrag = false; pinchDist = null; });
 
     updateSize();
     updateOutputs();
@@ -306,6 +399,14 @@
     function tick(ms) {
       const t = ms * 0.001;
       updateRays(t);
+      // Soft pulse on ray materials
+      const pulse = 0.65 + 0.35 * (0.5 + 0.5 * Math.sin(t * 3));
+      incidentRay.material.opacity = pulse;
+      refractedRay.material.opacity = pulse;
+      reflectedRay.material.opacity = pulse;
+      incidentRay.material.transparent = true;
+      refractedRay.material.transparent = true;
+      reflectedRay.material.transparent = true;
       renderer.render(scene, camera);
       requestAnimationFrame(tick);
     }

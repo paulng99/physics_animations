@@ -330,6 +330,7 @@
         let beamR, beamG, beamB;
         let screenMesh, floorMesh;
         let spotlightHousingR, spotlightHousingG, spotlightHousingB;
+        const baseSpotPositions = { r: null, g: null, b: null };
 
         const container = document.getElementById('three-container');
 
@@ -595,7 +596,6 @@
         }
 
         let colourAnimT = 0;
-        const baseSpotPositions = { r: null, g: null, b: null };
 
         function pulseBeam(beam, factor, phase) {
             if (!beam) return;

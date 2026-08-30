@@ -6,258 +6,209 @@
   <title>3D Radioactive Decay and Half-life Lab (HKDSE)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; }
     mjx-container { display: inline-block !important; }
-    .glass { background: rgba(255,255,255,0.88); backdrop-filter: blur(10px); }
+    #three-container { width: 100%; height: 440px; cursor: grab; border-radius: 12px; overflow: hidden; background: #f1f5f9; }
+    #three-container:active { cursor: grabbing; }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
-  <header class="max-w-7xl mx-auto px-4 py-4">
-    <div class="flex items-center justify-between gap-3">
-      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
-        <span>←</span><span data-i18n="back">Back to Topics</span>
-      </a>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+  <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex justify-between items-center">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600"><span>←</span><span data-i18n="back">Back to Topics</span></a>
       <div class="flex gap-2">
         <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" data-lang="en" onclick="updateLanguage('en')">EN</button>
         <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" data-lang="zh-hk" onclick="updateLanguage('zh-hk')">繁</button>
       </div>
     </div>
-  </header>
+  </nav>
 
-  <main class="max-w-7xl mx-auto px-4 pb-12">
-    <section class="glass rounded-3xl border border-white/70 p-6 md:p-8 shadow-xl shadow-blue-100/40">
-      <div class="grid lg:grid-cols-[1.35fr_1fr] gap-6">
-        <div>
-          <p class="text-sm uppercase tracking-wide font-semibold text-blue-600" data-i18n="tag">3D HKDSE Radioactivity Lab</p>
-          <h1 class="mt-2 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">3D Radioactive Decay & Half-life Lab</h1>
-          <p class="mt-3 text-slate-600" data-i18n="subtitle">Observe nuclei disappear in a 3D chamber and compare measured remaining count with the decay law.</p>
-        </div>
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
-          <h2 class="font-bold text-lg" data-i18n="focusTitle">Focus</h2>
-          <ul class="mt-3 text-sm space-y-2">
-            <li data-i18n="focus1">• Random single-particle decay in 3D.</li>
-            <li data-i18n="focus2">• Macroscopic exponential law emerges.</li>
-            <li data-i18n="focus3">• Compare measured and theoretical N(t).</li>
-          </ul>
-        </div>
-      </div>
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <p class="text-sm uppercase tracking-wide font-semibold text-blue-600" data-i18n="tag">3D HKDSE Radioactivity Lab</p>
+      <h1 class="mt-1 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">3D Radioactive Decay & Half-life Lab</h1>
+      <p class="mt-2 text-slate-600" data-i18n="subtitle">Watch nuclei decay randomly in 3D and compare measured N(t) with the exponential law.</p>
     </section>
 
-    <section class="mt-6 grid xl:grid-cols-[1.45fr_1fr] gap-5">
-      <article class="glass rounded-3xl border border-white/70 p-4 md:p-5 shadow-lg shadow-blue-100/30">
-        <canvas id="sceneCanvas" width="1260" height="700" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
-        <canvas id="graphCanvas" width="1260" height="240" class="w-full mt-3 rounded-2xl border border-slate-200 bg-slate-50"></canvas>
-      </article>
-
-      <aside class="space-y-4">
-        <div class="glass rounded-2xl border border-white/70 p-4">
-          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
-          <label class="block text-sm text-slate-700 mb-1"><span data-i18n="n0">Initial nuclei N₀</span>: <span id="n0Out" class="font-semibold text-blue-600">260</span></label>
-          <input id="n0" type="range" min="80" max="700" step="10" value="260" class="w-full accent-blue-600 mb-3" />
-          <label class="block text-sm text-slate-700 mb-1"><span data-i18n="halfLife">Half-life T½ (s)</span>: <span id="halfOut" class="font-semibold text-blue-600">8.0</span></label>
-          <input id="halfLife" type="range" min="2" max="20" step="0.5" value="8" class="w-full accent-blue-600 mb-3" />
-          <label class="block text-sm text-slate-700 mb-1"><span data-i18n="dt">Time step Δt (s)</span>: <span id="dtOut" class="font-semibold text-blue-600">0.20</span></label>
-          <input id="dt" type="range" min="0.05" max="1" step="0.05" value="0.2" class="w-full accent-blue-600 mb-4" />
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <aside class="lg:col-span-4 space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <h2 class="font-semibold text-slate-900" data-i18n="controls">Controls</h2>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="n0">Initial nuclei N₀</span><span id="n0Out" class="font-semibold text-blue-600">260</span></div>
+            <input id="n0" type="range" min="80" max="500" step="10" value="260" class="w-full accent-blue-600" />
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="halfLife">Half-life T½ (s)</span><span id="halfOut" class="font-semibold text-amber-600">8.0</span></div>
+            <input id="halfLife" type="range" min="2" max="20" step="0.5" value="8" class="w-full accent-amber-600" />
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="dt">Time step Δt (s)</span><span id="dtOut" class="font-semibold text-purple-600">0.20</span></div>
+            <input id="dt" type="range" min="0.05" max="1" step="0.05" value="0.2" class="w-full accent-purple-600" />
+          </div>
           <div class="grid grid-cols-2 gap-2">
-            <button id="startBtn" class="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2" data-i18n="start">Start</button>
-            <button id="pauseBtn" class="rounded-xl bg-slate-700 hover:bg-slate-800 text-white font-semibold py-2" data-i18n="pause">Pause</button>
-            <button id="stepBtn" class="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2" data-i18n="single">Single Step</button>
-            <button id="resetBtn" class="rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2" data-i18n="reset">Reset</button>
+            <button id="startBtn" class="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 hover:-translate-y-0.5 transition" data-i18n="start">Start</button>
+            <button id="pauseBtn" class="rounded-xl bg-slate-700 hover:bg-slate-800 text-white font-semibold py-2.5" data-i18n="pause">Pause</button>
+            <button id="stepBtn" class="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5" data-i18n="single">Single Step</button>
+            <button id="resetBtn" class="rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2.5" data-i18n="reset">Reset</button>
+          </div>
+          <div class="grid grid-cols-3 gap-2 pt-1">
+            <button type="button" id="presetFast" class="py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-xs font-bold text-amber-800" data-i18n="preset.fast">T½=3s</button>
+            <button type="button" id="presetMid" class="py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-xs font-bold text-blue-800" data-i18n="preset.mid">T½=8s</button>
+            <button type="button" id="presetSlow" class="py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700" data-i18n="preset.slow">T½=15s</button>
           </div>
         </div>
 
-        <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readings">Readings</h2>
-          <div class="space-y-1.5">
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="time">Time</span><span id="timeOut" class="font-semibold text-purple-700">0.00 s</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="remaining">Remaining N</span><span id="remainingOut" class="font-semibold text-green-700">260</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="activity">Activity</span><span id="activityOut" class="font-semibold text-red-700">0.00 s⁻¹</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="theory">Theory N(t)</span><span id="theoryOut" class="font-semibold text-blue-700">260.0</span></div>
-          </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm text-sm space-y-2">
+          <h2 class="font-semibold mb-2" data-i18n="readings">Live Data</h2>
+          <div class="flex justify-between"><span class="text-slate-600" data-i18n="time">Time</span><span id="timeOut" class="font-semibold text-purple-700">0.00 s</span></div>
+          <div class="flex justify-between"><span class="text-slate-600" data-i18n="remaining">Remaining N</span><span id="remainingOut" class="font-semibold text-green-700">260</span></div>
+          <div class="flex justify-between"><span class="text-slate-600" data-i18n="activity">Activity A</span><span id="activityOut" class="font-semibold text-red-700">0.00 s⁻¹</span></div>
+          <div class="flex justify-between"><span class="text-slate-600" data-i18n="theory">Theory N(t)</span><span id="theoryOut" class="font-semibold text-blue-700">260.0</span></div>
+          <div class="flex justify-between"><span class="text-slate-600" data-i18n="lambda">λ = ln2/T½</span><span id="lambdaOut" class="font-semibold text-amber-700">0.087</span></div>
         </div>
 
-        <div class="glass rounded-2xl border border-white/70 p-4 text-sm text-slate-700">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">Formula Bank</h2>
-          <ul class="list-disc ml-5 space-y-1">
-            <li><strong>N = N₀(1/2)<sup>t/T½</sup></strong></li>
-            <li><strong>λ = ln2 / T½</strong></li>
-            <li><strong>A = λN</strong></li>
+        <div class="bg-slate-900 text-white rounded-2xl p-5 text-sm">
+          <h2 class="text-xs font-bold text-slate-400 uppercase mb-2" data-i18n="formulaTitle">Formula Bank</h2>
+          <ul class="space-y-1 text-slate-200">
+            <li>N = N₀ (1/2)<sup>t/T½</sup></li>
+            <li>λ = ln2 / T½</li>
+            <li>A = λN</li>
           </ul>
         </div>
       </aside>
-    </section>
+
+      <section class="lg:col-span-8 space-y-3">
+        <div id="three-container" class="relative border-2 border-slate-200 shadow-lg">
+          <div class="absolute top-4 left-4 flex flex-wrap gap-2 pointer-events-none z-10">
+            <span class="bg-white/80 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold text-blue-700" data-i18n="legend.alive">Undecayed</span>
+            <span class="bg-white/80 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold text-red-600" data-i18n="legend.decay">Decay flash</span>
+            <span class="bg-white/80 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold text-amber-600" data-i18n="legend.theory">Theory curve</span>
+          </div>
+          <div class="absolute bottom-4 right-4 bg-gray-900/80 text-white px-4 py-2 rounded-full text-xs pointer-events-none" data-i18n="hint">Drag • Wheel • Pinch</div>
+        </div>
+        <canvas id="graphCanvas" width="1260" height="220" class="w-full rounded-xl border-2 border-slate-200 bg-white"></canvas>
+      </section>
+    </div>
   </main>
 
   <script>
-    const controls = {
-      n0: document.getElementById('n0'),
-      halfLife: document.getElementById('halfLife'),
-      dt: document.getElementById('dt')
-    };
-    const out = {
-      n0Out: document.getElementById('n0Out'),
-      halfOut: document.getElementById('halfOut'),
-      dtOut: document.getElementById('dtOut'),
-      timeOut: document.getElementById('timeOut'),
-      remainingOut: document.getElementById('remainingOut'),
-      activityOut: document.getElementById('activityOut'),
-      theoryOut: document.getElementById('theoryOut')
-    };
-    const sceneCanvas = document.getElementById('sceneCanvas');
-    const graphCanvas = document.getElementById('graphCanvas');
-    const gCtx = graphCanvas.getContext('2d');
-    const startBtn = document.getElementById('startBtn');
-    const pauseBtn = document.getElementById('pauseBtn');
-    const stepBtn = document.getElementById('stepBtn');
-    const resetBtn = document.getElementById('resetBtn');
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf8fafc);
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 300);
-    const renderer = new THREE.WebGLRenderer({ canvas: sceneCanvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    camera.position.set(0, 0, 12.5);
-    camera.lookAt(0, 0, 0);
-
-    scene.add(new THREE.AmbientLight(0xffffff, 0.78));
-    const key = new THREE.DirectionalLight(0xffffff, 0.85);
-    key.position.set(7, 9, 10);
-    scene.add(key);
-    const rim = new THREE.DirectionalLight(0x93c5fd, 0.48);
-    rim.position.set(-8, -5, -8);
-    scene.add(rim);
-
-    const chamber = new THREE.Mesh(
-      new THREE.BoxGeometry(8.2, 8.2, 8.2),
-      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.16 })
-    );
-    scene.add(chamber);
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(chamber.geometry), new THREE.LineBasicMaterial({ color: 0x64748b }));
-    scene.add(edges);
-
-    const nucGeo = new THREE.SphereGeometry(0.075, 12, 12);
-    const nucMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.45, metalness: 0.08 });
-    const particles = [];
-    const state = {
-      running: false,
-      t: 0,
-      N0: 260,
-      N: 260,
-      halfLife: 8,
-      dt: 0.2,
-      lastActivity: 0,
-      points: [{ t: 0, N: 260 }],
-      theoryPoints: [{ t: 0, N: 260 }],
-      lastTs: performance.now()
-    };
-
     const translations = {
       en: {
-        back: 'Back to Topics',
-        tag: '3D HKDSE Radioactivity Lab',
+        back: 'Back to Topics', tag: '3D HKDSE Radioactivity Lab',
         title: '3D Radioactive Decay & Half-life Lab',
-        subtitle: 'Observe nuclei disappear in a 3D chamber and compare measured remaining count with the decay law.',
-        focusTitle: 'Focus',
-        focus1: '• Random single-particle decay in 3D.',
-        focus2: '• Macroscopic exponential law emerges.',
-        focus3: '• Compare measured and theoretical N(t).',
-        controls: 'Controls',
-        n0: 'Initial nuclei N₀',
-        halfLife: 'Half-life T½ (s)',
-        dt: 'Time step Δt (s)',
-        start: 'Start',
-        pause: 'Pause',
-        single: 'Single Step',
-        reset: 'Reset',
-        readings: 'Readings',
-        time: 'Time',
-        remaining: 'Remaining N',
-        activity: 'Activity',
-        theory: 'Theory N(t)',
-        formulaTitle: 'Formula Bank'
+        subtitle: 'Watch nuclei decay randomly in 3D and compare measured N(t) with the exponential law.',
+        controls: 'Controls', n0: 'Initial nuclei N₀', halfLife: 'Half-life T½ (s)', dt: 'Time step Δt (s)',
+        start: 'Start', pause: 'Pause', single: 'Single Step', reset: 'Reset',
+        'preset.fast': 'T½=3s', 'preset.mid': 'T½=8s', 'preset.slow': 'T½=15s',
+        readings: 'Live Data', time: 'Time', remaining: 'Remaining N', activity: 'Activity A',
+        theory: 'Theory N(t)', lambda: 'λ = ln2/T½', formulaTitle: 'Formula Bank',
+        'legend.alive': 'Undecayed', 'legend.decay': 'Decay flash', 'legend.theory': 'Theory curve',
+        hint: 'Drag • Wheel • Pinch'
       },
       'zh-hk': {
-        back: '返回主題頁',
-        tag: '3D HKDSE 放射實驗室',
+        back: '返回主題頁', tag: '3D HKDSE 放射實驗室',
         title: '3D 放射性衰變與半衰期實驗室',
-        subtitle: '在 3D 容器中觀察核子衰變，並比較量度剩餘數與理論衰減曲線。',
-        focusTitle: '重點',
-        focus1: '• 3D 單粒子隨機衰變。',
-        focus2: '• 宏觀上呈現指數衰減規律。',
-        focus3: '• 比較量度與理論 N(t)。',
-        controls: '控制面板',
-        n0: '初始核數 N₀',
-        halfLife: '半衰期 T½ (s)',
-        dt: '時間步長 Δt (s)',
-        start: '開始',
-        pause: '暫停',
-        single: '單步',
-        reset: '重設',
-        readings: '讀數',
-        time: '時間',
-        remaining: '剩餘 N',
-        activity: '活度',
-        theory: '理論 N(t)',
-        formulaTitle: '公式庫'
+        subtitle: '在 3D 容器中觀察隨機衰變，並比較量度 N(t) 與指數定律。',
+        controls: '控制面板', n0: '初始核數 N₀', halfLife: '半衰期 T½ (s)', dt: '時間步長 Δt (s)',
+        start: '開始', pause: '暫停', single: '單步', reset: '重設',
+        'preset.fast': 'T½=3s', 'preset.mid': 'T½=8s', 'preset.slow': 'T½=15s',
+        readings: '即時數據', time: '時間', remaining: '剩餘 N', activity: '活度 A',
+        theory: '理論 N(t)', lambda: 'λ = ln2/T½', formulaTitle: '公式庫',
+        'legend.alive': '未衰變', 'legend.decay': '衰變閃光', 'legend.theory': '理論曲線',
+        hint: '拖曳 • 滾輪 • 雙指縮放'
       }
     };
 
-    function rebuildParticles() {
-      particles.forEach((p) => scene.remove(p.mesh));
-      particles.length = 0;
-      for (let i = 0; i < state.N0; i += 1) {
-        const mesh = new THREE.Mesh(nucGeo, nucMat.clone());
-        mesh.position.set((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 7, (Math.random() - 0.5) * 7);
-        scene.add(mesh);
-        particles.push({ alive: true, mesh });
-      }
-      state.N = state.N0;
+    const container = document.getElementById('three-container');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const gCtx = graphCanvas.getContext('2d');
+    let scene, camera, renderer, chamber, edges, particles = [], sparks = [];
+    let camTheta = 0.55, camPhi = 1.1, camRadius = 16;
+    const defaultCam = { theta: 0.55, phi: 1.1, radius: 16 };
+    let isCameraDrag = false, startCamX, startCamY;
+
+    const state = {
+      running: false, t: 0, N0: 260, N: 260, halfLife: 8, dt: 0.2,
+      lastActivity: 0, points: [{ t: 0, N: 260 }], theoryPoints: [{ t: 0, N: 260 }],
+      lastTs: performance.now(), acc: 0
+    };
+
+    function updateLanguage(lang) {
+      localStorage.setItem('preferred_language', lang);
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang]?.[key]) el.textContent = translations[lang][key];
+      });
+      document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        const a = btn.dataset.lang === lang;
+        btn.classList.toggle('bg-blue-600', a); btn.classList.toggle('text-white', a); btn.classList.toggle('text-slate-600', !a);
+      });
     }
 
     function syncControls() {
-      state.N0 = Number(controls.n0.value);
-      state.halfLife = Number(controls.halfLife.value);
-      state.dt = Number(controls.dt.value);
-      out.n0Out.textContent = state.N0.toFixed(0);
-      out.halfOut.textContent = state.halfLife.toFixed(1);
-      out.dtOut.textContent = state.dt.toFixed(2);
+      state.N0 = +document.getElementById('n0').value;
+      state.halfLife = +document.getElementById('halfLife').value;
+      state.dt = +document.getElementById('dt').value;
+      document.getElementById('n0Out').textContent = state.N0;
+      document.getElementById('halfOut').textContent = state.halfLife.toFixed(1);
+      document.getElementById('dtOut').textContent = state.dt.toFixed(2);
+      document.getElementById('lambdaOut').textContent = (Math.log(2) / state.halfLife).toFixed(3);
     }
 
-    function resetSim() {
-      syncControls();
-      state.running = false;
-      state.t = 0;
-      state.lastActivity = 0;
-      state.points = [{ t: 0, N: state.N0 }];
-      state.theoryPoints = [{ t: 0, N: state.N0 }];
-      rebuildParticles();
-      updateOutputs();
+    function rebuildParticles() {
+      particles.forEach(p => scene.remove(p.mesh));
+      particles = [];
+      const geo = new THREE.SphereGeometry(0.09, 10, 10);
+      for (let i = 0; i < state.N0; i++) {
+        const mat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.4, metalness: 0.1 });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set((Math.random() - 0.5) * 6.5, (Math.random() - 0.5) * 6.5, (Math.random() - 0.5) * 6.5);
+        scene.add(mesh);
+        particles.push({
+          alive: true, mesh,
+          drift: new THREE.Vector3((Math.random() - 0.5) * 0.004, (Math.random() - 0.5) * 0.004, (Math.random() - 0.5) * 0.004),
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+      state.N = state.N0;
     }
 
     function updateOutputs() {
       const lambda = Math.log(2) / state.halfLife;
       const theory = state.N0 * Math.exp(-lambda * state.t);
-      out.timeOut.textContent = `${state.t.toFixed(2)} s`;
-      out.remainingOut.textContent = `${state.N}`;
-      out.activityOut.textContent = `${state.lastActivity.toFixed(2)} s⁻¹`;
-      out.theoryOut.textContent = theory.toFixed(1);
+      document.getElementById('timeOut').textContent = state.t.toFixed(2) + ' s';
+      document.getElementById('remainingOut').textContent = state.N;
+      document.getElementById('activityOut').textContent = state.lastActivity.toFixed(2) + ' s⁻¹';
+      document.getElementById('theoryOut').textContent = theory.toFixed(1);
+      document.getElementById('lambdaOut').textContent = lambda.toFixed(3);
+    }
+
+    function spawnSpark(pos) {
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.15, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xdc2626, transparent: true, opacity: 1 })
+      );
+      mesh.position.copy(pos);
+      scene.add(mesh);
+      sparks.push({ mesh, age: 0, vel: new THREE.Vector3((Math.random() - 0.5) * 0.08, 0.05 + Math.random() * 0.08, (Math.random() - 0.5) * 0.08) });
     }
 
     function decayStep() {
       const lambda = Math.log(2) / state.halfLife;
       const pDecay = 1 - Math.exp(-lambda * state.dt);
       let decayed = 0;
-      for (let i = 0; i < particles.length; i += 1) {
+      for (let i = 0; i < particles.length; i++) {
         const part = particles[i];
         if (!part.alive) continue;
         if (Math.random() < pDecay) {
           part.alive = false;
+          spawnSpark(part.mesh.position.clone());
           part.mesh.visible = false;
-          decayed += 1;
+          decayed++;
         }
       }
       state.N -= decayed;
@@ -269,122 +220,170 @@
       updateOutputs();
     }
 
-    function drawGraph() {
-      gCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
-      gCtx.fillStyle = '#f8fafc';
-      gCtx.fillRect(0, 0, graphCanvas.width, graphCanvas.height);
-      const m = 46;
-      const w = graphCanvas.width - m * 2;
-      const h = graphCanvas.height - m * 2;
-      const tMax = Math.max(18, state.points[state.points.length - 1].t + 1);
-      const nMax = Math.max(10, state.N0);
-      const toX = (t) => m + (t / tMax) * w;
-      const toY = (n) => graphCanvas.height - m - (n / nMax) * h;
-
-      gCtx.strokeStyle = '#94a3b8';
-      gCtx.lineWidth = 1.5;
-      gCtx.beginPath();
-      gCtx.moveTo(m, m);
-      gCtx.lineTo(m, graphCanvas.height - m);
-      gCtx.lineTo(graphCanvas.width - m, graphCanvas.height - m);
-      gCtx.stroke();
-
-      gCtx.strokeStyle = '#2563eb';
-      gCtx.lineWidth = 2.2;
-      gCtx.beginPath();
-      state.points.forEach((p, i) => {
-        const x = toX(p.t);
-        const y = toY(p.N);
-        if (i === 0) gCtx.moveTo(x, y); else gCtx.lineTo(x, y);
-      });
-      gCtx.stroke();
-
-      gCtx.strokeStyle = '#d97706';
-      gCtx.lineWidth = 2.1;
-      gCtx.beginPath();
-      state.theoryPoints.forEach((p, i) => {
-        const x = toX(p.t);
-        const y = toY(p.N);
-        if (i === 0) gCtx.moveTo(x, y); else gCtx.lineTo(x, y);
-      });
-      gCtx.stroke();
-
-      gCtx.fillStyle = '#334155';
-      gCtx.font = '12px Inter';
-      gCtx.fillText('t (s)', graphCanvas.width - m - 18, graphCanvas.height - m + 18);
-      gCtx.fillText('N', m - 20, m - 10);
+    function resetSim() {
+      syncControls();
+      state.running = false; state.t = 0; state.lastActivity = 0; state.acc = 0;
+      state.points = [{ t: 0, N: state.N0 }];
+      state.theoryPoints = [{ t: 0, N: state.N0 }];
+      sparks.forEach(s => scene.remove(s.mesh)); sparks = [];
+      rebuildParticles();
+      updateOutputs();
     }
 
-    function resizeRenderer() {
-      const r = sceneCanvas.getBoundingClientRect();
-      const w = Math.max(200, Math.floor(r.width));
-      const h = Math.max(220, Math.floor(r.height));
-      if (sceneCanvas.width !== w || sceneCanvas.height !== h) {
-        renderer.setSize(w, h, false);
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-      }
+    function drawGraph() {
+      gCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+      gCtx.fillStyle = '#ffffff';
+      gCtx.fillRect(0, 0, graphCanvas.width, graphCanvas.height);
+      const m = 46, w = graphCanvas.width - m * 2, h = graphCanvas.height - m * 2;
+      const tMax = Math.max(18, state.points[state.points.length - 1].t + 1);
+      const nMax = Math.max(10, state.N0);
+      const toX = t => m + (t / tMax) * w;
+      const toY = n => graphCanvas.height - m - (n / nMax) * h;
+      gCtx.strokeStyle = '#94a3b8'; gCtx.lineWidth = 1.5;
+      gCtx.beginPath(); gCtx.moveTo(m, m); gCtx.lineTo(m, graphCanvas.height - m); gCtx.lineTo(graphCanvas.width - m, graphCanvas.height - m); gCtx.stroke();
+      gCtx.strokeStyle = '#2563eb'; gCtx.lineWidth = 2.2; gCtx.beginPath();
+      state.points.forEach((p, i) => { const x = toX(p.t), y = toY(p.N); if (i === 0) gCtx.moveTo(x, y); else gCtx.lineTo(x, y); });
+      gCtx.stroke();
+      gCtx.strokeStyle = '#d97706'; gCtx.lineWidth = 2.1; gCtx.beginPath();
+      state.theoryPoints.forEach((p, i) => { const x = toX(p.t), y = toY(p.N); if (i === 0) gCtx.moveTo(x, y); else gCtx.lineTo(x, y); });
+      gCtx.stroke();
+      gCtx.fillStyle = '#334155'; gCtx.font = '12px Inter';
+      gCtx.fillText('t (s)', graphCanvas.width - m - 24, graphCanvas.height - m + 18);
+      gCtx.fillText('N', m - 20, m - 8);
+      gCtx.fillStyle = '#2563eb'; gCtx.fillText('Measured', m + 8, m + 14);
+      gCtx.fillStyle = '#d97706'; gCtx.fillText('Theory', m + 90, m + 14);
+    }
+
+    function updateCameraFromSpherical() {
+      camera.position.set(camRadius * Math.sin(camPhi) * Math.sin(camTheta), camRadius * Math.cos(camPhi), camRadius * Math.sin(camPhi) * Math.cos(camTheta));
+      camera.lookAt(0, 0, 0);
+    }
+
+    function setupCameraControls() {
+      container.addEventListener('mousedown', e => { if (e.target.closest('input,button')) return; isCameraDrag = true; startCamX = e.clientX; startCamY = e.clientY; });
+      window.addEventListener('mouseup', () => { isCameraDrag = false; });
+      window.addEventListener('mousemove', e => {
+        if (!isCameraDrag) return;
+        camTheta -= (e.clientX - startCamX) * 0.005; camPhi -= (e.clientY - startCamY) * 0.005;
+        camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi));
+        startCamX = e.clientX; startCamY = e.clientY; updateCameraFromSpherical();
+      });
+      container.addEventListener('wheel', e => { e.preventDefault(); camRadius = Math.max(8, Math.min(40, camRadius + e.deltaY * 0.025)); updateCameraFromSpherical(); }, { passive: false });
+      let ltd = null, ltx = null, lty = null;
+      container.addEventListener('touchstart', e => {
+        e.preventDefault();
+        if (e.touches.length === 1) { ltx = e.touches[0].clientX; lty = e.touches[0].clientY; }
+        else if (e.touches.length === 2) ltd = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      }, { passive: false });
+      container.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (e.touches.length === 1 && ltx !== null) {
+          camTheta -= (e.touches[0].clientX - ltx) * 0.008; camPhi -= (e.touches[0].clientY - lty) * 0.008;
+          camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi));
+          ltx = e.touches[0].clientX; lty = e.touches[0].clientY; updateCameraFromSpherical();
+        } else if (e.touches.length === 2 && ltd !== null) {
+          const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          camRadius = Math.max(8, Math.min(40, camRadius + (ltd - d) * 0.08)); ltd = d; updateCameraFromSpherical();
+        }
+      }, { passive: false });
+      container.addEventListener('touchend', () => { ltx = lty = ltd = null; });
+    }
+
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf8fafc);
+      camera = new THREE.PerspectiveCamera(45, container.offsetWidth / Math.max(container.offsetHeight, 1), 0.1, 300);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+      const key = new THREE.DirectionalLight(0xffffff, 0.85); key.position.set(7, 9, 10); scene.add(key);
+      const rim = new THREE.DirectionalLight(0x93c5fd, 0.4); rim.position.set(-8, -5, -8); scene.add(rim);
+
+      chamber = new THREE.Mesh(new THREE.BoxGeometry(8.2, 8.2, 8.2), new THREE.MeshStandardMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.14 }));
+      scene.add(chamber);
+      edges = new THREE.LineSegments(new THREE.EdgesGeometry(chamber.geometry), new THREE.LineBasicMaterial({ color: 0x64748b }));
+      scene.add(edges);
+
+      rebuildParticles();
+      setupCameraControls();
+      updateCameraFromSpherical();
+      animate(performance.now());
     }
 
     function animate(ts) {
       const elapsed = Math.min(0.05, (ts - state.lastTs) / 1000);
       state.lastTs = ts;
       if (state.running) {
-        if (!state.acc) state.acc = 0;
         state.acc += elapsed;
         while (state.acc >= state.dt) {
           state.acc -= state.dt;
           decayStep();
-          if (state.N <= 0) {
-            state.running = false;
-            break;
-          }
+          if (state.N <= 0) { state.running = false; break; }
         }
       }
-      chamber.rotation.y += 0.0025;
-      chamber.rotation.x += 0.0013;
+
+      const tAnim = ts * 0.001;
+      particles.forEach(p => {
+        if (!p.alive) return;
+        p.mesh.position.add(p.drift);
+        p.mesh.position.y += Math.sin(tAnim + p.phase) * 0.0015;
+        // soft bounce inside chamber
+        ['x', 'y', 'z'].forEach(ax => {
+          if (Math.abs(p.mesh.position[ax]) > 3.4) p.drift[ax] *= -1;
+        });
+      });
+
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const s = sparks[i];
+        s.age += elapsed;
+        s.mesh.position.add(s.vel);
+        s.mesh.material.opacity = Math.max(0, 1 - s.age * 2.5);
+        s.mesh.scale.setScalar(1 + s.age * 2);
+        if (s.age > 0.5) { scene.remove(s.mesh); sparks.splice(i, 1); }
+      }
+
+      chamber.rotation.y += 0.0015;
       edges.rotation.copy(chamber.rotation);
-      resizeRenderer();
       renderer.render(scene, camera);
       drawGraph();
       requestAnimationFrame(animate);
     }
 
-    function updateLanguage(lang) {
-      localStorage.setItem('preferred_language', lang);
-      document.querySelectorAll('[data-i18n]').forEach((el) => {
-        const key = el.getAttribute('data-i18n');
-        const text = translations[lang] && translations[lang][key];
-        if (text) el.textContent = text;
-      });
-      document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
-      document.querySelectorAll('.lang-btn').forEach((btn) => {
-        const active = btn.dataset.lang === lang;
-        btn.classList.toggle('bg-blue-600', active);
-        btn.classList.toggle('text-white', active);
-        btn.classList.toggle('text-slate-600', !active);
-      });
-    }
-
-    [controls.n0, controls.halfLife, controls.dt].forEach((el) => {
-      el.addEventListener('input', () => {
+    ['n0', 'halfLife', 'dt'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
         syncControls();
         if (!state.running) resetSim();
+        else updateOutputs();
       });
     });
-    startBtn.addEventListener('click', () => { state.running = true; });
-    pauseBtn.addEventListener('click', () => { state.running = false; });
-    stepBtn.addEventListener('click', () => { state.running = false; decayStep(); });
-    resetBtn.addEventListener('click', resetSim);
+    document.getElementById('startBtn').addEventListener('click', () => { state.running = true; });
+    document.getElementById('pauseBtn').addEventListener('click', () => { state.running = false; });
+    document.getElementById('stepBtn').addEventListener('click', () => { state.running = false; decayStep(); });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      camTheta = defaultCam.theta; camPhi = defaultCam.phi; camRadius = defaultCam.radius;
+      updateCameraFromSpherical(); resetSim();
+    });
+    document.getElementById('presetFast').addEventListener('click', () => { document.getElementById('halfLife').value = 3; syncControls(); if (!state.running) resetSim(); });
+    document.getElementById('presetMid').addEventListener('click', () => { document.getElementById('halfLife').value = 8; syncControls(); if (!state.running) resetSim(); });
+    document.getElementById('presetSlow').addEventListener('click', () => { document.getElementById('halfLife').value = 15; syncControls(); if (!state.running) resetSim(); });
 
-    resetSim();
+    window.addEventListener('resize', () => {
+      if (!camera) return;
+      camera.aspect = container.offsetWidth / Math.max(container.offsetHeight, 1);
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
+
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
-    requestAnimationFrame(animate);
+    syncControls();
+    initThree();
+    updateOutputs();
   </script>
 
-    <!-- Practice Questions Widget -->
-    <script src="practice_questions.js"></script>
-    <script src="practice_questions_data.js"></script>
-    <script>initPracticeQuestions('half_life');</script>
+  <script src="practice_questions.js"></script>
+  <script src="practice_questions_data.js"></script>
+  <script>initPracticeQuestions('half_life');</script>
 </body>
 </html>

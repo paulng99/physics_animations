@@ -1,571 +1,293 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rutherford's Atomic Model – Scattering Experiment</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <style>
-        :root { color-scheme: light; }
-        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
-        mjx-container { display: inline-block !important; }
-        .glass { background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); }
-        canvas { background-color: #0f172a; border-radius: 0.75rem; border: 2px solid #e2e8f0; }
-    </style>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-RJQ61GJDVS');
-    </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Rutherford Scattering Experiment</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    #three-container { width: 100%; height: 500px; cursor: grab; border-radius: 12px; overflow: hidden; background: #0f172a; }
+    #three-container:active { cursor: grabbing; }
+  </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+  <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex justify-between items-center">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600"><span>←</span><span data-i18n="nav.back">Back</span></a>
+      <div class="flex gap-2">
+        <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-100" data-lang="zh">繁</button>
+        <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" data-lang="en">EN</button>
+      </div>
+    </div>
+  </nav>
 
-    <header class="max-w-6xl mx-auto px-4 pt-6 pb-4">
-        <nav class="flex items-center justify-between flex-wrap gap-3">
-            <div class="flex items-center gap-3">
-                <a href="index.html" class="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                    <span data-i18n="nav.back">Back</span>
-                </a>
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-sm">Φ</span>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
-                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
-            </div>
-        </nav>
-    </header>
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <h1 class="text-2xl md:text-3xl font-bold" data-i18n="title">3D Rutherford Gold Foil Scattering</h1>
+      <p class="mt-2 text-slate-600" data-i18n="subtitle">Fire α particles at a gold nucleus and observe Coulomb scattering in 3D.</p>
+    </section>
 
-    <main class="max-w-6xl mx-auto px-4 pb-12">
-        <div class="glass rounded-3xl p-6 md:p-8 border border-white/60 shadow-xl">
-            <h1 class="text-2xl md:text-3xl font-bold text-slate-800" data-i18n="title">Rutherford's Gold Foil Scattering Experiment</h1>
-            <p class="text-slate-600 mt-2 text-sm md:text-base" data-i18n="subtitle">Simulate alpha particle scattering to discover the atomic nucleus</p>
-
-            <div class="grid lg:grid-cols-3 gap-6 mt-6">
-                <div class="lg:col-span-2">
-                    <canvas id="simCanvas" class="w-full" style="aspect-ratio: 4/3;"></canvas>
-
-                    <div class="flex flex-wrap gap-3 mt-4">
-                        <button id="fireBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="btn.fire">Fire Alpha Particles</button>
-                        <button id="burstBtn" class="px-5 py-2.5 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="btn.burst">Burst (50)</button>
-                        <button id="resetBtn" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all" data-i18n="btn.reset">Reset</button>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <h3 class="font-semibold text-slate-800 mb-3" data-i18n="controls.title">Controls</h3>
-
-                        <label class="block text-sm font-medium text-slate-600 mb-1" data-i18n="controls.charge">Nuclear Charge (Z)</label>
-                        <input type="range" id="chargeSlider" min="10" max="120" value="79" class="w-full accent-blue-600">
-                        <div class="flex justify-between text-xs text-slate-400"><span>10</span><span id="chargeVal" class="font-semibold text-blue-600">79 (Au)</span><span>120</span></div>
-
-                        <label class="block text-sm font-medium text-slate-600 mb-1 mt-4" data-i18n="controls.energy">Particle Energy (MeV)</label>
-                        <input type="range" id="energySlider" min="1" max="20" value="5" step="0.5" class="w-full accent-blue-600">
-                        <div class="flex justify-between text-xs text-slate-400"><span>1</span><span id="energyVal" class="font-semibold text-blue-600">5.0 MeV</span><span>20</span></div>
-
-                        <label class="block text-sm font-medium text-slate-600 mb-1 mt-4" data-i18n="controls.speed">Animation Speed</label>
-                        <input type="range" id="speedSlider" min="1" max="5" value="2" class="w-full accent-blue-600">
-                        <div class="flex justify-between text-xs text-slate-400"><span data-i18n="controls.slow">Slow</span><span id="speedVal" class="font-semibold text-blue-600">2×</span><span data-i18n="controls.fast">Fast</span></div>
-
-                        <div class="mt-4 flex items-center gap-2">
-                            <input type="checkbox" id="showTrails" checked class="accent-blue-600">
-                            <label for="showTrails" class="text-sm text-slate-600" data-i18n="controls.trails">Show trails</label>
-                        </div>
-                        <div class="flex items-center gap-2 mt-1">
-                            <input type="checkbox" id="showFoil" checked class="accent-blue-600">
-                            <label for="showFoil" class="text-sm text-slate-600" data-i18n="controls.foil">Show gold foil</label>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <h3 class="font-semibold text-slate-800 mb-3" data-i18n="stats.title">Statistics</h3>
-                        <div class="grid grid-cols-2 gap-3 text-sm">
-                            <div>
-                                <div class="text-slate-500" data-i18n="stats.total">Total Fired</div>
-                                <div id="statTotal" class="text-xl font-bold text-blue-600">0</div>
-                            </div>
-                            <div>
-                                <div class="text-slate-500" data-i18n="stats.passed">Passed Through</div>
-                                <div id="statPassed" class="text-xl font-bold text-green-600">0</div>
-                            </div>
-                            <div>
-                                <div class="text-slate-500" data-i18n="stats.deflected">Deflected (&gt;10°)</div>
-                                <div id="statDeflected" class="text-xl font-bold text-amber-600">0</div>
-                            </div>
-                            <div>
-                                <div class="text-slate-500" data-i18n="stats.backscattered">Backscattered (&gt;90°)</div>
-                                <div id="statBack" class="text-xl font-bold text-red-600">0</div>
-                            </div>
-                        </div>
-                        <div class="mt-3 h-4 bg-slate-100 rounded-full overflow-hidden flex">
-                            <div id="barPassed" class="bg-green-500 transition-all" style="width:100%"></div>
-                            <div id="barDeflected" class="bg-amber-500 transition-all" style="width:0%"></div>
-                            <div id="barBack" class="bg-red-500 transition-all" style="width:0%"></div>
-                        </div>
-                        <div class="flex justify-between text-xs text-slate-400 mt-1">
-                            <span class="text-green-600" data-i18n="stats.passedLabel">Passed</span>
-                            <span class="text-amber-600" data-i18n="stats.deflectedLabel">Deflected</span>
-                            <span class="text-red-600" data-i18n="stats.backLabel">Backscattered</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <h3 class="font-semibold text-slate-800 mb-2" data-i18n="legend.title">Legend</h3>
-                        <div class="space-y-1 text-sm">
-                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-400 inline-block"></span><span data-i18n="legend.alpha">Alpha particle (α)</span></div>
-                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span><span data-i18n="legend.nucleus">Gold nucleus (Au)</span></div>
-                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-300 inline-block border border-amber-400"></span><span data-i18n="legend.foil">Gold foil</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-8 grid md:grid-cols-2 gap-6">
-                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                    <h3 class="text-lg font-semibold text-slate-800 mb-3" data-i18n="info.title">About Rutherford's Experiment</h3>
-                    <div class="text-sm text-slate-600 space-y-2">
-                        <p data-i18n="info.p1">In 1911, Ernest Rutherford directed alpha particles at a thin gold foil. Most particles passed straight through, but a small fraction were deflected at large angles — some even bounced back.</p>
-                        <p data-i18n="info.p2">This result was incompatible with Thomson's "plum pudding" model. It proved that atoms have a tiny, dense, positively charged nucleus surrounded by mostly empty space.</p>
-                        <p data-i18n="info.p3">The scattering pattern follows the Rutherford scattering formula, where the probability of scattering at angle θ is proportional to:</p>
-                        <div class="text-center py-2">$$\frac{d\sigma}{d\Omega} \propto \frac{1}{\sin^4(\theta/2)}$$</div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                    <h3 class="text-lg font-semibold text-slate-800 mb-3" data-i18n="info.limTitle">Key Observations & Limitations</h3>
-                    <div class="text-sm text-slate-600 space-y-2">
-                        <p data-i18n="info.obs1"><strong>Observation 1:</strong> Most alpha particles pass through — the atom is mostly empty space.</p>
-                        <p data-i18n="info.obs2"><strong>Observation 2:</strong> Some particles deflect at large angles — a concentrated positive charge (nucleus) exists.</p>
-                        <p data-i18n="info.obs3"><strong>Observation 3:</strong> Very few particles bounce back — the nucleus is very small but very massive.</p>
-                        <p class="border-t border-slate-100 pt-2 mt-2" data-i18n="info.lim1"><strong>Limitation 1:</strong> Rutherford's model cannot explain why orbiting electrons don't radiate energy and spiral into the nucleus (classical electrodynamics predicts they should).</p>
-                        <p data-i18n="info.lim2"><strong>Limitation 2:</strong> It cannot explain the discrete line spectra of elements — there is no mechanism for quantised energy levels.</p>
-                        <p data-i18n="info.impact"><strong>Legacy:</strong> Scattering experiments remain fundamental in particle physics. Modern accelerators (e.g. CERN's LHC) use the same principle — firing high-energy particles to probe subatomic structure.</p>
-                    </div>
-                </div>
-            </div>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <aside class="lg:col-span-4 space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <div class="flex justify-between items-center">
+            <h2 class="font-semibold" data-i18n="controls.title">Controls</h2>
+            <button id="resetBtn" class="text-xs font-bold text-blue-600 hover:underline" data-i18n="btn.reset">Reset</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="fireBtn" class="px-3 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5" data-i18n="btn.fire">Fire α</button>
+            <button id="burstBtn" class="px-3 py-2.5 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 hover:-translate-y-0.5" data-i18n="btn.burst">Burst 50</button>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="controls.charge">Nuclear Charge Z</span><span id="zVal" class="font-semibold text-red-600">79</span></div>
+            <input id="chargeSlider" type="range" min="10" max="120" value="79" class="w-full accent-red-600" />
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="controls.energy">Energy (MeV)</span><span id="eVal" class="font-semibold text-green-600">5.0</span></div>
+            <input id="energySlider" type="range" min="1" max="20" value="5" step="0.5" class="w-full accent-green-600" />
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="controls.speed">Anim. Speed</span><span id="speedVal" class="font-semibold text-blue-600">2×</span></div>
+            <input id="speedSlider" type="range" min="1" max="5" value="2" class="w-full accent-blue-600" />
+          </div>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="showTrails" checked class="accent-blue-600" /><span data-i18n="controls.trails">Show trails</span></label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="showFoil" checked class="accent-blue-600" /><span data-i18n="controls.foil">Show gold foil</span></label>
         </div>
-    </main>
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm text-sm space-y-2">
+          <h2 class="font-semibold mb-2" data-i18n="stats.title">Statistics</h2>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.total">Total Fired</span><span id="statTotal" class="font-bold">0</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.passed">Passed</span><span id="statPassed" class="font-bold text-green-600">0</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.deflected">Deflected &gt;10°</span><span id="statDef" class="font-bold text-amber-600">0</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.back">Backscattered &gt;90°</span><span id="statBack" class="font-bold text-red-600">0</span></div>
+        </div>
+      </aside>
 
-    <script>
-    window.addEventListener('load', () => {
-        const canvas = document.getElementById('simCanvas');
-        const ctx = canvas.getContext('2d');
+      <section class="lg:col-span-8">
+        <div id="three-container" class="relative border-2 border-slate-700 shadow-lg">
+          <div class="absolute top-4 left-4 flex flex-wrap gap-2 pointer-events-none z-10">
+            <span class="bg-black/50 backdrop-blur text-yellow-300 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.alpha">α particle</span>
+            <span class="bg-black/50 backdrop-blur text-red-400 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.nucleus">Au nucleus</span>
+            <span class="bg-black/50 backdrop-blur text-amber-300 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.foil">Gold foil</span>
+          </div>
+          <div class="absolute bottom-4 right-4 bg-gray-900/80 text-white px-4 py-2 rounded-full text-xs pointer-events-none" data-i18n="hint">Drag • Wheel • Pinch</div>
+        </div>
+      </section>
+    </div>
 
-        let W, H, scale;
-        const particles = [];
-        const completedTrails = [];
-        let stats = { total: 0, passed: 0, deflected: 0, back: 0 };
-        let animId;
+    <section class="bg-white rounded-2xl border border-slate-200 p-6 text-sm text-slate-600 space-y-2">
+      <h3 class="font-semibold text-slate-900" data-i18n="info.title">About the experiment</h3>
+      <p data-i18n="info.p1">Most α particles pass through — the atom is mostly empty space. Large-angle scattering proves a tiny, dense, positively charged nucleus.</p>
+      <p data-i18n="info.p2">Scattering angle rises with nuclear charge Z and falls with particle kinetic energy.</p>
+    </section>
+  </main>
 
-        function resizeCanvas() {
-            const rect = canvas.parentElement.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.width * 0.75 * dpr;
-            canvas.style.width = rect.width + 'px';
-            canvas.style.height = rect.width * 0.75 + 'px';
-            W = canvas.width;
-            H = canvas.height;
-            scale = W / 800;
+  <script>
+    const translations = {
+      en: {
+        'nav.back': 'Back', title: '3D Rutherford Gold Foil Scattering',
+        subtitle: 'Fire α particles at a gold nucleus and observe Coulomb scattering in 3D.',
+        'controls.title': 'Controls', 'btn.reset': 'Reset', 'btn.fire': 'Fire α', 'btn.burst': 'Burst 50',
+        'controls.charge': 'Nuclear Charge Z', 'controls.energy': 'Energy (MeV)', 'controls.speed': 'Anim. Speed',
+        'controls.trails': 'Show trails', 'controls.foil': 'Show gold foil',
+        'stats.title': 'Statistics', 'stats.total': 'Total Fired', 'stats.passed': 'Passed',
+        'stats.deflected': 'Deflected >10°', 'stats.back': 'Backscattered >90°',
+        'legend.alpha': 'α particle', 'legend.nucleus': 'Au nucleus', 'legend.foil': 'Gold foil',
+        hint: 'Drag • Wheel • Pinch', 'info.title': 'About the experiment',
+        'info.p1': 'Most α particles pass through — the atom is mostly empty space. Large-angle scattering proves a tiny, dense, positively charged nucleus.',
+        'info.p2': 'Scattering angle rises with nuclear charge Z and falls with particle kinetic energy.'
+      },
+      zh: {
+        'nav.back': '返回', title: '3D 盧瑟福金箔散射',
+        subtitle: '向金原子核發射 α 粒子，觀察三維庫侖散射。',
+        'controls.title': '控制', 'btn.reset': '重設', 'btn.fire': '發射 α', 'btn.burst': '連發 50',
+        'controls.charge': '核電荷 Z', 'controls.energy': '能量 (MeV)', 'controls.speed': '動畫速度',
+        'controls.trails': '顯示軌跡', 'controls.foil': '顯示金箔',
+        'stats.title': '統計', 'stats.total': '總發射', 'stats.passed': '直穿',
+        'stats.deflected': '偏轉 >10°', 'stats.back': '背散射 >90°',
+        'legend.alpha': 'α 粒子', 'legend.nucleus': '金原子核', 'legend.foil': '金箔',
+        hint: '拖曳 • 滾輪 • 雙指縮放', 'info.title': '實驗簡介',
+        'info.p1': '大多數 α 粒子直穿——原子大部分是真空。大角散射證明存在細小、緻密、帶正電的原子核。',
+        'info.p2': '散射角隨核電荷 Z 增大，隨動能增大而減小。'
+      }
+    };
+    let currentLang = localStorage.getItem('preferred_language') === 'zh-hk' || localStorage.getItem('preferred_language') === 'zh' ? 'zh' : 'en';
+
+    const stats = { total: 0, passed: 0, deflected: 0, back: 0 };
+    const container = document.getElementById('three-container');
+    let scene, camera, renderer, nucleus, foil, alphas = [], trailGroup;
+    let camTheta = 0.7, camPhi = 1.15, camRadius = 22;
+    const defaultCam = { theta: 0.7, phi: 1.15, radius: 22 };
+    let isCameraDrag = false, startCamX, startCamY;
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('preferred_language', lang === 'zh' ? 'zh-hk' : lang);
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const k = el.getAttribute('data-i18n');
+        if (translations[lang]?.[k]) el.textContent = translations[lang][k];
+      });
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        const a = btn.dataset.lang === lang;
+        btn.classList.toggle('bg-blue-600', a); btn.classList.toggle('text-white', a);
+      });
+    }
+
+    function updateStatsUI() {
+      document.getElementById('statTotal').textContent = stats.total;
+      document.getElementById('statPassed').textContent = stats.passed;
+      document.getElementById('statDef').textContent = stats.deflected;
+      document.getElementById('statBack').textContent = stats.back;
+    }
+
+    function updateCameraFromSpherical() {
+      camera.position.set(camRadius * Math.sin(camPhi) * Math.sin(camTheta), camRadius * Math.cos(camPhi), camRadius * Math.sin(camPhi) * Math.cos(camTheta));
+      camera.lookAt(0, 0, 0);
+    }
+
+    function setupCameraControls() {
+      container.addEventListener('mousedown', e => { if (e.target.closest('input,button')) return; isCameraDrag = true; startCamX = e.clientX; startCamY = e.clientY; });
+      window.addEventListener('mouseup', () => { isCameraDrag = false; });
+      window.addEventListener('mousemove', e => {
+        if (!isCameraDrag) return;
+        camTheta -= (e.clientX - startCamX) * 0.005; camPhi -= (e.clientY - startCamY) * 0.005;
+        camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi));
+        startCamX = e.clientX; startCamY = e.clientY; updateCameraFromSpherical();
+      });
+      container.addEventListener('wheel', e => { e.preventDefault(); camRadius = Math.max(8, Math.min(50, camRadius + e.deltaY * 0.03)); updateCameraFromSpherical(); }, { passive: false });
+      let ltd = null, ltx = null, lty = null;
+      container.addEventListener('touchstart', e => {
+        e.preventDefault();
+        if (e.touches.length === 1) { ltx = e.touches[0].clientX; lty = e.touches[0].clientY; }
+        else if (e.touches.length === 2) ltd = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      }, { passive: false });
+      container.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (e.touches.length === 1 && ltx !== null) {
+          camTheta -= (e.touches[0].clientX - ltx) * 0.008; camPhi -= (e.touches[0].clientY - lty) * 0.008;
+          camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi));
+          ltx = e.touches[0].clientX; lty = e.touches[0].clientY; updateCameraFromSpherical();
+        } else if (e.touches.length === 2 && ltd !== null) {
+          const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          camRadius = Math.max(8, Math.min(50, camRadius + (ltd - d) * 0.1)); ltd = d; updateCameraFromSpherical();
         }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+      }, { passive: false });
+      container.addEventListener('touchend', () => { ltx = lty = ltd = null; });
+    }
 
-        const chargeSlider = document.getElementById('chargeSlider');
-        const energySlider = document.getElementById('energySlider');
-        const speedSlider = document.getElementById('speedSlider');
-        const showTrails = document.getElementById('showTrails');
-        const showFoil = document.getElementById('showFoil');
+    function fireOne() {
+      const Z = +document.getElementById('chargeSlider').value;
+      const E = +document.getElementById('energySlider').value;
+      const impact = (Math.random() - 0.5) * 6;
+      const impactZ = (Math.random() - 0.5) * 6;
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0x854d0e, emissiveIntensity: 0.3 }));
+      mesh.position.set(-12, impact * 0.15, impactZ * 0.15);
+      scene.add(mesh);
+      // Rutherford-like hyperbolic deflection strength ~ Z / E / b
+      const b = Math.sqrt(impact * impact + impactZ * impactZ) + 0.15;
+      const strength = (Z / 79) * (5 / E) * (1.8 / b);
+      alphas.push({
+        mesh, pos: mesh.position.clone(),
+        vel: new THREE.Vector3(0.18, 0, 0),
+        bVec: new THREE.Vector3(0, impact * 0.15, impactZ * 0.15),
+        strength, classified: false, trail: []
+      });
+      stats.total++; updateStatsUI();
+    }
 
-        chargeSlider.addEventListener('input', () => {
-            const v = parseInt(chargeSlider.value);
-            const el = { 79: 'Au', 29: 'Cu', 47: 'Ag', 82: 'Pb', 92: 'U' };
-            document.getElementById('chargeVal').textContent = v + (el[v] ? ` (${el[v]})` : '');
-        });
-        energySlider.addEventListener('input', () => {
-            document.getElementById('energyVal').textContent = parseFloat(energySlider.value).toFixed(1) + ' MeV';
-        });
-        speedSlider.addEventListener('input', () => {
-            document.getElementById('speedVal').textContent = speedSlider.value + '×';
-        });
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0f172a);
+      camera = new THREE.PerspectiveCamera(45, container.offsetWidth / container.offsetHeight, 0.1, 300);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+      const sun = new THREE.DirectionalLight(0xffffff, 0.9); sun.position.set(5, 10, 8); scene.add(sun);
 
-        const nucleusX = () => W * 0.55;
-        const nucleusY = () => H * 0.5;
-        const nucleusRadius = () => 8 * scale;
+      nucleus = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 24), new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x7f1d1d, emissiveIntensity: 0.4, metalness: 0.3 }));
+      scene.add(nucleus);
+      const glow = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 16), new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.15 }));
+      scene.add(glow);
 
-        function coulombForce(px, py, Z, energy) {
-            const nx = nucleusX(), ny = nucleusY();
-            const dx = px - nx, dy = py - ny;
-            const r2 = dx * dx + dy * dy;
-            const r = Math.sqrt(r2);
-            const k = Z * 2 * 0.5 * scale * scale / (energy * 0.8);
-            const fMag = k / (r2 + 100 * scale * scale);
-            return { fx: fMag * dx / r, fy: fMag * dy / r };
-        }
+      foil = new THREE.Mesh(new THREE.PlaneGeometry(10, 8), new THREE.MeshStandardMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.18, side: THREE.DoubleSide, metalness: 0.8 }));
+      scene.add(foil);
 
-        function createParticle(yOffset) {
-            const Z = parseInt(chargeSlider.value);
-            const energy = parseFloat(energySlider.value);
-            const y = nucleusY() + yOffset;
-            return {
-                x: -10 * scale,
-                y: y,
-                vx: 2.5 * scale,
-                vy: 0,
-                trail: [],
-                alive: true,
-                Z, energy,
-                startY: y,
-                initialAngle: 0
-            };
-        }
+      trailGroup = new THREE.Group(); scene.add(trailGroup);
+      const grid = new THREE.GridHelper(30, 30, 0x334155, 0x1e293b); grid.position.y = -4; scene.add(grid);
 
-        function fireParticles(count) {
-            for (let i = 0; i < count; i++) {
-                const spread = H * 0.4;
-                const yOffset = (Math.random() - 0.5) * spread;
-                particles.push(createParticle(yOffset));
-                stats.total++;
-            }
-            updateStats();
-        }
+      setupCameraControls(); updateCameraFromSpherical(); animate();
+    }
 
-        function classifyParticle(p) {
-            const dx = p.vx, dy = p.vy;
-            const angle = Math.abs(Math.atan2(dy, dx)) * 180 / Math.PI;
-            if (angle > 90) return 'back';
-            if (angle > 10) return 'deflected';
-            return 'passed';
-        }
+    function animate() {
+      requestAnimationFrame(animate);
+      const spd = +document.getElementById('speedSlider').value;
+      const showTrails = document.getElementById('showTrails').checked;
+      foil.visible = document.getElementById('showFoil').checked;
+      nucleus.scale.setScalar(0.7 + (+document.getElementById('chargeSlider').value) / 200);
 
-        function updateStats() {
-            document.getElementById('statTotal').textContent = stats.total;
-            document.getElementById('statPassed').textContent = stats.passed;
-            document.getElementById('statDeflected').textContent = stats.deflected;
-            document.getElementById('statBack').textContent = stats.back;
+      for (let i = alphas.length - 1; i >= 0; i--) {
+        const a = alphas[i];
+        const r = a.pos.length() + 0.01;
+        // Coulomb repulsion from origin (nucleus)
+        const force = a.pos.clone().normalize().multiplyScalar(a.strength / (r * r));
+        a.vel.addScaledVector(force, 0.08 * spd);
+        a.pos.addScaledVector(a.vel, spd);
+        a.mesh.position.copy(a.pos);
 
-            const t = stats.passed + stats.deflected + stats.back;
-            if (t > 0) {
-                document.getElementById('barPassed').style.width = (stats.passed / t * 100) + '%';
-                document.getElementById('barDeflected').style.width = (stats.deflected / t * 100) + '%';
-                document.getElementById('barBack').style.width = (stats.back / t * 100) + '%';
-            }
-        }
-
-        function drawGoldFoil() {
-            if (!showFoil.checked) return;
-            const foilX = nucleusX();
-            ctx.save();
-            ctx.globalAlpha = 0.15;
-            ctx.fillStyle = '#fbbf24';
-            ctx.fillRect(foilX - 6 * scale, 0, 12 * scale, H);
-            ctx.globalAlpha = 0.4;
-            ctx.strokeStyle = '#f59e0b';
-            ctx.lineWidth = 1 * scale;
-            ctx.setLineDash([4 * scale, 4 * scale]);
-            ctx.beginPath();
-            ctx.moveTo(foilX, 0);
-            ctx.lineTo(foilX, H);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.restore();
-        }
-
-        function drawNucleus() {
-            const nx = nucleusX(), ny = nucleusY(), nr = nucleusRadius();
-            const grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, nr * 4);
-            grad.addColorStop(0, 'rgba(239,68,68,0.4)');
-            grad.addColorStop(1, 'rgba(239,68,68,0)');
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(nx, ny, nr * 4, 0, Math.PI * 2);
-            ctx.fill();
-
-            const coreGrad = ctx.createRadialGradient(nx - nr * 0.3, ny - nr * 0.3, 0, nx, ny, nr);
-            coreGrad.addColorStop(0, '#fca5a5');
-            coreGrad.addColorStop(0.5, '#ef4444');
-            coreGrad.addColorStop(1, '#991b1b');
-            ctx.fillStyle = coreGrad;
-            ctx.beginPath();
-            ctx.arc(nx, ny, nr, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = 'white';
-            ctx.font = `bold ${10 * scale}px Inter`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('+', nx, ny);
-        }
-
-        function drawParticleSource() {
-            const sx = 20 * scale, sy = nucleusY();
-            ctx.fillStyle = '#475569';
-            ctx.fillRect(0, sy - 30 * scale, sx, 60 * scale);
-            const grad = ctx.createLinearGradient(0, 0, sx, 0);
-            grad.addColorStop(0, '#334155');
-            grad.addColorStop(1, '#64748b');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, sy - 30 * scale, sx, 60 * scale);
-            ctx.fillStyle = '#94a3b8';
-            ctx.font = `bold ${9 * scale}px Inter`;
-            ctx.textAlign = 'center';
-            ctx.fillText('α', sx * 0.5, sy);
-        }
-
-        function drawDetectorArc() {
-            const nx = nucleusX(), ny = nucleusY();
-            const r = Math.min(W, H) * 0.42;
-            ctx.save();
-            ctx.globalAlpha = 0.15;
-            ctx.strokeStyle = '#60a5fa';
-            ctx.lineWidth = 2 * scale;
-            ctx.setLineDash([6 * scale, 4 * scale]);
-            ctx.beginPath();
-            ctx.arc(nx, ny, r, -Math.PI * 0.8, Math.PI * 0.8);
-            ctx.stroke();
-            ctx.setLineDash([]);
-
-            ctx.globalAlpha = 0.3;
-            ctx.fillStyle = '#93c5fd';
-            ctx.font = `${9 * scale}px Inter`;
-            ctx.textAlign = 'center';
-            for (let a = -150; a <= 150; a += 30) {
-                const rad = a * Math.PI / 180;
-                const tx = nx + (r + 12 * scale) * Math.cos(rad);
-                const ty = ny + (r + 12 * scale) * Math.sin(rad);
-                ctx.fillText(Math.abs(a) + '°', tx, ty);
-            }
-            ctx.restore();
+        if (showTrails && Math.random() < 0.5) {
+          const t = new THREE.Mesh(new THREE.SphereGeometry(0.04, 4, 4), new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.5 }));
+          t.position.copy(a.pos); trailGroup.add(t); a.trail.push(t);
+          if (a.trail.length > 40) { trailGroup.remove(a.trail.shift()); }
         }
 
-        function draw() {
-            ctx.clearRect(0, 0, W, H);
-
-            const bgGrad = ctx.createRadialGradient(W * 0.5, H * 0.5, 0, W * 0.5, H * 0.5, W * 0.6);
-            bgGrad.addColorStop(0, '#1e293b');
-            bgGrad.addColorStop(1, '#0f172a');
-            ctx.fillStyle = bgGrad;
-            ctx.fillRect(0, 0, W, H);
-
-            drawDetectorArc();
-            drawGoldFoil();
-            drawParticleSource();
-            drawNucleus();
-
-            if (showTrails.checked) {
-                for (const trail of completedTrails) {
-                    drawTrail(trail, 0.2);
-                }
-            }
-
-            for (const p of particles) {
-                if (!p.alive) continue;
-
-                if (showTrails.checked && p.trail.length > 1) {
-                    drawTrail(p.trail, 0.6);
-                }
-
-                const pGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 4 * scale);
-                pGrad.addColorStop(0, '#fef08a');
-                pGrad.addColorStop(1, '#eab308');
-                ctx.fillStyle = pGrad;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 3.5 * scale, 0, Math.PI * 2);
-                ctx.fill();
-            }
+        if (!a.classified && a.pos.x > 2) {
+          a.classified = true;
+          const angle = Math.atan2(Math.hypot(a.vel.y, a.vel.z), a.vel.x) * 180 / Math.PI;
+          if (angle > 90) stats.back++;
+          else if (angle > 10) stats.deflected++;
+          else stats.passed++;
+          updateStatsUI();
         }
-
-        function drawTrail(trail, alpha) {
-            if (trail.length < 2) return;
-            ctx.save();
-            ctx.globalAlpha = alpha;
-            ctx.strokeStyle = '#facc15';
-            ctx.lineWidth = 1.5 * scale;
-            ctx.beginPath();
-            ctx.moveTo(trail[0].x, trail[0].y);
-            for (let i = 1; i < trail.length; i++) {
-                ctx.lineTo(trail[i].x, trail[i].y);
-            }
-            ctx.stroke();
-            ctx.restore();
+        if (a.pos.length() > 28 || a.pos.x < -18) {
+          a.trail.forEach(t => trailGroup.remove(t));
+          scene.remove(a.mesh); alphas.splice(i, 1);
         }
+      }
+      nucleus.rotation.y += 0.01;
+      renderer.render(scene, camera);
+    }
 
-        function update() {
-            const speed = parseInt(speedSlider.value);
-            for (let s = 0; s < speed; s++) {
-                for (const p of particles) {
-                    if (!p.alive) continue;
-
-                    const { fx, fy } = coulombForce(p.x, p.y, p.Z, p.energy);
-                    p.vx += fx;
-                    p.vy += fy;
-
-                    p.x += p.vx;
-                    p.y += p.vy;
-
-                    if (p.trail.length === 0 || Math.hypot(p.x - p.trail[p.trail.length - 1].x, p.y - p.trail[p.trail.length - 1].y) > 3 * scale) {
-                        p.trail.push({ x: p.x, y: p.y });
-                    }
-
-                    if (p.x < -20 * scale || p.x > W + 20 * scale || p.y < -20 * scale || p.y > H + 20 * scale) {
-                        p.alive = false;
-                        const cat = classifyParticle(p);
-                        stats[cat]++;
-                        updateStats();
-                        if (showTrails.checked) {
-                            completedTrails.push([...p.trail]);
-                            if (completedTrails.length > 200) completedTrails.shift();
-                        }
-                    }
-                }
-            }
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                if (!particles[i].alive) particles.splice(i, 1);
-            }
-        }
-
-        function animate() {
-            update();
-            draw();
-            animId = requestAnimationFrame(animate);
-        }
-
-        document.getElementById('fireBtn').addEventListener('click', () => fireParticles(5));
-        document.getElementById('burstBtn').addEventListener('click', () => fireParticles(50));
-        document.getElementById('resetBtn').addEventListener('click', () => {
-            particles.length = 0;
-            completedTrails.length = 0;
-            stats = { total: 0, passed: 0, deflected: 0, back: 0 };
-            updateStats();
-        });
-
-        animate();
-
-        // i18n
-        const translations = {
-            en: {
-                'nav.back': 'Back',
-                'title': "Rutherford's Gold Foil Scattering Experiment",
-                'subtitle': 'Simulate alpha particle scattering to discover the atomic nucleus',
-                'btn.fire': 'Fire Alpha Particles',
-                'btn.burst': 'Burst (50)',
-                'btn.reset': 'Reset',
-                'controls.title': 'Controls',
-                'controls.charge': 'Nuclear Charge (Z)',
-                'controls.energy': 'Particle Energy (MeV)',
-                'controls.speed': 'Animation Speed',
-                'controls.slow': 'Slow',
-                'controls.fast': 'Fast',
-                'controls.trails': 'Show trails',
-                'controls.foil': 'Show gold foil',
-                'stats.title': 'Statistics',
-                'stats.total': 'Total Fired',
-                'stats.passed': 'Passed Through',
-                'stats.deflected': 'Deflected (>10°)',
-                'stats.backscattered': 'Backscattered (>90°)',
-                'stats.passedLabel': 'Passed',
-                'stats.deflectedLabel': 'Deflected',
-                'stats.backLabel': 'Backscattered',
-                'legend.title': 'Legend',
-                'legend.alpha': 'Alpha particle (α)',
-                'legend.nucleus': 'Gold nucleus (Au)',
-                'legend.foil': 'Gold foil',
-                'info.title': "About Rutherford's Experiment",
-                'info.p1': 'In 1911, Ernest Rutherford directed alpha particles at a thin gold foil. Most particles passed straight through, but a small fraction were deflected at large angles — some even bounced back.',
-                'info.p2': 'This result was incompatible with Thomson\'s "plum pudding" model. It proved that atoms have a tiny, dense, positively charged nucleus surrounded by mostly empty space.',
-                'info.p3': 'The scattering pattern follows the Rutherford scattering formula, where the probability of scattering at angle θ is proportional to:',
-                'info.limTitle': 'Key Observations & Limitations',
-                'info.obs1': '<strong>Observation 1:</strong> Most alpha particles pass through — the atom is mostly empty space.',
-                'info.obs2': '<strong>Observation 2:</strong> Some particles deflect at large angles — a concentrated positive charge (nucleus) exists.',
-                'info.obs3': '<strong>Observation 3:</strong> Very few particles bounce back — the nucleus is very small but very massive.',
-                'info.lim1': '<strong>Limitation 1:</strong> Rutherford\'s model cannot explain why orbiting electrons don\'t radiate energy and spiral into the nucleus (classical electrodynamics predicts they should).',
-                'info.lim2': '<strong>Limitation 2:</strong> It cannot explain the discrete line spectra of elements — there is no mechanism for quantised energy levels.',
-                'info.impact': '<strong>Legacy:</strong> Scattering experiments remain fundamental in particle physics. Modern accelerators (e.g. CERN\'s LHC) use the same principle — firing high-energy particles to probe subatomic structure.'
-            },
-            zh: {
-                'nav.back': '返回',
-                'title': '盧瑟福金箔散射實驗',
-                'subtitle': '模擬阿爾法粒子散射，探索原子核的存在',
-                'btn.fire': '發射阿爾法粒子',
-                'btn.burst': '連射 (50)',
-                'btn.reset': '重置',
-                'controls.title': '控制面板',
-                'controls.charge': '原子核電荷數 (Z)',
-                'controls.energy': '粒子能量 (MeV)',
-                'controls.speed': '動畫速度',
-                'controls.slow': '慢',
-                'controls.fast': '快',
-                'controls.trails': '顯示軌跡',
-                'controls.foil': '顯示金箔',
-                'stats.title': '統計數據',
-                'stats.total': '發射總數',
-                'stats.passed': '穿過',
-                'stats.deflected': '偏轉 (>10°)',
-                'stats.backscattered': '反向散射 (>90°)',
-                'stats.passedLabel': '穿過',
-                'stats.deflectedLabel': '偏轉',
-                'stats.backLabel': '反向散射',
-                'legend.title': '圖例',
-                'legend.alpha': '阿爾法粒子 (α)',
-                'legend.nucleus': '金原子核 (Au)',
-                'legend.foil': '金箔',
-                'info.title': '關於盧瑟福實驗',
-                'info.p1': '1911年，歐內斯特·盧瑟福將阿爾法粒子射向薄金箔。大多數粒子直接穿過，但少數粒子發生大角度偏轉——有些甚至被反彈回來。',
-                'info.p2': '這一結果與湯姆森的「梅子布丁」模型不相容。它證明了原子有一個微小、緻密、帶正電的原子核，周圍幾乎都是空曠的空間。',
-                'info.p3': '散射模式遵循盧瑟福散射公式，散射到角度 θ 的概率正比於：',
-                'info.limTitle': '關鍵觀察與局限性',
-                'info.obs1': '<strong>觀察 1：</strong>大多數阿爾法粒子穿過——原子內部幾乎是空的。',
-                'info.obs2': '<strong>觀察 2：</strong>部分粒子發生大角度偏轉——存在集中的正電荷（原子核）。',
-                'info.obs3': '<strong>觀察 3：</strong>極少數粒子被反彈——原子核非常小但非常重。',
-                'info.lim1': '<strong>局限 1：</strong>盧瑟福模型無法解釋為何軌道電子不會輻射能量並螺旋墜入原子核（經典電動力學預測它們應該會這樣）。',
-                'info.lim2': '<strong>局限 2：</strong>它無法解釋元素的離散線狀光譜——沒有量子化能級的機制。',
-                'info.impact': '<strong>影響：</strong>散射實驗在粒子物理學中仍然是基本的方法。現代加速器（如歐洲核子研究中心的大型強子對撞機）使用相同的原理——發射高能粒子來探測亞原子結構。'
-            }
-        };
-
-        let currentLang = localStorage.getItem('preferred_language') || 'en';
-        if (currentLang === 'cn') currentLang = 'zh';
-
-        function setLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('preferred_language', lang);
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (translations[lang] && translations[lang][key]) {
-                    if (translations[lang][key].includes('<strong>')) {
-                        el.innerHTML = translations[lang][key];
-                    } else {
-                        el.textContent = translations[lang][key];
-                    }
-                }
-            });
-            document.querySelectorAll('.lang-btn').forEach(btn => {
-                if (btn.getAttribute('data-lang') === lang) {
-                    btn.classList.add('bg-blue-600', 'text-white');
-                    btn.classList.remove('text-slate-600');
-                } else {
-                    btn.classList.remove('bg-blue-600', 'text-white');
-                    btn.classList.add('text-slate-600');
-                }
-            });
-            document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
-        }
-        window.setLanguage = setLanguage;
-
-        setLanguage(currentLang);
+    document.getElementById('chargeSlider').addEventListener('input', e => { document.getElementById('zVal').textContent = e.target.value; });
+    document.getElementById('energySlider').addEventListener('input', e => { document.getElementById('eVal').textContent = (+e.target.value).toFixed(1); });
+    document.getElementById('speedSlider').addEventListener('input', e => { document.getElementById('speedVal').textContent = e.target.value + '×'; });
+    document.getElementById('fireBtn').addEventListener('click', fireOne);
+    document.getElementById('burstBtn').addEventListener('click', () => { for (let i = 0; i < 50; i++) setTimeout(fireOne, i * 40); });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      alphas.forEach(a => { a.trail.forEach(t => trailGroup.remove(t)); scene.remove(a.mesh); });
+      alphas = []; stats.total = stats.passed = stats.deflected = stats.back = 0; updateStatsUI();
+      document.getElementById('chargeSlider').value = 79; document.getElementById('energySlider').value = 5;
+      document.getElementById('speedSlider').value = 2;
+      document.getElementById('zVal').textContent = '79'; document.getElementById('eVal').textContent = '5.0'; document.getElementById('speedVal').textContent = '2×';
+      camTheta = defaultCam.theta; camPhi = defaultCam.phi; camRadius = defaultCam.radius; updateCameraFromSpherical();
     });
-    </script>
+    window.addEventListener('resize', () => {
+      if (!camera) return;
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix(); renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
 
-    <!-- Practice Questions Widget -->
-    <script src="practice_questions.js"></script>
-    <script src="practice_questions_data.js"></script>
-    <script>initPracticeQuestions('rutherford');</script>
+    setLanguage(currentLang);
+    initThree();
+    // Continuous auto-fire for ambient motion
+    setInterval(() => { if (alphas.length < 12) fireOne(); }, 900);
+  </script>
+
+  <script src="practice_questions.js"></script>
+  <script src="practice_questions_data.js"></script>
+  <script>initPracticeQuestions('rutherford');</script>
 </body>
 </html>

@@ -49,13 +49,24 @@
 
     <section class="mt-6 grid xl:grid-cols-[1.5fr_1fr] gap-5">
       <article class="glass rounded-3xl border border-white/70 p-4">
-        <canvas id="waveCanvas" width="1200" height="520" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
+        <div class="relative rounded-2xl border border-slate-200 overflow-hidden bg-slate-50" style="touch-action:none">
+          <canvas id="waveCanvas" width="1200" height="520" class="w-full h-[320px] md:h-[420px] cursor-grab active:cursor-grabbing"></canvas>
+          <div class="absolute bottom-3 right-3 bg-slate-900/75 text-white text-xs px-3 py-1.5 rounded-full pointer-events-none" data-i18n="camHint">Drag to rotate • Pinch to zoom</div>
+          <div class="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
+            <span class="bg-white/90 text-blue-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.wave">Wave</span>
+            <span class="bg-white/90 text-red-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.node">Node</span>
+            <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.antinode">Antinode</span>
+          </div>
+        </div>
         <canvas id="responseCanvas" width="1200" height="250" class="w-full mt-3 rounded-2xl border border-slate-200 bg-slate-50"></canvas>
       </article>
 
       <aside class="space-y-4">
         <div class="glass rounded-2xl border border-white/70 p-4">
-          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="font-semibold text-slate-900" data-i18n="controls">Controls</h2>
+            <button id="resetBtn" class="text-xs font-bold text-blue-600 hover:text-blue-700" data-i18n="reset">Reset</button>
+          </div>
           <label class="block text-sm text-slate-700" for="length"><span data-i18n="length">String length L (m)</span>: <span id="lengthOut" class="text-blue-600 font-semibold">1.20</span></label>
           <input id="length" type="range" min="0.4" max="2.4" step="0.01" value="1.2" class="w-full accent-blue-600 mb-3" />
 
@@ -68,7 +79,7 @@
           <label class="block text-sm text-slate-700" for="harmonic"><span data-i18n="harmonic">Target harmonic n</span>: <span id="harmonicOut" class="text-blue-600 font-semibold">2</span></label>
           <input id="harmonic" type="range" min="1" max="10" step="1" value="2" class="w-full accent-blue-600 mb-3" />
 
-          <button id="tuneBtn" class="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2" data-i18n="tune">Auto Tune to fₙ</button>
+          <button id="tuneBtn" class="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 hover:-translate-y-0.5 transition" data-i18n="tune">Auto Tune to fₙ</button>
         </div>
 
         <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
@@ -102,6 +113,7 @@
       ampOut: document.getElementById('ampOut')
     };
     const tuneBtn = document.getElementById('tuneBtn');
+    const resetBtn = document.getElementById('resetBtn');
     const waveCanvas = document.getElementById('waveCanvas');
     const responseCanvas = document.getElementById('responseCanvas');
     const rCtx = responseCanvas.getContext('2d');
@@ -111,8 +123,18 @@
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100);
     const renderer = new THREE.WebGLRenderer({ canvas: waveCanvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    camera.position.set(0, 2.4, 7.2);
-    camera.lookAt(0, 0, 0);
+
+    let camRadius = 7.6, camTheta = 0.35, camPhi = 1.15;
+    const defaultCam = { radius: 7.6, theta: 0.35, phi: 1.15 };
+    function updateCameraFromSpherical() {
+      camera.position.set(
+        camRadius * Math.sin(camPhi) * Math.sin(camTheta),
+        camRadius * Math.cos(camPhi),
+        camRadius * Math.sin(camPhi) * Math.cos(camTheta)
+      );
+      camera.lookAt(0, 0, 0);
+    }
+    updateCameraFromSpherical();
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.74));
     const key = new THREE.DirectionalLight(0xffffff, 0.85);
@@ -174,7 +196,12 @@
         fundamental: 'Fundamental f₁',
         resFreq: 'Resonance fₙ',
         detuning: 'Detuning |f-fₙ|',
-        amplitude: 'Relative amplitude'
+        amplitude: 'Relative amplitude',
+        reset: 'Reset',
+        camHint: 'Drag to rotate • Pinch to zoom',
+        'legend.wave': 'Wave',
+        'legend.node': 'Node',
+        'legend.antinode': 'Antinode'
       },
       'zh-hk': {
         back: '返回主題頁',
@@ -195,7 +222,12 @@
         fundamental: '基頻 f₁',
         resFreq: '共振頻率 fₙ',
         detuning: '失諧量 |f-fₙ|',
-        amplitude: '相對振幅'
+        amplitude: '相對振幅',
+        reset: '重設',
+        camHint: '拖曳旋轉 • 雙指縮放',
+        'legend.wave': '駐波',
+        'legend.node': '波節',
+        'legend.antinode': '波腹'
       }
     };
 
@@ -353,6 +385,68 @@
       controls.frequency.value = s.fn.toFixed(0);
       updateOutputs();
     });
+    resetBtn.addEventListener('click', () => {
+      controls.length.value = 1.2;
+      controls.speed.value = 120;
+      controls.frequency.value = 100;
+      controls.harmonic.value = 2;
+      camRadius = defaultCam.radius;
+      camTheta = defaultCam.theta;
+      camPhi = defaultCam.phi;
+      updateCameraFromSpherical();
+      updateOutputs();
+    });
+
+    // Spherical camera: mouse + touch
+    let isCamDrag = false, lastX = 0, lastY = 0, pinchDist = null;
+    waveCanvas.addEventListener('mousedown', (e) => {
+      isCamDrag = true; lastX = e.clientX; lastY = e.clientY;
+    });
+    window.addEventListener('mouseup', () => { isCamDrag = false; });
+    window.addEventListener('mousemove', (e) => {
+      if (!isCamDrag) return;
+      camTheta -= (e.clientX - lastX) * 0.006;
+      camPhi = Math.max(0.2, Math.min(Math.PI - 0.2, camPhi + (e.clientY - lastY) * 0.006));
+      lastX = e.clientX; lastY = e.clientY;
+      updateCameraFromSpherical();
+    });
+    waveCanvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      camRadius = Math.max(3.5, Math.min(14, camRadius + e.deltaY * 0.01));
+      updateCameraFromSpherical();
+    }, { passive: false });
+    waveCanvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        isCamDrag = true;
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+      } else if (e.touches.length === 2) {
+        isCamDrag = false;
+        pinchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+    }, { passive: true });
+    waveCanvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && isCamDrag) {
+        camTheta -= (e.touches[0].clientX - lastX) * 0.008;
+        camPhi = Math.max(0.2, Math.min(Math.PI - 0.2, camPhi + (e.touches[0].clientY - lastY) * 0.008));
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+        updateCameraFromSpherical();
+      } else if (e.touches.length === 2 && pinchDist !== null) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        camRadius = Math.max(3.5, Math.min(14, camRadius - (dist - pinchDist) * 0.02));
+        pinchDist = dist;
+        updateCameraFromSpherical();
+      }
+    }, { passive: false });
+    waveCanvas.addEventListener('touchend', () => { isCamDrag = false; pinchDist = null; });
 
     updateOutputs();
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');

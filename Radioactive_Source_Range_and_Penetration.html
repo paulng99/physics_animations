@@ -1,651 +1,359 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radioactive Source: Range & Penetration (HKDSE)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <style>
-        :root { color-scheme: light; }
-        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
-        mjx-container { display: inline-block !important; }
-        .glass { background: rgba(255, 255, 255, 0.78); backdrop-filter: blur(10px); }
-        canvas { background-color: #0f172a; border-radius: 0.75rem; border: 2px solid #e2e8f0; }
-        .legend-dot { width: 0.875rem; height: 0.875rem; border-radius: 999px; display: inline-block; }
-    </style>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-RJQ61GJDVS');
-    </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Radioactive Source: Range & Penetration (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+    #three-container { width: 100%; height: 480px; cursor: grab; border-radius: 12px; overflow: hidden; background: #0f172a; }
+    #three-container:active { cursor: grabbing; }
+  </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
-    <header class="max-w-6xl mx-auto px-4 pt-6 pb-4">
-        <nav class="flex items-center justify-between flex-wrap gap-3">
-            <div class="flex items-center gap-3">
-                <a href="index.html" class="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                    <span data-i18n="nav.back">Back</span>
-                </a>
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-sm">☢</span>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="updateLanguage('zh-hk')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh-hk">繁</button>
-                <button onclick="updateLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
-            </div>
-        </nav>
-    </header>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+  <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex justify-between items-center">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600"><span>←</span><span data-i18n="nav.back">Back</span></a>
+      <div class="flex gap-2">
+        <button onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-100" data-lang="zh-hk">繁</button>
+        <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" data-lang="en">EN</button>
+      </div>
+    </div>
+  </nav>
 
-    <main class="max-w-6xl mx-auto px-4 pb-12">
-        <div class="glass rounded-3xl p-6 md:p-8 border border-white/60 shadow-xl">
-            <h1 class="text-2xl md:text-3xl font-bold text-slate-800" data-i18n="title">Radioactive Source: Range and Penetration</h1>
-            <p class="text-slate-600 mt-2 text-sm md:text-base" data-i18n="subtitle">HKDSE-level simulation of alpha, beta, gamma through absorbers</p>
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <h1 class="text-2xl md:text-3xl font-bold" data-i18n="title">3D Radioactive Source: Range & Penetration</h1>
+      <p class="mt-2 text-slate-600" data-i18n="subtitle">HKDSE simulation of α, β, γ through air and absorbers in 3D.</p>
+    </section>
 
-            <div class="grid lg:grid-cols-3 gap-6 mt-6">
-                <div class="lg:col-span-2">
-                    <canvas id="simCanvas" class="w-full" style="aspect-ratio: 16/10;"></canvas>
-                    <div class="flex flex-wrap gap-3 mt-4">
-                        <button id="toggleRunBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="btn.pause">Pause</button>
-                        <button id="resetBtn" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all" data-i18n="btn.reset">Reset</button>
-                    </div>
-                </div>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <aside class="lg:col-span-4 space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <div class="flex justify-between items-center">
+            <h2 class="font-semibold" data-i18n="controls.title">Controls</h2>
+            <button id="resetBtn" class="text-xs font-bold text-blue-600 hover:underline" data-i18n="btn.reset">Reset</button>
+          </div>
+          <button id="toggleRunBtn" class="w-full px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold" data-i18n="btn.pause">Pause</button>
 
-                <div class="space-y-4">
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <h3 class="font-semibold text-slate-800 mb-3" data-i18n="controls.title">Controls</h3>
+          <label class="block text-sm font-medium text-slate-600" data-i18n="controls.type">Radiation Type</label>
+          <select id="radiationType" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+            <option value="alpha">Alpha (α)</option>
+            <option value="beta">Beta (β)</option>
+            <option value="gamma">Gamma (γ)</option>
+          </select>
 
-                        <label for="radiationType" class="block text-sm font-medium text-slate-600 mb-1" data-i18n="controls.type">Radiation Type</label>
-                        <select id="radiationType" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="alpha" data-i18n="radiation.alpha">Alpha (α)</option>
-                            <option value="beta" data-i18n="radiation.beta">Beta (β)</option>
-                            <option value="gamma" data-i18n="radiation.gamma">Gamma (γ)</option>
-                        </select>
+          <label class="block text-sm font-medium text-slate-600" data-i18n="controls.absorber">Absorber</label>
+          <select id="absorberType" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+            <option value="none">None (Air only)</option>
+            <option value="paper">Paper</option>
+            <option value="aluminium">Aluminium</option>
+            <option value="lead">Lead</option>
+          </select>
 
-                        <label for="absorberType" class="block text-sm font-medium text-slate-600 mb-1 mt-4" data-i18n="controls.absorber">Absorber Material</label>
-                        <select id="absorberType" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="none" data-i18n="absorber.none">None (Air only)</option>
-                            <option value="paper" data-i18n="absorber.paper">Paper</option>
-                            <option value="aluminium" data-i18n="absorber.aluminium">Aluminium</option>
-                            <option value="lead" data-i18n="absorber.lead">Lead</option>
-                        </select>
-
-                        <label for="thicknessSlider" class="block text-sm font-medium text-slate-600 mb-1 mt-4" data-i18n="controls.thickness">Absorber Thickness</label>
-                        <input type="range" id="thicknessSlider" min="0" max="20" value="1" step="0.1" class="w-full accent-blue-600">
-                        <div class="flex justify-between text-xs text-slate-400"><span>0</span><span id="thicknessVal" class="font-semibold text-blue-600">1.0 mm</span><span>20 mm</span></div>
-
-                        <label for="distanceSlider" class="block text-sm font-medium text-slate-600 mb-1 mt-4" data-i18n="controls.distance">Source-Detector Distance</label>
-                        <input type="range" id="distanceSlider" min="1" max="20" value="5" step="0.5" class="w-full accent-blue-600">
-                        <div class="flex justify-between text-xs text-slate-400"><span>1 cm</span><span id="distanceVal" class="font-semibold text-blue-600">5.0 cm</span><span>20 cm</span></div>
-
-                        <label for="activitySlider" class="block text-sm font-medium text-slate-600 mb-1 mt-4" data-i18n="controls.activity">Source Activity (cps at 5 cm)</label>
-                        <input type="range" id="activitySlider" min="200" max="3000" value="1200" step="50" class="w-full accent-blue-600">
-                        <div class="flex justify-between text-xs text-slate-400"><span>200</span><span id="activityVal" class="font-semibold text-blue-600">1200 cps</span><span>3000</span></div>
-                    </div>
-
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <h3 class="font-semibold text-slate-800 mb-3" data-i18n="stats.title">Detector Readings</h3>
-                        <div class="grid grid-cols-2 gap-3 text-sm">
-                            <div>
-                                <div class="text-slate-500" data-i18n="stats.transmission">Transmission</div>
-                                <div id="transmissionVal" class="text-xl font-bold text-green-600">100.0%</div>
-                            </div>
-                            <div>
-                                <div class="text-slate-500" data-i18n="stats.expected">Expected Rate</div>
-                                <div id="expectedVal" class="text-xl font-bold text-blue-600">1225 cps</div>
-                            </div>
-                            <div>
-                                <div class="text-slate-500" data-i18n="stats.measured">Measured Rate</div>
-                                <div id="measuredVal" class="text-xl font-bold text-amber-600">1213 cps</div>
-                            </div>
-                            <div>
-                                <div class="text-slate-500" data-i18n="stats.verdictLabel">Penetration</div>
-                                <div id="verdictVal" class="text-xl font-bold text-purple-600" data-i18n="verdict.high">High</div>
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <div class="h-4 bg-slate-100 rounded-full overflow-hidden">
-                                <div id="penetrationBar" class="h-full bg-blue-500 transition-all" style="width: 100%"></div>
-                            </div>
-                            <div class="flex justify-between text-xs text-slate-400 mt-1">
-                                <span data-i18n="verdict.low">Low</span>
-                                <span data-i18n="verdict.medium">Medium</span>
-                                <span data-i18n="verdict.high">High</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <h3 class="font-semibold text-slate-800 mb-2" data-i18n="legend.title">Legend</h3>
-                        <div class="space-y-1 text-sm">
-                            <div class="flex items-center gap-2"><span class="legend-dot bg-red-600"></span><span data-i18n="legend.alpha">Alpha (α): strong ionisation, short range</span></div>
-                            <div class="flex items-center gap-2"><span class="legend-dot bg-green-600"></span><span data-i18n="legend.beta">Beta (β): medium penetration</span></div>
-                            <div class="flex items-center gap-2"><span class="legend-dot bg-amber-500"></span><span data-i18n="legend.gamma">Gamma (γ): weak ionisation, high penetration</span></div>
-                            <div class="flex items-center gap-2"><span class="legend-dot bg-slate-500"></span><span data-i18n="legend.absorber">Absorber slab</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-8 grid md:grid-cols-2 gap-6">
-                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                    <h3 class="text-lg font-semibold text-slate-800 mb-3" data-i18n="info.title">HKDSE Concept Summary</h3>
-                    <div class="text-sm text-slate-600 space-y-2">
-                        <p data-i18n="info.p1"><strong>Alpha (α):</strong> very short range in air (a few cm), stopped by paper or skin.</p>
-                        <p data-i18n="info.p2"><strong>Beta (β):</strong> medium range and penetration, reduced by aluminium sheet.</p>
-                        <p data-i18n="info.p3"><strong>Gamma (γ):</strong> no charge, very penetrating, best reduced by thick lead/concrete.</p>
-                        <p data-i18n="info.p4">In experiments, subtract background count rate before comparing source intensities.</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                    <h3 class="text-lg font-semibold text-slate-800 mb-3" data-i18n="info.formulaTitle">Model Used in This Simulation</h3>
-                    <div class="text-sm text-slate-600 space-y-2">
-                        <p data-i18n="info.f1">Approximate count model:</p>
-                        <div class="text-center py-2">$$R \approx R_0\left(\frac{5}{d}\right)^2T_{\text{air}}T_{\text{absorber}} + R_{\text{background}}$$</div>
-                        <p data-i18n="info.f2">For beta/gamma absorption we use an exponential trend:</p>
-                        <div class="text-center py-2">$$T_{\text{absorber}} \approx e^{-\mu x}$$</div>
-                        <p data-i18n="info.f3">This is a teaching model, tuned for HKDSE-style qualitative understanding.</p>
-                        <p class="text-xs text-slate-500 pt-1" data-i18n="info.updated">Last updated: 2026-04-25</p>
-                    </div>
-                </div>
-            </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="controls.thickness">Thickness</span><span id="thicknessVal" class="font-semibold text-blue-600">1.0 mm</span></div>
+            <input id="thicknessSlider" type="range" min="0" max="20" value="1" step="0.1" class="w-full accent-blue-600" />
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="controls.distance">Distance</span><span id="distanceVal" class="font-semibold text-slate-600">5.0 cm</span></div>
+            <input id="distanceSlider" type="range" min="1" max="20" value="5" step="0.5" class="w-full accent-slate-600" />
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="controls.activity">Activity</span><span id="activityVal" class="font-semibold text-red-600">1200 cps</span></div>
+            <input id="activitySlider" type="range" min="200" max="3000" value="1200" step="50" class="w-full accent-red-600" />
+          </div>
         </div>
-    </main>
 
-    <script>
-    window.addEventListener('load', () => {
-        const canvas = document.getElementById('simCanvas');
-        const ctx = canvas.getContext('2d');
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm text-sm space-y-2">
+          <h2 class="font-semibold mb-2" data-i18n="stats.title">Detector Readings</h2>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.transmission">Transmission</span><span id="transmissionVal" class="font-bold text-green-600">100%</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.expected">Expected</span><span id="expectedVal" class="font-bold text-blue-600">—</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.measured">Measured</span><span id="measuredVal" class="font-bold text-amber-600">—</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.verdictLabel">Penetration</span><span id="verdictVal" class="font-bold text-purple-600">High</span></div>
+          <div class="h-3 bg-slate-100 rounded-full overflow-hidden mt-2"><div id="penetrationBar" class="h-full bg-blue-500 transition-all" style="width:100%"></div></div>
+        </div>
+      </aside>
 
-        const radiationType = document.getElementById('radiationType');
-        const absorberType = document.getElementById('absorberType');
-        const thicknessSlider = document.getElementById('thicknessSlider');
-        const distanceSlider = document.getElementById('distanceSlider');
-        const activitySlider = document.getElementById('activitySlider');
-        const toggleRunBtn = document.getElementById('toggleRunBtn');
-        const resetBtn = document.getElementById('resetBtn');
+      <section class="lg:col-span-8">
+        <div id="three-container" class="relative border-2 border-slate-700 shadow-lg">
+          <div class="absolute top-4 left-4 flex flex-wrap gap-2 pointer-events-none z-10">
+            <span class="bg-black/50 text-red-400 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.alpha">α</span>
+            <span class="bg-black/50 text-green-400 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.beta">β</span>
+            <span class="bg-black/50 text-amber-300 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.gamma">γ</span>
+            <span class="bg-black/50 text-slate-300 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.absorber">Absorber</span>
+          </div>
+          <div class="absolute bottom-4 right-4 bg-gray-900/80 text-white px-4 py-2 rounded-full text-xs pointer-events-none" data-i18n="hint">Drag • Wheel • Pinch</div>
+        </div>
+      </section>
+    </div>
 
-        const thicknessVal = document.getElementById('thicknessVal');
-        const distanceVal = document.getElementById('distanceVal');
-        const activityVal = document.getElementById('activityVal');
-        const transmissionVal = document.getElementById('transmissionVal');
-        const expectedVal = document.getElementById('expectedVal');
-        const measuredVal = document.getElementById('measuredVal');
-        const verdictVal = document.getElementById('verdictVal');
-        const penetrationBar = document.getElementById('penetrationBar');
+    <section class="bg-white rounded-2xl border border-slate-200 p-6 text-sm text-slate-600 grid md:grid-cols-2 gap-4">
+      <div>
+        <h3 class="font-semibold text-slate-900 mb-2" data-i18n="info.title">HKDSE Summary</h3>
+        <p data-i18n="info.p1">α: short range in air, stopped by paper. β: aluminium. γ: thick lead.</p>
+      </div>
+      <div>
+        <h3 class="font-semibold text-slate-900 mb-2" data-i18n="info.formulaTitle">Model</h3>
+        <p>\( R \approx R_0(5/d)^2 T_{\mathrm{air}} T_{\mathrm{abs}} + R_{\mathrm{bg}} \)</p>
+        <p class="mt-1">\( T_{\mathrm{abs}} \approx e^{-\mu x} \) (β, γ)</p>
+      </div>
+    </section>
+  </main>
 
-        let W = 0;
-        let H = 0;
-        let scale = 1;
-        const particles = [];
-        const sparks = [];
-        let running = true;
-        let expectedRate = 0;
-        let measuredRate = 0;
-        let noiseTimer = 0;
-        let prevTs = 0;
-        let spawnAccumulator = 0;
+  <script>
+    const COLORS = { alpha: 0xdc2626, beta: 0x16a34a, gamma: 0xd97706 };
+    const translations = {
+      en: {
+        'nav.back': 'Back', title: '3D Radioactive Source: Range & Penetration',
+        subtitle: 'HKDSE simulation of α, β, γ through air and absorbers in 3D.',
+        'controls.title': 'Controls', 'btn.reset': 'Reset', 'btn.pause': 'Pause', 'btn.resume': 'Resume',
+        'controls.type': 'Radiation Type', 'controls.absorber': 'Absorber', 'controls.thickness': 'Thickness',
+        'controls.distance': 'Distance', 'controls.activity': 'Activity',
+        'stats.title': 'Detector Readings', 'stats.transmission': 'Transmission', 'stats.expected': 'Expected',
+        'stats.measured': 'Measured', 'stats.verdictLabel': 'Penetration',
+        'legend.alpha': 'α', 'legend.beta': 'β', 'legend.gamma': 'γ', 'legend.absorber': 'Absorber',
+        hint: 'Drag • Wheel • Pinch', 'info.title': 'HKDSE Summary', 'info.formulaTitle': 'Model',
+        'info.p1': 'α: short range in air, stopped by paper. β: aluminium. γ: thick lead.',
+        'verdict.low': 'Low', 'verdict.medium': 'Medium', 'verdict.high': 'High'
+      },
+      'zh-hk': {
+        'nav.back': '返回', title: '3D 放射源：射程與穿透',
+        subtitle: 'HKDSE：α、β、γ 在空氣與吸收體中的三維模擬。',
+        'controls.title': '控制', 'btn.reset': '重設', 'btn.pause': '暫停', 'btn.resume': '繼續',
+        'controls.type': '輻射種類', 'controls.absorber': '吸收體', 'controls.thickness': '厚度',
+        'controls.distance': '距離', 'controls.activity': '活度',
+        'stats.title': '探測器讀數', 'stats.transmission': '透射率', 'stats.expected': '預期',
+        'stats.measured': '量度', 'stats.verdictLabel': '穿透程度',
+        'legend.alpha': 'α', 'legend.beta': 'β', 'legend.gamma': 'γ', 'legend.absorber': '吸收體',
+        hint: '拖曳 • 滾輪 • 雙指縮放', 'info.title': 'HKDSE 摘要', 'info.formulaTitle': '模型',
+        'info.p1': 'α：空氣中短射程，紙可阻隔。β：鋁片。γ：厚鉛。',
+        'verdict.low': '低', 'verdict.medium': '中', 'verdict.high': '高'
+      }
+    };
+    let currentLang = localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en';
+    function t(k) { return translations[currentLang]?.[k] ?? translations.en[k] ?? k; }
 
-        function resizeCanvas() {
-            const rect = canvas.parentElement.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.width * 0.625 * dpr;
-            canvas.style.width = rect.width + 'px';
-            canvas.style.height = rect.width * 0.625 + 'px';
-            W = canvas.width;
-            H = canvas.height;
-            scale = W / 1000;
+    const container = document.getElementById('three-container');
+    let scene, camera, renderer, sourceMesh, detectorMesh, absorberMesh, particles = [];
+    let running = true, measuredRate = 0, noiseTimer = 0;
+    let camTheta = 0.5, camPhi = 1.15, camRadius = 18;
+    const defaultCam = { theta: 0.5, phi: 1.15, radius: 18 };
+    let isCameraDrag = false, startCamX, startCamY;
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('preferred_language', lang);
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const k = el.getAttribute('data-i18n');
+        if (translations[lang]?.[k]) el.textContent = translations[lang][k];
+      });
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        const a = btn.dataset.lang === lang; btn.classList.toggle('bg-blue-600', a); btn.classList.toggle('text-white', a);
+      });
+      updateReadings();
+      if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+    }
+
+    function getAirTransmission(type, d) {
+      if (type === 'alpha') return d >= 6 ? 0 : Math.max(0, 1 - d / 6);
+      if (type === 'beta') return Math.exp(-0.005 * d);
+      return Math.exp(-0.0008 * d);
+    }
+    function getAbsorberTransmission(type, material, x) {
+      if (material === 'none') return 1;
+      if (type === 'alpha') {
+        if (material === 'paper') return x >= 0.08 ? 0 : Math.max(0, 1 - x / 0.08);
+        return x >= 0.01 ? 0 : 1;
+      }
+      if (type === 'beta') {
+        const mu = { paper: 0.04, aluminium: 0.35, lead: 0.95 };
+        return Math.exp(-(mu[material] || 0) * x);
+      }
+      const mu = { paper: 0.006, aluminium: 0.06, lead: 0.22 };
+      return Math.exp(-(mu[material] || 0) * x);
+    }
+    function computeTransmission() {
+      const type = document.getElementById('radiationType').value;
+      const mat = document.getElementById('absorberType').value;
+      const x = +document.getElementById('thicknessSlider').value;
+      const d = +document.getElementById('distanceSlider').value;
+      return Math.max(0, Math.min(1, getAirTransmission(type, d) * getAbsorberTransmission(type, mat, x)));
+    }
+    function computeExpectedRate() {
+      const base = +document.getElementById('activitySlider').value;
+      const d = +document.getElementById('distanceSlider').value;
+      return 25 + base * Math.pow(5 / d, 2) * computeTransmission();
+    }
+
+    function updateReadings() {
+      const tr = computeTransmission();
+      const exp = computeExpectedRate();
+      document.getElementById('thicknessVal').textContent = (+document.getElementById('thicknessSlider').value).toFixed(1) + ' mm';
+      document.getElementById('distanceVal').textContent = (+document.getElementById('distanceSlider').value).toFixed(1) + ' cm';
+      document.getElementById('activityVal').textContent = document.getElementById('activitySlider').value + ' cps';
+      document.getElementById('transmissionVal').textContent = (tr * 100).toFixed(1) + '%';
+      document.getElementById('expectedVal').textContent = exp.toFixed(0) + ' cps';
+      document.getElementById('measuredVal').textContent = measuredRate.toFixed(0) + ' cps';
+      const verdict = tr < 0.12 ? 'low' : tr < 0.55 ? 'medium' : 'high';
+      document.getElementById('verdictVal').textContent = t('verdict.' + verdict);
+      document.getElementById('penetrationBar').style.width = Math.max(2, tr * 100) + '%';
+      layoutScene();
+    }
+
+    function layoutScene() {
+      if (!sourceMesh) return;
+      const d = +document.getElementById('distanceSlider').value;
+      const x = +document.getElementById('thicknessSlider').value;
+      const mat = document.getElementById('absorberType').value;
+      detectorMesh.position.x = -4 + (d / 20) * 12;
+      absorberMesh.visible = mat !== 'none';
+      absorberMesh.scale.x = Math.max(0.08, x / 10);
+      absorberMesh.position.x = (sourceMesh.position.x + detectorMesh.position.x) / 2;
+      const colors = { none: 0x64748b, paper: 0xf1f5f9, aluminium: 0xcbd5e1, lead: 0x475569 };
+      absorberMesh.material.color.setHex(colors[mat] || 0x64748b);
+    }
+
+    function updateCameraFromSpherical() {
+      camera.position.set(camRadius * Math.sin(camPhi) * Math.sin(camTheta), camRadius * Math.cos(camPhi), camRadius * Math.sin(camPhi) * Math.cos(camTheta));
+      camera.lookAt(0, 0, 0);
+    }
+    function setupCameraControls() {
+      container.addEventListener('mousedown', e => { if (e.target.closest('input,button,select')) return; isCameraDrag = true; startCamX = e.clientX; startCamY = e.clientY; });
+      window.addEventListener('mouseup', () => { isCameraDrag = false; });
+      window.addEventListener('mousemove', e => {
+        if (!isCameraDrag) return;
+        camTheta -= (e.clientX - startCamX) * 0.005; camPhi -= (e.clientY - startCamY) * 0.005;
+        camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi));
+        startCamX = e.clientX; startCamY = e.clientY; updateCameraFromSpherical();
+      });
+      container.addEventListener('wheel', e => { e.preventDefault(); camRadius = Math.max(8, Math.min(40, camRadius + e.deltaY * 0.025)); updateCameraFromSpherical(); }, { passive: false });
+      let ltd = null, ltx = null, lty = null;
+      container.addEventListener('touchstart', e => {
+        e.preventDefault();
+        if (e.touches.length === 1) { ltx = e.touches[0].clientX; lty = e.touches[0].clientY; }
+        else if (e.touches.length === 2) ltd = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      }, { passive: false });
+      container.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (e.touches.length === 1 && ltx !== null) {
+          camTheta -= (e.touches[0].clientX - ltx) * 0.008; camPhi -= (e.touches[0].clientY - lty) * 0.008;
+          camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi));
+          ltx = e.touches[0].clientX; lty = e.touches[0].clientY; updateCameraFromSpherical();
+        } else if (e.touches.length === 2 && ltd !== null) {
+          const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          camRadius = Math.max(8, Math.min(40, camRadius + (ltd - d) * 0.08)); ltd = d; updateCameraFromSpherical();
         }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+      }, { passive: false });
+      container.addEventListener('touchend', () => { ltx = lty = ltd = null; });
+    }
 
-        function getColorByType(type) {
-            if (type === 'alpha') return '#dc2626';
-            if (type === 'beta') return '#16a34a';
-            return '#d97706';
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0f172a);
+      camera = new THREE.PerspectiveCamera(45, container.offsetWidth / container.offsetHeight, 0.1, 200);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+      const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(5, 10, 6); scene.add(sun);
+
+      sourceMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.8, 16), new THREE.MeshStandardMaterial({ color: 0x1e40af, metalness: 0.5 }));
+      sourceMesh.rotation.z = Math.PI / 2; sourceMesh.position.set(-4, 0, 0); scene.add(sourceMesh);
+
+      detectorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 1.8), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.4 }));
+      detectorMesh.position.set(4, 0, 0); scene.add(detectorMesh);
+
+      absorberMesh = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.4, 2.4), new THREE.MeshStandardMaterial({ color: 0xcbd5e1, transparent: true, opacity: 0.7 }));
+      scene.add(absorberMesh);
+
+      const table = new THREE.Mesh(new THREE.BoxGeometry(14, 0.15, 4), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+      table.position.y = -1.5; scene.add(table);
+
+      setupCameraControls(); updateCameraFromSpherical(); layoutScene(); animate();
+    }
+
+    let spawnAcc = 0, hitAcc = 0, hitCount = 0;
+    function animate() {
+      requestAnimationFrame(animate);
+      const type = document.getElementById('radiationType').value;
+      const tr = computeTransmission();
+      const exp = computeExpectedRate();
+      noiseTimer += 1 / 60;
+
+      if (running) {
+        spawnAcc += (exp / 80) * (1 / 60);
+        while (spawnAcc >= 1) {
+          spawnAcc -= 1;
+          const col = COLORS[type];
+          const mesh = new THREE.Mesh(new THREE.SphereGeometry(type === 'gamma' ? 0.06 : 0.1, 6, 6), new THREE.MeshBasicMaterial({ color: col }));
+          mesh.position.set(sourceMesh.position.x + 0.5, (Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.6);
+          scene.add(mesh);
+          const speed = type === 'alpha' ? 0.08 : type === 'beta' ? 0.12 : 0.16;
+          particles.push({ mesh, vel: new THREE.Vector3(speed, (Math.random() - 0.5) * 0.01, (Math.random() - 0.5) * 0.01), absorbed: false });
         }
+      }
 
-        function getAbsorberColor(material) {
-            const map = {
-                none: '#64748b',
-                paper: '#f8fafc',
-                aluminium: '#cbd5e1',
-                lead: '#6b7280'
-            };
-            return map[material] || '#64748b';
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.mesh.position.add(p.vel);
+        // Absorber check
+        if (!p.absorbed && absorberMesh.visible && Math.abs(p.mesh.position.x - absorberMesh.position.x) < absorberMesh.scale.x * 0.25) {
+          if (Math.random() > tr) {
+            scene.remove(p.mesh); particles.splice(i, 1); continue;
+          }
+          p.absorbed = true; // survived once
         }
-
-        function getAirTransmission(type, distanceCm) {
-            if (type === 'alpha') {
-                const rangeCm = 6;
-                return distanceCm >= rangeCm ? 0 : Math.max(0, 1 - distanceCm / rangeCm);
-            }
-            if (type === 'beta') {
-                return Math.exp(-0.005 * distanceCm);
-            }
-            return Math.exp(-0.0008 * distanceCm);
+        if (p.mesh.position.x >= detectorMesh.position.x - 0.3) {
+          hitCount++; scene.remove(p.mesh); particles.splice(i, 1); continue;
         }
+        if (p.mesh.position.x > 10) { scene.remove(p.mesh); particles.splice(i, 1); }
+      }
 
-        function getAbsorberTransmission(type, material, thicknessMm) {
-            if (material === 'none') return 1;
+      if (noiseTimer >= 0.5) {
+        measuredRate = exp * (0.92 + Math.random() * 0.16);
+        document.getElementById('measuredVal').textContent = measuredRate.toFixed(0) + ' cps';
+        noiseTimer = 0;
+      }
+      renderer.render(scene, camera);
+    }
 
-            if (type === 'alpha') {
-                if (material === 'paper') {
-                    const cutoff = 0.08;
-                    return thicknessMm >= cutoff ? 0 : Math.max(0, 1 - thicknessMm / cutoff);
-                }
-                const hardCutoff = 0.01;
-                return thicknessMm >= hardCutoff ? 0 : 1;
-            }
-
-            if (type === 'beta') {
-                const mu = {
-                    paper: 0.04,
-                    aluminium: 0.35,
-                    lead: 0.95
-                };
-                return Math.exp(-(mu[material] || 0) * thicknessMm);
-            }
-
-            const mu = {
-                paper: 0.006,
-                aluminium: 0.06,
-                lead: 0.22
-            };
-            return Math.exp(-(mu[material] || 0) * thicknessMm);
-        }
-
-        function computeTransmission() {
-            const type = radiationType.value;
-            const material = absorberType.value;
-            const thickness = parseFloat(thicknessSlider.value);
-            const distance = parseFloat(distanceSlider.value);
-            const airT = getAirTransmission(type, distance);
-            const absorberT = getAbsorberTransmission(type, material, thickness);
-            return Math.max(0, Math.min(1, airT * absorberT));
-        }
-
-        function computeExpectedRate() {
-            const base = parseFloat(activitySlider.value);
-            const distance = parseFloat(distanceSlider.value);
-            const transmission = computeTransmission();
-            const inverseSquare = Math.pow(5 / distance, 2);
-            const background = 25;
-            return background + base * inverseSquare * transmission;
-        }
-
-        function getVerdict(transmission) {
-            if (transmission < 0.12) return 'low';
-            if (transmission < 0.55) return 'medium';
-            return 'high';
-        }
-
-        function updateControlLabels() {
-            thicknessVal.textContent = parseFloat(thicknessSlider.value).toFixed(1) + ' mm';
-            distanceVal.textContent = parseFloat(distanceSlider.value).toFixed(1) + ' cm';
-            activityVal.textContent = Math.round(parseFloat(activitySlider.value)) + ' cps';
-        }
-
-        function updateStatsDisplay() {
-            const transmission = computeTransmission();
-            expectedRate = computeExpectedRate();
-            const verdict = getVerdict(transmission);
-
-            transmissionVal.textContent = (transmission * 100).toFixed(1) + '%';
-            expectedVal.textContent = Math.round(expectedRate) + ' cps';
-            measuredVal.textContent = Math.max(0, Math.round(measuredRate)) + ' cps';
-
-            const lang = currentLang in translations ? currentLang : 'en';
-            const verdictKey = 'verdict.' + verdict;
-            verdictVal.textContent = translations[lang][verdictKey] || verdict;
-            verdictVal.setAttribute('data-i18n', verdictKey);
-
-            const barPct = Math.max(2, transmission * 100);
-            penetrationBar.style.width = barPct + '%';
-            if (verdict === 'low') penetrationBar.className = 'h-full bg-red-500 transition-all';
-            else if (verdict === 'medium') penetrationBar.className = 'h-full bg-amber-500 transition-all';
-            else penetrationBar.className = 'h-full bg-green-500 transition-all';
-        }
-
-        function resetSimulationState() {
-            particles.length = 0;
-            sparks.length = 0;
-            measuredRate = expectedRate;
-            spawnAccumulator = 0;
-            updateStatsDisplay();
-        }
-
-        function createParticle() {
-            return {
-                x: 90 * scale,
-                y: H * 0.5 + (Math.random() - 0.5) * 150 * scale,
-                vx: 270 * scale,
-                alive: true,
-                tested: false,
-                color: getColorByType(radiationType.value)
-            };
-        }
-
-        function createSpark(x, y) {
-            sparks.push({
-                x,
-                y,
-                life: 1,
-                vy: (Math.random() - 0.5) * 40 * scale,
-                vx: (Math.random() - 0.2) * 70 * scale
-            });
-        }
-
-        function updateParticles(dt) {
-            if (!running) return;
-
-            const transmission = computeTransmission();
-            const visualRate = Math.min(120, 18 + Math.sqrt(expectedRate) * 2.6);
-            spawnAccumulator += visualRate * dt;
-            while (spawnAccumulator > 1) {
-                particles.push(createParticle());
-                spawnAccumulator -= 1;
-            }
-
-            const absorberCenterX = W * 0.53;
-            const detectorX = W * 0.87;
-
-            for (const p of particles) {
-                if (!p.alive) continue;
-                p.x += p.vx * dt;
-
-                if (!p.tested && p.x >= absorberCenterX) {
-                    p.tested = true;
-                    if (Math.random() > transmission) {
-                        p.alive = false;
-                        createSpark(absorberCenterX, p.y);
-                    }
-                }
-
-                if (p.x >= detectorX) {
-                    p.alive = false;
-                }
-            }
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                if (!particles[i].alive) particles.splice(i, 1);
-            }
-        }
-
-        function updateSparks(dt) {
-            for (const s of sparks) {
-                s.x += s.vx * dt;
-                s.y += s.vy * dt;
-                s.life -= dt * 1.8;
-            }
-            for (let i = sparks.length - 1; i >= 0; i--) {
-                if (sparks[i].life <= 0) sparks.splice(i, 1);
-            }
-        }
-
-        function drawScene() {
-            const type = radiationType.value;
-            const material = absorberType.value;
-            const thickness = parseFloat(thicknessSlider.value);
-            const distance = parseFloat(distanceSlider.value);
-            const absorberCenterX = W * 0.53;
-            const detectorX = W * 0.87;
-            const absorberWidth = Math.max(2 * scale, thickness * 3.3 * scale);
-
-            ctx.clearRect(0, 0, W, H);
-
-            const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-            bgGrad.addColorStop(0, '#1e293b');
-            bgGrad.addColorStop(1, '#0f172a');
-            ctx.fillStyle = bgGrad;
-            ctx.fillRect(0, 0, W, H);
-
-            ctx.strokeStyle = 'rgba(148,163,184,0.25)';
-            ctx.lineWidth = 2 * scale;
-            ctx.setLineDash([8 * scale, 8 * scale]);
-            ctx.beginPath();
-            ctx.moveTo(90 * scale, H * 0.5);
-            ctx.lineTo(detectorX, H * 0.5);
-            ctx.stroke();
-            ctx.setLineDash([]);
-
-            ctx.save();
-            ctx.fillStyle = '#334155';
-            ctx.fillRect(20 * scale, H * 0.5 - 70 * scale, 70 * scale, 140 * scale);
-            ctx.fillStyle = '#e2e8f0';
-            ctx.font = `bold ${18 * scale}px Inter`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('☢', 55 * scale, H * 0.5);
-            ctx.restore();
-
-            if (material !== 'none' && thickness > 0) {
-                ctx.save();
-                ctx.fillStyle = getAbsorberColor(material);
-                ctx.globalAlpha = material === 'paper' ? 0.5 : 0.85;
-                ctx.fillRect(absorberCenterX - absorberWidth / 2, H * 0.16, absorberWidth, H * 0.68);
-                ctx.globalAlpha = 1;
-                ctx.strokeStyle = '#94a3b8';
-                ctx.lineWidth = 1.5 * scale;
-                ctx.strokeRect(absorberCenterX - absorberWidth / 2, H * 0.16, absorberWidth, H * 0.68);
-                ctx.restore();
-            }
-
-            ctx.save();
-            ctx.fillStyle = '#1d4ed8';
-            ctx.fillRect(detectorX, H * 0.5 - 90 * scale, 60 * scale, 180 * scale);
-            ctx.fillStyle = '#dbeafe';
-            ctx.font = `bold ${11 * scale}px Inter`;
-            ctx.textAlign = 'center';
-            ctx.fillText('GM', detectorX + 30 * scale, H * 0.5 - 8 * scale);
-            ctx.fillText('Counter', detectorX + 30 * scale, H * 0.5 + 8 * scale);
-            ctx.restore();
-
-            for (const p of particles) {
-                ctx.beginPath();
-                ctx.fillStyle = p.color;
-                ctx.arc(p.x, p.y, 3.4 * scale, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            for (const s of sparks) {
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, s.life);
-                ctx.strokeStyle = '#f87171';
-                ctx.lineWidth = 1.5 * scale;
-                ctx.beginPath();
-                ctx.moveTo(s.x - 3 * scale, s.y - 3 * scale);
-                ctx.lineTo(s.x + 3 * scale, s.y + 3 * scale);
-                ctx.moveTo(s.x - 3 * scale, s.y + 3 * scale);
-                ctx.lineTo(s.x + 3 * scale, s.y - 3 * scale);
-                ctx.stroke();
-                ctx.restore();
-            }
-
-            ctx.save();
-            ctx.fillStyle = '#93c5fd';
-            ctx.font = `${12 * scale}px Inter`;
-            ctx.textAlign = 'left';
-            ctx.fillText(`${distance.toFixed(1)} cm`, W * 0.45, H * 0.5 + 28 * scale);
-            ctx.fillStyle = getColorByType(type);
-            const symbol = type === 'alpha' ? 'α' : type === 'beta' ? 'β' : 'γ';
-            ctx.fillText(symbol, 95 * scale, H * 0.5 - 20 * scale);
-            ctx.restore();
-        }
-
-        function animate(ts) {
-            if (!prevTs) prevTs = ts;
-            const dt = Math.min(0.05, (ts - prevTs) / 1000);
-            prevTs = ts;
-
-            updateControlLabels();
-            updateParticles(dt);
-            updateSparks(dt);
-
-            noiseTimer += dt;
-            if (noiseTimer >= 0.35) {
-                noiseTimer = 0;
-                const sigma = Math.max(4, Math.sqrt(Math.max(1, expectedRate)));
-                measuredRate = running
-                    ? expectedRate + sigma * (Math.random() * 2 - 1)
-                    : measuredRate;
-            }
-            updateStatsDisplay();
-            drawScene();
-            requestAnimationFrame(animate);
-        }
-
-        const interactiveInputs = [radiationType, absorberType, thicknessSlider, distanceSlider, activitySlider];
-        interactiveInputs.forEach(el => el.addEventListener('input', () => {
-            updateStatsDisplay();
-        }));
-
-        toggleRunBtn.addEventListener('click', () => {
-            running = !running;
-            const key = running ? 'btn.pause' : 'btn.start';
-            toggleRunBtn.setAttribute('data-i18n', key);
-            updateLanguage(currentLang, true);
-        });
-
-        resetBtn.addEventListener('click', () => {
-            resetSimulationState();
-        });
-
-        const translations = {
-            en: {
-                'nav.back': 'Back',
-                'title': 'Radioactive Source: Range and Penetration',
-                'subtitle': 'HKDSE-level simulation of alpha, beta, gamma through absorbers',
-                'btn.pause': 'Pause',
-                'btn.start': 'Start',
-                'btn.reset': 'Reset',
-                'controls.title': 'Controls',
-                'controls.type': 'Radiation Type',
-                'controls.absorber': 'Absorber Material',
-                'controls.thickness': 'Absorber Thickness',
-                'controls.distance': 'Source-Detector Distance',
-                'controls.activity': 'Source Activity (cps at 5 cm)',
-                'radiation.alpha': 'Alpha (α)',
-                'radiation.beta': 'Beta (β)',
-                'radiation.gamma': 'Gamma (γ)',
-                'absorber.none': 'None (Air only)',
-                'absorber.paper': 'Paper',
-                'absorber.aluminium': 'Aluminium',
-                'absorber.lead': 'Lead',
-                'stats.title': 'Detector Readings',
-                'stats.transmission': 'Transmission',
-                'stats.expected': 'Expected Rate',
-                'stats.measured': 'Measured Rate',
-                'stats.verdictLabel': 'Penetration',
-                'verdict.low': 'Low',
-                'verdict.medium': 'Medium',
-                'verdict.high': 'High',
-                'legend.title': 'Legend',
-                'legend.alpha': 'Alpha (α): strong ionisation, short range',
-                'legend.beta': 'Beta (β): medium penetration',
-                'legend.gamma': 'Gamma (γ): weak ionisation, high penetration',
-                'legend.absorber': 'Absorber slab',
-                'info.title': 'HKDSE Concept Summary',
-                'info.p1': '<strong>Alpha (α):</strong> very short range in air (a few cm), stopped by paper or skin.',
-                'info.p2': '<strong>Beta (β):</strong> medium range and penetration, reduced by aluminium sheet.',
-                'info.p3': '<strong>Gamma (γ):</strong> no charge, very penetrating, best reduced by thick lead/concrete.',
-                'info.p4': 'In experiments, subtract background count rate before comparing source intensities.',
-                'info.formulaTitle': 'Model Used in This Simulation',
-                'info.f1': 'Approximate count model:',
-                'info.f2': 'For beta/gamma absorption we use an exponential trend:',
-                'info.f3': 'This is a teaching model, tuned for HKDSE-style qualitative understanding.',
-                'info.updated': 'Last updated: 2026-04-25'
-            },
-            'zh-hk': {
-                'nav.back': '返回',
-                'title': '放射源：射程與穿透力',
-                'subtitle': 'HKDSE 程度模擬：α、β、γ 射線穿過吸收物',
-                'btn.pause': '暫停',
-                'btn.start': '開始',
-                'btn.reset': '重置',
-                'controls.title': '控制面板',
-                'controls.type': '輻射種類',
-                'controls.absorber': '吸收物料',
-                'controls.thickness': '吸收層厚度',
-                'controls.distance': '放射源與探測器距離',
-                'controls.activity': '放射源活度（在 5 cm 的 cps）',
-                'radiation.alpha': '阿爾法 (α)',
-                'radiation.beta': '貝他 (β)',
-                'radiation.gamma': '伽馬 (γ)',
-                'absorber.none': '沒有（只有空氣）',
-                'absorber.paper': '紙',
-                'absorber.aluminium': '鋁',
-                'absorber.lead': '鉛',
-                'stats.title': '探測器讀數',
-                'stats.transmission': '透射率',
-                'stats.expected': '預期計數率',
-                'stats.measured': '量度計數率',
-                'stats.verdictLabel': '穿透程度',
-                'verdict.low': '低',
-                'verdict.medium': '中',
-                'verdict.high': '高',
-                'legend.title': '圖例',
-                'legend.alpha': '阿爾法 (α)：電離能力強，射程短',
-                'legend.beta': '貝他 (β)：穿透能力中等',
-                'legend.gamma': '伽馬 (γ)：電離能力較弱，穿透能力高',
-                'legend.absorber': '吸收層',
-                'info.title': 'HKDSE 概念重點',
-                'info.p1': '<strong>阿爾法 (α)：</strong>在空氣中射程很短（幾厘米），可被紙或皮膚阻擋。',
-                'info.p2': '<strong>貝他 (β)：</strong>射程和穿透力中等，鋁片可有效減弱。',
-                'info.p3': '<strong>伽馬 (γ)：</strong>不帶電、穿透力很高，需厚鉛或混凝土減弱。',
-                'info.p4': '做實驗時，應先扣除本底計數率，再比較不同情況的放射強度。',
-                'info.formulaTitle': '本模擬使用的模型',
-                'info.f1': '計數率近似模型：',
-                'info.f2': '對 β/γ 吸收使用指數衰減趨勢：',
-                'info.f3': '此為教學模型，重點在 HKDSE 的定性理解。',
-                'info.updated': '最後更新：2026-04-25'
-            }
-        };
-
-        let currentLang = localStorage.getItem('preferred_language') || 'en';
-        if (currentLang === 'zh' || currentLang === 'cn') currentLang = 'zh-hk';
-        if (!(currentLang in translations)) currentLang = 'en';
-
-        function updateLanguage(lang, skipSave) {
-            currentLang = lang in translations ? lang : 'en';
-            if (!skipSave) localStorage.setItem('preferred_language', currentLang);
-
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                const value = translations[currentLang][key];
-                if (!value) return;
-                if (value.includes('<strong>')) el.innerHTML = value;
-                else el.textContent = value;
-            });
-
-            document.querySelectorAll('.lang-btn').forEach(btn => {
-                const isActive = btn.getAttribute('data-lang') === currentLang;
-                btn.classList.toggle('bg-blue-600', isActive);
-                btn.classList.toggle('text-white', isActive);
-                btn.classList.toggle('text-slate-600', !isActive);
-            });
-
-            document.documentElement.lang = currentLang === 'zh-hk' ? 'zh-HK' : 'en';
-        }
-        window.updateLanguage = updateLanguage;
-
-        updateControlLabels();
-        updateStatsDisplay();
-        measuredRate = expectedRate;
-        updateLanguage(currentLang);
-        requestAnimationFrame(animate);
+    ['radiationType', 'absorberType'].forEach(id => document.getElementById(id).addEventListener('change', updateReadings));
+    ['thicknessSlider', 'distanceSlider', 'activitySlider'].forEach(id => document.getElementById(id).addEventListener('input', updateReadings));
+    document.getElementById('toggleRunBtn').addEventListener('click', () => {
+      running = !running;
+      document.getElementById('toggleRunBtn').textContent = running ? t('btn.pause') : t('btn.resume');
     });
-    </script>
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      document.getElementById('radiationType').value = 'alpha';
+      document.getElementById('absorberType').value = 'none';
+      document.getElementById('thicknessSlider').value = 1;
+      document.getElementById('distanceSlider').value = 5;
+      document.getElementById('activitySlider').value = 1200;
+      particles.forEach(p => scene.remove(p.mesh)); particles = [];
+      running = true; document.getElementById('toggleRunBtn').textContent = t('btn.pause');
+      camTheta = defaultCam.theta; camPhi = defaultCam.phi; camRadius = defaultCam.radius; updateCameraFromSpherical();
+      updateReadings();
+    });
+    window.addEventListener('resize', () => {
+      if (!camera) return;
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix(); renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
 
-    <!-- Practice Questions Widget -->
-    <script src="practice_questions.js"></script>
-    <script src="practice_questions_data.js"></script>
-    <script>initPracticeQuestions('radioactive_range');</script>
+    setLanguage(currentLang);
+    updateReadings();
+    initThree();
+  </script>
+
+  <script src="practice_questions.js"></script>
+  <script src="practice_questions_data.js"></script>
+  <script>initPracticeQuestions('radioactive_range');</script>
 </body>
 </html>
