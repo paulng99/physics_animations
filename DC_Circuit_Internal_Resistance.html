@@ -1,300 +1,1033 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DC Circuit and Internal Resistance (HKDSE)</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-    mjx-container { display: inline-block !important; }
-  </style>
-</head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
-  <header class="max-w-6xl mx-auto px-4 py-4">
-    <div class="flex items-center justify-between gap-3">
-      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
-        <span>←</span>
-        <span data-i18n="back">Back to Topics</span>
-      </a>
-      <div class="flex gap-2">
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="updateLanguage('en')" data-lang="en">EN</button>
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
-      </div>
-    </div>
-  </header>
-
-  <main class="max-w-6xl mx-auto px-4 pb-10">
-    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-5 md:p-7 shadow-sm">
-      <h1 class="text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">DC Circuit with Internal Resistance</h1>
-      <p class="mt-2 text-slate-600" data-i18n="subtitle">Explore EMF, internal resistance, and load resistance in one visual model.</p>
-    </section>
-
-    <section class="mt-5 grid lg:grid-cols-3 gap-4">
-      <article class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
-        <canvas id="circuitCanvas" class="w-full rounded-xl bg-slate-50 border border-slate-200" width="960" height="500"></canvas>
-      </article>
-
-      <aside class="space-y-4">
-        <div class="bg-white rounded-2xl border border-slate-200 p-4">
-          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
-
-          <label class="block text-sm font-medium text-slate-700" for="emf">
-            <span data-i18n="emf">EMF (E, V)</span>: <span id="emfValue" class="text-blue-600 font-semibold">12.0</span>
-          </label>
-          <input id="emf" type="range" min="1" max="24" step="0.1" value="12" class="w-full accent-blue-600 mb-3" />
-
-          <label class="block text-sm font-medium text-slate-700" for="internalR">
-            <span data-i18n="internalR">Internal Resistance (r, Ω)</span>: <span id="internalRValue" class="text-blue-600 font-semibold">1.0</span>
-          </label>
-          <input id="internalR" type="range" min="0.1" max="10" step="0.1" value="1" class="w-full accent-blue-600 mb-3" />
-
-          <label class="block text-sm font-medium text-slate-700" for="loadR">
-            <span data-i18n="loadR">Load Resistance (R, Ω)</span>: <span id="loadRValue" class="text-blue-600 font-semibold">10.0</span>
-          </label>
-          <input id="loadR" type="range" min="0.5" max="100" step="0.5" value="10" class="w-full accent-blue-600" />
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-4">
-          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="readings">Calculated Readings</h2>
-          <div class="grid gap-2 text-sm">
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="current">Current I</span><span id="currentOut" class="font-semibold text-green-600">1.09 A</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="terminalV">Terminal voltage V</span><span id="terminalOut" class="font-semibold text-blue-600">10.91 V</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="power">Power on load P</span><span id="powerOut" class="font-semibold text-red-600">11.90 W</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="efficiency">Efficiency</span><span id="efficiencyOut" class="font-semibold text-purple-600">90.9%</span></div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE Formula Focus</h2>
-          <ul class="list-disc ml-5 space-y-1">
-            <li><span class="font-medium">I = E / (R + r)</span></li>
-            <li><span class="font-medium">V = IR = E - Ir</span></li>
-            <li><span class="font-medium">P = I²R</span></li>
-          </ul>
-        </div>
-      </aside>
-    </section>
-  </main>
-
-  <script>
-    const controls = {
-      emf: document.getElementById('emf'),
-      internalR: document.getElementById('internalR'),
-      loadR: document.getElementById('loadR')
-    };
-
-    const outputEls = {
-      emfValue: document.getElementById('emfValue'),
-      internalRValue: document.getElementById('internalRValue'),
-      loadRValue: document.getElementById('loadRValue'),
-      currentOut: document.getElementById('currentOut'),
-      terminalOut: document.getElementById('terminalOut'),
-      powerOut: document.getElementById('powerOut'),
-      efficiencyOut: document.getElementById('efficiencyOut')
-    };
-
-    const canvas = document.getElementById('circuitCanvas');
-    const ctx = canvas.getContext('2d');
-    let phase = 0;
-
-    const translations = {
-      en: {
-        back: 'Back to Topics',
-        title: 'DC Circuit with Internal Resistance',
-        subtitle: 'Explore EMF, internal resistance, and load resistance in one visual model.',
-        controls: 'Controls',
-        emf: 'EMF (E, V)',
-        internalR: 'Internal Resistance (r, Ω)',
-        loadR: 'Load Resistance (R, Ω)',
-        readings: 'Calculated Readings',
-        current: 'Current I',
-        terminalV: 'Terminal voltage V',
-        power: 'Power on load P',
-        efficiency: 'Efficiency',
-        formulaTitle: 'HKDSE Formula Focus'
-      },
-      'zh-hk': {
-        back: '返回主題頁',
-        title: '直流電路與內阻模擬',
-        subtitle: '以同一個模型觀察電動勢、內阻與外接電阻之關係。',
-        controls: '控制面板',
-        emf: '電動勢 (E, V)',
-        internalR: '內阻 (r, Ω)',
-        loadR: '外接電阻 (R, Ω)',
-        readings: '計算讀數',
-        current: '電流 I',
-        terminalV: '端電壓 V',
-        power: '負載功率 P',
-        efficiency: '效率',
-        formulaTitle: 'HKDSE 重點公式'
-      }
-    };
-
-    function computeValues() {
-      const E = Number(controls.emf.value);
-      const r = Number(controls.internalR.value);
-      const R = Number(controls.loadR.value);
-      const I = E / (R + r);
-      const V = I * R;
-      const P = I * I * R;
-      const efficiency = (R / (R + r)) * 100;
-      return { E, r, R, I, V, P, efficiency };
-    }
-
-    function updateOutputs() {
-      const { E, r, R, I, V, P, efficiency } = computeValues();
-      outputEls.emfValue.textContent = E.toFixed(1);
-      outputEls.internalRValue.textContent = r.toFixed(1);
-      outputEls.loadRValue.textContent = R.toFixed(1);
-      outputEls.currentOut.textContent = `${I.toFixed(2)} A`;
-      outputEls.terminalOut.textContent = `${V.toFixed(2)} V`;
-      outputEls.powerOut.textContent = `${P.toFixed(2)} W`;
-      outputEls.efficiencyOut.textContent = `${efficiency.toFixed(1)}%`;
-    }
-
-    function drawCircuit() {
-      const { E, r, R, I } = computeValues();
-      phase += 0.02 + I * 0.01;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const left = 130;
-      const right = 830;
-      const top = 120;
-      const bottom = 380;
-
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = '#334155';
-      ctx.beginPath();
-      ctx.moveTo(left, top);
-      ctx.lineTo(right, top);
-      ctx.lineTo(right, bottom);
-      ctx.lineTo(left, bottom);
-      ctx.lineTo(left, top);
-      ctx.stroke();
-
-      ctx.strokeStyle = '#1d4ed8';
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.moveTo(left, 210);
-      ctx.lineTo(left, 290);
-      ctx.stroke();
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(left - 18, 225);
-      ctx.lineTo(left - 18, 275);
-      ctx.stroke();
-      ctx.fillStyle = '#1e293b';
-      ctx.font = '16px Inter';
-      ctx.fillText(`E = ${E.toFixed(1)} V`, 50, 310);
-
-      const rX = 210;
-      ctx.strokeStyle = '#0f766e';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(rX, top);
-      for (let i = 0; i < 7; i += 1) {
-        const x = rX + i * 14;
-        const y = i % 2 === 0 ? top - 16 : top + 16;
-        ctx.lineTo(x + 10, y);
-      }
-      ctx.lineTo(rX + 110, top);
-      ctx.stroke();
-      ctx.fillStyle = '#0f766e';
-      ctx.fillText(`r = ${r.toFixed(1)} Ω`, rX + 8, top - 28);
-
-      const loadX = right;
-      ctx.strokeStyle = '#9333ea';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(loadX, 180);
-      for (let i = 0; i < 8; i += 1) {
-        const y = 180 + i * 16;
-        const x = i % 2 === 0 ? loadX - 18 : loadX + 18;
-        ctx.lineTo(x, y + 10);
-      }
-      ctx.lineTo(loadX, 340);
-      ctx.stroke();
-      ctx.fillStyle = '#9333ea';
-      ctx.fillText(`R = ${R.toFixed(1)} Ω`, loadX - 68, 162);
-
-      ctx.strokeStyle = '#16a34a';
-      ctx.fillStyle = '#16a34a';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(360, bottom + 26);
-      ctx.lineTo(620, bottom + 26);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(620, bottom + 26);
-      ctx.lineTo(607, bottom + 18);
-      ctx.lineTo(607, bottom + 34);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillText(`I = ${I.toFixed(2)} A`, 450, bottom + 54);
-
-      const path = [
-        [left, top], [right, top], [right, bottom], [left, bottom]
-      ];
-      const perimeter = 2 * ((right - left) + (bottom - top));
-      const dotCount = 20;
-      const speed = 2 + I * 5;
-
-      for (let i = 0; i < dotCount; i += 1) {
-        const s = ((i / dotCount) * perimeter + phase * speed) % perimeter;
-        let x;
-        let y;
-        if (s < right - left) {
-          x = left + s;
-          y = top;
-        } else if (s < right - left + bottom - top) {
-          x = right;
-          y = top + (s - (right - left));
-        } else if (s < 2 * (right - left) + bottom - top) {
-          x = right - (s - (right - left + bottom - top));
-          y = bottom;
-        } else {
-          x = left;
-          y = bottom - (s - (2 * (right - left) + bottom - top));
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DC Circuit &amp; Internal Resistance — 3D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
+        #three-container {
+            width: 100%;
+            height: 420px;
+            background: #e2e8f0;
+            cursor: move;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            touch-action: none;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
         }
-        ctx.beginPath();
-        ctx.fillStyle = '#16a34a';
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
+        @media (min-width: 1024px) {
+            #three-container { height: 560px; }
+        }
+        #three-container canvas { display: block; }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #cbd5e1;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+        input.accent-teal::-webkit-slider-thumb { background: #0d9488; }
+        input.accent-purple::-webkit-slider-thumb { background: #9333ea; }
+        mjx-container { display: inline-block !important; }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){ dataLayer.push(arguments); }
+        gtag('js', new Date()); gtag('config', 'G-RJQ61GJDVS');
+    </script>
+</head>
+<body class="antialiased min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
 
-      requestAnimationFrame(drawCircuit);
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+                </a>
+                <div class="h-6 w-px bg-slate-300 mx-2"></div>
+                <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold">3D</div>
+                <span class="text-xl font-bold hidden sm:inline">PhysLab<span class="text-blue-600">3D</span></span>
+            </div>
+            <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white hover:shadow-sm" data-lang="zh">繁</button>
+                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white hover:shadow-sm" data-lang="cn">简</button>
+                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white hover:shadow-sm bg-white shadow-sm text-blue-600" data-lang="en">EN</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 py-8 space-y-6 w-full">
+        <header class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2" data-i18n="title">DC Circuit with Internal Resistance</h1>
+            <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="subtitle">A real cell is not an ideal EMF. Inside the dashed box, <span class="text-blue-600 font-semibold">E</span> drives charge while internal resistance <span class="text-teal-600 font-semibold">r</span> drops voltage. Terminal voltage is <span class="font-semibold">V = E − Ir</span>, and green particles show the current <span class="text-green-600 font-semibold">I = E / (R + r)</span>.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800" data-i18n="controls.title">Parameters</h3>
+                        <button id="reset-sim" class="text-xs text-blue-600 font-bold hover:text-blue-700 transition min-h-[44px] px-3" data-i18n="controls.reset">Reset</button>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-sm font-medium text-slate-600" data-i18n="controls.emf">EMF E (V)</label>
+                            <span class="text-sm font-bold text-blue-600 font-mono"><span id="emfVal">12.0</span> V</span>
+                        </div>
+                        <input type="range" id="emfSlider" min="1" max="24" step="0.1" value="12" class="accent-blue-600" oninput="onEmfInput(this)">
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-sm font-medium text-slate-600" data-i18n="controls.internalR">Internal r (Ω)</label>
+                            <span class="text-sm font-bold text-teal-600 font-mono"><span id="rVal">1.0</span> Ω</span>
+                        </div>
+                        <input type="range" id="rSlider" min="0.1" max="10" step="0.1" value="1" class="accent-teal accent-teal-600" oninput="onRintInput(this)">
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-sm font-medium text-slate-600" data-i18n="controls.loadR">Load R (Ω)</label>
+                            <span class="text-sm font-bold text-purple-600 font-mono"><span id="RVal">10.0</span> Ω</span>
+                        </div>
+                        <input type="range" id="RSlider" min="0.5" max="100" step="0.5" value="10" class="accent-purple accent-purple-600" oninput="onRloadInput(this)">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button onclick="applyPreset('ideal')" class="min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:border-blue-300 hover:-translate-y-0.5 transition" data-i18n="preset.ideal">Ideal cell</button>
+                        <button onclick="applyPreset('dying')" class="min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:border-blue-300 hover:-translate-y-0.5 transition" data-i18n="preset.dying">Dying cell</button>
+                        <button onclick="applyPreset('matched')" class="min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:border-blue-300 hover:-translate-y-0.5 transition" data-i18n="preset.matched">Max power</button>
+                        <button onclick="applyPreset('open')" class="min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:border-blue-300 hover:-translate-y-0.5 transition" data-i18n="preset.open">Light load</button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-6 rounded-2xl shadow-lg text-white">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3" data-i18n="formula.title">HKDSE Formula Focus</h3>
+                    <div class="text-center space-y-2 text-lg font-serif text-blue-200 py-1">
+                        <div>$I = \dfrac{E}{R+r}$</div>
+                        <div>$V = E - Ir = IR$</div>
+                        <div class="text-base text-amber-200">$P = I^{2}R \quad \eta = \dfrac{R}{R+r}$</div>
+                    </div>
+                    <p class="text-xs text-slate-400 text-center mt-3" data-i18n="formula.desc">Terminal voltage falls as current rises. Efficiency is the fraction of EMF that appears across the load.</p>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-200">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide mb-4" data-i18n="result.title">Live Readings</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center bg-white p-2 rounded border border-blue-100">
+                            <span class="text-slate-500" data-i18n="result.current">Current I</span>
+                            <span id="currentOut" class="font-bold font-mono text-green-600">1.09 A</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-2 rounded border border-blue-100">
+                            <span class="text-slate-500" data-i18n="result.terminalV">Terminal V</span>
+                            <span id="terminalOut" class="font-bold font-mono text-blue-600">10.91 V</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-2 rounded border border-blue-100">
+                            <span class="text-slate-500" data-i18n="result.drop">Internal drop Ir</span>
+                            <span id="dropOut" class="font-bold font-mono text-teal-600">1.09 V</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-2 rounded border border-blue-100">
+                            <span class="text-slate-500" data-i18n="result.power">Load power P</span>
+                            <span id="powerOut" class="font-bold font-mono text-red-600">11.90 W</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-2 rounded border border-blue-100">
+                            <span class="text-slate-500" data-i18n="result.lost">Lost in r</span>
+                            <span id="lostOut" class="font-bold font-mono text-slate-600">1.19 W</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-2 rounded border border-blue-100">
+                            <span class="text-slate-500" data-i18n="result.efficiency">Efficiency η</span>
+                            <span id="efficiencyOut" class="font-bold font-mono text-purple-600">90.9%</span>
+                        </div>
+                    </div>
+                    <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mt-4 mb-2" data-i18n="result.split">EMF split: useful V vs lost Ir</p>
+                    <div class="h-3 rounded-full overflow-hidden flex bg-slate-200">
+                        <div id="barV" class="bg-blue-600 transition-all duration-150" style="width:90.9%"></div>
+                        <div id="barIr" class="bg-teal-500 transition-all duration-150" style="width:9.1%"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] mt-1 font-bold">
+                        <span class="text-blue-600" data-i18n="result.splitV">V on load</span>
+                        <span class="text-teal-600" data-i18n="result.splitIr">Ir inside cell</span>
+                    </div>
+                    <p id="interpretation" class="mt-3 text-xs text-slate-600 leading-relaxed" data-i18n="note.typical">Typical classroom cell: most of the EMF appears across the load.</p>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 p-4">
+                    <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="info.title">Key Concepts</h2>
+                    <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
+                        <li data-i18n="info.1">EMF E is the energy per coulomb supplied by the cell.</li>
+                        <li data-i18n="info.2">Internal r is inside the cell; it always wastes I²r heat.</li>
+                        <li data-i18n="info.3">Terminal voltage V = E − Ir equals the load voltage IR.</li>
+                        <li data-i18n="info.4">Maximum load power when R = r (then η = 50%).</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-4">
+                <div class="relative">
+                    <div id="three-container"></div>
+                    <div class="absolute bottom-4 left-4 flex flex-wrap gap-2 pointer-events-none max-w-[75%]">
+                        <div class="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm border border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-green-600 inline-block mr-1"></span> <span data-i18n="legend.current">Current (I)</span>
+                        </div>
+                        <div class="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm border border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-blue-600 inline-block mr-1"></span> <span data-i18n="legend.emf">EMF (E)</span>
+                        </div>
+                        <div class="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm border border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-teal-500 inline-block mr-1"></span> <span data-i18n="legend.internal">Internal r</span>
+                        </div>
+                        <div class="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm border border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-purple-600 inline-block mr-1"></span> <span data-i18n="legend.load">Load R</span>
+                        </div>
+                        <div class="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm border border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-red-600 inline-block mr-1"></span> <span data-i18n="legend.power">Load power</span>
+                        </div>
+                    </div>
+                    <div class="absolute top-4 right-4 text-[10px] font-bold text-white uppercase bg-gray-900/80 backdrop-blur px-4 py-2 rounded-full pointer-events-none">
+                        <span data-i18n="canvas.hint">Drag to rotate • Scroll / pinch to zoom</span>
+                    </div>
+                    <div class="absolute bottom-4 right-4 max-w-[55%] text-[11px] text-white bg-gray-900/70 backdrop-blur px-3 py-2 rounded-full pointer-events-none hidden sm:block">
+                        <span data-i18n="canvas.note">Dashed box = cell (E and r)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+<script>
+const PHYSICS_COLORS = {
+    force: 0xdc2626, velocity: 0x16a34a, accel: 0x9333ea,
+    bField: 0xd97706, displacement: 0x475569
+};
+const COL = {
+    emf: 0x2563eb,
+    internal: 0x0d9488,
+    load: 0x9333ea,
+    copper: 0xb45309,
+    brass: 0xd97706,
+    pcb: 0x166534,
+    cellGlass: 0x38bdf8
+};
+
+const defaults = { E: 12, r: 1, R: 10 };
+const state = { ...defaults };
+
+const CAM = { radius: 15.5, theta: 0.62, phi: 1.05 };
+const camDefault = { radius: 15.5, theta: 0.62, phi: 1.05 };
+
+const X_L = -4.6, X_R = 4.6, Z_B = -2.45, Z_F = 2.45, LOOP_Y = 0.42;
+
+const container = document.getElementById('three-container');
+let scene, camera, renderer, simGroup;
+let isCameraDrag = false, startCamX, startCamY;
+let lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+let clock = 0;
+
+const refs = {
+    particles: [],
+    rGroup: null,
+    RGroup: null,
+    rMat: null,
+    RMat: null,
+    labels: {},
+    meters: {},
+    iArrow: null,
+    lastRint: null,
+    lastRload: null
+};
+
+function normalizeLang(lang) {
+    if (lang === 'zh-hk' || lang === 'zh-HK' || lang === 'zh-TW' || lang === 'zh-tw') return 'zh';
+    if (lang === 'zh-cn' || lang === 'zh-CN') return 'cn';
+    if (lang === 'en' || lang === 'zh' || lang === 'cn') return lang;
+    return 'en';
+}
+
+let currentLang = normalizeLang(localStorage.getItem('preferred_language') || 'en');
+
+const translations = {
+    en: {
+        'nav.back': 'Back to Home',
+        'page.title': 'DC Circuit & Internal Resistance — 3D',
+        'title': 'DC Circuit with Internal Resistance',
+        'subtitle': 'A real cell is not an ideal EMF. Inside the dashed box, <span class="text-blue-600 font-semibold">E</span> drives charge while internal resistance <span class="text-teal-600 font-semibold">r</span> drops voltage. Terminal voltage is <span class="font-semibold">V = E − Ir</span>, and green particles show the current <span class="text-green-600 font-semibold">I = E / (R + r)</span>.',
+        'controls.title': 'Parameters',
+        'controls.reset': 'Reset',
+        'controls.emf': 'EMF E (V)',
+        'controls.internalR': 'Internal r (Ω)',
+        'controls.loadR': 'Load R (Ω)',
+        'preset.ideal': 'Ideal cell',
+        'preset.dying': 'Dying cell',
+        'preset.matched': 'Max power',
+        'preset.open': 'Light load',
+        'formula.title': 'HKDSE Formula Focus',
+        'formula.desc': 'Terminal voltage falls as current rises. Efficiency is the fraction of EMF that appears across the load.',
+        'result.title': 'Live Readings',
+        'result.current': 'Current I',
+        'result.terminalV': 'Terminal V',
+        'result.drop': 'Internal drop Ir',
+        'result.power': 'Load power P',
+        'result.lost': 'Lost in r',
+        'result.efficiency': 'Efficiency η',
+        'result.split': 'EMF split: useful V vs lost Ir',
+        'result.splitV': 'V on load',
+        'result.splitIr': 'Ir inside cell',
+        'info.title': 'Key Concepts',
+        'info.1': 'EMF E is the energy per coulomb supplied by the cell.',
+        'info.2': 'Internal r is inside the cell; it always wastes I²r heat.',
+        'info.3': 'Terminal voltage V = E − Ir equals the load voltage IR.',
+        'info.4': 'Maximum load power when R = r (then η = 50%).',
+        'legend.current': 'Current (I)',
+        'legend.emf': 'EMF (E)',
+        'legend.internal': 'Internal r',
+        'legend.load': 'Load R',
+        'legend.power': 'Load power',
+        'canvas.hint': 'Drag to rotate • Scroll / pinch to zoom',
+        'canvas.note': 'Dashed box = cell (E and r)',
+        'note.efficient': 'R ≫ r: almost all of the EMF appears across the load (high efficiency).',
+        'note.waste': 'R ≪ r: most energy is wasted as heat in the internal resistance.',
+        'note.maxpower': 'R ≈ r: maximum power transfer to the load, but efficiency is only 50%.',
+        'note.typical': 'Typical classroom cell: most of the EMF appears across the load.',
+        'sprite.cell': 'cell (E, r)'
+    },
+    zh: {
+        'nav.back': '返回主頁',
+        'page.title': '直流電路與內阻 — 3D',
+        'title': '直流電路與內阻',
+        'subtitle': '真實電池並非理想電動勢。虛線盒內，<span class="text-blue-600 font-semibold">E</span> 驅動電荷，內阻 <span class="text-teal-600 font-semibold">r</span> 造成電壓降。端電壓 <span class="font-semibold">V = E − Ir</span>，綠色粒子顯示電流 <span class="text-green-600 font-semibold">I = E / (R + r)</span>。',
+        'controls.title': '參數',
+        'controls.reset': '重設',
+        'controls.emf': '電動勢 E (V)',
+        'controls.internalR': '內阻 r (Ω)',
+        'controls.loadR': '負載 R (Ω)',
+        'preset.ideal': '理想電池',
+        'preset.dying': '老化電池',
+        'preset.matched': '最大功率',
+        'preset.open': '輕負載',
+        'formula.title': 'HKDSE 重點公式',
+        'formula.desc': '電流越大，端電壓越低。效率是電動勢出現在負載上的比例。',
+        'result.title': '即時讀數',
+        'result.current': '電流 I',
+        'result.terminalV': '端電壓 V',
+        'result.drop': '內阻壓降 Ir',
+        'result.power': '負載功率 P',
+        'result.lost': '內阻損耗',
+        'result.efficiency': '效率 η',
+        'result.split': '電動勢分配：有用 V 對損失 Ir',
+        'result.splitV': '負載 V',
+        'result.splitIr': '電池內 Ir',
+        'info.title': '核心概念',
+        'info.1': '電動勢 E 是電池每庫侖電荷所提供的能量。',
+        'info.2': '內阻 r 在電池內部，必定以 I²r 熱能損耗。',
+        'info.3': '端電壓 V = E − Ir，等於負載電壓 IR。',
+        'info.4': '當 R = r 時負載功率最大（此時 η = 50%）。',
+        'legend.current': '電流 (I)',
+        'legend.emf': '電動勢 (E)',
+        'legend.internal': '內阻 r',
+        'legend.load': '負載 R',
+        'legend.power': '負載功率',
+        'canvas.hint': '拖曳旋轉 • 滾輪 / 雙指縮放',
+        'canvas.note': '虛線盒 = 電池（E 與 r）',
+        'note.efficient': 'R ≫ r：幾乎全部電動勢都落在負載上（高效率）。',
+        'note.waste': 'R ≪ r：大部分能量以熱能耗散在內阻。',
+        'note.maxpower': 'R ≈ r：負載獲得最大功率，但效率只有 50%。',
+        'note.typical': '課堂常用電池：大部分電動勢出現在負載上。',
+        'sprite.cell': '電池 (E, r)'
+    },
+    cn: {
+        'nav.back': '返回首页',
+        'page.title': '直流电路与内阻 — 3D',
+        'title': '直流电路与内阻',
+        'subtitle': '真实电池并非理想电动势。虚线盒内，<span class="text-blue-600 font-semibold">E</span> 驱动电荷，内阻 <span class="text-teal-600 font-semibold">r</span> 造成电压降。端电压 <span class="font-semibold">V = E − Ir</span>，绿色粒子显示电流 <span class="text-green-600 font-semibold">I = E / (R + r)</span>。',
+        'controls.title': '参数',
+        'controls.reset': '重设',
+        'controls.emf': '电动势 E (V)',
+        'controls.internalR': '内阻 r (Ω)',
+        'controls.loadR': '负载 R (Ω)',
+        'preset.ideal': '理想电池',
+        'preset.dying': '老化电池',
+        'preset.matched': '最大功率',
+        'preset.open': '轻负载',
+        'formula.title': 'HKDSE 重点公式',
+        'formula.desc': '电流越大，端电压越低。效率是电动势出现在负载上的比例。',
+        'result.title': '即时读数',
+        'result.current': '电流 I',
+        'result.terminalV': '端电压 V',
+        'result.drop': '内阻压降 Ir',
+        'result.power': '负载功率 P',
+        'result.lost': '内阻损耗',
+        'result.efficiency': '效率 η',
+        'result.split': '电动势分配：有用 V 对损失 Ir',
+        'result.splitV': '负载 V',
+        'result.splitIr': '电池内 Ir',
+        'info.title': '核心概念',
+        'info.1': '电动势 E 是电池每库仑电荷所提供的能量。',
+        'info.2': '内阻 r 在电池内部，必定以 I²r 热能损耗。',
+        'info.3': '端电压 V = E − Ir，等于负载电压 IR。',
+        'info.4': '当 R = r 时负载功率最大（此时 η = 50%）。',
+        'legend.current': '电流 (I)',
+        'legend.emf': '电动势 (E)',
+        'legend.internal': '内阻 r',
+        'legend.load': '负载 R',
+        'legend.power': '负载功率',
+        'canvas.hint': '拖曳旋转 • 滚轮 / 双指缩放',
+        'canvas.note': '虚线盒 = 电池（E 与 r）',
+        'note.efficient': 'R ≫ r：几乎全部电动势都落在负载上（高效率）。',
+        'note.waste': 'R ≪ r：大部分能量以热能耗散在内阻。',
+        'note.maxpower': 'R ≈ r：负载获得最大功率，但效率只有 50%。',
+        'note.typical': '课堂常用电池：大部分电动势出现在负载上。',
+        'sprite.cell': '电池 (E, r)'
     }
+};
 
-    function updateLanguage(lang) {
-      localStorage.setItem('preferred_language', lang);
-      document.querySelectorAll('[data-i18n]').forEach((el) => {
+function t(key) {
+    return translations[currentLang]?.[key] ?? translations.en[key] ?? key;
+}
+
+function computeValues() {
+    const E = state.E, r = state.r, R = state.R;
+    const I = E / (R + r);
+    const V = I * R;           // V = IR = E − Ir
+    const Ir = I * r;
+    const P = I * I * R;
+    const Plost = I * I * r;
+    const eta = (R / (R + r)) * 100;
+    return { E, r, R, I, V, Ir, P, Plost, eta };
+}
+
+function interpretationKey(r, R) {
+    if (R > 3 * r) return 'note.efficient';
+    if (R < r / 3) return 'note.waste';
+    if (Math.abs(R - r) / Math.max(r, 0.01) < 0.18) return 'note.maxpower';
+    return 'note.typical';
+}
+
+function makeTextSprite(text, colorHex, scale = 1.4) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    const tex = new THREE.CanvasTexture(canvas);
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+    spr.scale.set(scale * 2.2, scale * 0.55, 1);
+    spr.userData.canvas = canvas;
+    spr.userData.ctx = ctx;
+    spr.userData.tex = tex;
+    spr.userData.color = colorHex;
+    paintSprite(spr, text);
+    return spr;
+}
+
+function paintSprite(spr, text) {
+    const ctx = spr.userData.ctx;
+    const canvas = spr.userData.canvas;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#' + spr.userData.color.toString(16).padStart(6, '0');
+    ctx.font = 'bold 48px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    spr.userData.tex.needsUpdate = true;
+}
+
+function makeMeterPlane(w, h) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 320;
+    canvas.height = 160;
+    const tex = new THREE.CanvasTexture(canvas);
+    const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(w, h),
+        new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })
+    );
+    mesh.userData.canvas = canvas;
+    mesh.userData.ctx = canvas.getContext('2d');
+    mesh.userData.tex = tex;
+    return mesh;
+}
+
+function paintMeter(mesh, title, value, colorCss) {
+    const ctx = mesh.userData.ctx;
+    const c = mesh.userData.canvas;
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.strokeStyle = colorCss;
+    ctx.lineWidth = 10;
+    ctx.strokeRect(6, 6, c.width - 12, c.height - 12);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'bold 26px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(title, c.width / 2, 48);
+    ctx.fillStyle = colorCss;
+    ctx.font = 'bold 44px Inter, Arial, sans-serif';
+    ctx.fillText(value, c.width / 2, 110);
+    mesh.userData.tex.needsUpdate = true;
+}
+
+function clearGroup(g) {
+    while (g.children.length) {
+        const o = g.children[0];
+        g.remove(o);
+        o.traverse(c => {
+            if (c.geometry) c.geometry.dispose();
+            if (c.material) {
+                if (c.material.map) c.material.map.dispose();
+                if (Array.isArray(c.material)) c.material.forEach(m => m.dispose());
+                else c.material.dispose();
+            }
+        });
+    }
+}
+
+function addCylinderBetween(a, b, radius, material, parent) {
+    const dir = new THREE.Vector3().subVectors(b, a);
+    const len = dir.length();
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, len, 12), material);
+    mesh.position.copy(a).add(b).multiplyScalar(0.5);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    mesh.castShadow = true;
+    parent.add(mesh);
+    return mesh;
+}
+
+function loopPoint(u) {
+    const y = LOOP_Y + 0.12;
+    const segs = [
+        { a: new THREE.Vector3(X_L, y, Z_B), b: new THREE.Vector3(X_R, y, Z_B) },
+        { a: new THREE.Vector3(X_R, y, Z_B), b: new THREE.Vector3(X_R, y, Z_F) },
+        { a: new THREE.Vector3(X_R, y, Z_F), b: new THREE.Vector3(X_L, y, Z_F) },
+        { a: new THREE.Vector3(X_L, y, Z_F), b: new THREE.Vector3(X_L, y, Z_B) }
+    ];
+    const lens = segs.map(s => s.a.distanceTo(s.b));
+    const total = lens.reduce((a, b) => a + b, 0);
+    let d = ((u % 1) + 1) % 1 * total;
+    for (let i = 0; i < segs.length; i++) {
+        if (d <= lens[i]) {
+            return segs[i].a.clone().lerp(segs[i].b, d / lens[i]);
+        }
+        d -= lens[i];
+    }
+    return segs[0].a.clone();
+}
+
+function addZigzag(group, length, zigs, color, radius) {
+    const pts = [];
+    const n = Math.max(4, zigs);
+    for (let i = 0; i <= n; i++) {
+        pts.push(new THREE.Vector3((i / n - 0.5) * length, (i % 2 ? 0.28 : -0.28), 0));
+    }
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const mat = new THREE.MeshStandardMaterial({
+        color, metalness: 0.35, roughness: 0.4,
+        emissive: color, emissiveIntensity: 0.12
+    });
+    const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, n * 10, radius, 8, false), mat);
+    mesh.castShadow = true;
+    group.add(mesh);
+    return mat;
+}
+
+function rebuildResistors() {
+    const zigsR = 4 + Math.round(state.r * 1.1);
+    const zigsLoad = 5 + Math.round(Math.min(state.R, 80) / 8);
+    if (refs.lastRint !== state.r) {
+        clearGroup(refs.rGroup);
+        refs.rMat = addZigzag(refs.rGroup, 2.2, zigsR, COL.internal, 0.07);
+        refs.lastRint = state.r;
+    }
+    if (refs.lastRload !== state.R) {
+        clearGroup(refs.RGroup);
+        refs.RMat = addZigzag(refs.RGroup, 2.6, zigsLoad, COL.load, 0.08);
+        refs.lastRload = state.R;
+    }
+}
+
+function addBattery(parent) {
+    const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.52, 0.52, 3.05, 32),
+        new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.72, roughness: 0.22 })
+    );
+    body.rotation.x = Math.PI / 2;
+    body.position.set(X_L, 0.78, 0);
+    body.castShadow = true;
+    parent.add(body);
+
+    const band = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.545, 0.545, 1.15, 32),
+        new THREE.MeshStandardMaterial({ color: COL.emf, metalness: 0.35, roughness: 0.45 })
+    );
+    band.rotation.x = Math.PI / 2;
+    band.position.set(X_L, 0.78, 0);
+    parent.add(band);
+
+    const plus = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.38, 0.38, 0.22, 24),
+        new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.5, roughness: 0.3 })
+    );
+    plus.rotation.x = Math.PI / 2;
+    plus.position.set(X_L, 0.78, -1.58);
+    parent.add(plus);
+
+    const bump = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.15, 0.15, 0.18, 16),
+        new THREE.MeshStandardMaterial({ color: 0xfca5a5, metalness: 0.6 })
+    );
+    bump.rotation.x = Math.PI / 2;
+    bump.position.set(X_L, 0.78, -1.74);
+    parent.add(bump);
+
+    const minus = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.49, 0.49, 0.18, 24),
+        new THREE.MeshStandardMaterial({ color: 0x1d4ed8, metalness: 0.5, roughness: 0.3 })
+    );
+    minus.rotation.x = Math.PI / 2;
+    minus.position.set(X_L, 0.78, 1.58);
+    parent.add(minus);
+
+    const plusLab = makeTextSprite('+', 0xdc2626, 1.1);
+    plusLab.position.set(X_L - 0.85, 1.15, -1.55);
+    parent.add(plusLab);
+
+    const minusLab = makeTextSprite('−', 0x2563eb, 1.1);
+    minusLab.position.set(X_L - 0.85, 1.15, 1.55);
+    parent.add(minusLab);
+}
+
+function addBoard(parent) {
+    const pcb = new THREE.Mesh(
+        new THREE.BoxGeometry(12.4, 0.16, 8.2),
+        new THREE.MeshStandardMaterial({ color: COL.pcb, roughness: 0.7, metalness: 0.15 })
+    );
+    pcb.position.y = 0.0;
+    pcb.receiveShadow = true;
+    pcb.castShadow = true;
+    parent.add(pcb);
+
+    const holes = [[-5.6, -3.5], [5.6, -3.5], [-5.6, 3.5], [5.6, 3.5]];
+    holes.forEach(([x, z]) => {
+        const h = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.18, 0.18, 0.2, 16),
+            new THREE.MeshStandardMaterial({ color: 0x0f172a })
+        );
+        h.position.set(x, 0.02, z);
+        parent.add(h);
+    });
+
+    const copper = new THREE.MeshStandardMaterial({ color: COL.copper, metalness: 0.75, roughness: 0.28 });
+    addCylinderBetween(new THREE.Vector3(X_L, LOOP_Y, Z_B), new THREE.Vector3(X_R, LOOP_Y, Z_B), 0.075, copper, parent);
+    addCylinderBetween(new THREE.Vector3(X_R, LOOP_Y, Z_B), new THREE.Vector3(X_R, LOOP_Y, Z_F), 0.075, copper, parent);
+    addCylinderBetween(new THREE.Vector3(X_R, LOOP_Y, Z_F), new THREE.Vector3(X_L, LOOP_Y, Z_F), 0.075, copper, parent);
+    addCylinderBetween(new THREE.Vector3(X_L, LOOP_Y, Z_F), new THREE.Vector3(X_L, LOOP_Y, Z_B), 0.075, copper, parent);
+
+    const padMat = new THREE.MeshStandardMaterial({ color: COL.brass, metalness: 0.8, roughness: 0.25 });
+    [[X_L, Z_B], [X_R, Z_B], [X_R, Z_F], [X_L, Z_F]].forEach(([x, z]) => {
+        const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.06, 16), padMat);
+        pad.position.set(x, LOOP_Y, z);
+        parent.add(pad);
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.35, 12), padMat);
+        post.position.set(x, LOOP_Y + 0.2, z);
+        parent.add(post);
+    });
+}
+
+function addCellEnclosure(parent) {
+    const w = 6.0, h = 1.95, d = 6.5;
+    const glass = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshStandardMaterial({
+            color: COL.cellGlass, transparent: true, opacity: 0.11,
+            metalness: 0.1, roughness: 0.12, side: THREE.DoubleSide
+        })
+    );
+    glass.position.set(-2.35, 0.95, 0);
+    parent.add(glass);
+
+    const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d));
+    const dashes = new THREE.LineSegments(edgeGeo, new THREE.LineDashedMaterial({
+        color: 0x0284c7, dashSize: 0.18, gapSize: 0.1, linewidth: 1
+    }));
+    dashes.computeLineDistances();
+    dashes.position.copy(glass.position);
+    parent.add(dashes);
+}
+
+function addMeters(parent) {
+    const vLoad = makeMeterPlane(1.7, 0.85);
+    vLoad.position.set(6.55, 1.55, 0);
+    vLoad.rotation.y = -Math.PI / 2;
+    parent.add(vLoad);
+    refs.meters.load = vLoad;
+
+    const vTerm = makeMeterPlane(1.7, 0.85);
+    vTerm.position.set(0.55, 2.05, 0);
+    parent.add(vTerm);
+    refs.meters.term = vTerm;
+
+    const vEmf = makeMeterPlane(1.55, 0.78);
+    vEmf.position.set(X_L - 1.55, 1.85, 0);
+    vEmf.rotation.y = Math.PI / 2;
+    parent.add(vEmf);
+    refs.meters.emf = vEmf;
+}
+
+function addParticles(parent) {
+    const geo = new THREE.SphereGeometry(0.11, 10, 10);
+    const mat = new THREE.MeshStandardMaterial({
+        color: PHYSICS_COLORS.velocity,
+        emissive: PHYSICS_COLORS.velocity,
+        emissiveIntensity: 0.55
+    });
+    refs.particles = [];
+    const count = 22;
+    for (let i = 0; i < count; i++) {
+        const s = new THREE.Mesh(geo, mat);
+        s.userData.t = i / count;
+        parent.add(s);
+        refs.particles.push(s);
+        s.position.copy(loopPoint(s.userData.t));
+    }
+}
+
+function buildScene() {
+    simGroup = new THREE.Group();
+    scene.add(simGroup);
+
+    addBoard(simGroup);
+    addBattery(simGroup);
+    addCellEnclosure(simGroup);
+
+    refs.rGroup = new THREE.Group();
+    refs.rGroup.position.set(-1.45, LOOP_Y + 0.08, Z_B);
+    simGroup.add(refs.rGroup);
+
+    refs.RGroup = new THREE.Group();
+    refs.RGroup.position.set(X_R, LOOP_Y + 0.08, 0);
+    refs.RGroup.rotation.y = Math.PI / 2;
+    simGroup.add(refs.RGroup);
+
+    refs.lastRint = null;
+    refs.lastRload = null;
+    rebuildResistors();
+
+    refs.labels.E = makeTextSprite('E', COL.emf, 1.5);
+    refs.labels.E.position.set(X_L - 0.15, 1.85, 0);
+    simGroup.add(refs.labels.E);
+
+    refs.labels.r = makeTextSprite('r', COL.internal, 1.35);
+    refs.labels.r.position.set(-1.45, 1.25, Z_B - 0.55);
+    simGroup.add(refs.labels.r);
+
+    refs.labels.R = makeTextSprite('R', COL.load, 1.45);
+    refs.labels.R.position.set(X_R + 0.85, 1.35, 0);
+    simGroup.add(refs.labels.R);
+
+    refs.labels.I = makeTextSprite('I', PHYSICS_COLORS.velocity, 1.35);
+    refs.labels.I.position.set(0, 0.95, Z_F + 0.7);
+    simGroup.add(refs.labels.I);
+
+    refs.labels.cell = makeTextSprite(t('sprite.cell'), 0x0284c7, 1.55);
+    refs.labels.cell.position.set(-2.3, 2.15, -3.15);
+    simGroup.add(refs.labels.cell);
+
+    refs.labels.valE = makeTextSprite('E = 12.0 V', COL.emf, 1.15);
+    refs.labels.valE.position.set(X_L, 2.35, 0);
+    simGroup.add(refs.labels.valE);
+
+    refs.labels.valR = makeTextSprite('R = 10.0 Ω', COL.load, 1.1);
+    refs.labels.valR.position.set(X_R + 0.2, 2.05, 0);
+    simGroup.add(refs.labels.valR);
+
+    refs.labels.valr = makeTextSprite('r = 1.0 Ω', COL.internal, 1.05);
+    refs.labels.valr.position.set(-1.45, 1.7, Z_B - 0.2);
+    simGroup.add(refs.labels.valr);
+
+    refs.labels.valI = makeTextSprite('I = 1.09 A', PHYSICS_COLORS.velocity, 1.15);
+    refs.labels.valI.position.set(0.2, 0.35, Z_F + 0.85);
+    simGroup.add(refs.labels.valI);
+
+    addMeters(simGroup);
+    addParticles(simGroup);
+
+    refs.iArrow = new THREE.ArrowHelper(
+        new THREE.Vector3(-1, 0, 0),
+        new THREE.Vector3(1.6, LOOP_Y + 0.28, Z_F),
+        2.2,
+        PHYSICS_COLORS.velocity,
+        0.32,
+        0.16
+    );
+    simGroup.add(refs.iArrow);
+}
+
+function updateReadouts() {
+    const { E, r, R, I, V, Ir, P, Plost, eta } = computeValues();
+    document.getElementById('emfVal').textContent = E.toFixed(1);
+    document.getElementById('rVal').textContent = r.toFixed(1);
+    document.getElementById('RVal').textContent = R.toFixed(1);
+    document.getElementById('currentOut').textContent = I.toFixed(2) + ' A';
+    document.getElementById('terminalOut').textContent = V.toFixed(2) + ' V';
+    document.getElementById('dropOut').textContent = Ir.toFixed(2) + ' V';
+    document.getElementById('powerOut').textContent = P.toFixed(2) + ' W';
+    document.getElementById('lostOut').textContent = Plost.toFixed(2) + ' W';
+    document.getElementById('efficiencyOut').textContent = eta.toFixed(1) + '%';
+    document.getElementById('barV').style.width = eta.toFixed(1) + '%';
+    document.getElementById('barIr').style.width = (100 - eta).toFixed(1) + '%';
+
+    const ik = interpretationKey(r, R);
+    const note = document.getElementById('interpretation');
+    note.setAttribute('data-i18n', ik);
+    note.textContent = t(ik);
+
+    if (refs.labels.valE) paintSprite(refs.labels.valE, 'E = ' + E.toFixed(1) + ' V');
+    if (refs.labels.valr) paintSprite(refs.labels.valr, 'r = ' + r.toFixed(1) + ' Ω');
+    if (refs.labels.valR) paintSprite(refs.labels.valR, 'R = ' + R.toFixed(1) + ' Ω');
+    if (refs.labels.valI) paintSprite(refs.labels.valI, 'I = ' + I.toFixed(2) + ' A');
+    if (refs.labels.cell) paintSprite(refs.labels.cell, t('sprite.cell'));
+
+    if (refs.meters.load) paintMeter(refs.meters.load, 'V = IR', V.toFixed(2) + ' V', '#2563eb');
+    if (refs.meters.term) paintMeter(refs.meters.term, 'V = E − Ir', V.toFixed(2) + ' V', '#2563eb');
+    if (refs.meters.emf) paintMeter(refs.meters.emf, 'EMF E', E.toFixed(1) + ' V', '#2563eb');
+
+    if (refs.rMat) refs.rMat.emissiveIntensity = 0.08 + 0.45 * Math.min(1, Ir / 8);
+    if (refs.RMat) refs.RMat.emissiveIntensity = 0.08 + 0.55 * Math.min(1, P / 20);
+}
+
+function updateSimulation() {
+    rebuildResistors();
+    updateReadouts();
+}
+
+function onEmfInput(el) {
+    state.E = Number(el.value);
+    updateSimulation();
+}
+function onRintInput(el) {
+    state.r = Number(el.value);
+    updateSimulation();
+}
+function onRloadInput(el) {
+    state.R = Number(el.value);
+    updateSimulation();
+}
+
+function syncSliders() {
+    document.getElementById('emfSlider').value = state.E;
+    document.getElementById('rSlider').value = state.r;
+    document.getElementById('RSlider').value = state.R;
+}
+
+function applyPreset(name) {
+    const presets = {
+        ideal: { E: 12, r: 0.2, R: 24 },
+        dying: { E: 12, r: 8, R: 10 },
+        matched: { E: 12, r: 6, R: 6 },
+        open: { E: 12, r: 1, R: 80 },
+        default: { ...defaults }
+    };
+    Object.assign(state, presets[name] || presets.default);
+    syncSliders();
+    updateSimulation();
+}
+
+function resetSim() {
+    Object.assign(state, defaults);
+    Object.assign(CAM, camDefault);
+    syncSliders();
+    updateSimulation();
+    updateCameraFromSpherical();
+}
+
+function updateCameraFromSpherical() {
+    camera.position.x = CAM.radius * Math.sin(CAM.phi) * Math.sin(CAM.theta);
+    camera.position.y = CAM.radius * Math.cos(CAM.phi);
+    camera.position.z = CAM.radius * Math.sin(CAM.phi) * Math.cos(CAM.theta);
+    camera.lookAt(0, 0.45, 0);
+}
+
+function setupCameraControls() {
+    container.addEventListener('mousedown', (e) => {
+        if (e.target.closest('input, button')) return;
+        isCameraDrag = true;
+        startCamX = e.clientX;
+        startCamY = e.clientY;
+    });
+    window.addEventListener('mouseup', () => { isCameraDrag = false; });
+    window.addEventListener('mousemove', (e) => {
+        if (!isCameraDrag) return;
+        CAM.theta -= (e.clientX - startCamX) * 0.005;
+        CAM.phi -= (e.clientY - startCamY) * 0.005;
+        CAM.phi = Math.max(0.1, Math.min(Math.PI - 0.1, CAM.phi));
+        startCamX = e.clientX;
+        startCamY = e.clientY;
+        updateCameraFromSpherical();
+    });
+    container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        CAM.radius = Math.max(7, Math.min(36, CAM.radius + e.deltaY * 0.05));
+        updateCameraFromSpherical();
+    }, { passive: false });
+
+    container.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+            lastTouchDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1 && lastTouchX !== null) {
+            const dx = (e.touches[0].clientX - lastTouchX) * 0.008;
+            const dy = (e.touches[0].clientY - lastTouchY) * 0.008;
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+            CAM.theta -= dx;
+            CAM.phi -= dy;
+            CAM.phi = Math.max(0.1, Math.min(Math.PI - 0.1, CAM.phi));
+            updateCameraFromSpherical();
+        } else if (e.touches.length === 2 && lastTouchDist !== null) {
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            CAM.radius += (lastTouchDist - dist) * 0.1;
+            CAM.radius = Math.max(7, Math.min(36, CAM.radius));
+            lastTouchDist = dist;
+            updateCameraFromSpherical();
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchend', () => {
+        lastTouchX = lastTouchY = lastTouchDist = null;
+    });
+}
+
+function initThree() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf1f5f9);
+    const w = container.offsetWidth || 800;
+    const h = container.offsetHeight || 500;
+    camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+    sun.position.set(10, 18, 12);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    scene.add(sun);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.28);
+    fill.position.set(-8, 6, -8);
+    scene.add(fill);
+
+    const floor = new THREE.Mesh(
+        new THREE.CircleGeometry(14, 48),
+        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.92 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.22;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const grid = new THREE.GridHelper(16, 16, 0xcbd5e1, 0xe2e8f0);
+    grid.position.y = -0.21;
+    scene.add(grid);
+
+    buildScene();
+    updateCameraFromSpherical();
+    setupCameraControls();
+    updateSimulation();
+    animate();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    clock += 0.016;
+    const { I } = computeValues();
+    const speed = 0.0035 + I * 0.011;
+    const scale = 0.85 + Math.min(1.4, I * 0.35);
+    refs.particles.forEach(p => {
+        p.userData.t = (p.userData.t + speed) % 1;
+        p.position.copy(loopPoint(p.userData.t));
+        p.scale.setScalar(scale);
+    });
+    if (refs.iArrow) {
+        const pulse = 1.9 + 0.4 * Math.min(2, I);
+        refs.iArrow.setLength(pulse, 0.28, 0.14);
+    }
+    renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+    if (!camera || !renderer) return;
+    camera.aspect = container.offsetWidth / container.offsetHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
+});
+
+function setLanguage(lang) {
+    currentLang = normalizeLang(lang);
+    localStorage.setItem('preferred_language', currentLang);
+    document.documentElement.lang = currentLang === 'cn' ? 'zh-CN' : currentLang === 'zh' ? 'zh-HK' : 'en';
+    document.title = t('page.title');
+    document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        const text = translations[lang] && translations[lang][key];
-        if (text) el.innerText = text;
-      });
-      document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
-      document.querySelectorAll('.lang-btn').forEach((btn) => {
-        const active = btn.dataset.lang === lang;
-        btn.classList.toggle('bg-blue-600', active);
-        btn.classList.toggle('text-white', active);
-        btn.classList.toggle('text-slate-600', !active);
-      });
-    }
+        const val = translations[currentLang]?.[key];
+        if (!val) return;
+        if (key.includes('desc') || key.includes('subtitle') || key.includes('note') || key.includes('info.') || key.includes('interpret')) {
+            el.innerHTML = val;
+        } else {
+            el.textContent = val;
+        }
+    });
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        const active = btn.dataset.lang === currentLang;
+        btn.classList.toggle('bg-white', active);
+        btn.classList.toggle('shadow-sm', active);
+        btn.classList.toggle('text-blue-600', active);
+    });
+    updateReadouts();
+    if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+}
 
-    Object.values(controls).forEach((input) => input.addEventListener('input', updateOutputs));
-    updateOutputs();
-    drawCircuit();
-    updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
-  </script>
+document.getElementById('reset-sim').addEventListener('click', resetSim);
 
-    <!-- Practice Questions Widget -->
+initThree();
+setLanguage(currentLang);
+</script>
+
     <script src="practice_questions.js"></script>
     <script src="practice_questions_data.js"></script>
     <script>initPracticeQuestions('dc_circuit_internal_resistance');</script>

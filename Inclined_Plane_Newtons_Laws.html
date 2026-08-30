@@ -60,7 +60,18 @@
 
     <section class="mt-6 grid xl:grid-cols-[1.45fr_1fr] gap-5">
       <article class="glass rounded-3xl border border-white/70 p-4 md:p-5 shadow-lg shadow-blue-100/30">
-        <canvas id="simCanvas" width="1180" height="620" class="w-full rounded-2xl border border-slate-200 bg-slate-50"></canvas>
+        <div class="relative rounded-2xl border-2 border-slate-200 overflow-hidden bg-slate-50">
+          <canvas id="simCanvas" width="1180" height="620" class="w-full block touch-none cursor-grab active:cursor-grabbing" style="touch-action:none"></canvas>
+          <div class="absolute top-3 left-3 flex flex-wrap gap-2 pointer-events-none">
+            <span class="px-3 py-1 rounded-full bg-white/90 text-xs font-medium text-red-600">F</span>
+            <span class="px-3 py-1 rounded-full bg-white/90 text-xs font-medium text-green-600">v</span>
+            <span class="px-3 py-1 rounded-full bg-white/90 text-xs font-medium text-purple-600">a</span>
+          </div>
+          <div class="absolute bottom-3 right-3 bg-gray-900/80 text-white px-4 py-2 rounded-full text-xs pointer-events-none" data-i18n="camHint">Drag to rotate • Scroll / pinch zoom</div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="resetCamBtn" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 text-sm min-h-[44px]" data-i18n="resetCam">Reset Camera</button>
+        </div>
         <div class="mt-4 grid sm:grid-cols-4 gap-3 text-sm">
           <div class="rounded-xl border border-red-200 bg-red-50 px-3 py-2">
             <div class="text-red-700 font-semibold" data-i18n="cardForce">Net Force</div>
@@ -104,8 +115,8 @@
           <label class="block text-sm text-slate-700" for="mu"><span data-i18n="mu">Friction coefficient μ</span>: <span id="muValue" class="font-semibold text-blue-600">0.22</span></label>
           <input id="mu" type="range" min="0" max="1" step="0.01" value="0.22" class="w-full accent-blue-600 mb-3" />
 
-          <label class="block text-sm text-slate-700" for="push"><span data-i18n="push">Push up slope (N)</span>: <span id="pushValue" class="font-semibold text-blue-600">5.0</span></label>
-          <input id="push" type="range" min="-80" max="120" step="0.5" value="5" class="w-full accent-blue-600 mb-4" />
+          <label class="block text-sm text-slate-700" for="push"><span data-i18n="push">Push up slope (N)</span>: <span id="pushValue" class="font-semibold text-red-600">5.0</span></label>
+          <input id="push" type="range" min="-80" max="120" step="0.5" value="5" class="w-full accent-red-600 mb-4" />
 
           <div class="grid grid-cols-3 gap-2">
             <button id="playBtn" class="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2" data-i18n="play">Start</button>
@@ -297,7 +308,9 @@
         exam2: '• State friction direction based on intended motion.',
         exam3: '• Quote unit for acceleration and force.',
         exam4: '• Mention if object is at limiting equilibrium.',
-        formulaTitle: 'Formula Bank'
+        formulaTitle: 'Formula Bank',
+        camHint: 'Drag to rotate • Scroll / pinch zoom',
+        resetCam: 'Reset Camera'
       },
       'zh-hk': {
         back: '返回主題頁',
@@ -335,9 +348,71 @@
         exam2: '• 摩擦方向要按實際趨勢判斷。',
         exam3: '• 加速度和力必須附上單位。',
         exam4: '• 若臨界平衡需說明條件。',
-        formulaTitle: '公式庫'
+        formulaTitle: '公式庫',
+        camHint: '拖曳旋轉 • 滾輪／雙指縮放',
+        resetCam: '重設視角'
       }
     };
+
+    let camTheta = 0.05, camPhi = 1.15, camRadius = 11.2;
+    let isCameraDrag = false, startCamX = 0, startCamY = 0;
+
+    function updateCameraFromSpherical() {
+      camera.position.x = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+      camera.position.y = camRadius * Math.cos(camPhi);
+      camera.position.z = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+      camera.lookAt(0, 0, 0);
+    }
+
+    function resetCameraView() {
+      camTheta = 0.05; camPhi = 1.15; camRadius = 11.2;
+      updateCameraFromSpherical();
+    }
+
+    function setupCameraControls() {
+      canvas.addEventListener('mousedown', (e) => {
+        isCameraDrag = true; startCamX = e.clientX; startCamY = e.clientY;
+      });
+      window.addEventListener('mouseup', () => { isCameraDrag = false; });
+      window.addEventListener('mousemove', (e) => {
+        if (!isCameraDrag) return;
+        camTheta -= (e.clientX - startCamX) * 0.005;
+        camPhi -= (e.clientY - startCamY) * 0.005;
+        camPhi = Math.max(0.25, Math.min(Math.PI / 2 - 0.05, camPhi));
+        startCamX = e.clientX; startCamY = e.clientY;
+        updateCameraFromSpherical();
+      });
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        camRadius = Math.max(5, Math.min(22, camRadius + e.deltaY * 0.015));
+        updateCameraFromSpherical();
+      }, { passive: false });
+
+      let lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1) { lastTouchX = e.touches[0].clientX; lastTouchY = e.touches[0].clientY; }
+        else if (e.touches.length === 2) {
+          lastTouchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        }
+      }, { passive: false });
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1 && lastTouchX !== null) {
+          camTheta -= (e.touches[0].clientX - lastTouchX) * 0.008;
+          camPhi -= (e.touches[0].clientY - lastTouchY) * 0.008;
+          camPhi = Math.max(0.25, Math.min(Math.PI / 2 - 0.05, camPhi));
+          lastTouchX = e.touches[0].clientX; lastTouchY = e.touches[0].clientY;
+          updateCameraFromSpherical();
+        } else if (e.touches.length === 2 && lastTouchDist !== null) {
+          const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          camRadius = Math.max(5, Math.min(22, camRadius + (lastTouchDist - dist) * 0.05));
+          lastTouchDist = dist;
+          updateCameraFromSpherical();
+        }
+      }, { passive: false });
+      canvas.addEventListener('touchend', () => { lastTouchX = lastTouchY = lastTouchDist = null; });
+    }
 
     function getParams() {
       const m = Number(controls.mass.value);
@@ -438,8 +513,7 @@
       velArrow.setDirection(dirSlope.clone().multiplyScalar(Math.sign(state.velocity || p.acc) || 1));
       velArrow.setLength(velLen, 0.28, 0.14);
 
-      camera.position.set(0.5, 4.2, 10.2);
-      camera.lookAt(0, 0, 0);
+      updateCameraFromSpherical();
       resizeRenderer();
       renderer.render(scene, camera);
     }
@@ -449,6 +523,7 @@
       state.velocity = 0;
       state.distance = 2.2;
       state.trail = [];
+      resetCameraView();
       updateOutputs();
       drawScene();
     }
@@ -505,7 +580,10 @@
     playBtn.addEventListener('click', () => { state.running = true; });
     pauseBtn.addEventListener('click', () => { state.running = false; });
     resetBtn.addEventListener('click', resetSimulation);
+    document.getElementById('resetCamBtn').addEventListener('click', resetCameraView);
 
+    setupCameraControls();
+    resetCameraView();
     resetSimulation();
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
     requestAnimationFrame(step);

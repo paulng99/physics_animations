@@ -70,6 +70,15 @@
         </div>
     </div>
 
+    <div class="mt-3 grid grid-cols-2 gap-2">
+        <button id="btn-reset" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5" data-i18n="button.reset">Reset</button>
+        <button id="btn-preset-demo" class="py-2.5 rounded-xl bg-green-100 hover:bg-green-200 text-sm font-semibold text-green-700 transition hover:-translate-y-0.5" data-i18n="button.preset">Demo I↑</button>
+    </div>
+    <div class="mt-2 grid grid-cols-2 gap-2">
+        <button id="btn-preset-strong" class="py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-xs font-semibold text-amber-800 transition" data-i18n="button.strongB">Strong B</button>
+        <button id="btn-preset-long" class="py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-xs font-semibold text-blue-800 transition" data-i18n="button.longL">Long L</button>
+    </div>
+
     <button id="btn-explain" class="mt-4 w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -135,23 +144,36 @@
 
 <script>
     let scene, camera, renderer, frame, activeSegment, endSegment, pInsulator, forceArrow, plate;
-    let northPole, southPole, yoke, rail1, rail2;
+    let northPole, southPole, yoke, rail1, rail2, currentParticles, bFieldArrows;
     let current = 1.0, bField = 0.5, wireLength = 2.0;
+    let targetFrameRot = 0, displayForceLen = 0;
+    let userInteracted = false;
+    let camTheta = Math.PI / 4, camPhi = Math.acos(12 / Math.sqrt(15*15+12*12+15*15)), camRadius = Math.sqrt(15*15+12*12+15*15);
+    const defaultCam = { theta: camTheta, phi: camPhi, radius: camRadius };
+    const defaults = { current: 1.0, bField: 0.5, wireLength: 2.0 };
     
     const GRAVITY_CONST = 9.81;
+    const containerEl = () => document.getElementById('canvas-container');
+
+    function updateCameraFromSpherical() {
+        camera.position.x = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+        camera.position.y = camRadius * Math.cos(camPhi);
+        camera.position.z = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+        camera.lookAt(0, 0, 0);
+    }
 
     function init() {
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0xf8fafc); // Slate-50
 
         camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(15, 12, 15);
-        camera.lookAt(0, 0, 0);
+        updateCameraFromSpherical();
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.shadowMap.enabled = true;
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        containerEl().appendChild(renderer.domElement);
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.7));
         const sun = new THREE.DirectionalLight(0xffffff, 0.6);
@@ -235,13 +257,115 @@
         forceArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-6, 0, 0), 1, 0xdc2626); // Red-600
         scene.add(forceArrow);
 
+        // B-field arrows between poles
+        bFieldArrows = new THREE.Group();
+        for (let i = -1; i <= 1; i++) {
+            const a = new THREE.ArrowHelper(new THREE.Vector3(0, 0, -1), new THREE.Vector3(-6, -1, 1.2), 2.4, 0xd97706, 0.35, 0.2);
+            a.position.x = -6 + i * 0.5;
+            bFieldArrows.add(a);
+        }
+        scene.add(bFieldArrows);
+
+        // Current particles along active segment (Z axis)
+        currentParticles = new THREE.Group();
+        const pGeo = new THREE.SphereGeometry(0.1, 10, 10);
+        const pMat = new THREE.MeshBasicMaterial({ color: 0x16a34a });
+        for (let i = 0; i < 8; i++) {
+            const p = new THREE.Mesh(pGeo, pMat);
+            p.userData.t = i / 8;
+            currentParticles.add(p);
+        }
+        scene.add(currentParticles);
+
         setupControls();
+        setupCameraControls();
         setupModal();
         animate();
     }
 
+    function setupCameraControls() {
+        const container = containerEl();
+        let isCameraDrag = false, startCamX, startCamY;
+        let lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+
+        const ignoreUI = (el) => el.closest('input, button, select, #modal-explain, .absolute.top-5');
+
+        container.addEventListener('mousedown', (e) => {
+            if (ignoreUI(e.target)) return;
+            isCameraDrag = true;
+            startCamX = e.clientX;
+            startCamY = e.clientY;
+            userInteracted = true;
+        });
+        window.addEventListener('mouseup', () => { isCameraDrag = false; });
+        window.addEventListener('mousemove', (e) => {
+            if (!isCameraDrag) return;
+            camTheta -= (e.clientX - startCamX) * 0.005;
+            camPhi -= (e.clientY - startCamY) * 0.005;
+            camPhi = Math.max(0.1, Math.min(Math.PI - 0.1, camPhi));
+            startCamX = e.clientX;
+            startCamY = e.clientY;
+            updateCameraFromSpherical();
+        });
+        container.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            userInteracted = true;
+            camRadius = Math.max(8, Math.min(40, camRadius + e.deltaY * 0.05));
+            updateCameraFromSpherical();
+        }, { passive: false });
+
+        container.addEventListener('touchstart', (e) => {
+            if (ignoreUI(e.target)) return;
+            e.preventDefault();
+            userInteracted = true;
+            if (e.touches.length === 1) {
+                lastTouchX = e.touches[0].clientX;
+                lastTouchY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                lastTouchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 1 && lastTouchX !== null) {
+                const dx = (e.touches[0].clientX - lastTouchX) * 0.008;
+                const dy = (e.touches[0].clientY - lastTouchY) * 0.008;
+                lastTouchX = e.touches[0].clientX;
+                lastTouchY = e.touches[0].clientY;
+                camTheta -= dx;
+                camPhi -= dy;
+                camPhi = Math.max(0.1, Math.min(Math.PI - 0.1, camPhi));
+                updateCameraFromSpherical();
+            } else if (e.touches.length === 2 && lastTouchDist !== null) {
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                camRadius += (lastTouchDist - dist) * 0.1;
+                camRadius = Math.max(8, Math.min(40, camRadius));
+                lastTouchDist = dist;
+                updateCameraFromSpherical();
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchend', () => {
+            lastTouchX = lastTouchY = lastTouchDist = null;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    }
+
     function setupControls() {
         const update = () => {
+            userInteracted = true;
             current = parseFloat(document.getElementById('slider-current').value);
             bField = parseFloat(document.getElementById('slider-bfield').value);
             wireLength = parseFloat(document.getElementById('slider-length').value);
@@ -252,7 +376,47 @@
             updatePhysics();
         };
         ['slider-current', 'slider-bfield', 'slider-length'].forEach(id => document.getElementById(id).oninput = update);
-        update();
+
+        const applySliders = () => {
+            document.getElementById('slider-current').value = current;
+            document.getElementById('slider-bfield').value = bField;
+            document.getElementById('slider-length').value = wireLength;
+            document.getElementById('val-current').innerText = `${current.toFixed(1)} A`;
+            document.getElementById('val-bfield').innerText = `${bField.toFixed(1)} T`;
+            document.getElementById('val-length').innerText = `${wireLength.toFixed(1)} cm`;
+            updatePhysics();
+        };
+
+        document.getElementById('btn-reset').onclick = () => {
+            userInteracted = true;
+            current = defaults.current;
+            bField = defaults.bField;
+            wireLength = defaults.wireLength;
+            camTheta = defaultCam.theta;
+            camPhi = defaultCam.phi;
+            camRadius = defaultCam.radius;
+            updateCameraFromSpherical();
+            applySliders();
+        };
+        document.getElementById('btn-preset-demo').onclick = () => {
+            userInteracted = true;
+            current = 3.5;
+            bField = 0.8;
+            wireLength = 3.0;
+            applySliders();
+        };
+        document.getElementById('btn-preset-strong').onclick = () => {
+            userInteracted = true;
+            bField = 1.8;
+            applySliders();
+        };
+        document.getElementById('btn-preset-long').onclick = () => {
+            userInteracted = true;
+            wireLength = 7.0;
+            applySliders();
+        };
+
+        applySliders();
     }
     
     function setupModal() {
@@ -272,34 +436,20 @@
         const force = bField * current * L_meters;
         document.getElementById('force-val').innerText = `${Math.abs(force).toFixed(4)} N`;
         
-        frame.rotation.z = force * 3.0;
+        targetFrameRot = force * 3.0;
 
-        // Force Arrow
-        forceArrow.visible = Math.abs(force) > 0.0005;
-        if (forceArrow.visible) {
-            forceArrow.setDirection(new THREE.Vector3(0, force > 0 ? 1 : -1, 0));
-            forceArrow.setLength(Math.abs(force) * 200, 0.4, 0.2);
-        }
-
-        // Balance Logic
         const forceAtP = -force;
         let reading = 0;
         if (forceAtP > 0) {
             reading = (forceAtP / GRAVITY_CONST) * 1000;
-            plate.position.y = 0.7 - Math.min(0.1, forceAtP * 2);
-        } else {
-            plate.position.y = 0.7;
         }
         document.getElementById('balance-display').innerText = `${reading.toFixed(3)} g`;
+        plate.userData.targetY = forceAtP > 0 ? 0.7 - Math.min(0.1, forceAtP * 2) : 0.7;
 
-        // DYNAMIC SCALING: Wire and Magnets
-        const scale = wireLength / 2.0; 
-        
-        // Scale wire segments
+        const scale = wireLength / 2.0;
         activeSegment.scale.y = scale;
         endSegment.scale.y = scale;
         
-        // Adjust rail separation
         const offset = 0.75 * scale;
         rail1.position.z = offset;
         rail2.position.z = -offset;
@@ -307,37 +457,68 @@
         endSegment.position.z = 0;
         pInsulator.position.z = 0;
 
-        // Scale magnets to match
         northPole.scale.z = scale;
         southPole.scale.z = scale;
         yoke.scale.z = scale;
         
-        // Position magnets relative to wire separation
         northPole.position.z = offset + 0.5 * scale;
         southPole.position.z = -offset - 0.5 * scale;
-        yoke.scale.z = (offset * 2 + 1) / 4; 
+        yoke.scale.z = (offset * 2 + 1) / 4;
+
+        bFieldArrows.children.forEach((a, i) => {
+            a.position.set(-6 + (i - 1) * 0.5, -1, offset);
+            a.setLength(Math.max(0.8, offset * 2), 0.35, 0.2);
+            a.setDirection(new THREE.Vector3(0, 0, -1));
+        });
+
+        forceArrow.userData.targetLen = Math.abs(force) > 0.0005 ? Math.abs(force) * 200 : 0;
+        forceArrow.userData.dirY = force > 0 ? 1 : -1;
     }
 
-    let isMouseDown = false, mouseX = 0, mouseY = 0;
-    window.addEventListener('mousedown', (e) => { 
-        if(e.target.tagName !== 'INPUT' && !e.target.closest('#modal-explain') && !e.target.closest('#btn-explain')) { 
-            isMouseDown = true; mouseX = e.clientX; mouseY = e.clientY; 
-        }
-    });
-    window.addEventListener('mouseup', () => isMouseDown = false);
-    window.addEventListener('mousemove', (e) => {
-        if (!isMouseDown) return;
-        const dX = e.clientX - mouseX, dY = e.clientY - mouseY;
-        const r = Math.sqrt(camera.position.x**2 + camera.position.z**2);
-        const phi = Math.atan2(camera.position.z, camera.position.x) + dX * 0.01;
-        camera.position.x = r * Math.cos(phi);
-        camera.position.z = r * Math.sin(phi);
-        camera.position.y = Math.max(1, Math.min(25, camera.position.y + dY * 0.05));
-        camera.lookAt(0, 0, 0);
-        mouseX = e.clientX; mouseY = e.clientY;
-    });
+    function animate() {
+        requestAnimationFrame(animate);
 
-    function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+        if (!userInteracted) {
+            current = 1.0 + Math.sin(Date.now() * 0.0005) * 1.5;
+            document.getElementById('slider-current').value = current;
+            document.getElementById('val-current').innerText = `${current.toFixed(1)} A`;
+            updatePhysics();
+            camTheta += 0.0012;
+            updateCameraFromSpherical();
+        }
+
+        frame.rotation.z += (targetFrameRot - frame.rotation.z) * 0.08;
+        if (plate.userData.targetY !== undefined) {
+            plate.position.y += (plate.userData.targetY - plate.position.y) * 0.08;
+        }
+
+        const tLen = forceArrow.userData.targetLen || 0;
+        displayForceLen += (tLen - displayForceLen) * 0.08;
+        if (displayForceLen > 0.05) {
+            forceArrow.visible = true;
+            forceArrow.setDirection(new THREE.Vector3(0, forceArrow.userData.dirY || 1, 0));
+            forceArrow.setLength(displayForceLen, 0.4, 0.2);
+            forceArrow.position.set(-6, 0, 0);
+        } else {
+            forceArrow.visible = false;
+        }
+
+        const half = (wireLength / 2.0) * 1.5;
+        const flow = Math.abs(current) > 0.05;
+        currentParticles.visible = flow;
+        if (flow) {
+            const dir = current >= 0 ? 1 : -1;
+            const speed = 0.012 * Math.min(3, Math.abs(current));
+            currentParticles.children.forEach((p) => {
+                p.userData.t = (p.userData.t + speed * dir + 1) % 1;
+                const z = -half + p.userData.t * half * 2;
+                p.position.set(-6, 0.15, z);
+            });
+        }
+
+        renderer.render(scene, camera);
+    }
+
     window.onload = () => {
         init();
         setLanguage(currentLang);
@@ -353,6 +534,10 @@
             'balance.title': 'Electronic Balance',
             'balance.force': 'Lorentz Force',
             'button.explain': 'How it works?',
+            'button.reset': 'Reset',
+            'button.preset': 'Demo I↑',
+            'button.strongB': 'Strong B',
+            'button.longL': 'Long L',
             'modal.title': 'Physics Principles',
             'modal.subtitle': 'Understanding the Current Balance Experiment',
             'modal.formula.title': '1. The Lorentz Force Formula',
@@ -374,6 +559,10 @@
             'balance.title': '電子天平',
             'balance.force': '勞侖茲力',
             'button.explain': '原理說明',
+            'button.reset': '重設',
+            'button.preset': '示範 I↑',
+            'button.strongB': '強磁場',
+            'button.longL': '長導體',
             'modal.title': '物理原理',
             'modal.subtitle': '理解電流天平實驗',
             'modal.formula.title': '1. 勞侖茲力公式',
@@ -395,6 +584,10 @@
             'balance.title': '电子天平',
             'balance.force': '洛伦兹力',
             'button.explain': '原理说明',
+            'button.reset': '重置',
+            'button.preset': '示范 I↑',
+            'button.strongB': '强磁场',
+            'button.longL': '长导体',
             'modal.title': '物理原理',
             'modal.subtitle': '理解电流天平实验',
             'modal.formula.title': '1. 洛伦兹力公式',

@@ -3,166 +3,744 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magnetic Effect of Electric Current</title>
+    <title>Magnetic Effect of Electric Current — 3D</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
         window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, svg: { fontCache: 'global' } };
     </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <style>
-        :root { color-scheme: light; }
         body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
-        .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); }
-        canvas { background-color: white; border-radius: 0.5rem; border: 2px solid #e2e8f0; touch-action: none; }
+        #three-container {
+            width: 100%;
+            height: 500px;
+            background: #e2e8f0;
+            cursor: move;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            touch-action: none;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+        }
+        #three-container canvas { display: block; }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #cbd5e1;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
         mjx-container { display: inline-block !important; }
     </style>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date()); gtag('config', 'G-RJQ61GJDVS');
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){ dataLayer.push(arguments); }
+        gtag('js', new Date()); gtag('config', 'G-RJQ61GJDVS');
     </script>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
-    <header class="max-w-6xl mx-auto px-6 pt-6 pb-4">
-        <nav class="flex items-center justify-between">
-            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
-            </a>
-            <div class="flex gap-2">
-                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
-                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="cn">简</button>
-                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
-            </div>
-        </nav>
-    </header>
+<body class="antialiased min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
 
-    <div class="w-full max-w-6xl mx-auto px-6 pb-16">
-        <div class="glass rounded-3xl p-6 md:p-8 border border-white/60">
-            <div class="text-center mb-6">
-                <h1 class="text-3xl md:text-4xl font-bold text-slate-800" data-i18n="title">Magnetic Effect of Electric Current</h1>
-                <p class="text-md md:text-lg text-slate-600 mt-2" data-i18n="subtitle">Visualize B-fields from straight wires, coils, and solenoids</p>
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+                </a>
+                <div class="h-6 w-px bg-slate-300 mx-2"></div>
+                <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold">3D</div>
+                <span class="text-xl font-bold hidden sm:inline">PhysLab<span class="text-blue-600">3D</span></span>
             </div>
+            <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white hover:shadow-sm" data-lang="zh">繁</button>
+                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white hover:shadow-sm" data-lang="cn">简</button>
+                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white hover:shadow-sm bg-white shadow-sm text-blue-600" data-lang="en">EN</button>
+            </div>
+        </div>
+    </nav>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2">
-                    <div class="w-full aspect-[4/3] bg-white rounded-lg shadow-lg border-2 border-slate-200 relative">
-                        <canvas id="emCanvas"></canvas>
+    <main class="flex-grow max-w-7xl mx-auto px-4 py-8 space-y-6 w-full">
+        <header class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2" data-i18n="title">Magnetic Effect of Electric Current</h1>
+            <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="subtitle">Visualize B-fields from straight wires, coils, and solenoids in 3D. Use the right-hand grip rule as current particles flow.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800" data-i18n="controls.title">Parameters</h3>
+                        <button id="reset-sim" class="text-xs text-blue-600 font-bold hover:text-blue-700 transition" data-i18n="controls.reset">Reset</button>
                     </div>
-                    <div class="mt-2 flex justify-center gap-4">
-                        <button onclick="setScene('wire')" class="scene-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-blue-600 text-white" data-scene="wire" data-i18n="scene.wire">Straight Wire</button>
-                        <button onclick="setScene('coil')" class="scene-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-white border border-slate-200 text-slate-700 hover:border-blue-300" data-scene="coil" data-i18n="scene.coil">Circular Coil</button>
-                        <button onclick="setScene('solenoid')" class="scene-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-white border border-slate-200 text-slate-700 hover:border-blue-300" data-scene="solenoid" data-i18n="scene.solenoid">Solenoid</button>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setScene('wire')" class="scene-btn px-2 py-2 rounded-xl text-xs font-semibold transition-all bg-blue-600 text-white" data-scene="wire" data-i18n="scene.wire">Straight Wire</button>
+                        <button onclick="setScene('coil')" class="scene-btn px-2 py-2 rounded-xl text-xs font-semibold transition-all bg-white border border-slate-200 text-slate-700 hover:border-blue-300" data-scene="coil" data-i18n="scene.coil">Circular Coil</button>
+                        <button onclick="setScene('solenoid')" class="scene-btn px-2 py-2 rounded-xl text-xs font-semibold transition-all bg-white border border-slate-200 text-slate-700 hover:border-blue-300" data-scene="solenoid" data-i18n="scene.solenoid">Solenoid</button>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-sm font-medium text-slate-600" data-i18n="controls.current">Current I (A)</label>
+                            <span class="text-sm font-bold text-green-600 font-mono"><span id="currentVal">5.0</span> A</span>
+                        </div>
+                        <input type="range" id="currentSlider" min="0.5" max="10" step="0.5" value="5" class="accent-green-600" oninput="onCurrentInput(this)">
+                    </div>
+                    <div id="turnsGroup" class="hidden">
+                        <div class="flex justify-between mb-1">
+                            <label class="text-sm font-medium text-slate-600" data-i18n="controls.turns">Turns N</label>
+                            <span class="text-sm font-bold text-blue-600 font-mono"><span id="turnsVal">10</span></span>
+                        </div>
+                        <input type="range" id="turnsSlider" min="1" max="20" value="10" class="accent-blue-600" oninput="onTurnsInput(this)">
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-sm font-medium text-slate-600" id="sizeLabel" data-i18n="controls.r">Distance r (m)</label>
+                            <span class="text-sm font-bold text-amber-600 font-mono"><span id="sizeVal">0.05</span> m</span>
+                        </div>
+                        <input type="range" id="sizeSlider" min="0.02" max="0.20" step="0.01" value="0.05" class="accent-amber-600" oninput="onSizeInput(this)">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-slate-600" data-i18n="controls.direction">Current Direction</label>
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="setDirection(1)" id="dirUp" class="flex-1 px-3 py-2 rounded-xl text-sm font-semibold bg-green-600 text-white transition hover:-translate-y-0.5">⊙ <span data-i18n="dir.out">Out</span></button>
+                            <button onclick="setDirection(-1)" id="dirDown" class="flex-1 px-3 py-2 rounded-xl text-sm font-semibold bg-white border border-slate-200 text-slate-600 transition hover:-translate-y-0.5">⊗ <span data-i18n="dir.in">In</span></button>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="showFieldPts" checked class="accent-amber-600 w-4 h-4" onchange="onShowField(this)">
+                        <label for="showFieldPts" class="text-sm font-medium text-slate-600" data-i18n="controls.fieldpts">Show Field Pattern</label>
                     </div>
                 </div>
 
-                <div class="space-y-4">
-                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-                        <h2 class="text-lg font-semibold text-slate-800 mb-3" data-i18n="controls.title">Parameters</h2>
-                        <div class="space-y-3">
-                            <div>
-                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.current">Current I (A)</label>
-                                <input type="range" id="currentSlider" min="0.5" max="10" step="0.5" value="5" class="w-full accent-green-600 mt-1">
-                                <div class="text-xs text-green-600 text-right font-semibold"><span id="currentVal">5.0</span> A</div>
-                            </div>
-                            <div id="turnsGroup">
-                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.turns">Turns N</label>
-                                <input type="range" id="turnsSlider" min="1" max="20" value="10" class="w-full accent-blue-600 mt-1">
-                                <div class="text-xs text-blue-600 text-right font-semibold"><span id="turnsVal">10</span></div>
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.direction">Current Direction</label>
-                                <div class="flex gap-2 mt-1">
-                                    <button onclick="setDirection(1)" id="dirUp" class="flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold bg-green-600 text-white transition">⊙ <span data-i18n="dir.out">Out</span></button>
-                                    <button onclick="setDirection(-1)" id="dirDown" class="flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold bg-white border border-slate-200 text-slate-600 transition">⊗ <span data-i18n="dir.in">In</span></button>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <input type="checkbox" id="showFieldPts" checked class="accent-amber-600 w-4 h-4">
-                                <label for="showFieldPts" class="text-sm font-medium text-slate-600" data-i18n="controls.fieldpts">Show Field Pattern</label>
-                            </div>
+                <div class="bg-slate-900 p-6 rounded-2xl shadow-lg text-white">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3" data-i18n="formula.title">Formula</h3>
+                    <div id="formulaContent" class="text-center text-xl font-serif text-amber-300 py-2">$B = \frac{\mu_0 I}{2\pi r}$</div>
+                    <p id="formulaDesc" class="text-xs text-slate-400 text-center mt-3" data-i18n="formula.wire.desc">B-field around a long straight wire decreases with distance r.</p>
+                </div>
+
+                <div class="bg-amber-50 p-6 rounded-2xl border border-amber-200">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide mb-4" data-i18n="result.title">Computed B</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center bg-white p-2 rounded border border-amber-100">
+                            <span class="text-slate-500" data-i18n="result.at">At distance r:</span>
+                            <span id="rDisplay" class="font-bold font-mono text-amber-700">0.05 m</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-2 rounded border border-amber-100">
+                            <span class="text-slate-500">B =</span>
+                            <span id="bDisplay" class="font-bold font-mono text-amber-600">2.00 × 10⁻⁵ T</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-2 rounded border border-amber-100">
+                            <span class="text-slate-500">I</span>
+                            <span id="data-i" class="font-bold font-mono text-green-600">5.00 A</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-2 rounded border border-amber-100 hidden" id="dataNRow">
+                            <span class="text-slate-500">N</span>
+                            <span id="data-n" class="font-bold font-mono text-blue-600">10</span>
                         </div>
                     </div>
+                </div>
 
-                    <div id="formulaCard" class="bg-amber-50 rounded-2xl border border-amber-200 p-4 shadow-sm">
-                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="formula.title">Formula</h2>
-                        <div id="formulaContent" class="text-center text-lg text-amber-900 font-serif py-2">
-                            $B = \frac{\mu_0 I}{2\pi r}$
+                <div class="bg-blue-50 rounded-2xl border border-blue-200 p-4">
+                    <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="info.title">Key Concepts</h2>
+                    <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
+                        <li data-i18n="info.1">Moving charges / currents create magnetic fields.</li>
+                        <li data-i18n="info.2">Use the right-hand grip rule to find B direction.</li>
+                        <li data-i18n="info.3">Solenoid field is uniform inside, like a bar magnet.</li>
+                        <li data-i18n="info.4">More turns &amp; higher current → stronger B-field.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-4">
+                <div class="relative">
+                    <div id="three-container"></div>
+                    <div class="absolute bottom-4 left-4 flex flex-wrap gap-2 pointer-events-none">
+                        <div class="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm border border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-green-600 inline-block mr-1"></span> <span data-i18n="legend.current">Current (I)</span>
                         </div>
-                        <p id="formulaDesc" class="text-sm text-slate-600 mt-2" data-i18n="formula.wire.desc">B-field around a long straight wire decreases with distance r.</p>
-                    </div>
-
-                    <div id="resultCard" class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="result.title">Computed B</h2>
-                        <div class="grid grid-cols-2 gap-2 text-sm">
-                            <div class="text-slate-600" data-i18n="result.at">At distance r:</div>
-                            <div class="text-right font-semibold text-amber-600" id="rDisplay">0.05 m</div>
-                            <div class="text-slate-600">B =</div>
-                            <div class="text-right font-semibold text-amber-600" id="bDisplay">2.0 × 10⁻⁵ T</div>
+                        <div class="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm border border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-amber-500 inline-block mr-1"></span> <span data-i18n="legend.bfield">Magnetic Field (B)</span>
+                        </div>
+                        <div class="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm border border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-red-500 inline-block mr-1"></span> N
+                        </div>
+                        <div class="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-600 shadow-sm border border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-blue-600 inline-block mr-1"></span> S
                         </div>
                     </div>
-
-                    <div class="bg-blue-50 rounded-2xl border border-blue-200 p-4 shadow-sm">
-                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="info.title">Key Concepts</h2>
-                        <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
-                            <li data-i18n="info.1">Moving charges / currents create magnetic fields.</li>
-                            <li data-i18n="info.2">Use the right-hand grip rule to find B direction.</li>
-                            <li data-i18n="info.3">Solenoid field is uniform inside, like a bar magnet.</li>
-                            <li data-i18n="info.4">More turns & higher current → stronger B-field.</li>
-                        </ul>
+                    <div class="absolute top-4 right-4 text-[10px] font-bold text-white uppercase bg-gray-900/80 backdrop-blur px-4 py-2 rounded-full pointer-events-none">
+                        <span data-i18n="canvas.hint">Drag to rotate • Scroll to zoom</span>
+                    </div>
+                    <div class="absolute bottom-4 right-4 max-w-[70%] text-[11px] text-white bg-gray-900/70 backdrop-blur px-3 py-2 rounded-full pointer-events-none">
+                        <span id="sceneHint" data-i18n="canvas.rhr">Right-hand grip rule: thumb = I, fingers = B</span>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
 <script>
-const canvas = document.getElementById('emCanvas');
-const ctx = canvas.getContext('2d');
-
-function resizeCanvas() {
-    const parent = canvas.parentElement;
-    canvas.width = parent.clientWidth;
-    canvas.height = parent.clientHeight;
-}
-resizeCanvas();
-window.addEventListener('resize', () => { resizeCanvas(); draw(); });
-
-const GREEN = '#16A34A';
-const AMBER = '#D97706';
-const RED = '#DC2626';
-const BLUE = '#2563EB';
-const SLATE = '#475569';
+const PHYSICS_COLORS = {
+    force: 0xdc2626, velocity: 0x16a34a, accel: 0x9333ea,
+    bField: 0xd97706, displacement: 0x475569, north: 0xef4444, south: 0x2563eb
+};
 const MU0 = 4 * Math.PI * 1e-7;
 
-let scene = 'wire';
-let current = 5;
-let turns = 10;
-let direction = 1;
-let showFieldPts = true;
+const defaults = { current: 5, turns: 10, direction: 1, showField: true, scene: 'wire', size: 0.05 };
+const state = { ...defaults };
+
+const CAM = { radius: 16, theta: 0.55, phi: 1.12 };
+const camDefault = { radius: 16, theta: 0.55, phi: 1.12 };
+
+const container = document.getElementById('three-container');
+let scene, camera, renderer, simGroup, fieldGroup;
+let isCameraDrag = false, startCamX, startCamY;
+let lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+let clock = 0;
+
+const refs = {
+    particles: [],
+    fieldArrows: [],
+    probe: null,
+    helixCurve: null
+};
+
+function t(key) {
+    return translations[currentLang]?.[key] ?? key;
+}
+
+function makeTextSprite(text, colorHex, scale = 1.4) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#' + colorHex.toString(16).padStart(6, '0');
+    ctx.font = 'bold 44px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 128, 34);
+    const tex = new THREE.CanvasTexture(canvas);
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+    spr.scale.set(scale * 1.8, scale * 0.45, 1);
+    return spr;
+}
+
+function makeArrow(dir, origin, length, color, head = 0.22, width = 0.12) {
+    return new THREE.ArrowHelper(dir.clone().normalize(), origin.clone(), length, color, head, width);
+}
+
+function clearGroup(g) {
+    while (g.children.length) {
+        const o = g.children[0];
+        g.remove(o);
+        o.traverse(c => {
+            if (c.geometry) c.geometry.dispose();
+            if (c.material) {
+                if (c.material.map) c.material.map.dispose();
+                if (Array.isArray(c.material)) c.material.forEach(m => m.dispose());
+                else c.material.dispose();
+            }
+        });
+    }
+}
+
+function circlePoints(r, y, segs = 64) {
+    const pts = [];
+    for (let i = 0; i <= segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        pts.push(new THREE.Vector3(r * Math.cos(a), y, r * Math.sin(a)));
+    }
+    return pts;
+}
+
+function addLine(points, color, opacity = 0.55) {
+    const geo = new THREE.BufferGeometry().setFromPoints(points);
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+    const line = new THREE.Line(geo, mat);
+    fieldGroup.add(line);
+    return line;
+}
+
+function addCurrentParticles(pathFn, count, radius = 0.09) {
+    const geo = new THREE.SphereGeometry(radius, 10, 10);
+    const mat = new THREE.MeshStandardMaterial({
+        color: PHYSICS_COLORS.velocity, emissive: PHYSICS_COLORS.velocity, emissiveIntensity: 0.55
+    });
+    refs.particles = [];
+    for (let i = 0; i < count; i++) {
+        const s = new THREE.Mesh(geo, mat);
+        s.userData.t = i / count;
+        s.userData.pathFn = pathFn;
+        simGroup.add(s);
+        refs.particles.push(s);
+    }
+}
+
+function visualR() {
+    return Math.max(0.9, state.size * 50);
+}
+
+function superscript(n) {
+    const map = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+    return String(n).split('').map(c => map[c] || c).join('');
+}
+
+function updateResult() {
+    let r, B;
+    if (state.scene === 'wire') {
+        r = state.size;
+        B = MU0 * state.current / (2 * Math.PI * r);
+        document.getElementById('rDisplay').textContent = r.toFixed(2) + ' m';
+    } else if (state.scene === 'coil') {
+        r = state.size;
+        B = MU0 * state.turns * state.current / (2 * r);
+        document.getElementById('rDisplay').textContent = 'R = ' + r.toFixed(2) + ' m';
+    } else {
+        r = solenoidLength();
+        B = MU0 * state.turns * state.current / r;
+        document.getElementById('rDisplay').textContent = 'l = ' + r.toFixed(2) + ' m';
+    }
+    const exp = Math.floor(Math.log10(Math.abs(B)));
+    const coeff = B / Math.pow(10, exp);
+    document.getElementById('bDisplay').textContent = coeff.toFixed(2) + ' × 10' + superscript(exp) + ' T';
+    document.getElementById('data-i').textContent = state.current.toFixed(2) + ' A';
+    document.getElementById('data-n').textContent = String(state.turns);
+}
+
+function solenoidLength() {
+    if (state.scene === 'solenoid') return state.size;
+    return 0.20;
+}
+
+function buildWire() {
+    const copper = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.65, roughness: 0.3 });
+    const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 10, 20), copper);
+    wire.castShadow = true;
+    simGroup.add(wire);
+    const cap = new THREE.Mesh(
+        new THREE.SphereGeometry(0.22, 16, 16),
+        new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.5 })
+    );
+    cap.position.y = 5;
+    simGroup.add(cap);
+
+    const iDir = new THREE.Vector3(0, state.direction, 0);
+    const iArr = makeArrow(iDir, new THREE.Vector3(0, -1.2, 0), 2.4, PHYSICS_COLORS.velocity, 0.32, 0.16);
+    simGroup.add(iArr);
+    const iLab = makeTextSprite('I', PHYSICS_COLORS.velocity);
+    iLab.position.set(0.55, 2.2, 0);
+    simGroup.add(iLab);
+
+    const radii = [1.2, 2.0, 3.0, 4.2];
+    const ys = [-2.5, 0, 2.5];
+    refs.fieldArrows = [];
+    radii.forEach(r => {
+        ys.forEach(y => {
+            addLine(circlePoints(r, y), PHYSICS_COLORS.bField, 0.35);
+            const nA = Math.max(4, Math.round(r * 2));
+            for (let i = 0; i < nA; i++) {
+                const a0 = (2 * Math.PI * i) / nA;
+                const radial = new THREE.Vector3(Math.cos(a0), 0, Math.sin(a0));
+                const tangent = new THREE.Vector3().crossVectors(iDir, radial).normalize();
+                const origin = new THREE.Vector3(r * Math.cos(a0), y, r * Math.sin(a0));
+                const arr = makeArrow(tangent, origin, 0.45, PHYSICS_COLORS.bField, 0.16, 0.09);
+                arr.userData.r = r;
+                arr.userData.y = y;
+                arr.userData.ang0 = a0;
+                fieldGroup.add(arr);
+                refs.fieldArrows.push(arr);
+            }
+        });
+    });
+    const bLab = makeTextSprite('B', PHYSICS_COLORS.bField);
+    bLab.position.set(2.4, 0.4, 0);
+    fieldGroup.add(bLab);
+
+    const probeR = visualR();
+    const probe = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 12, 12),
+        new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: PHYSICS_COLORS.bField, emissiveIntensity: 0.4 })
+    );
+    probe.position.set(probeR, 0, 0);
+    refs.probe = probe;
+    simGroup.add(probe);
+
+    addCurrentParticles((u) => new THREE.Vector3(0, (u - 0.5) * 9 * state.direction, 0), 12);
+}
+
+function buildCoil() {
+    const R = visualR();
+    const n = state.turns;
+    const pitch = 0.12;
+    const copper = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.6, roughness: 0.3 });
+    const pts = [];
+    const steps = Math.max(64, n * 24);
+    for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const ang = t * n * 2 * Math.PI * state.direction;
+        pts.push(new THREE.Vector3((t - 0.5) * n * pitch, R * Math.cos(ang), R * Math.sin(ang)));
+    }
+    const curve = new THREE.CatmullRomCurve3(pts);
+    refs.helixCurve = curve;
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, steps, 0.1, 8, false), copper);
+    tube.castShadow = true;
+    simGroup.add(tube);
+
+    addCurrentParticles((u) => curve.getPoint((state.direction > 0 ? u : 1 - u) % 1), Math.min(18, 8 + n), 0.08);
+
+    const axis = new THREE.Vector3(state.direction, 0, 0);
+    refs.fieldArrows = [];
+    for (let i = -2; i <= 2; i++) {
+        const a = makeArrow(axis, new THREE.Vector3(-1.6, i * 0.15, 0), 3.2, PHYSICS_COLORS.bField, 0.28, 0.14);
+        fieldGroup.add(a);
+        refs.fieldArrows.push(a);
+    }
+    const bLab = makeTextSprite('B', PHYSICS_COLORS.bField);
+    bLab.position.set(2.2, 0.5, 0);
+    fieldGroup.add(bLab);
+
+    const nLoop = 6;
+    for (let i = 0; i < nLoop; i++) {
+        const phi = (i / nLoop) * Math.PI;
+        const loop = [];
+        const aMaj = R + 1.8, bMin = R * 0.55 + 0.8;
+        for (let k = 0; k <= 48; k++) {
+            const a = (k / 48) * Math.PI * 2;
+            const x = aMaj * Math.cos(a);
+            const y = bMin * Math.sin(a) * Math.cos(phi);
+            const z = bMin * Math.sin(a) * Math.sin(phi);
+            loop.push(new THREE.Vector3(x, y, z));
+        }
+        addLine(loop, PHYSICS_COLORS.bField, 0.28);
+    }
+}
+
+function buildSolenoid() {
+    const n = state.turns;
+    const Lvis = 8 * (solenoidLength() / 0.2);
+    const R = 1.35;
+    const copper = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.6, roughness: 0.3 });
+    const pts = [];
+    const steps = Math.max(80, n * 20);
+    for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const ang = t * n * 2 * Math.PI * state.direction;
+        pts.push(new THREE.Vector3(-Lvis / 2 + t * Lvis, R * Math.cos(ang), R * Math.sin(ang)));
+    }
+    const curve = new THREE.CatmullRomCurve3(pts);
+    refs.helixCurve = curve;
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, steps, 0.09, 8, false), copper);
+    tube.castShadow = true;
+    simGroup.add(tube);
+
+    const core = new THREE.Mesh(
+        new THREE.CylinderGeometry(R * 0.72, R * 0.72, Lvis * 0.92, 24),
+        new THREE.MeshStandardMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.12, metalness: 0.1 })
+    );
+    core.rotation.z = Math.PI / 2;
+    fieldGroup.add(core);
+
+    addCurrentParticles((u) => curve.getPoint((state.direction > 0 ? u : 1 - u) % 1), Math.min(20, 6 + n), 0.08);
+
+    const bDir = new THREE.Vector3(state.direction, 0, 0);
+    refs.fieldArrows = [];
+    const nInt = 5;
+    for (let i = 0; i < nInt; i++) {
+        const x = -Lvis / 2 + 0.8 + (i / (nInt - 1)) * (Lvis - 1.6);
+        const a = makeArrow(bDir, new THREE.Vector3(x - 0.6 * state.direction, 0, 0), 1.2, PHYSICS_COLORS.bField, 0.24, 0.12);
+        fieldGroup.add(a);
+        refs.fieldArrows.push(a);
+    }
+
+    const ext = [1.8, 2.6, 3.4];
+    ext.forEach(off => {
+        [1, -1].forEach(side => {
+            const loop = [];
+            for (let k = 0; k <= 40; k++) {
+                const u = k / 40;
+                const x = (u - 0.5) * (Lvis + off * 1.4);
+                const rad = off + 0.4 * Math.sin(u * Math.PI);
+                loop.push(new THREE.Vector3(x, rad * side, 0));
+            }
+            addLine(loop, PHYSICS_COLORS.bField, 0.3);
+            const loop2 = [];
+            for (let k = 0; k <= 40; k++) {
+                const u = k / 40;
+                const x = (u - 0.5) * (Lvis + off * 1.4);
+                const rad = off + 0.4 * Math.sin(u * Math.PI);
+                loop2.push(new THREE.Vector3(x, 0, rad * side));
+            }
+            addLine(loop2, PHYSICS_COLORS.bField, 0.22);
+        });
+    });
+
+    const nEnd = state.direction > 0 ? Lvis / 2 + 0.7 : -Lvis / 2 - 0.7;
+    const sEnd = state.direction > 0 ? -Lvis / 2 - 0.7 : Lvis / 2 + 0.7;
+    const nLab = makeTextSprite('N', PHYSICS_COLORS.north, 1.8);
+    nLab.position.set(nEnd, 0, 0);
+    fieldGroup.add(nLab);
+    const sLab = makeTextSprite('S', PHYSICS_COLORS.south, 1.8);
+    sLab.position.set(sEnd, 0, 0);
+    fieldGroup.add(sLab);
+    const bLab = makeTextSprite('B', PHYSICS_COLORS.bField);
+    bLab.position.set(0, 0.55, 0);
+    fieldGroup.add(bLab);
+}
+
+function rebuildScene() {
+    clearGroup(simGroup);
+    clearGroup(fieldGroup);
+    refs.particles = [];
+    refs.fieldArrows = [];
+    refs.probe = null;
+    refs.helixCurve = null;
+    if (state.scene === 'wire') buildWire();
+    else if (state.scene === 'coil') buildCoil();
+    else buildSolenoid();
+    fieldGroup.visible = state.showField;
+    updateHint();
+}
+
+function updateHint() {
+    const el = document.getElementById('sceneHint');
+    const key = state.scene === 'coil' ? 'canvas.coil' : state.scene === 'solenoid' ? 'canvas.solenoid' : 'canvas.rhr';
+    el.setAttribute('data-i18n', key);
+    el.textContent = t(key);
+}
+
+function updateCameraFromSpherical() {
+    camera.position.x = CAM.radius * Math.sin(CAM.phi) * Math.sin(CAM.theta);
+    camera.position.y = CAM.radius * Math.cos(CAM.phi);
+    camera.position.z = CAM.radius * Math.sin(CAM.phi) * Math.cos(CAM.theta);
+    camera.lookAt(0, 0, 0);
+}
+
+function setupCameraControls() {
+    container.addEventListener('mousedown', (e) => {
+        if (e.target.closest('input, button')) return;
+        isCameraDrag = true;
+        startCamX = e.clientX;
+        startCamY = e.clientY;
+    });
+    window.addEventListener('mouseup', () => { isCameraDrag = false; });
+    window.addEventListener('mousemove', (e) => {
+        if (!isCameraDrag) return;
+        CAM.theta -= (e.clientX - startCamX) * 0.005;
+        CAM.phi -= (e.clientY - startCamY) * 0.005;
+        CAM.phi = Math.max(0.1, Math.min(Math.PI - 0.1, CAM.phi));
+        startCamX = e.clientX;
+        startCamY = e.clientY;
+        updateCameraFromSpherical();
+    });
+    container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        CAM.radius = Math.max(7, Math.min(42, CAM.radius + e.deltaY * 0.05));
+        updateCameraFromSpherical();
+    }, { passive: false });
+
+    container.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+            lastTouchDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1 && lastTouchX !== null) {
+            const dx = (e.touches[0].clientX - lastTouchX) * 0.008;
+            const dy = (e.touches[0].clientY - lastTouchY) * 0.008;
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+            CAM.theta -= dx;
+            CAM.phi -= dy;
+            CAM.phi = Math.max(0.1, Math.min(Math.PI - 0.1, CAM.phi));
+            updateCameraFromSpherical();
+        } else if (e.touches.length === 2 && lastTouchDist !== null) {
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            CAM.radius += (lastTouchDist - dist) * 0.1;
+            CAM.radius = Math.max(7, Math.min(42, CAM.radius));
+            lastTouchDist = dist;
+            updateCameraFromSpherical();
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchend', () => {
+        lastTouchX = lastTouchY = lastTouchDist = null;
+    });
+}
+
+function initThree() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf1f5f9);
+    const w = container.offsetWidth || 800;
+    const h = container.offsetHeight || 500;
+    camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+    sun.position.set(10, 18, 12);
+    sun.castShadow = true;
+    scene.add(sun);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.25);
+    fill.position.set(-8, 6, -8);
+    scene.add(fill);
+
+    const grid = new THREE.GridHelper(16, 16, 0xcbd5e1, 0xe2e8f0);
+    grid.position.y = -5.4;
+    scene.add(grid);
+
+    simGroup = new THREE.Group();
+    fieldGroup = new THREE.Group();
+    scene.add(simGroup);
+    scene.add(fieldGroup);
+
+    updateCameraFromSpherical();
+    setupCameraControls();
+    rebuildScene();
+    animate();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    clock += 0.016;
+    const speed = 0.01 * (0.35 + state.current / 6);
+
+    refs.particles.forEach(p => {
+        p.userData.t = (p.userData.t + speed) % 1;
+        if (p.userData.pathFn) p.position.copy(p.userData.pathFn(p.userData.t));
+    });
+
+    if (state.scene === 'wire') {
+        const iDir = new THREE.Vector3(0, state.direction, 0);
+        refs.fieldArrows.forEach((a, i) => {
+            const ang = a.userData.ang0 + clock * 0.7 * state.direction;
+            const r = a.userData.r;
+            const y = a.userData.y;
+            const radial = new THREE.Vector3(Math.cos(ang), 0, Math.sin(ang));
+            const tangent = new THREE.Vector3().crossVectors(iDir, radial).normalize();
+            a.position.set(r * Math.cos(ang), y, r * Math.sin(ang));
+            a.setDirection(tangent);
+            const pulse = 0.85 + 0.15 * Math.sin(clock * 3 + i);
+            a.setLength(0.4 + 0.12 * (state.current / 10), 0.16 * pulse, 0.09);
+        });
+        if (refs.probe) {
+            refs.probe.position.set(visualR(), 0, 0);
+            refs.probe.scale.setScalar(0.9 + 0.15 * Math.sin(clock * 4));
+        }
+    } else {
+        refs.fieldArrows.forEach((a, i) => {
+            a.setLength(1.1 + 0.35 * (state.current / 10) * (state.scene === 'solenoid' ? 1 : 1), 0.24, 0.12);
+            a.scale.set(1, 0.9 + 0.1 * Math.sin(clock * 3 + i * 0.5), 1);
+        });
+    }
+
+    if (fieldGroup) fieldGroup.visible = state.showField;
+    renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+    if (!camera || !renderer) return;
+    camera.aspect = container.offsetWidth / container.offsetHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
+});
+
+function updateFormula() {
+    const fc = document.getElementById('formulaContent');
+    const fd = document.getElementById('formulaDesc');
+    if (state.scene === 'wire') {
+        fc.innerHTML = '$B = \\frac{\\mu_0 I}{2\\pi r}$';
+        fd.setAttribute('data-i18n', 'formula.wire.desc');
+    } else if (state.scene === 'coil') {
+        fc.innerHTML = '$B = \\frac{\\mu_0 N I}{2 R}$';
+        fd.setAttribute('data-i18n', 'formula.coil.desc');
+    } else {
+        fc.innerHTML = '$B = \\frac{\\mu_0 N I}{l}$';
+        fd.setAttribute('data-i18n', 'formula.solenoid.desc');
+    }
+    fd.textContent = t(fd.getAttribute('data-i18n'));
+    if (window.MathJax?.typesetPromise) MathJax.typesetPromise([fc]);
+    else if (window.MathJax?.typeset) MathJax.typeset([fc]);
+    updateResult();
+}
+
+const sizeByScene = { wire: 0.05, coil: 0.05, solenoid: 0.20 };
+
+function syncSizeSlider() {
+    const slider = document.getElementById('sizeSlider');
+    const label = document.getElementById('sizeLabel');
+    if (state.scene === 'wire') {
+        slider.min = 0.02; slider.max = 0.20; slider.step = 0.01;
+        label.setAttribute('data-i18n', 'controls.r');
+        label.textContent = t('controls.r');
+    } else if (state.scene === 'coil') {
+        slider.min = 0.02; slider.max = 0.12; slider.step = 0.01;
+        label.setAttribute('data-i18n', 'controls.R');
+        label.textContent = t('controls.R');
+    } else {
+        slider.min = 0.10; slider.max = 0.40; slider.step = 0.02;
+        label.setAttribute('data-i18n', 'controls.l');
+        label.textContent = t('controls.l');
+    }
+    slider.value = state.size;
+    document.getElementById('sizeVal').textContent = state.size.toFixed(2);
+}
 
 function setScene(s) {
-    scene = s;
+    sizeByScene[state.scene] = state.size;
+    state.scene = s;
+    state.size = sizeByScene[s];
     document.querySelectorAll('.scene-btn').forEach(btn => {
-        if (btn.getAttribute('data-scene') === s) {
-            btn.classList.add('bg-blue-600', 'text-white');
-            btn.classList.remove('bg-white', 'text-slate-700', 'border', 'border-slate-200');
-        } else {
-            btn.classList.remove('bg-blue-600', 'text-white');
-            btn.classList.add('bg-white', 'text-slate-700', 'border', 'border-slate-200');
-        }
+        const on = btn.getAttribute('data-scene') === s;
+        btn.classList.toggle('bg-blue-600', on);
+        btn.classList.toggle('text-white', on);
+        btn.classList.toggle('bg-white', !on);
+        btn.classList.toggle('text-slate-700', !on);
+        btn.classList.toggle('border', !on);
+        btn.classList.toggle('border-slate-200', !on);
     });
-    document.getElementById('turnsGroup').style.display = (s === 'wire') ? 'none' : 'block';
+    document.getElementById('turnsGroup').classList.toggle('hidden', s === 'wire');
+    document.getElementById('dataNRow').classList.toggle('hidden', s === 'wire');
+    syncSizeSlider();
     updateFormula();
-    draw();
+    rebuildScene();
 }
 
 function setDirection(d) {
-    direction = d;
+    state.direction = d;
     const up = document.getElementById('dirUp');
     const dn = document.getElementById('dirDown');
     if (d === 1) {
@@ -176,367 +754,73 @@ function setDirection(d) {
         up.classList.remove('bg-green-600', 'text-white');
         up.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
     }
-    draw();
+    rebuildScene();
 }
 
-function updateFormula() {
-    const fc = document.getElementById('formulaContent');
-    const fd = document.getElementById('formulaDesc');
-    if (scene === 'wire') {
-        fc.innerHTML = '$B = \\frac{\\mu_0 I}{2\\pi r}$';
-        fd.setAttribute('data-i18n', 'formula.wire.desc');
-    } else if (scene === 'coil') {
-        fc.innerHTML = '$B = \\frac{\\mu_0 N I}{2 R}$';
-        fd.setAttribute('data-i18n', 'formula.coil.desc');
-    } else {
-        fc.innerHTML = '$B = \\frac{\\mu_0 N I}{l}$';
-        fd.setAttribute('data-i18n', 'formula.solenoid.desc');
-    }
-    const key = fd.getAttribute('data-i18n');
-    if (translations[currentLang] && translations[currentLang][key]) {
-        fd.innerText = translations[currentLang][key];
-    } else {
-        const defaults = {
-            'formula.wire.desc': 'B-field around a long straight wire decreases with distance r.',
-            'formula.coil.desc': 'B-field at the centre of a flat coil with N turns and radius R.',
-            'formula.solenoid.desc': 'Uniform B-field inside a long solenoid of length l with N turns.'
-        };
-        fd.innerText = defaults[key] || '';
-    }
-    if (window.MathJax && window.MathJax.typeset) {
-        MathJax.typeset([fc]);
-    }
+function onCurrentInput(el) {
+    state.current = parseFloat(el.value);
+    document.getElementById('currentVal').textContent = state.current.toFixed(1);
     updateResult();
 }
 
-function updateResult() {
-    let r, B;
-    if (scene === 'wire') {
-        r = 0.05;
-        B = MU0 * current / (2 * Math.PI * r);
-        document.getElementById('rDisplay').textContent = r.toFixed(2) + ' m';
-    } else if (scene === 'coil') {
-        r = 0.05;
-        B = MU0 * turns * current / (2 * r);
-        document.getElementById('rDisplay').textContent = 'R = ' + r.toFixed(2) + ' m';
+function onTurnsInput(el) {
+    state.turns = parseInt(el.value, 10);
+    document.getElementById('turnsVal').textContent = state.turns;
+    updateResult();
+    if (state.scene !== 'wire') rebuildScene();
+}
+
+function onSizeInput(el) {
+    state.size = parseFloat(el.value);
+    document.getElementById('sizeVal').textContent = state.size.toFixed(2);
+    updateResult();
+    if (state.scene === 'wire' && refs.probe) {
+        refs.probe.position.set(visualR(), 0, 0);
     } else {
-        r = 0.2;
-        B = MU0 * turns * current / r;
-        document.getElementById('rDisplay').textContent = 'l = ' + r.toFixed(2) + ' m';
+        rebuildScene();
     }
-    const exp = Math.floor(Math.log10(Math.abs(B)));
-    const coeff = B / Math.pow(10, exp);
-    document.getElementById('bDisplay').textContent = coeff.toFixed(2) + ' × 10' + superscript(exp) + ' T';
 }
 
-function superscript(n) {
-    const map = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
-    return String(n).split('').map(c => map[c] || c).join('');
+function onShowField(el) {
+    state.showField = el.checked;
+    if (fieldGroup) fieldGroup.visible = state.showField;
 }
 
-document.getElementById('currentSlider').addEventListener('input', e => {
-    current = parseFloat(e.target.value);
-    document.getElementById('currentVal').textContent = current.toFixed(1);
-    updateResult();
-    draw();
+document.getElementById('reset-sim').addEventListener('click', () => {
+    Object.assign(state, defaults);
+    sizeByScene.wire = 0.05;
+    sizeByScene.coil = 0.05;
+    sizeByScene.solenoid = 0.20;
+    document.getElementById('currentSlider').value = 5;
+    document.getElementById('turnsSlider').value = 10;
+    document.getElementById('sizeSlider').value = 0.05;
+    document.getElementById('currentVal').textContent = '5.0';
+    document.getElementById('turnsVal').textContent = '10';
+    document.getElementById('sizeVal').textContent = '0.05';
+    document.getElementById('showFieldPts').checked = true;
+    CAM.radius = camDefault.radius;
+    CAM.theta = camDefault.theta;
+    CAM.phi = camDefault.phi;
+    updateCameraFromSpherical();
+    setDirection(1);
+    setScene('wire');
 });
 
-document.getElementById('turnsSlider').addEventListener('input', e => {
-    turns = parseInt(e.target.value);
-    document.getElementById('turnsVal').textContent = turns;
-    updateResult();
-    draw();
-});
-
-document.getElementById('showFieldPts').addEventListener('change', e => {
-    showFieldPts = e.target.checked;
-    draw();
-});
-
-function drawArrow(x1, y1, x2, y2, color, width) {
-    const dx = x2 - x1, dy = y2 - y1;
-    const len = Math.hypot(dx, dy);
-    if (len < 2) return;
-    const ux = dx / len, uy = dy / len;
-    const headLen = Math.min(10, len * 0.3);
-
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width || 2;
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2 - ux * headLen * 0.5, y2 - uy * headLen * 0.5);
-    ctx.stroke();
-
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(x2, y2);
-    ctx.lineTo(x2 - ux * headLen - uy * headLen * 0.4, y2 - uy * headLen + ux * headLen * 0.4);
-    ctx.lineTo(x2 - ux * headLen + uy * headLen * 0.4, y2 - uy * headLen - ux * headLen * 0.4);
-    ctx.closePath();
-    ctx.fill();
-}
-
-function drawWireScene() {
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const maxR = Math.min(cx, cy) * 0.85;
-
-    // Wire cross-section
-    ctx.beginPath();
-    ctx.arc(cx, cy, 14, 0, Math.PI * 2);
-    ctx.fillStyle = '#CBD5E1';
-    ctx.fill();
-    ctx.strokeStyle = SLATE;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Direction symbol
-    ctx.fillStyle = GREEN;
-    ctx.font = 'bold 18px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(direction === 1 ? '⊙' : '⊗', cx, cy);
-
-    // Concentric field rings
-    const ringRadii = [40, 70, 110, 160, 220];
-    for (const r of ringRadii) {
-        if (r > maxR) continue;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.strokeStyle = AMBER;
-        ctx.lineWidth = 1.5;
-        ctx.globalAlpha = 0.5;
-        ctx.setLineDash([4, 6]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.globalAlpha = 1;
-
-        if (showFieldPts) {
-            const nArrows = Math.max(4, Math.round(r / 25));
-            for (let i = 0; i < nArrows; i++) {
-                const ang = (2 * Math.PI * i) / nArrows;
-                const tangent = direction === 1 ? ang + Math.PI / 2 : ang - Math.PI / 2;
-                const px = cx + r * Math.cos(ang);
-                const py = cy + r * Math.sin(ang);
-                const arrLen = 12;
-                drawArrow(px - arrLen * 0.5 * Math.cos(tangent), py - arrLen * 0.5 * Math.sin(tangent),
-                          px + arrLen * 0.5 * Math.cos(tangent), py + arrLen * 0.5 * Math.sin(tangent), AMBER, 1.5);
-            }
-        }
-    }
-
-    // B label
-    ctx.font = 'italic bold 16px Inter, sans-serif';
-    ctx.fillStyle = AMBER;
-    ctx.textAlign = 'left';
-    ctx.fillText('B', cx + ringRadii[1] + 5, cy - 10);
-
-    // Current label
-    ctx.fillStyle = GREEN;
-    ctx.fillText('I', cx + 20, cy - 2);
-
-    // Right-hand rule hint
-    ctx.font = '13px Inter, sans-serif';
-    ctx.fillStyle = SLATE;
-    ctx.textAlign = 'center';
-    const rhText = translations[currentLang]?.['canvas.rhr'] || 'Right-hand grip rule: thumb = I, fingers = B';
-    ctx.fillText(rhText, cx, canvas.height - 15);
-}
-
-function drawCoilScene() {
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const coilR = Math.min(cx, cy) * 0.35;
-
-    // Coil ring
-    ctx.beginPath();
-    ctx.arc(cx, cy, coilR, 0, Math.PI * 2);
-    ctx.strokeStyle = '#64748B';
-    ctx.lineWidth = 8;
-    ctx.stroke();
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = '#CBD5E1';
-    ctx.stroke();
-
-    // Current arrows on coil
-    const nCA = 8;
-    for (let i = 0; i < nCA; i++) {
-        const ang = (2 * Math.PI * i) / nCA;
-        const tangent = direction === 1 ? ang + Math.PI / 2 : ang - Math.PI / 2;
-        const px = cx + coilR * Math.cos(ang);
-        const py = cy + coilR * Math.sin(ang);
-        const arrLen = 16;
-        drawArrow(px - arrLen * 0.5 * Math.cos(tangent), py - arrLen * 0.5 * Math.sin(tangent),
-                  px + arrLen * 0.5 * Math.cos(tangent), py + arrLen * 0.5 * Math.sin(tangent), GREEN, 2);
-    }
-
-    if (showFieldPts) {
-        // Central field (perpendicular to plane)
-        const bDir = direction === 1 ? -1 : 1;
-        const fieldSymbol = bDir < 0 ? '⊙' : '⊗';
-        ctx.fillStyle = AMBER;
-        ctx.font = 'bold 28px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(fieldSymbol, cx, cy);
-        ctx.font = 'italic bold 14px Inter, sans-serif';
-        ctx.fillText('B', cx + 20, cy - 5);
-
-        // Field lines radiating from center (side view conceptual)
-        const nLines = 6;
-        for (let i = 0; i < nLines; i++) {
-            const ang = (2 * Math.PI * i) / nLines;
-            const r1 = coilR + 20;
-            const r2 = coilR + 55;
-            const px1 = cx + r1 * Math.cos(ang);
-            const py1 = cy + r1 * Math.sin(ang);
-            const px2 = cx + r2 * Math.cos(ang);
-            const py2 = cy + r2 * Math.sin(ang);
-            ctx.strokeStyle = AMBER;
-            ctx.lineWidth = 1.2;
-            ctx.globalAlpha = 0.5;
-            ctx.setLineDash([3, 5]);
-            ctx.beginPath();
-            ctx.moveTo(px1, py1);
-            ctx.lineTo(px2, py2);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.globalAlpha = 1;
-        }
-    }
-
-    // Labels
-    ctx.font = '13px Inter, sans-serif';
-    ctx.fillStyle = SLATE;
-    ctx.textAlign = 'center';
-    const coilText = translations[currentLang]?.['canvas.coil'] || 'Top view of circular coil — B is perpendicular to the plane';
-    ctx.fillText(coilText, cx, canvas.height - 15);
-    ctx.fillStyle = GREEN;
-    ctx.font = 'italic bold 14px Inter, sans-serif';
-    ctx.fillText('I', cx + coilR + 12, cy);
-}
-
-function drawSolenoidScene() {
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const solLen = Math.min(canvas.width * 0.6, 350);
-    const solH = Math.min(canvas.height * 0.28, 80);
-    const x0 = cx - solLen / 2;
-    const x1 = cx + solLen / 2;
-    const y0 = cy - solH / 2;
-    const y1 = cy + solH / 2;
-
-    // Solenoid body
-    ctx.fillStyle = '#F1F5F9';
-    ctx.strokeStyle = '#94A3B8';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(x0, y0, solLen, solH, 8);
-    ctx.fill();
-    ctx.stroke();
-
-    // Coil turns
-    const nTurns = Math.min(turns, 20);
-    const spacing = solLen / (nTurns + 1);
-    ctx.strokeStyle = '#64748B';
-    ctx.lineWidth = 2;
-    for (let i = 1; i <= nTurns; i++) {
-        const tx = x0 + i * spacing;
-        ctx.beginPath();
-        ctx.ellipse(tx, cy, 6, solH / 2 - 2, 0, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-
-    // Current direction arrows on top & bottom
-    const arrSpacing = solLen / 6;
-    for (let i = 1; i <= 5; i++) {
-        const ax = x0 + i * arrSpacing;
-        // Top wire: current goes right or left
-        const topDir = direction === 1 ? 1 : -1;
-        drawArrow(ax - 10 * topDir, y0 - 6, ax + 10 * topDir, y0 - 6, GREEN, 1.5);
-        drawArrow(ax + 10 * topDir, y1 + 6, ax - 10 * topDir, y1 + 6, GREEN, 1.5);
-    }
-
-    if (showFieldPts) {
-        // Internal field arrows (uniform)
-        const internalDir = direction === 1 ? 1 : -1;
-        const nInternal = 4;
-        const intSpacing = solLen / (nInternal + 1);
-        for (let i = 1; i <= nInternal; i++) {
-            const ax = x0 + i * intSpacing;
-            drawArrow(ax - 18, cy, ax + 18, cy, AMBER, 2);
-        }
-
-        // External field lines (looping back)
-        ctx.strokeStyle = AMBER;
-        ctx.lineWidth = 1.2;
-        ctx.globalAlpha = 0.4;
-        ctx.setLineDash([4, 6]);
-        const extOffsets = [40, 70, 100];
-        for (const off of extOffsets) {
-            ctx.beginPath();
-            ctx.moveTo(x1 + 10, cy);
-            ctx.bezierCurveTo(x1 + off, cy - off * 1.2, x0 - off, cy - off * 1.2, x0 - 10, cy);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x1 + 10, cy);
-            ctx.bezierCurveTo(x1 + off, cy + off * 1.2, x0 - off, cy + off * 1.2, x0 - 10, cy);
-            ctx.stroke();
-        }
-        ctx.setLineDash([]);
-        ctx.globalAlpha = 1;
-
-        // N and S labels at ends
-        ctx.font = 'bold 16px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        if (internalDir > 0) {
-            ctx.fillStyle = RED;
-            ctx.fillText('N', x1 + 20, cy);
-            ctx.fillStyle = BLUE;
-            ctx.fillText('S', x0 - 20, cy);
-        } else {
-            ctx.fillStyle = RED;
-            ctx.fillText('N', x0 - 20, cy);
-            ctx.fillStyle = BLUE;
-            ctx.fillText('S', x1 + 20, cy);
-        }
-    }
-
-    // Labels
-    ctx.fillStyle = AMBER;
-    ctx.font = 'italic bold 14px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('B', cx, cy - 12);
-
-    ctx.fillStyle = GREEN;
-    ctx.fillText('I', x0 + arrSpacing, y0 - 18);
-
-    ctx.font = '13px Inter, sans-serif';
-    ctx.fillStyle = SLATE;
-    const solText = translations[currentLang]?.['canvas.solenoid'] || 'Solenoid: uniform B inside, like a bar magnet outside';
-    ctx.fillText(solText, cx, canvas.height - 15);
-}
-
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (scene === 'wire') drawWireScene();
-    else if (scene === 'coil') drawCoilScene();
-    else drawSolenoidScene();
-}
-
-// --- i18n ---
 const translations = {
     en: {
         'nav.back': 'Back to Home',
         'title': 'Magnetic Effect of Electric Current',
-        'subtitle': 'Visualize B-fields from straight wires, coils, and solenoids',
+        'subtitle': 'Visualize B-fields from straight wires, coils, and solenoids in 3D. Use the right-hand grip rule as current particles flow.',
         'scene.wire': 'Straight Wire',
         'scene.coil': 'Circular Coil',
         'scene.solenoid': 'Solenoid',
         'controls.title': 'Parameters',
+        'controls.reset': 'Reset',
         'controls.current': 'Current I (A)',
         'controls.turns': 'Turns N',
+        'controls.r': 'Distance r (m)',
+        'controls.R': 'Coil radius R (m)',
+        'controls.l': 'Solenoid length l (m)',
         'controls.direction': 'Current Direction',
         'dir.out': 'Out',
         'dir.in': 'In',
@@ -547,25 +831,32 @@ const translations = {
         'formula.solenoid.desc': 'Uniform B-field inside a long solenoid of length l with N turns.',
         'result.title': 'Computed B',
         'result.at': 'At distance r:',
+        'legend.current': 'Current (I)',
+        'legend.bfield': 'Magnetic Field (B)',
         'info.title': 'Key Concepts',
         'info.1': 'Moving charges / currents create magnetic fields.',
         'info.2': 'Use the right-hand grip rule to find B direction.',
         'info.3': 'Solenoid field is uniform inside, like a bar magnet.',
         'info.4': 'More turns & higher current → stronger B-field.',
+        'canvas.hint': 'Drag to rotate • Scroll to zoom',
         'canvas.rhr': 'Right-hand grip rule: thumb = I, fingers = B',
-        'canvas.coil': 'Top view of circular coil — B is perpendicular to the plane',
+        'canvas.coil': 'Circular coil — B is along the axis, through the centre',
         'canvas.solenoid': 'Solenoid: uniform B inside, like a bar magnet outside'
     },
     zh: {
         'nav.back': '返回首頁',
         'title': '電流的磁效應',
-        'subtitle': '可視化直導線、線圈和螺線管的磁場',
+        'subtitle': '以 3D 可視化直導線、線圈和螺線管的磁場。電流粒子流動時，用右手螺旋定則判斷方向。',
         'scene.wire': '直導線',
         'scene.coil': '環形線圈',
         'scene.solenoid': '螺線管',
         'controls.title': '參數',
+        'controls.reset': '重設',
         'controls.current': '電流 I (A)',
         'controls.turns': '匝數 N',
+        'controls.r': '距離 r (m)',
+        'controls.R': '線圈半徑 R (m)',
+        'controls.l': '螺線管長度 l (m)',
         'controls.direction': '電流方向',
         'dir.out': '出紙面',
         'dir.in': '入紙面',
@@ -576,25 +867,32 @@ const translations = {
         'formula.solenoid.desc': '長度 l、N 匝螺線管內部的均勻磁場。',
         'result.title': '計算結果 B',
         'result.at': '在距離 r 處：',
+        'legend.current': '電流 (I)',
+        'legend.bfield': '磁場 (B)',
         'info.title': '核心概念',
         'info.1': '移動電荷/電流會產生磁場。',
         'info.2': '用右手螺旋定則判斷 B 的方向。',
         'info.3': '螺線管內部磁場均勻，像條形磁鐵。',
         'info.4': '匝數越多、電流越大 → 磁場越強。',
+        'canvas.hint': '拖曳旋轉 • 滾輪縮放',
         'canvas.rhr': '右手螺旋定則：拇指 = I，手指 = B',
-        'canvas.coil': '俯視環形線圈 — B 垂直於平面',
+        'canvas.coil': '環形線圈 — B 沿軸線穿過中心',
         'canvas.solenoid': '螺線管：內部磁場均勻，外部像條形磁鐵'
     },
     cn: {
         'nav.back': '返回首页',
         'title': '电流的磁效应',
-        'subtitle': '可视化直导线、线圈和螺线管的磁场',
+        'subtitle': '以 3D 可视化直导线、线圈和螺线管的磁场。电流粒子流动时，用右手螺旋定则判断方向。',
         'scene.wire': '直导线',
         'scene.coil': '环形线圈',
         'scene.solenoid': '螺线管',
         'controls.title': '参数',
+        'controls.reset': '重设',
         'controls.current': '电流 I (A)',
         'controls.turns': '匝数 N',
+        'controls.r': '距离 r (m)',
+        'controls.R': '线圈半径 R (m)',
+        'controls.l': '螺线管长度 l (m)',
         'controls.direction': '电流方向',
         'dir.out': '出纸面',
         'dir.in': '入纸面',
@@ -605,13 +903,16 @@ const translations = {
         'formula.solenoid.desc': '长度 l、N 匝螺线管内部的均匀磁场。',
         'result.title': '计算结果 B',
         'result.at': '在距离 r 处：',
+        'legend.current': '电流 (I)',
+        'legend.bfield': '磁场 (B)',
         'info.title': '核心概念',
         'info.1': '移动电荷/电流会产生磁场。',
         'info.2': '用右手螺旋定则判断 B 的方向。',
         'info.3': '螺线管内部磁场均匀，像条形磁铁。',
         'info.4': '匝数越多、电流越大 → 磁场越强。',
+        'canvas.hint': '拖曳旋转 • 滚轮缩放',
         'canvas.rhr': '右手螺旋定则：拇指 = I，手指 = B',
-        'canvas.coil': '俯视环形线圈 — B 垂直于平面',
+        'canvas.coil': '环形线圈 — B 沿轴线穿过中心',
         'canvas.solenoid': '螺线管：内部磁场均匀，外部像条形磁铁'
     }
 };
@@ -621,35 +922,33 @@ let currentLang = localStorage.getItem('preferred_language') || 'en';
 function setLanguage(lang) {
     currentLang = lang;
     localStorage.setItem('preferred_language', lang);
+    document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-HK' : 'en';
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (translations[lang] && translations[lang][key]) {
-            if (el.tagName === 'OPTION') el.textContent = translations[lang][key];
-            else el.innerText = translations[lang][key];
+        const val = translations[lang]?.[key];
+        if (!val) return;
+        if (key.includes('desc') || key.includes('legend') || key.includes('interpret') || key.includes('info.') || key.includes('subtitle') || key.includes('note')) {
+            el.innerHTML = val;
+        } else {
+            el.textContent = val;
         }
     });
     document.querySelectorAll('.lang-btn').forEach(btn => {
-        if (btn.getAttribute('data-lang') === lang) {
-            btn.classList.add('bg-blue-600', 'text-white');
-            btn.classList.remove('text-slate-600');
-        } else {
-            btn.classList.remove('bg-blue-600', 'text-white');
-            btn.classList.add('text-slate-600');
-        }
+        const active = btn.dataset.lang === lang;
+        btn.classList.toggle('bg-white', active);
+        btn.classList.toggle('shadow-sm', active);
+        btn.classList.toggle('text-blue-600', active);
     });
-    document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
     updateFormula();
-    draw();
+    updateHint();
+    syncSizeSlider();
 }
 
-// Must run after `translations` and `currentLang` are declared: setScene() triggers
-// updateFormula()/draw(), which read translations[currentLang].
+initThree();
 setScene('wire');
-
 window.addEventListener('DOMContentLoaded', () => setLanguage(currentLang));
 </script>
 
-    <!-- Practice Questions Widget -->
     <script src="practice_questions.js"></script>
     <script src="practice_questions_data.js"></script>
     <script>initPracticeQuestions('magnetic_effect_current');</script>

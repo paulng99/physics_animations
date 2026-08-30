@@ -91,6 +91,11 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                     <span data-i18n="btn.reset">Reset 3D View</span>
                 </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="applyPreset('into-down')" class="py-2 rounded-lg bg-green-50 hover:bg-green-100 text-xs font-semibold text-green-800 transition" data-i18n="btn.preset1">I into · B↓</button>
+                    <button onclick="applyPreset('out-up')" class="py-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-xs font-semibold text-amber-800 transition" data-i18n="btn.preset2">I out · B↑</button>
+                </div>
+                <button onclick="resetAll()" class="w-full py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition" data-i18n="btn.resetAll">Reset All</button>
             </div>
         </div>
     </div>
@@ -140,8 +145,11 @@
             currentDirection: 1, // 1: Q->P (Into screen in side view), -1: P->Q
             bFieldDirection: -1, // -1: Down, 1: Up
             rodPosition: 0,
-            showVectors: true
+            showVectors: true,
+            forceLen: 3,
+            userInteracted: false
         };
+        const defaults = { angle: 30, currentDirection: 1, bFieldDirection: -1 };
 
         const materials = {
             rail: new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.6, roughness: 0.4 }), // Slate-400
@@ -242,6 +250,17 @@
         scene.add(forceArrow);
         scene.add(currentArrow);
 
+        // Flowing current particles on the rod
+        const currentParticles = new THREE.Group();
+        inclineGroup.add(currentParticles);
+        const pGeo = new THREE.SphereGeometry(0.12, 10, 10);
+        const pMat = new THREE.MeshBasicMaterial({ color: 0x16a34a });
+        for (let i = 0; i < 10; i++) {
+            const p = new THREE.Mesh(pGeo, pMat);
+            p.userData.t = i / 10;
+            currentParticles.add(p);
+        }
+
         // Battery schematic (Visual only)
         const wireGroup = new THREE.Group();
         inclineGroup.add(wireGroup);
@@ -314,14 +333,13 @@
             // Force F = I x B
             let dirF = new THREE.Vector3().crossVectors(dirI, dirB);
             
-            // Update Arrow Helpers
-            forceArrow.position.copy(rodWorldPos);
-            forceArrow.setDirection(dirF);
-            forceArrow.setLength(5);
-            forceArrow.setColor(materials.arrowForce); // Ensure color
+            // Store targets for lerp in animate
+            forceArrow.userData.targetDir = dirF.clone();
+            forceArrow.userData.targetPos = rodWorldPos.clone();
+            forceArrow.userData.targetLen = 5;
 
             currentArrow.position.copy(rodWorldPos);
-            currentArrow.position.z -= 0.5 * state.currentDirection; // Offset
+            currentArrow.position.z -= 0.5 * state.currentDirection;
             currentArrow.setDirection(dirI);
             currentArrow.setColor(materials.arrowI);
             
@@ -332,21 +350,10 @@
             updateWires();
         }
 
-        // --- 4. Animation Loop ---
-        
-        function animate() {
-            requestAnimationFrame(animate);
-            updatePhysics();
-            renderer.render(scene, camera);
-        }
-        
-        animate();
-
-        // --- 5. Interactions ---
-
+        // --- 4. Camera state (must exist before animate) ---
         let isDragging = false;
         let previousMousePosition = { x: 0, y: 0 };
-        let sphereCoords = { radius: 25, theta: Math.PI/4, phi: Math.PI/4 }; 
+        let sphereCoords = { radius: 25, theta: Math.PI/4, phi: Math.PI/4 };
 
         function updateCamera() {
             camera.position.x = sphereCoords.radius * Math.sin(sphereCoords.theta) * Math.cos(sphereCoords.phi);
@@ -354,15 +361,56 @@
             camera.position.y = sphereCoords.radius * Math.cos(sphereCoords.theta);
             camera.lookAt(0, 0, 0);
         }
-        // Initialize camera
         updateCamera();
 
+        // --- 5. Animation Loop ---
+        
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (!state.userInteracted) {
+                state.angle = 30 + Math.sin(Date.now() * 0.00035) * 8;
+                sphereCoords.phi += 0.0015;
+                updateCamera();
+            }
+
+            updatePhysics();
+
+            // Lerp force arrow
+            if (forceArrow.userData.targetDir) {
+                const cur = forceArrow.userData.smoothDir || forceArrow.userData.targetDir.clone();
+                cur.lerp(forceArrow.userData.targetDir, 0.08).normalize();
+                forceArrow.userData.smoothDir = cur;
+                forceArrow.setDirection(cur);
+                forceArrow.position.lerp(forceArrow.userData.targetPos, 0.08);
+                state.forceLen += (forceArrow.userData.targetLen - state.forceLen) * 0.08;
+                forceArrow.setLength(state.forceLen, 0.8, 0.5);
+                forceArrow.setColor(materials.arrowForce);
+            }
+
+            // Current particles along rod (local Z)
+            const half = (railSep + 1) / 2;
+            const dir = state.currentDirection;
+            currentParticles.children.forEach((p) => {
+                p.userData.t = (p.userData.t + 0.008 * dir + 1) % 1;
+                p.position.set(0, 0.55, -half + p.userData.t * half * 2);
+            });
+
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+
+        // --- 6. Interactions ---
+
         container.addEventListener('mousedown', (e) => { 
+            if (e.target.closest('#ui-panel, .dg')) return;
             isDragging = true;
+            state.userInteracted = true;
             previousMousePosition = { x: e.offsetX, y: e.offsetY }; 
         });
         
-        container.addEventListener('mouseup', (e) => { isDragging = false; });
+        container.addEventListener('mouseup', () => { isDragging = false; });
         
         container.addEventListener('mousemove', (e) => {
             if(isDragging) {
@@ -372,7 +420,6 @@
                 sphereCoords.phi -= deltaX * 0.01;
                 sphereCoords.theta -= deltaY * 0.01;
                 
-                // Clamp theta to prevent flipping
                 sphereCoords.theta = Math.max(0.1, Math.min(Math.PI - 0.1, sphereCoords.theta));
 
                 updateCamera();
@@ -381,22 +428,103 @@
         });
         
         container.addEventListener('wheel', (e) => {
+            state.userInteracted = true;
             sphereCoords.radius += e.deltaY * 0.05;
             sphereCoords.radius = Math.max(5, Math.min(50, sphereCoords.radius));
             updateCamera();
         });
 
+        // Touch: single-finger rotate, two-finger pinch zoom
+        let lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+        container.addEventListener('touchstart', (e) => {
+            if (e.target.closest('#ui-panel, .dg')) return;
+            e.preventDefault();
+            state.userInteracted = true;
+            if (e.touches.length === 1) {
+                lastTouchX = e.touches[0].clientX;
+                lastTouchY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                lastTouchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 1 && lastTouchX !== null) {
+                const dx = (e.touches[0].clientX - lastTouchX) * 0.008;
+                const dy = (e.touches[0].clientY - lastTouchY) * 0.008;
+                lastTouchX = e.touches[0].clientX;
+                lastTouchY = e.touches[0].clientY;
+                sphereCoords.phi -= dx;
+                sphereCoords.theta -= dy;
+                sphereCoords.theta = Math.max(0.1, Math.min(Math.PI - 0.1, sphereCoords.theta));
+                updateCamera();
+            } else if (e.touches.length === 2 && lastTouchDist !== null) {
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                sphereCoords.radius += (lastTouchDist - dist) * 0.1;
+                sphereCoords.radius = Math.max(5, Math.min(50, sphereCoords.radius));
+                lastTouchDist = dist;
+                updateCamera();
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchend', () => {
+            lastTouchX = lastTouchY = lastTouchDist = null;
+        });
+
         // UI Functions
         window.snapToObserverView = function() {
+            state.userInteracted = true;
             sphereCoords.phi = Math.PI / 2; 
-            sphereCoords.theta = Math.PI / 2; // Horizontal
+            sphereCoords.theta = Math.PI / 2;
             sphereCoords.radius = 25;
             updateCamera();
         }
 
         window.resetCamera = function() {
+            state.userInteracted = true;
             sphereCoords = { radius: 25, theta: Math.PI/3, phi: Math.PI/4 };
             updateCamera();
+        }
+
+        window.applyPreset = function(name) {
+            state.userInteracted = true;
+            if (name === 'into-down') {
+                state.currentDirection = 1;
+                state.bFieldDirection = -1;
+                state.angle = 30;
+            } else {
+                state.currentDirection = -1;
+                state.bFieldDirection = 1;
+                state.angle = 45;
+            }
+            syncGuiFromState();
+        };
+
+        window.resetAll = function() {
+            state.userInteracted = true;
+            state.angle = defaults.angle;
+            state.currentDirection = defaults.currentDirection;
+            state.bFieldDirection = defaults.bFieldDirection;
+            state.forceLen = 3;
+            sphereCoords = { radius: 25, theta: Math.PI/3, phi: Math.PI/4 };
+            updateCamera();
+            syncGuiFromState();
+        };
+
+        function syncGuiFromState() {
+            if (!window._lorentzGui) return;
+            window._lorentzGui.__controllers.forEach((c) => {
+                if (c.property === 'angle') c.setValue(state.angle);
+                if (c.property === 'currentDirection') c.setValue(state.currentDirection);
+                if (c.property === 'bFieldDirection') c.setValue(state.bFieldDirection);
+            });
         }
         
         // Language Translation System
@@ -413,7 +541,10 @@
                 'physics.hint': 'Adjust the parameters below to see how the force vector changes direction and magnitude.',
                 'btn.sideview': 'Switch to Side View (2D)',
                 'btn.reset': 'Reset 3D View',
-                'controls.hint': 'Left Click: Rotate | Right Click: Pan | Scroll: Zoom',
+                'btn.preset1': 'I into · B↓',
+                'btn.preset2': 'I out · B↑',
+                'btn.resetAll': 'Reset All',
+                'controls.hint': 'Drag: Rotate | Pinch/Scroll: Zoom',
                 'gui.angle': 'Incline Angle',
                 'gui.current': 'Current Dir',
                 'gui.bfield': 'B Field Dir',
@@ -434,7 +565,10 @@
                 'physics.hint': '調整下方參數以觀察力向量的方向和大小如何變化。',
                 'btn.sideview': '切換至側視圖 (2D)',
                 'btn.reset': '重置 3D 視角',
-                'controls.hint': '左鍵：旋轉 | 右鍵：平移 | 滾輪：縮放',
+                'btn.preset1': 'I 入 · B↓',
+                'btn.preset2': 'I 出 · B↑',
+                'btn.resetAll': '全部重設',
+                'controls.hint': '拖曳：旋轉 | 雙指/滾輪：縮放',
                 'gui.angle': '傾斜角度',
                 'gui.current': '電流方向',
                 'gui.bfield': '磁場方向',
@@ -455,7 +589,10 @@
                 'physics.hint': '调整下方参数以观察力向量的方向和大小如何变化。',
                 'btn.sideview': '切换至侧视图 (2D)',
                 'btn.reset': '重置 3D 视角',
-                'controls.hint': '左键：旋转 | 右键：平移 | 滚轮：缩放',
+                'btn.preset1': 'I 入 · B↓',
+                'btn.preset2': 'I 出 · B↑',
+                'btn.resetAll': '全部重置',
+                'controls.hint': '拖曳：旋转 | 双指/滚轮：缩放',
                 'gui.angle': '倾斜角度',
                 'gui.current': '电流方向',
                 'gui.bfield': '磁场方向',
@@ -490,17 +627,19 @@
             gui.domElement.style.marginTop = '20px';
             gui.domElement.style.width = '100%';
 
-            gui.add(state, 'angle', 0, 60).name(t('gui.angle')).step(1);
+            gui.add(state, 'angle', 0, 60).name(t('gui.angle')).step(1).onChange(() => { state.userInteracted = true; });
             
             const currentOpts = {};
             currentOpts[t('gui.opt.into')] = 1;
             currentOpts[t('gui.opt.out')] = -1;
-            gui.add(state, 'currentDirection', currentOpts).name(t('gui.current'));
+            gui.add(state, 'currentDirection', currentOpts).name(t('gui.current')).onChange(() => { state.userInteracted = true; });
             
             const bOpts = {};
             bOpts[t('gui.opt.down')] = -1;
             bOpts[t('gui.opt.up')] = 1;
-            gui.add(state, 'bFieldDirection', bOpts).name(t('gui.bfield'));
+            gui.add(state, 'bFieldDirection', bOpts).name(t('gui.bfield')).onChange(() => { state.userInteracted = true; });
+
+            window._lorentzGui = gui;
         }
 
         function setLanguage(lang) {

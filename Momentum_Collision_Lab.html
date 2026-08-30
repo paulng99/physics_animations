@@ -1,321 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Momentum and Collision Lab (HKDSE)</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Momentum and Collision Lab — 3D</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; }
     mjx-container { display: inline-block !important; }
+    #three-container { width: 100%; height: 460px; cursor: grab; touch-action: none; }
+    #three-container:active { cursor: grabbing; }
+    .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
-  <header class="max-w-6xl mx-auto px-4 py-4">
-    <div class="flex items-center justify-between gap-3">
-      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
-        <span>←</span>
-        <span data-i18n="back">Back to Topics</span>
+  <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        <span class="font-medium" data-i18n="back">Back to Topics</span>
       </a>
       <div class="flex gap-2">
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="updateLanguage('en')" data-lang="en">EN</button>
-        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" onclick="setLanguage('en')" data-lang="en">EN</button>
+        <button class="lang-btn px-3 py-1 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100" onclick="setLanguage('zh-hk')" data-lang="zh-hk">繁</button>
       </div>
     </div>
-  </header>
+  </nav>
 
-  <main class="max-w-6xl mx-auto px-4 pb-10">
-    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-5 md:p-7 shadow-sm">
-      <h1 class="text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">Momentum and Collision Lab</h1>
-      <p class="mt-2 text-slate-600" data-i18n="subtitle">Test conservation of momentum for elastic and inelastic collisions.</p>
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <section class="glass rounded-3xl border border-white/60 p-6 md:p-8 shadow-xl">
+      <h1 class="text-2xl md:text-3xl font-bold" data-i18n="title">Momentum and Collision Lab</h1>
+      <p class="mt-2 text-slate-600" data-i18n="subtitle">Test conservation of momentum for elastic and inelastic collisions in 3D.</p>
     </section>
 
-    <section class="mt-5 grid lg:grid-cols-3 gap-4">
-      <article class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
-        <canvas id="simCanvas" class="w-full rounded-xl bg-slate-50 border border-slate-200" width="980" height="460"></canvas>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <button id="startBtn" class="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition" data-i18n="start">Start</button>
-          <button id="resetBtn" class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition" data-i18n="reset">Reset</button>
-        </div>
-      </article>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <aside class="lg:col-span-4 space-y-4">
+        <div class="glass rounded-2xl border border-white/60 p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="font-semibold" data-i18n="controls">Controls</h2>
+            <button id="resetBtn" class="text-xs font-bold text-blue-600 hover:underline" data-i18n="reset">Reset</button>
+          </div>
 
-      <aside class="space-y-4">
-        <div class="bg-white rounded-2xl border border-slate-200 p-4">
-          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+          <label class="block text-sm"><span data-i18n="m1">Cart A mass m₁ (kg)</span>: <span id="m1Value" class="font-semibold text-blue-600">1.0</span></label>
+          <input id="m1" type="range" min="0.5" max="3" step="0.1" value="1.0" class="w-full accent-blue-600" />
 
-          <label class="block text-sm font-medium text-slate-700" for="m1">
-            <span data-i18n="m1">Cart A mass m₁ (kg)</span>: <span id="m1Value" class="font-semibold text-blue-600">1.0</span>
-          </label>
-          <input id="m1" type="range" min="0.5" max="3" step="0.1" value="1.0" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm"><span data-i18n="m2">Cart B mass m₂ (kg)</span>: <span id="m2Value" class="font-semibold text-blue-600">1.5</span></label>
+          <input id="m2" type="range" min="0.5" max="3" step="0.1" value="1.5" class="w-full accent-blue-600" />
 
-          <label class="block text-sm font-medium text-slate-700" for="m2">
-            <span data-i18n="m2">Cart B mass m₂ (kg)</span>: <span id="m2Value" class="font-semibold text-blue-600">1.5</span>
-          </label>
-          <input id="m2" type="range" min="0.5" max="3" step="0.1" value="1.5" class="w-full accent-blue-600 mb-3" />
+          <label class="block text-sm"><span data-i18n="u1">Cart A initial u₁ (m/s)</span>: <span id="u1Value" class="font-semibold text-green-600">3.0</span></label>
+          <input id="u1" type="range" min="0.5" max="6" step="0.1" value="3.0" class="w-full accent-green-600" />
 
-          <label class="block text-sm font-medium text-slate-700" for="u1">
-            <span data-i18n="u1">Cart A initial u₁ (m/s)</span>: <span id="u1Value" class="font-semibold text-green-600">3.0</span>
-          </label>
-          <input id="u1" type="range" min="0.5" max="6" step="0.1" value="3.0" class="w-full accent-green-600 mb-3" />
+          <label class="block text-sm"><span data-i18n="u2">Cart B initial u₂ (m/s)</span>: <span id="u2Value" class="font-semibold text-green-600">0.0</span></label>
+          <input id="u2" type="range" min="-3" max="3" step="0.1" value="0.0" class="w-full accent-green-600" />
 
-          <label class="block text-sm font-medium text-slate-700" for="u2">
-            <span data-i18n="u2">Cart B initial u₂ (m/s)</span>: <span id="u2Value" class="font-semibold text-green-600">0.0</span>
-          </label>
-          <input id="u2" type="range" min="-3" max="3" step="0.1" value="0.0" class="w-full accent-green-600 mb-3" />
-
-          <label class="block text-sm font-medium text-slate-700 mb-2" data-i18n="type">Collision type</label>
+          <label class="block text-sm font-medium mb-1" data-i18n="type">Collision type</label>
           <div class="flex gap-2">
-            <button id="elasticBtn" class="collision-btn px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-medium" data-type="elastic" data-i18n="elastic">Elastic</button>
-            <button id="inelasticBtn" class="collision-btn px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium" data-type="inelastic" data-i18n="inelastic">Perfectly Inelastic</button>
+            <button id="elasticBtn" class="collision-btn flex-1 px-3 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium min-h-[44px]" data-type="elastic" data-i18n="elastic">Elastic</button>
+            <button id="inelasticBtn" class="collision-btn flex-1 px-3 py-2 rounded-xl bg-slate-200 text-slate-700 text-sm font-medium min-h-[44px]" data-type="inelastic" data-i18n="inelastic">Perfectly Inelastic</button>
           </div>
+
+          <button id="startBtn" class="w-full px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition min-h-[44px]" data-i18n="start">Start</button>
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-4">
-          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="results">Results</h2>
-          <div class="space-y-2 text-sm">
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="pBefore">Momentum before</span><span id="pBefore" class="font-semibold text-purple-600">3.00 kg·m/s</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="pAfter">Momentum after</span><span id="pAfter" class="font-semibold text-purple-600">3.00 kg·m/s</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="keBefore">KE before</span><span id="keBefore" class="font-semibold text-red-600">4.50 J</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="keAfter">KE after</span><span id="keAfter" class="font-semibold text-red-600">4.50 J</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="v1After">v₁ after</span><span id="v1After" class="font-semibold text-green-600">-0.60 m/s</span></div>
-            <div class="flex justify-between"><span class="text-slate-600" data-i18n="v2After">v₂ after</span><span id="v2After" class="font-semibold text-green-600">2.40 m/s</span></div>
-          </div>
+        <div class="glass rounded-2xl border border-white/60 p-5 space-y-2 text-sm">
+          <h2 class="font-semibold mb-2" data-i18n="results">Results</h2>
+          <div class="flex justify-between"><span class="text-slate-600" data-i18n="pBefore">Momentum before</span><span id="pBefore" class="font-semibold text-purple-600">3.00 kg·m/s</span></div>
+          <div class="flex justify-between"><span class="text-slate-600" data-i18n="pAfter">Momentum after</span><span id="pAfter" class="font-semibold text-purple-600">3.00 kg·m/s</span></div>
+          <div class="flex justify-between"><span class="text-slate-600" data-i18n="keBefore">KE before</span><span id="keBefore" class="font-semibold text-red-600">4.50 J</span></div>
+          <div class="flex justify-between"><span class="text-slate-600" data-i18n="keAfter">KE after</span><span id="keAfter" class="font-semibold text-red-600">4.50 J</span></div>
+          <div class="flex justify-between"><span class="text-slate-600" data-i18n="v1After">v₁ after</span><span id="v1After" class="font-semibold text-green-600">-0.60 m/s</span></div>
+          <div class="flex justify-between"><span class="text-slate-600" data-i18n="v2After">v₂ after</span><span id="v2After" class="font-semibold text-green-600">2.40 m/s</span></div>
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">
-          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE Formula Focus</h2>
-          <ul class="list-disc ml-5 space-y-1">
-            <li><span class="font-medium">m₁u₁ + m₂u₂ = m₁v₁ + m₂v₂</span></li>
-            <li><span class="font-medium">KE = 1/2 mv²</span></li>
-            <li><span class="font-medium">Inelastic: v₁ = v₂</span></li>
+        <div class="bg-slate-900 text-white rounded-2xl p-5 text-sm">
+          <h2 class="text-xs font-bold text-slate-400 uppercase mb-2" data-i18n="formulaTitle">HKDSE Formula Focus</h2>
+          <ul class="space-y-1 text-slate-300">
+            <li>m₁u₁ + m₂u₂ = m₁v₁ + m₂v₂</li>
+            <li>KE = ½ mv²</li>
+            <li>Inelastic: v₁ = v₂</li>
           </ul>
         </div>
       </aside>
-    </section>
+
+      <div class="lg:col-span-8">
+        <div class="relative rounded-xl border-2 border-slate-200 overflow-hidden bg-slate-100">
+          <div id="three-container"></div>
+          <div class="absolute top-4 left-4 flex flex-wrap gap-2 pointer-events-none">
+            <span class="px-3 py-1 rounded-full bg-white/90 text-xs font-medium text-green-600" data-i18n="legend.v">v — Velocity</span>
+            <span class="px-3 py-1 rounded-full bg-white/90 text-xs font-medium text-blue-600">A</span>
+            <span class="px-3 py-1 rounded-full bg-white/90 text-xs font-medium text-emerald-700">B</span>
+          </div>
+          <div class="absolute bottom-4 right-4 bg-gray-900/80 text-white px-4 py-2 rounded-full text-xs pointer-events-none" data-i18n="hint">Drag to rotate • Scroll / pinch zoom</div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script>
-    const controls = {
-      m1: document.getElementById('m1'),
-      m2: document.getElementById('m2'),
-      u1: document.getElementById('u1'),
-      u2: document.getElementById('u2')
-    };
-
-    const outputs = {
-      m1Value: document.getElementById('m1Value'),
-      m2Value: document.getElementById('m2Value'),
-      u1Value: document.getElementById('u1Value'),
-      u2Value: document.getElementById('u2Value'),
-      pBefore: document.getElementById('pBefore'),
-      pAfter: document.getElementById('pAfter'),
-      keBefore: document.getElementById('keBefore'),
-      keAfter: document.getElementById('keAfter'),
-      v1After: document.getElementById('v1After'),
-      v2After: document.getElementById('v2After')
-    };
-
-    const startBtn = document.getElementById('startBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const collisionBtns = document.querySelectorAll('.collision-btn');
-    const canvas = document.getElementById('simCanvas');
-    const ctx = canvas.getContext('2d');
-
-    const state = {
-      collisionType: 'elastic',
-      running: false,
-      collided: false,
-      x1: 140,
-      x2: 700,
-      y: 290,
-      scale: 90
-    };
+    const PHYSICS_COLORS = { velocity: 0x16a34a, force: 0xdc2626, accel: 0x9333ea };
 
     const translations = {
       en: {
-        back: 'Back to Topics',
-        title: 'Momentum and Collision Lab',
-        subtitle: 'Test conservation of momentum for elastic and inelastic collisions.',
-        start: 'Start',
-        reset: 'Reset',
-        controls: 'Controls',
-        m1: 'Cart A mass m₁ (kg)',
-        m2: 'Cart B mass m₂ (kg)',
-        u1: 'Cart A initial u₁ (m/s)',
-        u2: 'Cart B initial u₂ (m/s)',
-        type: 'Collision type',
-        elastic: 'Elastic',
-        inelastic: 'Perfectly Inelastic',
-        results: 'Results',
-        pBefore: 'Momentum before',
-        pAfter: 'Momentum after',
-        keBefore: 'KE before',
-        keAfter: 'KE after',
-        v1After: 'v₁ after',
-        v2After: 'v₂ after',
-        formulaTitle: 'HKDSE Formula Focus'
+        back: 'Back to Topics', title: 'Momentum and Collision Lab',
+        subtitle: 'Test conservation of momentum for elastic and inelastic collisions in 3D.',
+        start: 'Start', reset: 'Reset', controls: 'Controls',
+        m1: 'Cart A mass m₁ (kg)', m2: 'Cart B mass m₂ (kg)',
+        u1: 'Cart A initial u₁ (m/s)', u2: 'Cart B initial u₂ (m/s)',
+        type: 'Collision type', elastic: 'Elastic', inelastic: 'Perfectly Inelastic',
+        results: 'Results', pBefore: 'Momentum before', pAfter: 'Momentum after',
+        keBefore: 'KE before', keAfter: 'KE after', v1After: 'v₁ after', v2After: 'v₂ after',
+        formulaTitle: 'HKDSE Formula Focus', legend: { v: 'v — Velocity' },
+        hint: 'Drag to rotate • Scroll / pinch zoom'
       },
       'zh-hk': {
-        back: '返回主題頁',
-        title: '動量與碰撞實驗室',
-        subtitle: '透過彈性與完全非彈性碰撞驗證動量守恆。',
-        start: '開始',
-        reset: '重設',
-        controls: '控制面板',
-        m1: '小車 A 質量 m₁ (kg)',
-        m2: '小車 B 質量 m₂ (kg)',
-        u1: '小車 A 初速 u₁ (m/s)',
-        u2: '小車 B 初速 u₂ (m/s)',
-        type: '碰撞類型',
-        elastic: '彈性碰撞',
-        inelastic: '完全非彈性碰撞',
-        results: '結果',
-        pBefore: '碰撞前動量',
-        pAfter: '碰撞後動量',
-        keBefore: '碰撞前動能',
-        keAfter: '碰撞後動能',
-        v1After: '碰撞後 v₁',
-        v2After: '碰撞後 v₂',
-        formulaTitle: 'HKDSE 重點公式'
+        back: '返回主題頁', title: '動量與碰撞實驗室',
+        subtitle: '以 3D 驗證彈性與完全非彈性碰撞的動量守恆。',
+        start: '開始', reset: '重設', controls: '控制面板',
+        m1: '小車 A 質量 m₁ (kg)', m2: '小車 B 質量 m₂ (kg)',
+        u1: '小車 A 初速 u₁ (m/s)', u2: '小車 B 初速 u₂ (m/s)',
+        type: '碰撞類型', elastic: '彈性碰撞', inelastic: '完全非彈性碰撞',
+        results: '結果', pBefore: '碰撞前動量', pAfter: '碰撞後動量',
+        keBefore: '碰撞前動能', keAfter: '碰撞後動能', v1After: '碰撞後 v₁', v2After: '碰撞後 v₂',
+        formulaTitle: 'HKDSE 重點公式', legend: { v: 'v — 速度' },
+        hint: '拖曳旋轉 • 滾輪／雙指縮放'
       }
     };
 
-    function getParams() {
-      return {
-        m1: Number(controls.m1.value),
-        m2: Number(controls.m2.value),
-        u1: Number(controls.u1.value),
-        u2: Number(controls.u2.value)
-      };
-    }
+    let currentLang = localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en';
 
-    function calculateOutcome() {
-      const { m1, m2, u1, u2 } = getParams();
-      let v1;
-      let v2;
-      if (state.collisionType === 'elastic') {
-        v1 = ((m1 - m2) * u1 + 2 * m2 * u2) / (m1 + m2);
-        v2 = ((m2 - m1) * u2 + 2 * m1 * u1) / (m1 + m2);
-      } else {
-        v1 = (m1 * u1 + m2 * u2) / (m1 + m2);
-        v2 = v1;
-      }
-      const pBefore = m1 * u1 + m2 * u2;
-      const pAfter = m1 * v1 + m2 * v2;
-      const keBefore = 0.5 * m1 * u1 * u1 + 0.5 * m2 * u2 * u2;
-      const keAfter = 0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2;
-      return { m1, m2, u1, u2, v1, v2, pBefore, pAfter, keBefore, keAfter };
-    }
-
-    function updateReadings() {
-      const result = calculateOutcome();
-      outputs.m1Value.textContent = result.m1.toFixed(1);
-      outputs.m2Value.textContent = result.m2.toFixed(1);
-      outputs.u1Value.textContent = result.u1.toFixed(1);
-      outputs.u2Value.textContent = result.u2.toFixed(1);
-      outputs.pBefore.textContent = `${result.pBefore.toFixed(2)} kg·m/s`;
-      outputs.pAfter.textContent = `${result.pAfter.toFixed(2)} kg·m/s`;
-      outputs.keBefore.textContent = `${result.keBefore.toFixed(2)} J`;
-      outputs.keAfter.textContent = `${result.keAfter.toFixed(2)} J`;
-      outputs.v1After.textContent = `${result.v1.toFixed(2)} m/s`;
-      outputs.v2After.textContent = `${result.v2.toFixed(2)} m/s`;
-    }
-
-    function drawTrack() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.strokeStyle = '#475569';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(60, 330);
-      ctx.lineTo(920, 330);
-      ctx.stroke();
-
-      for (let i = 0; i <= 8; i += 1) {
-        const x = 80 + i * 100;
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x, 335);
-        ctx.lineTo(x, 360);
-        ctx.stroke();
-      }
-    }
-
-    function drawCart(x, y, width, color, label) {
-      ctx.fillStyle = color;
-      ctx.fillRect(x - width / 2, y - 50, width, 36);
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      ctx.arc(x - width / 4, y - 8, 8, 0, Math.PI * 2);
-      ctx.arc(x + width / 4, y - 8, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 15px Inter';
-      ctx.fillText(label, x - 8, y - 26);
-    }
-
-    function updateSimulation() {
-      drawTrack();
-
-      const result = calculateOutcome();
-      const dt = 1 / 60;
-
-      if (state.running) {
-        if (!state.collided) {
-          state.x1 += result.u1 * state.scale * dt;
-          state.x2 += result.u2 * state.scale * dt;
-          const cart1Right = state.x1 + 40;
-          const cart2Left = state.x2 - 40;
-          if (cart1Right >= cart2Left) {
-            state.collided = true;
-            state.x1 = (state.x1 + state.x2) / 2 - 40;
-            state.x2 = (state.x1 + state.x2) / 2 + 40;
-          }
-        } else {
-          state.x1 += result.v1 * state.scale * dt;
-          state.x2 += result.v2 * state.scale * dt;
-        }
-
-        if (state.x1 < 80 || state.x2 > 900 || state.x2 < 80 || state.x1 > 900) {
-          state.running = false;
-        }
-      }
-
-      drawCart(state.x1, state.y, 80, '#2563eb', 'A');
-      drawCart(state.x2, state.y, 80, '#16a34a', 'B');
-
-      ctx.fillStyle = '#334155';
-      ctx.font = '15px Inter';
-      const speed1 = state.collided ? result.v1 : result.u1;
-      const speed2 = state.collided ? result.v2 : result.u2;
-      ctx.fillText(`vA: ${speed1.toFixed(2)} m/s`, 90, 75);
-      ctx.fillText(`vB: ${speed2.toFixed(2)} m/s`, 90, 100);
-
-      requestAnimationFrame(updateSimulation);
-    }
-
-    function resetSimulation() {
-      state.running = false;
-      state.collided = false;
-      state.x1 = 140;
-      state.x2 = 700;
-      updateReadings();
-    }
-
-    function updateLanguage(lang) {
+    function setLanguage(lang) {
+      currentLang = lang;
       localStorage.setItem('preferred_language', lang);
+      document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
       document.querySelectorAll('[data-i18n]').forEach((el) => {
         const key = el.getAttribute('data-i18n');
-        const text = translations[lang] && translations[lang][key];
-        if (text) el.innerText = text;
+        const dict = translations[lang];
+        let text = dict[key];
+        if (key === 'legend.v') text = dict.legend?.v;
+        if (text) el.textContent = text;
       });
-      document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
       document.querySelectorAll('.lang-btn').forEach((btn) => {
         const active = btn.dataset.lang === lang;
         btn.classList.toggle('bg-blue-600', active);
@@ -324,43 +149,302 @@
       });
     }
 
+    const controls = {
+      m1: document.getElementById('m1'), m2: document.getElementById('m2'),
+      u1: document.getElementById('u1'), u2: document.getElementById('u2')
+    };
+    const outputs = {
+      m1Value: document.getElementById('m1Value'), m2Value: document.getElementById('m2Value'),
+      u1Value: document.getElementById('u1Value'), u2Value: document.getElementById('u2Value'),
+      pBefore: document.getElementById('pBefore'), pAfter: document.getElementById('pAfter'),
+      keBefore: document.getElementById('keBefore'), keAfter: document.getElementById('keAfter'),
+      v1After: document.getElementById('v1After'), v2After: document.getElementById('v2After')
+    };
+
+    const state = {
+      collisionType: 'elastic', running: false, collided: false,
+      x1: -3.5, x2: 3.5, scale: 1
+    };
+
+    function getParams() {
+      return {
+        m1: Number(controls.m1.value), m2: Number(controls.m2.value),
+        u1: Number(controls.u1.value), u2: Number(controls.u2.value)
+      };
+    }
+
+    function calculateOutcome() {
+      const { m1, m2, u1, u2 } = getParams();
+      let v1, v2;
+      if (state.collisionType === 'elastic') {
+        v1 = ((m1 - m2) * u1 + 2 * m2 * u2) / (m1 + m2);
+        v2 = ((m2 - m1) * u2 + 2 * m1 * u1) / (m1 + m2);
+      } else {
+        v1 = (m1 * u1 + m2 * u2) / (m1 + m2);
+        v2 = v1;
+      }
+      return {
+        m1, m2, u1, u2, v1, v2,
+        pBefore: m1 * u1 + m2 * u2,
+        pAfter: m1 * v1 + m2 * v2,
+        keBefore: 0.5 * m1 * u1 * u1 + 0.5 * m2 * u2 * u2,
+        keAfter: 0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2
+      };
+    }
+
+    function updateReadings() {
+      const r = calculateOutcome();
+      outputs.m1Value.textContent = r.m1.toFixed(1);
+      outputs.m2Value.textContent = r.m2.toFixed(1);
+      outputs.u1Value.textContent = r.u1.toFixed(1);
+      outputs.u2Value.textContent = r.u2.toFixed(1);
+      outputs.pBefore.textContent = `${r.pBefore.toFixed(2)} kg·m/s`;
+      outputs.pAfter.textContent = `${r.pAfter.toFixed(2)} kg·m/s`;
+      outputs.keBefore.textContent = `${r.keBefore.toFixed(2)} J`;
+      outputs.keAfter.textContent = `${r.keAfter.toFixed(2)} J`;
+      outputs.v1After.textContent = `${r.v1.toFixed(2)} m/s`;
+      outputs.v2After.textContent = `${r.v2.toFixed(2)} m/s`;
+      updateCartScale();
+    }
+
+    const container = document.getElementById('three-container');
+    let scene, camera, renderer, cartA, cartB, track, arrowA, arrowB;
+    let isCameraDrag = false, startCamX, startCamY;
+    let camTheta = 0.35, camPhi = 1.15, camRadius = 14;
+
+    function updateCameraFromSpherical() {
+      camera.position.x = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+      camera.position.y = camRadius * Math.cos(camPhi);
+      camera.position.z = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+      camera.lookAt(0, 0.4, 0);
+    }
+
+    function setupCameraControls() {
+      container.addEventListener('mousedown', (e) => {
+        isCameraDrag = true; startCamX = e.clientX; startCamY = e.clientY;
+      });
+      window.addEventListener('mouseup', () => { isCameraDrag = false; });
+      window.addEventListener('mousemove', (e) => {
+        if (!isCameraDrag) return;
+        camTheta -= (e.clientX - startCamX) * 0.005;
+        camPhi -= (e.clientY - startCamY) * 0.005;
+        camPhi = Math.max(0.25, Math.min(Math.PI / 2 - 0.05, camPhi));
+        startCamX = e.clientX; startCamY = e.clientY;
+        updateCameraFromSpherical();
+      });
+      container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        camRadius = Math.max(6, Math.min(28, camRadius + e.deltaY * 0.02));
+        updateCameraFromSpherical();
+      }, { passive: false });
+
+      let lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+      container.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1) { lastTouchX = e.touches[0].clientX; lastTouchY = e.touches[0].clientY; }
+        else if (e.touches.length === 2) {
+          lastTouchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        }
+      }, { passive: false });
+      container.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1 && lastTouchX !== null) {
+          camTheta -= (e.touches[0].clientX - lastTouchX) * 0.008;
+          camPhi -= (e.touches[0].clientY - lastTouchY) * 0.008;
+          camPhi = Math.max(0.25, Math.min(Math.PI / 2 - 0.05, camPhi));
+          lastTouchX = e.touches[0].clientX; lastTouchY = e.touches[0].clientY;
+          updateCameraFromSpherical();
+        } else if (e.touches.length === 2 && lastTouchDist !== null) {
+          const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          camRadius = Math.max(6, Math.min(28, camRadius + (lastTouchDist - dist) * 0.06));
+          lastTouchDist = dist;
+          updateCameraFromSpherical();
+        }
+      }, { passive: false });
+      container.addEventListener('touchend', () => { lastTouchX = lastTouchY = lastTouchDist = null; });
+    }
+
+    function makeCart(color) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 0.55, 0.7),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.1 })
+      );
+      body.position.y = 0.4;
+      body.castShadow = true;
+      g.add(body);
+      const wheelGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.14, 16);
+      const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+      [[-0.35, -0.32], [0.35, -0.32], [-0.35, 0.32], [0.35, 0.32]].forEach(([x, z]) => {
+        const w = new THREE.Mesh(wheelGeo, wheelMat);
+        w.rotation.z = Math.PI / 2;
+        w.position.set(x, 0.12, z);
+        g.add(w);
+      });
+      return g;
+    }
+
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf1f5f9);
+      camera = new THREE.PerspectiveCamera(45, container.offsetWidth / container.offsetHeight, 0.1, 100);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+      const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+      sun.position.set(5, 12, 8);
+      sun.castShadow = true;
+      scene.add(sun);
+
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(24, 10),
+        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 1 })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      track = new THREE.Mesh(
+        new THREE.BoxGeometry(16, 0.12, 1.4),
+        new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.85 })
+      );
+      track.position.y = 0.06;
+      scene.add(track);
+
+      cartA = makeCart(0x2563eb);
+      cartB = makeCart(0x16a34a);
+      scene.add(cartA, cartB);
+
+      arrowA = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 1, PHYSICS_COLORS.velocity, 0.3, 0.18);
+      arrowB = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 1, PHYSICS_COLORS.velocity, 0.3, 0.18);
+      scene.add(arrowA, arrowB);
+
+      updateCameraFromSpherical();
+      setupCameraControls();
+      animate();
+    }
+
+    function updateCartScale() {
+      const r = calculateOutcome();
+      const sA = 0.85 + r.m1 * 0.15;
+      const sB = 0.85 + r.m2 * 0.15;
+      cartA.scale.set(sA, sA, sA);
+      cartB.scale.set(sB, sB, sB);
+    }
+
+    function setVelArrow(arrow, x, speed) {
+      if (Math.abs(speed) < 0.05) { arrow.visible = false; return; }
+      arrow.visible = true;
+      arrow.position.set(x, 1.0, 0);
+      arrow.setDirection(new THREE.Vector3(speed >= 0 ? 1 : -1, 0, 0));
+      arrow.setLength(Math.min(2.8, 0.4 + Math.abs(speed) * 0.45), 0.3, 0.18);
+    }
+
+    let lastTs = performance.now();
+    function animate(ts) {
+      requestAnimationFrame(animate);
+      const dt = Math.min(0.05, (ts - lastTs) / 1000) || 0.016;
+      lastTs = ts;
+      const r = calculateOutcome();
+
+      if (state.running) {
+        if (!state.collided) {
+          state.x1 += r.u1 * dt;
+          state.x2 += r.u2 * dt;
+          const halfA = 0.6 * cartA.scale.x;
+          const halfB = 0.6 * cartB.scale.x;
+          if (state.x1 + halfA >= state.x2 - halfB) {
+            state.collided = true;
+            const mid = (state.x1 + state.x2) / 2;
+            state.x1 = mid - halfA;
+            state.x2 = mid + halfB;
+          }
+        } else {
+          state.x1 += r.v1 * dt;
+          state.x2 += r.v2 * dt;
+        }
+        if (state.x1 < -7.5 || state.x2 > 7.5 || state.x2 < -7.5 || state.x1 > 7.5) {
+          state.running = false;
+        }
+      }
+
+      cartA.position.set(state.x1, 0, 0);
+      cartB.position.set(state.x2, 0, 0);
+
+      const vA = state.collided ? r.v1 : r.u1;
+      const vB = state.collided ? r.v2 : r.u2;
+      setVelArrow(arrowA, state.x1, vA);
+      setVelArrow(arrowB, state.x2, vB);
+
+      // Spin wheels slightly when moving
+      cartA.children.forEach((c) => { if (c.geometry?.type === 'CylinderGeometry') c.rotation.x -= vA * dt * 2; });
+      cartB.children.forEach((c) => { if (c.geometry?.type === 'CylinderGeometry') c.rotation.x -= vB * dt * 2; });
+
+      renderer.render(scene, camera);
+    }
+
+    function resetSimulation() {
+      state.running = false;
+      state.collided = false;
+      state.x1 = -3.5;
+      state.x2 = 3.5;
+      camTheta = 0.35; camPhi = 1.15; camRadius = 14;
+      updateCameraFromSpherical();
+      updateReadings();
+    }
+
     Object.values(controls).forEach((input) => {
       input.addEventListener('input', () => {
         updateReadings();
-        if (!state.running) resetSimulation();
+        if (!state.running) {
+          state.x1 = -3.5;
+          state.x2 = 3.5;
+          state.collided = false;
+        }
       });
     });
 
-    collisionBtns.forEach((btn) => {
+    document.querySelectorAll('.collision-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         state.collisionType = btn.dataset.type;
-        collisionBtns.forEach((b) => {
+        document.querySelectorAll('.collision-btn').forEach((b) => {
           const active = b === btn;
           b.classList.toggle('bg-blue-600', active);
           b.classList.toggle('text-white', active);
           b.classList.toggle('bg-slate-200', !active);
           b.classList.toggle('text-slate-700', !active);
         });
-        updateReadings();
         resetSimulation();
       });
     });
 
-    startBtn.addEventListener('click', () => {
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (!state.running) {
+        state.x1 = -3.5;
+        state.x2 = 3.5;
+        state.collided = false;
+      }
       state.running = true;
     });
+    document.getElementById('resetBtn').addEventListener('click', resetSimulation);
 
-    resetBtn.addEventListener('click', resetSimulation);
+    window.addEventListener('resize', () => {
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
 
+    initThree();
     updateReadings();
-    resetSimulation();
-    updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
-    updateSimulation();
+    setLanguage(currentLang);
   </script>
 
-    <!-- Practice Questions Widget -->
-    <script src="practice_questions.js"></script>
-    <script src="practice_questions_data.js"></script>
-    <script>initPracticeQuestions('momentum_collision');</script>
+  <script src="practice_questions.js"></script>
+  <script src="practice_questions_data.js"></script>
+  <script>initPracticeQuestions('momentum_collision');</script>
 </body>
 </html>

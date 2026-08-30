@@ -68,6 +68,12 @@
             <input id="touchingCase" type="checkbox" class="accent-blue-600" />
             <span data-i18n="touchingCase">Person touching case</span>
           </label>
+
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <button type="button" id="btn-preset-safe" class="py-2.5 rounded-xl bg-green-100 hover:bg-green-200 text-xs font-semibold text-green-800 transition hover:-translate-y-0.5" data-i18n="preset.safe">Safe demo</button>
+            <button type="button" id="btn-preset-shock" class="py-2.5 rounded-xl bg-red-100 hover:bg-red-200 text-xs font-semibold text-red-800 transition hover:-translate-y-0.5" data-i18n="preset.shock">Shock risk</button>
+          </div>
+          <button type="button" id="btn-reset-board" class="mt-2 w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5" data-i18n="reset">Reset</button>
         </div>
 
         <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
@@ -120,7 +126,10 @@
         lineCurrent: 'Line current',
         tripDevice: 'Trip device',
         touchVoltage: 'Case touch voltage',
-        shockRisk: 'Shock risk'
+        shockRisk: 'Shock risk',
+        reset: 'Reset',
+        'preset.safe': 'Safe demo',
+        'preset.shock': 'Shock risk'
       },
       'zh-hk': {
         back: '返回主題頁',
@@ -137,7 +146,10 @@
         lineCurrent: '線路電流',
         tripDevice: '跳掣裝置',
         touchVoltage: '外殼觸碰電壓',
-        shockRisk: '觸電風險'
+        shockRisk: '觸電風險',
+        reset: '重設',
+        'preset.safe': '安全示範',
+        'preset.shock': '觸電風險'
       }
     };
 
@@ -149,6 +161,18 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     camera.position.set(0, 9, 18);
     camera.lookAt(0, 2.2, 0);
+
+    let camTheta = 0, camPhi = Math.acos(9 / Math.sqrt(9*9+18*18)), camRadius = Math.sqrt(9*9+18*18);
+    const defaultCam = { theta: camTheta, phi: camPhi, radius: camRadius };
+    let userInteracted = false;
+    let liveEmissive = 0.55, neutralEmissive = 0.42, earthEmissive = 0.35;
+
+    function updateCameraFromSpherical() {
+      camera.position.x = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+      camera.position.y = camRadius * Math.cos(camPhi);
+      camera.position.z = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+      camera.lookAt(0, 2.2, 0);
+    }
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.75));
     const key = new THREE.DirectionalLight(0xffffff, 0.95);
@@ -223,6 +247,23 @@
     spark.position.set(8.95, 2.55, -0.2);
     spark.visible = false;
     scene.add(spark);
+
+    // Flowing current particles on live / neutral / earth
+    const flowParticles = { live: [], neutral: [], earth: [] };
+    function makeCableParticles(color, z, bag) {
+      const geo = new THREE.SphereGeometry(0.09, 10, 10);
+      const mat = new THREE.MeshBasicMaterial({ color });
+      for (let i = 0; i < 12; i++) {
+        const m = new THREE.Mesh(geo, mat);
+        m.userData.t = i / 12;
+        m.userData.z = z;
+        scene.add(m);
+        bag.push(m);
+      }
+    }
+    makeCableParticles(0xdc2626, -2.6, flowParticles.live);
+    makeCableParticles(0x2563eb, 0, flowParticles.neutral);
+    makeCableParticles(0x16a34a, 2.6, flowParticles.earth);
 
     let pulse = 0;
 
@@ -319,13 +360,19 @@
       earth.visible = d.earthConnected;
       person.visible = d.touch;
       spark.visible = d.touch && d.touchV > 30;
-      lineMatLive.emissiveIntensity = d.trip === 'None' ? 0.55 : 0.12;
-      lineMatNeutral.emissiveIntensity = d.trip === 'None' ? 0.42 : 0.08;
-      lineMatEarth.emissiveIntensity = d.earthConnected ? (d.leakage ? 0.8 : 0.35) : 0.06;
+      liveEmissive = d.trip === 'None' ? 0.55 : 0.12;
+      neutralEmissive = d.trip === 'None' ? 0.42 : 0.08;
+      earthEmissive = d.earthConnected ? (d.leakage ? 0.8 : 0.35) : 0.06;
       fuseMesh.material.color.set(d.trip.includes('Fuse') ? 0xef4444 : 0x334155);
       mcbMesh.material.color.set(d.trip.includes('MCB') ? 0xef4444 : 0x334155);
       caseMesh.material.emissive.set(d.touchV > 150 ? 0x7c2d12 : d.touchV > 20 ? 0x78350f : 0x000000);
       caseMesh.material.emissiveIntensity = d.touchV > 0 ? 0.5 : 0;
+
+      // Particle visibility
+      const flowing = d.trip === 'None';
+      flowParticles.live.forEach((p) => { p.visible = flowing; });
+      flowParticles.neutral.forEach((p) => { p.visible = flowing; });
+      flowParticles.earth.forEach((p) => { p.visible = d.earthConnected && (d.leakage || flowing); });
     }
 
     function resizeRenderer() {
@@ -343,8 +390,36 @@
     function animate() {
       resizeRenderer();
       pulse += 0.06;
-      board.rotation.y = Math.sin(pulse * 0.25) * 0.08;
+
+      if (!userInteracted) {
+        camTheta += 0.0018;
+        updateCameraFromSpherical();
+      } else {
+        board.rotation.y += (0 - board.rotation.y) * 0.08;
+      }
+      if (!userInteracted) {
+        board.rotation.y = Math.sin(pulse * 0.25) * 0.08;
+      }
+
+      // Lerp cable glow
+      lineMatLive.emissiveIntensity += (liveEmissive - lineMatLive.emissiveIntensity) * 0.08;
+      lineMatNeutral.emissiveIntensity += (neutralEmissive - lineMatNeutral.emissiveIntensity) * 0.08;
+      lineMatEarth.emissiveIntensity += (earthEmissive - lineMatEarth.emissiveIntensity) * 0.08;
+
       spark.scale.setScalar(0.8 + Math.abs(Math.sin(pulse * 6)) * 1.2);
+
+      const speed = 0.01 + Number(controls.load.value) * 0.00025;
+      const updateBag = (arr) => {
+        arr.forEach((p) => {
+          if (!p.visible) return;
+          p.userData.t = (p.userData.t + speed) % 1;
+          p.position.set(-4.2 + p.userData.t * 8.4, 2.35, p.userData.z);
+        });
+      };
+      updateBag(flowParticles.live);
+      updateBag(flowParticles.neutral);
+      updateBag(flowParticles.earth);
+
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
     }
@@ -366,12 +441,99 @@
       updateOutputs();
     }
 
-    controls.scenario.addEventListener('change', () => { applyScenario(); updateOutputs(); });
-    Object.values(controls).forEach((ctrl) => ctrl.addEventListener('input', updateOutputs));
+    controls.scenario.addEventListener('change', () => { userInteracted = true; applyScenario(); updateOutputs(); });
+    Object.values(controls).forEach((ctrl) => ctrl.addEventListener('input', () => { userInteracted = true; updateOutputs(); }));
+
+    document.getElementById('btn-preset-safe').onclick = () => {
+      userInteracted = true;
+      controls.scenario.value = 'normal';
+      applyScenario();
+      controls.touchingCase.checked = false;
+      updateOutputs();
+    };
+    document.getElementById('btn-preset-shock').onclick = () => {
+      userInteracted = true;
+      controls.scenario.value = 'leak-no-earth';
+      applyScenario();
+      controls.touchingCase.checked = true;
+      updateOutputs();
+    };
+    document.getElementById('btn-reset-board').onclick = () => {
+      userInteracted = true;
+      controls.scenario.value = 'normal';
+      controls.fuse.value = 13;
+      controls.mcb.value = 20;
+      controls.touchingCase.checked = false;
+      applyScenario();
+      camTheta = defaultCam.theta;
+      camPhi = defaultCam.phi;
+      camRadius = defaultCam.radius;
+      updateCameraFromSpherical();
+      updateOutputs();
+    };
+
+    // Camera drag + touch
+    let isCamDrag = false, startX, startY, lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+    canvas.addEventListener('mousedown', (e) => {
+      isCamDrag = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      userInteracted = true;
+    });
+    window.addEventListener('mouseup', () => { isCamDrag = false; });
+    window.addEventListener('mousemove', (e) => {
+      if (!isCamDrag) return;
+      camTheta -= (e.clientX - startX) * 0.005;
+      camPhi -= (e.clientY - startY) * 0.005;
+      camPhi = Math.max(0.2, Math.min(Math.PI / 2.1, camPhi));
+      startX = e.clientX;
+      startY = e.clientY;
+      updateCameraFromSpherical();
+    });
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      userInteracted = true;
+      camRadius = Math.max(10, Math.min(32, camRadius + e.deltaY * 0.04));
+      updateCameraFromSpherical();
+    }, { passive: false });
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      userInteracted = true;
+      if (e.touches.length === 1) {
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+      } else if (e.touches.length === 2) {
+        lastTouchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && lastTouchX !== null) {
+        camTheta -= (e.touches[0].clientX - lastTouchX) * 0.008;
+        camPhi -= (e.touches[0].clientY - lastTouchY) * 0.008;
+        camPhi = Math.max(0.2, Math.min(Math.PI / 2.1, camPhi));
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+        updateCameraFromSpherical();
+      } else if (e.touches.length === 2 && lastTouchDist !== null) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        camRadius = Math.max(10, Math.min(32, camRadius + (lastTouchDist - dist) * 0.1));
+        lastTouchDist = dist;
+        updateCameraFromSpherical();
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchend', () => { lastTouchX = lastTouchY = lastTouchDist = null; });
 
     applyScenario();
     updateOutputs();
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
+    updateCameraFromSpherical();
     requestAnimationFrame(animate);
   </script>
 

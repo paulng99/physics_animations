@@ -3,651 +3,1020 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magnetic Field Visualizer</title>
+    <title>3D Magnetic Field Visualizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <style>
-        :root { color-scheme: light; }
-        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
-        .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); }
-        canvas { background-color: white; border-radius: 0.5rem; border: 2px solid #e2e8f0; touch-action: none; }
+        body { font-family: 'Inter', sans-serif; }
+        mjx-container { display: inline-block !important; }
+        #three-container { touch-action: none; }
+        #three-container canvas { display: block; width: 100%; height: 100%; }
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 8px; background: #cbd5e1; border-radius: 4px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #2563eb; border-radius: 50%; cursor: pointer; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+        input[type="range"].accent-amber::-webkit-slider-thumb { background: #d97706; }
     </style>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date()); gtag('config', 'G-RJQ61GJDVS');
-    </script>
+    <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-RJQ61GJDVS');</script>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
-    <header class="max-w-6xl mx-auto px-6 pt-6 pb-4">
-        <nav class="flex items-center justify-between">
-            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
-            </a>
-            <div class="flex gap-2">
-                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
-                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="cn">简</button>
-                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
-            </div>
-        </nav>
-    </header>
+<body class="antialiased min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
 
-    <div class="w-full max-w-5xl mx-auto px-6 pb-16">
-        <div class="glass rounded-3xl p-6 md:p-8 border border-white/60">
-            <div class="text-center mb-6">
-                <h1 class="text-3xl md:text-4xl font-bold text-slate-800" data-i18n="title">Magnetic Field Visualizer</h1>
-                <p class="text-md md:text-lg text-slate-600 mt-2" data-i18n="subtitle">Explore magnetic poles, field lines, and compass behaviour</p>
+    <nav class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+                </a>
+                <div class="h-6 w-px bg-slate-300 mx-1 hidden sm:block"></div>
+                <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold hidden sm:flex">3D</div>
+                <span class="text-xl font-bold hidden sm:inline">PhysLab<span class="text-blue-600">3D</span></span>
             </div>
+            <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white" data-lang="zh">繁</button>
+                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white" data-lang="cn">简</button>
+                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white bg-white shadow-sm text-blue-600" data-lang="en">EN</button>
+            </div>
+        </div>
+    </nav>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2">
-                    <div class="w-full aspect-[4/3] bg-white rounded-lg shadow-lg border-2 border-slate-200 relative">
-                        <canvas id="fieldCanvas"></canvas>
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-6 w-full">
+        <header class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2" data-i18n="page.title">3D Magnetic Field Visualizer</h1>
+            <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="page.description">Explore 3D field lines around bar and horseshoe magnets. Drag magnets to move them; compass needles (green) align with the local <span class="text-amber-600 font-semibold">B</span> field.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                        <h2 class="font-bold text-slate-800" data-i18n="controls.title">Controls</h2>
+                        <button id="resetBtn" class="text-xs font-bold text-blue-600 hover:text-blue-700" data-i18n="controls.reset">Reset</button>
                     </div>
-                    <p class="text-xs text-slate-500 mt-2 text-center" data-i18n="canvas.hint">Drag magnets to reposition them. Compasses follow the net field.</p>
+
+                    <div>
+                        <label class="text-sm font-medium text-slate-700" data-i18n="controls.mode">Mode</label>
+                        <select id="modeSelect" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="bar" data-i18n="mode.bar">Bar Magnet</option>
+                            <option value="two" data-i18n="mode.two">Two Bar Magnets</option>
+                            <option value="horseshoe" data-i18n="mode.horseshoe">Horseshoe Magnet</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-sm font-medium text-slate-700" data-i18n="controls.density">Field Line Density</label>
+                            <span class="text-sm font-bold font-mono text-amber-600"><span id="densityVal">12</span> <span data-i18n="controls.lines">lines</span></span>
+                        </div>
+                        <input type="range" id="densitySlider" min="8" max="20" step="1" value="12" class="accent-amber">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-sm font-medium text-slate-700" data-i18n="controls.strength">Pole Strength</label>
+                            <span id="strengthVal" class="text-sm font-bold font-mono text-amber-600">1.0×</span>
+                        </div>
+                        <input type="range" id="strengthSlider" min="0.4" max="2.0" step="0.1" value="1.0" class="accent-amber">
+                    </div>
+
+                    <label class="flex items-center gap-3 min-h-[44px] cursor-pointer">
+                        <input type="checkbox" id="showCompass" checked class="accent-green-600 w-4 h-4">
+                        <span class="text-sm font-medium text-slate-700" data-i18n="controls.compass">Show Compasses</span>
+                    </label>
+                    <label class="flex items-center gap-3 min-h-[44px] cursor-pointer">
+                        <input type="checkbox" id="showArrows" checked class="accent-amber-600 w-4 h-4">
+                        <span class="text-sm font-medium text-slate-700" data-i18n="controls.arrows">Show Field Arrows</span>
+                    </label>
+                    <label class="flex items-center gap-3 min-h-[44px] cursor-pointer">
+                        <input type="checkbox" id="showFlow" checked class="accent-amber-600 w-4 h-4">
+                        <span class="text-sm font-medium text-slate-700" data-i18n="controls.flow">Show Flow Particles</span>
+                    </label>
+
+                    <button id="flipBtn" class="hidden w-full px-5 py-2.5 rounded-xl bg-amber-100 text-amber-800 font-semibold text-sm hover:bg-amber-200 hover:-translate-y-0.5 transition-all" data-i18n="controls.flip">Flip 2nd Magnet</button>
+                    <button id="resetFullBtn" class="w-full px-5 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all font-semibold text-sm" data-i18n="controls.resetPos">Reset Positions</button>
                 </div>
 
-                <div class="space-y-4">
-                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-                        <h2 class="text-lg font-semibold text-slate-800 mb-3" data-i18n="controls.title">Controls</h2>
-
-                        <div class="space-y-3">
-                            <div>
-                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.mode">Mode</label>
-                                <select id="modeSelect" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="bar" data-i18n="mode.bar">Bar Magnet</option>
-                                    <option value="two" data-i18n="mode.two">Two Bar Magnets</option>
-                                    <option value="horseshoe" data-i18n="mode.horseshoe">Horseshoe Magnet</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.fieldlines">Field Line Density</label>
-                                <input type="range" id="densitySlider" min="6" max="24" value="12" class="w-full accent-blue-600 mt-1">
-                                <div class="text-xs text-slate-500 text-right"><span id="densityVal">12</span> <span data-i18n="controls.lines">lines</span></div>
-                            </div>
-
-                            <div class="flex items-center gap-2">
-                                <input type="checkbox" id="showCompass" checked class="accent-blue-600 w-4 h-4">
-                                <label for="showCompass" class="text-sm font-medium text-slate-600" data-i18n="controls.compass">Show Compasses</label>
-                            </div>
-
-                            <div class="flex items-center gap-2">
-                                <input type="checkbox" id="showArrows" checked class="accent-blue-600 w-4 h-4">
-                                <label for="showArrows" class="text-sm font-medium text-slate-600" data-i18n="controls.arrows">Show Field Arrows</label>
-                            </div>
-
-                            <button id="flipMagnet2" class="hidden w-full px-4 py-2 rounded-xl bg-amber-100 text-amber-700 font-semibold text-sm hover:bg-amber-200 transition-all" data-i18n="controls.flip">Flip 2nd Magnet</button>
-
-                            <button onclick="resetPositions()" class="w-full px-4 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all text-sm font-semibold" data-i18n="controls.reset">Reset Positions</button>
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                    <h2 class="font-bold text-slate-800 text-sm uppercase tracking-wide mb-4" data-i18n="data.title">Live Data</h2>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border border-slate-100">
+                            <span class="text-slate-500" data-i18n="data.config">Configuration</span>
+                            <span id="dataMode" class="font-bold text-slate-800">Bar magnet</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border border-slate-100">
+                            <span class="text-slate-500">|B| <span data-i18n="data.atProbe">at probe</span></span>
+                            <span id="dataB" class="font-bold font-mono text-amber-600">—</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border border-slate-100">
+                            <span class="text-slate-500" data-i18n="data.linesDrawn">Field lines</span>
+                            <span id="dataLines" class="font-bold font-mono text-slate-800">0</span>
                         </div>
                     </div>
+                </div>
 
-                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="legend.title">Legend</h2>
-                        <ul class="space-y-2 text-sm">
-                            <li class="flex items-center gap-2">
-                                <span class="w-3 h-3 rounded-full bg-red-600"></span>
-                                <span class="text-slate-700" data-i18n="legend.north">North Pole (N)</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="w-3 h-3 rounded-full bg-blue-600"></span>
-                                <span class="text-slate-700" data-i18n="legend.south">South Pole (S)</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="w-3 h-3 rounded-full bg-amber-500"></span>
-                                <span class="text-slate-700" data-i18n="legend.fieldline">Field Lines (N → S)</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="w-3 h-3 rounded-full bg-green-600"></span>
-                                <span class="text-slate-700" data-i18n="legend.compass">Compass Needles</span>
-                            </li>
-                        </ul>
-                    </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="font-semibold text-slate-800 mb-3" data-i18n="legend.title">Legend</h2>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-600"></span><span data-i18n="legend.north">North Pole (N)</span></li>
+                        <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-600"></span><span data-i18n="legend.south">South Pole (S)</span></li>
+                        <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-600"></span><span class="text-amber-700" data-i18n="legend.field">Magnetic Field B (N → S)</span></li>
+                        <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-600"></span><span class="text-green-700" data-i18n="legend.compass">Compass Needles</span></li>
+                    </ul>
+                </div>
+            </div>
 
-                    <div class="bg-blue-50 rounded-2xl border border-blue-200 p-4 shadow-sm">
-                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="info.title">Key Concepts</h2>
-                        <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
-                            <li data-i18n="info.1">Like poles repel; unlike poles attract.</li>
-                            <li data-i18n="info.2">Field lines go from N to S outside the magnet.</li>
-                            <li data-i18n="info.3">A compass needle aligns with the local field direction.</li>
-                            <li data-i18n="info.4">Field strength is stronger where lines are closer together.</li>
-                        </ul>
+            <div class="lg:col-span-8 space-y-4">
+                <div class="relative rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm bg-slate-100">
+                    <div id="three-container" class="w-full h-[380px] sm:h-[460px] lg:h-[520px] cursor-grab"></div>
+                    <div class="absolute top-3 left-3 z-10 flex flex-wrap gap-2 pointer-events-none max-w-[70%]">
+                        <span class="bg-white/80 backdrop-blur-md border border-white/20 rounded-full px-3 py-1 text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-red-600"></span><span data-i18n="legend.north">N</span>
+                        </span>
+                        <span class="bg-white/80 backdrop-blur-md border border-white/20 rounded-full px-3 py-1 text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-blue-600"></span><span data-i18n="legend.south">S</span>
+                        </span>
+                        <span class="bg-white/80 backdrop-blur-md border border-white/20 rounded-full px-3 py-1 text-xs font-semibold text-amber-700 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-amber-600"></span>B
+                        </span>
+                        <span class="bg-white/80 backdrop-blur-md border border-white/20 rounded-full px-3 py-1 text-xs font-semibold text-green-700 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-green-600"></span><span data-i18n="legend.compassShort">Compass</span>
+                        </span>
                     </div>
+                    <div class="absolute bottom-4 right-4 z-10 bg-gray-900/80 backdrop-blur text-white px-4 py-2.5 rounded-full text-xs pointer-events-none" data-i18n="canvas.hint">Drag magnet • Drag empty space to rotate • Scroll to zoom</div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-xl font-bold text-slate-800 mb-3" data-i18n="info.title">Key Concepts</h2>
+                <ul class="text-sm text-slate-700 space-y-2 list-disc list-inside leading-relaxed">
+                    <li data-i18n="info.1">Like poles repel; unlike poles attract.</li>
+                    <li data-i18n="info.2">Field lines go from N to S outside the magnet and form closed loops.</li>
+                    <li data-i18n="info.3">A compass needle aligns with the local field direction.</li>
+                    <li data-i18n="info.4">Field strength is stronger where lines are closer together.</li>
+                </ul>
+            </section>
+            <section class="bg-slate-900 p-6 rounded-2xl shadow-xl text-white">
+                <h2 class="text-sm font-bold text-slate-400 uppercase mb-2" data-i18n="formula.title">Dipole Model</h2>
+                <p class="text-lg font-serif italic mb-2">$\vec{B} \propto \dfrac{\vec{m}}{r^3}$ (far field)</p>
+                <p class="text-xs text-slate-400 leading-relaxed" data-i18n="formula.desc">Each magnet is modelled as N and S monopoles. The net field is their superposition. Lines never cross; density indicates |B|.</p>
+            </section>
+        </div>
+    </main>
 
 <script>
-const canvas = document.getElementById('fieldCanvas');
-const ctx = canvas.getContext('2d');
+const PHYSICS_COLORS = {
+    force: 0xdc2626, velocity: 0x16a34a, accel: 0x9333ea,
+    bField: 0xd97706, displacement: 0x475569,
+    north: 0xdc2626, south: 0x2563eb
+};
 
-function resizeCanvas() {
-    const parent = canvas.parentElement;
-    canvas.width = parent.clientWidth;
-    canvas.height = parent.clientHeight;
-}
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+const state = {
+    mode: 'bar',
+    density: 12,
+    strength: 1.0,
+    showCompass: true,
+    showArrows: true,
+    showFlow: true,
+    mag2Flipped: false
+};
 
-const NORTH_COLOR = '#DC2626';
-const SOUTH_COLOR = '#2563EB';
-const FIELD_COLOR = '#D97706';
-const COMPASS_COLOR = '#16A34A';
+const defaults = { mode: 'bar', density: 12, strength: 1.0, showCompass: true, showArrows: true, showFlow: true, mag2Flipped: false };
 
-let mode = 'bar';
-let fieldLineDensity = 12;
-let showCompass = true;
-let showArrows = true;
+const HALF_LEN = 2.0;
+const MAG_W = 0.72;
 
-class Magnet {
-    constructor(x, y, angle, flipped) {
-        this.x = x;
-        this.y = y;
-        this.angle = angle || 0;
-        this.flipped = flipped || false;
-        this.halfLen = 50;
-        this.halfW = 18;
-    }
-
-    get northPos() {
-        const dir = this.flipped ? -1 : 1;
-        return {
-            x: this.x + dir * this.halfLen * Math.cos(this.angle),
-            y: this.y + dir * this.halfLen * Math.sin(this.angle)
-        };
-    }
-    get southPos() {
-        const dir = this.flipped ? -1 : 1;
-        return {
-            x: this.x - dir * this.halfLen * Math.cos(this.angle),
-            y: this.y - dir * this.halfLen * Math.sin(this.angle)
-        };
-    }
-
-    draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
-
-        const nDir = this.flipped ? -1 : 1;
-        // North half
-        ctx.fillStyle = NORTH_COLOR;
-        ctx.beginPath();
-        ctx.roundRect(nDir > 0 ? 0 : -this.halfLen, -this.halfW, this.halfLen, this.halfW * 2, [0, 6, 6, 0]);
-        ctx.fill();
-        // South half
-        ctx.fillStyle = SOUTH_COLOR;
-        ctx.beginPath();
-        ctx.roundRect(nDir > 0 ? -this.halfLen : 0, -this.halfW, this.halfLen, this.halfW * 2, [6, 0, 0, 6]);
-        ctx.fill();
-
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 16px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('N', nDir * this.halfLen / 2, 0);
-        ctx.fillText('S', -nDir * this.halfLen / 2, 0);
-
-        ctx.restore();
-    }
-
-    containsPoint(px, py) {
-        const dx = px - this.x;
-        const dy = py - this.y;
-        const cos = Math.cos(-this.angle);
-        const sin = Math.sin(-this.angle);
-        const lx = dx * cos - dy * sin;
-        const ly = dx * sin + dy * cos;
-        return Math.abs(lx) <= this.halfLen + 5 && Math.abs(ly) <= this.halfW + 5;
-    }
-}
-
-class HorseshoeMagnet {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.w = 120;
-        this.h = 100;
-        this.gap = 40;
-        this.armW = 24;
-    }
-
-    get northPos() { return { x: this.x - this.w / 2 + this.armW / 2, y: this.y + this.h / 2 }; }
-    get southPos() { return { x: this.x + this.w / 2 - this.armW / 2, y: this.y + this.h / 2 }; }
-
-    draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-
-        // Top bar
-        ctx.fillStyle = '#6B7280';
-        ctx.beginPath();
-        ctx.roundRect(-this.w / 2, -this.h / 2, this.w, this.armW, 6);
-        ctx.fill();
-
-        // Left arm (N)
-        ctx.fillStyle = NORTH_COLOR;
-        ctx.fillRect(-this.w / 2, -this.h / 2 + this.armW, this.armW, this.h - this.armW);
-
-        // Right arm (S)
-        ctx.fillStyle = SOUTH_COLOR;
-        ctx.fillRect(this.w / 2 - this.armW, -this.h / 2 + this.armW, this.armW, this.h - this.armW);
-
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 14px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('N', -this.w / 2 + this.armW / 2, this.h / 4);
-        ctx.fillText('S', this.w / 2 - this.armW / 2, this.h / 4);
-
-        ctx.restore();
-    }
-
-    containsPoint(px, py) {
-        const dx = px - this.x;
-        const dy = py - this.y;
-        return Math.abs(dx) <= this.w / 2 + 5 && Math.abs(dy) <= this.h / 2 + 5;
-    }
-}
-
+let scene, camera, renderer;
+let magnetsGroup, fieldLinesGroup, compassGroup, arrowsGroup, particlesGroup, probeMesh;
 let magnets = [];
 let horseshoe = null;
+let fieldPolylines = [];
+let flowParticles = [];
+let compassNeedles = [];
+let fieldArrows = [];
 
-function initMagnets() {
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    magnets = [];
-    horseshoe = null;
-    if (mode === 'bar') {
-        magnets.push(new Magnet(cx, cy, 0, false));
-    } else if (mode === 'two') {
-        magnets.push(new Magnet(cx - 100, cy, 0, false));
-        magnets.push(new Magnet(cx + 100, cy, Math.PI, false));
-    } else if (mode === 'horseshoe') {
-        horseshoe = new HorseshoeMagnet(cx, cy);
+const container = document.getElementById('three-container');
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const hitPoint = new THREE.Vector3();
+const _v = new THREE.Vector3();
+const _v2 = new THREE.Vector3();
+const _q = new THREE.Quaternion();
+const X_AXIS = new THREE.Vector3(1, 0, 0);
+
+let isCameraDrag = false, isDraggingObject = false;
+let startCamX = 0, startCamY = 0;
+let theta = 0.55, phi = 1.05, radius = 16;
+const CAM_DEFAULT = { theta: 0.55, phi: 1.05, radius: 16 };
+let dragTarget = null, dragOffset = new THREE.Vector3();
+let lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+let flowT = 0;
+
+function t(key) {
+    return translations[currentLang]?.[key] ?? translations.en[key] ?? key;
+}
+
+function makeSprite(text, color, size) {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 128;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.font = 'bold 64px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 64, 70);
+    const tex = new THREE.CanvasTexture(c);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    const spr = new THREE.Sprite(mat);
+    spr.scale.set(size || 0.7, size || 0.7, 1);
+    spr.renderOrder = 2;
+    return spr;
+}
+
+function clearGroup(group) {
+    const disposed = new Set();
+    while (group.children.length) {
+        const child = group.children[0];
+        group.remove(child);
+        if (child.geometry) child.geometry.dispose();
+        const mats = child.material ? (Array.isArray(child.material) ? child.material : [child.material]) : [];
+        mats.forEach(m => {
+            if (!m || disposed.has(m)) return;
+            disposed.add(m);
+            if (m.map) m.map.dispose();
+            m.dispose();
+        });
     }
 }
 
-function dipoleField(px, py, nx, ny, sx, sy, strength) {
-    const dnx = px - nx, dny = py - ny;
-    const dsx = px - sx, dsy = py - sy;
-    const rn2 = dnx * dnx + dny * dny + 100;
-    const rs2 = dsx * dsx + dsy * dsy + 100;
-    const rn = Math.sqrt(rn2);
-    const rs = Math.sqrt(rs2);
-    const s = strength || 5000;
+function createBarMagnetMesh() {
+    const g = new THREE.Group();
+    const nMat = new THREE.MeshStandardMaterial({ color: PHYSICS_COLORS.north, roughness: 0.35, metalness: 0.25 });
+    const sMat = new THREE.MeshStandardMaterial({ color: PHYSICS_COLORS.south, roughness: 0.35, metalness: 0.25 });
+    const nBox = new THREE.Mesh(new THREE.BoxGeometry(HALF_LEN, MAG_W, MAG_W), nMat);
+    const sBox = new THREE.Mesh(new THREE.BoxGeometry(HALF_LEN, MAG_W, MAG_W), sMat);
+    nBox.position.x = HALF_LEN / 2;
+    sBox.position.x = -HALF_LEN / 2;
+    nBox.castShadow = true; sBox.castShadow = true;
+    g.add(nBox, sBox);
+    const nSpr = makeSprite('N', '#ffffff', 0.65);
+    nSpr.position.set(HALF_LEN / 2, MAG_W * 0.85, 0);
+    const sSpr = makeSprite('S', '#ffffff', 0.65);
+    sSpr.position.set(-HALF_LEN / 2, MAG_W * 0.85, 0);
+    g.add(nSpr, sSpr);
+    const hit = new THREE.Mesh(
+        new THREE.BoxGeometry(HALF_LEN * 2 + 0.3, MAG_W + 0.4, MAG_W + 0.4),
+        new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hit.userData.hitbox = true;
+    g.add(hit);
+    return g;
+}
+
+function createHorseshoeMesh() {
+    const g = new THREE.Group();
+    const nMat = new THREE.MeshStandardMaterial({ color: PHYSICS_COLORS.north, roughness: 0.35, metalness: 0.3 });
+    const sMat = new THREE.MeshStandardMaterial({ color: PHYSICS_COLORS.south, roughness: 0.35, metalness: 0.3 });
+    const yokeMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.3, metalness: 0.55 });
+    const yoke = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.7, 0.7), yokeMat);
+    yoke.position.set(0, 0, -1.45);
+    const nArm = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 2.9), nMat);
+    nArm.position.set(-1.25, 0, 0.15);
+    const sArm = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 2.9), sMat);
+    sArm.position.set(1.25, 0, 0.15);
+    [yoke, nArm, sArm].forEach(m => { m.castShadow = true; g.add(m); });
+    const nSpr = makeSprite('N', '#ffffff', 0.6);
+    nSpr.position.set(-1.25, 0.7, 1.35);
+    const sSpr = makeSprite('S', '#ffffff', 0.6);
+    sSpr.position.set(1.25, 0.7, 1.35);
+    g.add(nSpr, sSpr);
+    const hit = new THREE.Mesh(
+        new THREE.BoxGeometry(3.6, 1.2, 3.4),
+        new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hit.userData.hitbox = true;
+    g.add(hit);
+    g.userData.nLocal = new THREE.Vector3(-1.25, 0, 1.45);
+    g.userData.sLocal = new THREE.Vector3(1.25, 0, 1.45);
+    return g;
+}
+
+function poleWorld(magnet, which) {
+    const dir = magnet.flipped ? -1 : 1;
+    if (which === 'n') return new THREE.Vector3(magnet.x + dir * HALF_LEN, magnet.y, magnet.z);
+    return new THREE.Vector3(magnet.x - dir * HALF_LEN, magnet.y, magnet.z);
+}
+
+function horseshoePoles() {
+    const n = horseshoe.userData.nLocal.clone().add(horseshoe.position);
+    const s = horseshoe.userData.sLocal.clone().add(horseshoe.position);
+    return { n, s };
+}
+
+function dipoleField(px, py, pz, nx, ny, nz, sx, sy, sz, s) {
+    const dnx = px - nx, dny = py - ny, dnz = pz - nz;
+    const dsx = px - sx, dsy = py - sy, dsz = pz - sz;
+    const rn2 = dnx * dnx + dny * dny + dnz * dnz + 0.12;
+    const rs2 = dsx * dsx + dsy * dsy + dsz * dsz + 0.12;
+    const rn = Math.sqrt(rn2), rs = Math.sqrt(rs2);
+    const k = 6.5 * s;
     return {
-        bx: s * dnx / (rn2 * rn) - s * dsx / (rs2 * rs),
-        by: s * dny / (rn2 * rn) - s * dsy / (rs2 * rs)
+        bx: k * dnx / (rn2 * rn) - k * dsx / (rs2 * rs),
+        by: k * dny / (rn2 * rn) - k * dsy / (rs2 * rs),
+        bz: k * dnz / (rn2 * rn) - k * dsz / (rs2 * rs)
     };
 }
 
-function totalField(px, py) {
-    let bx = 0, by = 0;
+function totalField(px, py, pz) {
+    let bx = 0, by = 0, bz = 0;
+    const s = state.strength;
     if (horseshoe) {
-        const n = horseshoe.northPos;
-        const s = horseshoe.southPos;
-        const f = dipoleField(px, py, n.x, n.y, s.x, s.y, 5000);
-        bx += f.bx; by += f.by;
+        const p = horseshoePoles();
+        const f = dipoleField(px, py, pz, p.n.x, p.n.y, p.n.z, p.s.x, p.s.y, p.s.z, s);
+        bx += f.bx; by += f.by; bz += f.bz;
     }
     for (const m of magnets) {
-        const n = m.northPos;
-        const s = m.southPos;
-        const f = dipoleField(px, py, n.x, n.y, s.x, s.y, 5000);
-        bx += f.bx; by += f.by;
+        const n = poleWorld(m, 'n');
+        const so = poleWorld(m, 's');
+        const f = dipoleField(px, py, pz, n.x, n.y, n.z, so.x, so.y, so.z, s);
+        bx += f.bx; by += f.by; bz += f.bz;
     }
-    return { bx, by };
+    return { bx, by, bz };
 }
 
-function traceFieldLine(startX, startY, dir, maxSteps) {
-    const pts = [{ x: startX, y: startY }];
-    let x = startX, y = startY;
-    const step = 3;
-    for (let i = 0; i < (maxSteps || 300); i++) {
-        const { bx, by } = totalField(x, y);
-        const mag = Math.sqrt(bx * bx + by * by);
-        if (mag < 1e-8) break;
-        x += dir * step * bx / mag;
-        y += dir * step * by / mag;
-        if (x < -50 || x > canvas.width + 50 || y < -50 || y > canvas.height + 50) break;
-        pts.push({ x, y });
+function nearAnyPole(x, y, z, dist) {
+    const d2 = dist * dist;
+    for (const m of magnets) {
+        const n = poleWorld(m, 'n'), s = poleWorld(m, 's');
+        if (_v.set(x - n.x, y - n.y, z - n.z).lengthSq() < d2) return true;
+        if (_v.set(x - s.x, y - s.y, z - s.z).lengthSq() < d2) return true;
+        const dx = x - m.x, dy = y - m.y, dz = z - m.z;
+        const lx = m.flipped ? -dx : dx;
+        if (Math.abs(lx) <= HALF_LEN + 0.15 && Math.abs(dy) <= MAG_W && Math.abs(dz) <= MAG_W + 0.15) return true;
+    }
+    if (horseshoe) {
+        const p = horseshoePoles();
+        if (_v.set(x - p.n.x, y - p.n.y, z - p.n.z).lengthSq() < d2) return true;
+        if (_v.set(x - p.s.x, y - p.s.y, z - p.s.z).lengthSq() < d2) return true;
+        const hx = x - horseshoe.position.x, hy = y - horseshoe.position.y, hz = z - horseshoe.position.z;
+        if (Math.abs(hx) <= 1.85 && Math.abs(hy) <= 0.55 && Math.abs(hz) <= 1.75) return true;
+    }
+    return false;
+}
 
-        let nearPole = false;
-        for (const m of magnets) {
-            const sn = m.northPos, ss = m.southPos;
-            if (Math.hypot(x - sn.x, y - sn.y) < 8 || Math.hypot(x - ss.x, y - ss.y) < 8) nearPole = true;
-        }
-        if (horseshoe) {
-            const sn = horseshoe.northPos, ss = horseshoe.southPos;
-            if (Math.hypot(x - sn.x, y - sn.y) < 12 || Math.hypot(x - ss.x, y - ss.y) < 12) nearPole = true;
-        }
-        if (nearPole && i > 5) break;
+function getNorthPoles() {
+    const poles = [];
+    for (const m of magnets) {
+        const n = poleWorld(m, 'n');
+        const s = poleWorld(m, 's');
+        poles.push({ n, axis: _v2.set(n.x - s.x, n.y - s.y, n.z - s.z).clone().normalize() });
+    }
+    if (horseshoe) {
+        const p = horseshoePoles();
+        poles.push({ n: p.n, axis: p.n.clone().sub(p.s).normalize() });
+    }
+    return poles;
+}
+
+function hemisphereDirs(count, axis) {
+    const dirs = [];
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < count * 4 && dirs.length < count; i++) {
+        const y = 1 - (i / (count * 4 - 1)) * 2;
+        const r = Math.sqrt(Math.max(0, 1 - y * y));
+        const th = golden * i;
+        const v = new THREE.Vector3(Math.cos(th) * r, y, Math.sin(th) * r);
+        if (v.dot(axis) > 0.08) dirs.push(v);
+    }
+    while (dirs.length < count) dirs.push(axis.clone());
+    return dirs;
+}
+
+function traceFieldLine(sx, sy, sz, dirSign) {
+    const pts = [new THREE.Vector3(sx, sy, sz)];
+    let x = sx, y = sy, z = sz;
+    const step = 0.14;
+    for (let i = 0; i < 220; i++) {
+        const { bx, by, bz } = totalField(x, y, z);
+        const mag = Math.sqrt(bx * bx + by * by + bz * bz);
+        if (mag < 1e-6) break;
+        x += dirSign * step * bx / mag;
+        y += dirSign * step * by / mag;
+        z += dirSign * step * bz / mag;
+        if (x * x + y * y + z * z > 220) break;
+        pts.push(new THREE.Vector3(x, y, z));
+        if (i > 8 && nearAnyPole(x, y, z, 0.45)) break;
     }
     return pts;
 }
 
-function drawFieldLine(pts) {
-    if (pts.length < 2) return;
-    ctx.strokeStyle = FIELD_COLOR;
-    ctx.lineWidth = 1.5;
-    ctx.globalAlpha = 0.7;
-    ctx.beginPath();
-    ctx.moveTo(pts[0].x, pts[0].y);
-    for (let i = 1; i < pts.length; i++) {
-        ctx.lineTo(pts[i].x, pts[i].y);
+function rebuildFieldLines() {
+    clearGroup(fieldLinesGroup);
+    fieldPolylines = [];
+    const poles = getNorthPoles();
+    const mat = new THREE.LineBasicMaterial({ color: PHYSICS_COLORS.bField, transparent: true, opacity: 0.78 });
+    for (const pole of poles) {
+        const dirs = hemisphereDirs(state.density, pole.axis);
+        for (const d of dirs) {
+            const sx = pole.n.x + d.x * 0.42;
+            const sy = pole.n.y + d.y * 0.42;
+            const sz = pole.n.z + d.z * 0.42;
+            const pts = traceFieldLine(sx, sy, sz, 1);
+            if (pts.length < 4) continue;
+            fieldPolylines.push(pts);
+            const geom = new THREE.BufferGeometry().setFromPoints(pts);
+            fieldLinesGroup.add(new THREE.Line(geom, mat));
+        }
     }
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    rebuildParticles();
+    document.getElementById('dataLines').textContent = String(fieldPolylines.length);
+}
 
-    if (showArrows && pts.length > 20) {
-        const mid = Math.floor(pts.length / 2);
-        const p1 = pts[mid - 1], p2 = pts[mid + 1];
-        if (p1 && p2) {
-            const ang = Math.atan2(p2.y - p1.y, p2.x - p1.x);
-            drawArrowHead(pts[mid].x, pts[mid].y, ang, FIELD_COLOR, 7);
+function rebuildParticles() {
+    clearGroup(particlesGroup);
+    flowParticles = [];
+    if (!state.showFlow) return;
+    const geo = new THREE.SphereGeometry(0.09, 8, 8);
+    const mat = new THREE.MeshBasicMaterial({ color: PHYSICS_COLORS.bField });
+    const perLine = 2;
+    for (let i = 0; i < fieldPolylines.length; i++) {
+        for (let k = 0; k < perLine; k++) {
+            const mesh = new THREE.Mesh(geo, mat);
+            particlesGroup.add(mesh);
+            flowParticles.push({ mesh, line: i, offset: (k / perLine) + i * 0.07 });
         }
     }
 }
 
-function drawArrowHead(x, y, angle, color, size) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(size, 0);
-    ctx.lineTo(-size, -size * 0.6);
-    ctx.lineTo(-size, size * 0.6);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
+function placeCompasses() {
+    clearGroup(compassGroup);
+    compassNeedles = [];
+    const nMat = new THREE.MeshStandardMaterial({ color: PHYSICS_COLORS.north, roughness: 0.4 });
+    const sMat = new THREE.MeshStandardMaterial({ color: PHYSICS_COLORS.south, roughness: 0.4 });
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5, metalness: 0.1 });
+    const spacing = 2.4;
+    for (let ix = -4; ix <= 4; ix++) {
+        for (let iz = -3; iz <= 3; iz++) {
+            const x = ix * spacing, z = iz * spacing, y = 0;
+            if (nearAnyPole(x, y, z, 1.6)) continue;
+            const g = new THREE.Group();
+            const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16), ringMat);
+            const nCone = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.42, 8), nMat);
+            nCone.rotation.z = -Math.PI / 2;
+            nCone.position.x = 0.16;
+            const sCone = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.36, 8), sMat);
+            sCone.rotation.z = Math.PI / 2;
+            sCone.position.x = -0.14;
+            g.add(disc, nCone, sCone);
+            g.position.set(x, y, z);
+            compassGroup.add(g);
+            compassNeedles.push(g);
+        }
+    }
 }
 
-function drawCompass(cx, cy, size) {
-    const { bx, by } = totalField(cx, cy);
-    const mag = Math.sqrt(bx * bx + by * by);
-    if (mag < 1e-8) return;
-    const ang = Math.atan2(by, bx);
-
-    ctx.save();
-    ctx.translate(cx, cy);
-
-    ctx.beginPath();
-    ctx.arc(0, 0, size, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.fill();
-    ctx.strokeStyle = '#94A3B8';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    ctx.rotate(ang);
-    // North half (red)
-    ctx.fillStyle = NORTH_COLOR;
-    ctx.beginPath();
-    ctx.moveTo(size * 0.8, 0);
-    ctx.lineTo(-size * 0.15, -size * 0.2);
-    ctx.lineTo(-size * 0.15, size * 0.2);
-    ctx.closePath();
-    ctx.fill();
-    // South half (blue)
-    ctx.fillStyle = SOUTH_COLOR;
-    ctx.beginPath();
-    ctx.moveTo(-size * 0.8, 0);
-    ctx.lineTo(size * 0.15, -size * 0.2);
-    ctx.lineTo(size * 0.15, size * 0.2);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
-}
-
-function drawCompasses() {
-    if (!showCompass) return;
-    const spacing = 55;
-    const margin = 30;
-    for (let x = margin; x < canvas.width - margin; x += spacing) {
-        for (let y = margin; y < canvas.height - margin; y += spacing) {
-            let tooClose = false;
-            for (const m of magnets) {
-                if (m.containsPoint(x, y)) tooClose = true;
+function placeArrows() {
+    clearGroup(arrowsGroup);
+    fieldArrows = [];
+    const spacing = 2.8;
+    for (let ix = -3; ix <= 3; ix++) {
+        for (let iy = 0; iy <= 2; iy++) {
+            for (let iz = -2; iz <= 2; iz++) {
+                const x = ix * spacing, y = iy * 1.4 - 0.2, z = iz * spacing;
+                if (nearAnyPole(x, y, z, 1.4)) continue;
+                const origin = new THREE.Vector3(x, y, z);
+                const arrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), origin, 0.7, PHYSICS_COLORS.bField, 0.22, 0.14);
+                arrowsGroup.add(arrow);
+                fieldArrows.push(arrow);
             }
-            if (horseshoe && horseshoe.containsPoint(x, y)) tooClose = true;
-            if (!tooClose) drawCompass(x, y, 10);
         }
     }
 }
 
-function getAllNorthPoles() {
-    const poles = [];
-    for (const m of magnets) poles.push(m.northPos);
-    if (horseshoe) poles.push(horseshoe.northPos);
-    return poles;
-}
-
-function drawFieldLines() {
-    const northPoles = getAllNorthPoles();
-    const n = fieldLineDensity;
-    for (const pole of northPoles) {
-        for (let i = 0; i < n; i++) {
-            const ang = (2 * Math.PI * i) / n;
-            const startX = pole.x + 10 * Math.cos(ang);
-            const startY = pole.y + 10 * Math.sin(ang);
-            const pts = traceFieldLine(startX, startY, 1, 400);
-            drawFieldLine(pts);
+function updateCompassesAndArrows() {
+    compassGroup.visible = state.showCompass;
+    arrowsGroup.visible = state.showArrows;
+    if (state.showCompass) {
+        for (const g of compassNeedles) {
+            const { bx, by, bz } = totalField(g.position.x, g.position.y, g.position.z);
+            const mag = Math.sqrt(bx * bx + by * by + bz * bz);
+            if (mag < 1e-8 || nearAnyPole(g.position.x, g.position.y, g.position.z, 1.4)) {
+                g.visible = false;
+                continue;
+            }
+            g.visible = true;
+            _v.set(bx, by, bz).normalize();
+            _q.setFromUnitVectors(X_AXIS, _v);
+            g.quaternion.copy(_q);
+        }
+    }
+    if (state.showArrows) {
+        for (const arrow of fieldArrows) {
+            const p = arrow.position;
+            const { bx, by, bz } = totalField(p.x, p.y, p.z);
+            const mag = Math.sqrt(bx * bx + by * by + bz * bz);
+            if (mag < 1e-8 || nearAnyPole(p.x, p.y, p.z, 1.3)) {
+                arrow.visible = false;
+                continue;
+            }
+            arrow.visible = true;
+            _v.set(bx, by, bz).normalize();
+            arrow.setDirection(_v);
+            const len = Math.min(1.15, 0.35 + 0.12 * Math.log10(1 + mag));
+            arrow.setLength(len, len * 0.32, len * 0.2);
         }
     }
 }
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawFieldLines();
-    drawCompasses();
-    if (horseshoe) horseshoe.draw(ctx);
-    for (const m of magnets) m.draw(ctx);
+function updateReadouts() {
+    const probe = probeMesh.position;
+    const { bx, by, bz } = totalField(probe.x, probe.y, probe.z);
+    const mag = Math.sqrt(bx * bx + by * by + bz * bz);
+    document.getElementById('dataB').textContent = mag.toExponential(2) + ' (arb.)';
+    const modeKey = state.mode === 'bar' ? 'mode.bar' : state.mode === 'two' ? 'mode.two' : 'mode.horseshoe';
+    document.getElementById('dataMode').textContent = t(modeKey);
 }
 
-let dragging = null;
-let dragOffset = { x: 0, y: 0 };
-
-function getPointerPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches ? e.touches[0] : e;
-    return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+function syncMagnetMeshes() {
+    for (const m of magnets) {
+        m.group.position.set(m.x, m.y, m.z);
+        m.group.rotation.y = m.flipped ? Math.PI : 0;
+    }
 }
 
-function onPointerDown(e) {
-    e.preventDefault();
-    const pos = getPointerPos(e);
-    for (let i = magnets.length - 1; i >= 0; i--) {
-        if (magnets[i].containsPoint(pos.x, pos.y)) {
-            dragging = magnets[i];
-            dragOffset = { x: pos.x - magnets[i].x, y: pos.y - magnets[i].y };
+function initMagnets() {
+    clearGroup(magnetsGroup);
+    magnets = [];
+    horseshoe = null;
+    if (state.mode === 'bar') {
+        const g = createBarMagnetMesh();
+        const m = { group: g, x: 0, y: 0, z: 0, flipped: false };
+        magnets.push(m);
+        magnetsGroup.add(g);
+    } else if (state.mode === 'two') {
+        const g1 = createBarMagnetMesh();
+        const g2 = createBarMagnetMesh();
+        magnets.push({ group: g1, x: -3.4, y: 0, z: 0, flipped: false });
+        magnets.push({ group: g2, x: 3.4, y: 0, z: 0, flipped: state.mag2Flipped });
+        magnetsGroup.add(g1, g2);
+    } else {
+        horseshoe = createHorseshoeMesh();
+        horseshoe.position.set(0, 0, 0);
+        magnetsGroup.add(horseshoe);
+    }
+    syncMagnetMeshes();
+    document.getElementById('flipBtn').classList.toggle('hidden', state.mode !== 'two');
+}
+
+function updateSimulation() {
+    rebuildFieldLines();
+    placeCompasses();
+    placeArrows();
+    updateCompassesAndArrows();
+    updateReadouts();
+}
+
+function updateCameraFromSpherical() {
+    camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
+    camera.position.y = radius * Math.cos(phi);
+    camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
+    camera.lookAt(0, 0, 0);
+}
+
+function setPointerFromEvent(e, clientX, clientY) {
+    const rect = container.getBoundingClientRect();
+    pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+}
+
+function pickMagnet() {
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(magnetsGroup.children, true);
+    if (!hits.length) return null;
+    let obj = hits[0].object;
+    while (obj.parent && obj.parent !== magnetsGroup) obj = obj.parent;
+    if (horseshoe && obj === horseshoe) return horseshoe;
+    for (const m of magnets) if (m.group === obj) return m;
+    return null;
+}
+
+function beginObjectDrag(clientX, clientY) {
+    setPointerFromEvent(null, clientX, clientY);
+    const picked = pickMagnet();
+    if (!picked) return false;
+    isDraggingObject = true;
+    dragTarget = picked;
+    raycaster.setFromCamera(pointer, camera);
+    if (raycaster.ray.intersectPlane(dragPlane, hitPoint)) {
+        const px = picked.group ? picked.group.position : picked.position;
+        dragOffset.set(px.x - hitPoint.x, 0, px.z - hitPoint.z);
+    }
+    container.style.cursor = 'grabbing';
+    return true;
+}
+
+function moveObjectDrag(clientX, clientY) {
+    setPointerFromEvent(null, clientX, clientY);
+    raycaster.setFromCamera(pointer, camera);
+    if (!raycaster.ray.intersectPlane(dragPlane, hitPoint)) return;
+    const nx = Math.max(-8, Math.min(8, hitPoint.x + dragOffset.x));
+    const nz = Math.max(-6, Math.min(6, hitPoint.z + dragOffset.z));
+    if (dragTarget === horseshoe) {
+        horseshoe.position.set(nx, 0, nz);
+    } else {
+        dragTarget.x = nx;
+        dragTarget.z = nz;
+        dragTarget.group.position.set(nx, 0, nz);
+    }
+    rebuildFieldLines();
+    updateCompassesAndArrows();
+    updateReadouts();
+}
+
+function setupCameraControls() {
+    container.addEventListener('mousedown', (e) => {
+        if (e.target.closest('input, button, select')) return;
+        if (beginObjectDrag(e.clientX, e.clientY)) return;
+        isCameraDrag = true;
+        startCamX = e.clientX;
+        startCamY = e.clientY;
+        container.style.cursor = 'grabbing';
+    });
+    window.addEventListener('mouseup', () => {
+        isCameraDrag = false;
+        isDraggingObject = false;
+        dragTarget = null;
+        container.style.cursor = 'grab';
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (isDraggingObject) {
+            moveObjectDrag(e.clientX, e.clientY);
             return;
         }
-    }
-    if (horseshoe && horseshoe.containsPoint(pos.x, pos.y)) {
-        dragging = horseshoe;
-        dragOffset = { x: pos.x - horseshoe.x, y: pos.y - horseshoe.y };
-    }
+        if (!isCameraDrag) return;
+        theta -= (e.clientX - startCamX) * 0.005;
+        phi -= (e.clientY - startCamY) * 0.005;
+        phi = Math.max(0.12, Math.min(Math.PI - 0.12, phi));
+        startCamX = e.clientX;
+        startCamY = e.clientY;
+        updateCameraFromSpherical();
+    });
+    container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        radius = Math.max(8, Math.min(36, radius + e.deltaY * 0.02));
+        updateCameraFromSpherical();
+    }, { passive: false });
+
+    container.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+            beginObjectDrag(lastTouchX, lastTouchY);
+        } else if (e.touches.length === 2) {
+            isDraggingObject = false;
+            lastTouchDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+            const tx = e.touches[0].clientX, ty = e.touches[0].clientY;
+            if (isDraggingObject) {
+                moveObjectDrag(tx, ty);
+            } else if (lastTouchX !== null) {
+                theta -= (tx - lastTouchX) * 0.008;
+                phi -= (ty - lastTouchY) * 0.008;
+                phi = Math.max(0.12, Math.min(Math.PI - 0.12, phi));
+                lastTouchX = tx; lastTouchY = ty;
+                updateCameraFromSpherical();
+            }
+        } else if (e.touches.length === 2 && lastTouchDist !== null) {
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            radius = Math.max(8, Math.min(36, radius + (lastTouchDist - dist) * 0.08));
+            lastTouchDist = dist;
+            updateCameraFromSpherical();
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchend', () => {
+        lastTouchX = lastTouchY = lastTouchDist = null;
+        isDraggingObject = false;
+        dragTarget = null;
+    });
 }
 
-function onPointerMove(e) {
-    if (!dragging) return;
-    e.preventDefault();
-    const pos = getPointerPos(e);
-    dragging.x = pos.x - dragOffset.x;
-    dragging.y = pos.y - dragOffset.y;
-    draw();
-}
+function initThree() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf1f5f9);
 
-function onPointerUp() { dragging = null; }
+    camera = new THREE.PerspectiveCamera(45, Math.max(container.offsetWidth, 1) / Math.max(container.offsetHeight, 1), 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
 
-canvas.addEventListener('mousedown', onPointerDown);
-canvas.addEventListener('mousemove', onPointerMove);
-canvas.addEventListener('mouseup', onPointerUp);
-canvas.addEventListener('touchstart', onPointerDown, { passive: false });
-canvas.addEventListener('touchmove', onPointerMove, { passive: false });
-canvas.addEventListener('touchend', onPointerUp);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+    sun.position.set(10, 18, 12);
+    sun.castShadow = true;
+    scene.add(sun);
+    scene.add(new THREE.HemisphereLight(0xdbeafe, 0xcbd5e1, 0.35));
 
-document.getElementById('modeSelect').addEventListener('change', e => {
-    mode = e.target.value;
-    document.getElementById('flipMagnet2').classList.toggle('hidden', mode !== 'two');
+    const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(28, 28),
+        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.92, metalness: 0 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -1.15;
+    ground.receiveShadow = true;
+    scene.add(ground);
+    const grid = new THREE.GridHelper(24, 24, 0xcbd5e1, 0xe2e8f0);
+    grid.position.y = -1.14;
+    scene.add(grid);
+
+    magnetsGroup = new THREE.Group();
+    fieldLinesGroup = new THREE.Group();
+    compassGroup = new THREE.Group();
+    arrowsGroup = new THREE.Group();
+    particlesGroup = new THREE.Group();
+    scene.add(magnetsGroup, fieldLinesGroup, compassGroup, arrowsGroup, particlesGroup);
+
+    probeMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.16, 16, 16),
+        new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.2, emissive: 0x334155, emissiveIntensity: 0.2 })
+    );
+    probeMesh.position.set(0, 2.4, 2.2);
+    scene.add(probeMesh);
+    const probeLabel = makeSprite('B', '#D97706', 0.55);
+    probeLabel.position.set(0, 0.35, 0);
+    probeMesh.add(probeLabel);
+
+    updateCameraFromSpherical();
+    setupCameraControls();
     initMagnets();
-    draw();
-});
-
-document.getElementById('densitySlider').addEventListener('input', e => {
-    fieldLineDensity = parseInt(e.target.value);
-    document.getElementById('densityVal').textContent = fieldLineDensity;
-    draw();
-});
-
-document.getElementById('showCompass').addEventListener('change', e => {
-    showCompass = e.target.checked;
-    draw();
-});
-
-document.getElementById('showArrows').addEventListener('change', e => {
-    showArrows = e.target.checked;
-    draw();
-});
-
-document.getElementById('flipMagnet2').addEventListener('click', () => {
-    if (magnets.length > 1) {
-        magnets[1].flipped = !magnets[1].flipped;
-        draw();
-    }
-});
-
-function resetPositions() {
-    initMagnets();
-    draw();
+    updateSimulation();
+    animate();
 }
 
-initMagnets();
-draw();
+function animate() {
+    requestAnimationFrame(animate);
+    flowT += 0.008;
+    if (state.showFlow) {
+        particlesGroup.visible = true;
+        for (const p of flowParticles) {
+            const line = fieldPolylines[p.line];
+            if (!line || line.length < 2) continue;
+            const u = (flowT * 0.55 + p.offset) % 1;
+            const f = u * (line.length - 1);
+            const i = Math.floor(f);
+            const tfrac = f - i;
+            const a = line[i], b = line[Math.min(i + 1, line.length - 1)];
+            p.mesh.position.lerpVectors(a, b, tfrac);
+        }
+    } else {
+        particlesGroup.visible = false;
+    }
+    renderer.render(scene, camera);
+}
 
-window.addEventListener('resize', () => { resizeCanvas(); initMagnets(); draw(); });
+function resetAll() {
+    Object.assign(state, defaults);
+    document.getElementById('modeSelect').value = state.mode;
+    document.getElementById('densitySlider').value = state.density;
+    document.getElementById('densityVal').textContent = state.density;
+    document.getElementById('strengthSlider').value = state.strength;
+    document.getElementById('strengthVal').textContent = state.strength.toFixed(1) + '×';
+    document.getElementById('showCompass').checked = true;
+    document.getElementById('showArrows').checked = true;
+    document.getElementById('showFlow').checked = true;
+    theta = CAM_DEFAULT.theta; phi = CAM_DEFAULT.phi; radius = CAM_DEFAULT.radius;
+    updateCameraFromSpherical();
+    initMagnets();
+    updateSimulation();
+}
 
-// --- i18n ---
+document.getElementById('modeSelect').addEventListener('change', (e) => {
+    state.mode = e.target.value;
+    state.mag2Flipped = false;
+    initMagnets();
+    updateSimulation();
+});
+document.getElementById('densitySlider').addEventListener('input', (e) => {
+    state.density = parseInt(e.target.value, 10);
+    document.getElementById('densityVal').textContent = state.density;
+    rebuildFieldLines();
+    updateReadouts();
+});
+document.getElementById('strengthSlider').addEventListener('input', (e) => {
+    state.strength = parseFloat(e.target.value);
+    document.getElementById('strengthVal').textContent = state.strength.toFixed(1) + '×';
+    updateCompassesAndArrows();
+    updateReadouts();
+});
+document.getElementById('showCompass').addEventListener('change', (e) => {
+    state.showCompass = e.target.checked;
+    compassGroup.visible = state.showCompass;
+});
+document.getElementById('showArrows').addEventListener('change', (e) => {
+    state.showArrows = e.target.checked;
+    arrowsGroup.visible = state.showArrows;
+});
+document.getElementById('showFlow').addEventListener('change', (e) => {
+    state.showFlow = e.target.checked;
+    rebuildParticles();
+});
+document.getElementById('flipBtn').addEventListener('click', () => {
+    if (magnets.length < 2) return;
+    state.mag2Flipped = !state.mag2Flipped;
+    magnets[1].flipped = state.mag2Flipped;
+    syncMagnetMeshes();
+    updateSimulation();
+});
+document.getElementById('resetBtn').addEventListener('click', resetAll);
+document.getElementById('resetFullBtn').addEventListener('click', () => {
+    initMagnets();
+    updateSimulation();
+});
+
+window.addEventListener('resize', () => {
+    if (!camera || !renderer) return;
+    camera.aspect = container.offsetWidth / container.offsetHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
+});
+
 const translations = {
     en: {
         'nav.back': 'Back to Home',
-        'title': 'Magnetic Field Visualizer',
-        'subtitle': 'Explore magnetic poles, field lines, and compass behaviour',
-        'canvas.hint': 'Drag magnets to reposition them. Compasses follow the net field.',
+        'page.title': '3D Magnetic Field Visualizer',
+        'page.description': 'Explore 3D field lines around bar and horseshoe magnets. Drag magnets to move them; compass needles (green) align with the local B field.',
         'controls.title': 'Controls',
+        'controls.reset': 'Reset',
+        'controls.resetPos': 'Reset Positions',
         'controls.mode': 'Mode',
         'mode.bar': 'Bar Magnet',
         'mode.two': 'Two Bar Magnets',
         'mode.horseshoe': 'Horseshoe Magnet',
-        'controls.fieldlines': 'Field Line Density',
+        'controls.density': 'Field Line Density',
         'controls.lines': 'lines',
+        'controls.strength': 'Pole Strength',
         'controls.compass': 'Show Compasses',
         'controls.arrows': 'Show Field Arrows',
+        'controls.flow': 'Show Flow Particles',
         'controls.flip': 'Flip 2nd Magnet',
-        'controls.reset': 'Reset Positions',
+        'data.title': 'Live Data',
+        'data.config': 'Configuration',
+        'data.atProbe': 'at probe',
+        'data.linesDrawn': 'Field lines',
         'legend.title': 'Legend',
         'legend.north': 'North Pole (N)',
         'legend.south': 'South Pole (S)',
-        'legend.fieldline': 'Field Lines (N → S)',
+        'legend.field': 'Magnetic Field B (N → S)',
         'legend.compass': 'Compass Needles',
+        'legend.compassShort': 'Compass',
+        'canvas.hint': 'Drag magnet • Empty space rotates • Scroll zooms',
         'info.title': 'Key Concepts',
         'info.1': 'Like poles repel; unlike poles attract.',
-        'info.2': 'Field lines go from N to S outside the magnet.',
+        'info.2': 'Field lines go from N to S outside the magnet and form closed loops.',
         'info.3': 'A compass needle aligns with the local field direction.',
-        'info.4': 'Field strength is stronger where lines are closer together.'
+        'info.4': 'Field strength is stronger where lines are closer together.',
+        'formula.title': 'Dipole Model',
+        'formula.desc': 'Each magnet is modelled as N and S monopoles. The net field is their superposition. Lines never cross; density indicates |B|.'
     },
     zh: {
         'nav.back': '返回首頁',
-        'title': '磁場可視化器',
-        'subtitle': '探索磁極、磁力線和指南針的行為',
-        'canvas.hint': '拖動磁鐵重新定位。指南針跟隨淨磁場方向。',
+        'page.title': '三維磁場可視化器',
+        'page.description': '探索條形及馬蹄形磁鐵的三維磁力線。拖動磁鐵改變位置；綠色指南針對準局部 B 場。',
         'controls.title': '控制面板',
+        'controls.reset': '重設',
+        'controls.resetPos': '重設位置',
         'controls.mode': '模式',
         'mode.bar': '條形磁鐵',
         'mode.two': '兩個條形磁鐵',
         'mode.horseshoe': '馬蹄形磁鐵',
-        'controls.fieldlines': '磁力線密度',
+        'controls.density': '磁力線密度',
         'controls.lines': '條',
+        'controls.strength': '磁極強度',
         'controls.compass': '顯示指南針',
         'controls.arrows': '顯示磁場箭頭',
+        'controls.flow': '顯示流動粒子',
         'controls.flip': '翻轉第二塊磁鐵',
-        'controls.reset': '重置位置',
+        'data.title': '即時數據',
+        'data.config': '配置',
+        'data.atProbe': '於探針',
+        'data.linesDrawn': '磁力線',
         'legend.title': '圖例',
         'legend.north': '北極 (N)',
         'legend.south': '南極 (S)',
-        'legend.fieldline': '磁力線 (N → S)',
+        'legend.field': '磁場 B（N → S）',
         'legend.compass': '指南針',
+        'legend.compassShort': '指南針',
+        'canvas.hint': '拖動磁鐵 • 空白處旋轉視角 • 滾輪縮放',
         'info.title': '核心概念',
         'info.1': '同極相斥；異極相吸。',
-        'info.2': '磁力線在磁鐵外部從 N 極到 S 極。',
-        'info.3': '指南針指向局部磁場方向。',
-        'info.4': '磁力線越密集，磁場越強。'
+        'info.2': '磁力線在磁鐵外部由 N 至 S，形成閉合迴路。',
+        'info.3': '指南針對準局部磁場方向。',
+        'info.4': '磁力線越密集，磁場越強。',
+        'formula.title': '偶極模型',
+        'formula.desc': '每塊磁鐵以 N、S 磁單極模擬，淨場為兩者疊加。磁力線不相交，密度反映 |B|。'
     },
     cn: {
         'nav.back': '返回首页',
-        'title': '磁场可视化器',
-        'subtitle': '探索磁极、磁力线和指南针的行为',
-        'canvas.hint': '拖动磁铁重新定位。指南针跟随净磁场方向。',
+        'page.title': '三维磁场可视化器',
+        'page.description': '探索条形及马蹄形磁铁的三维磁力线。拖动磁铁改变位置；绿色指南针对准局部 B 场。',
         'controls.title': '控制面板',
+        'controls.reset': '重置',
+        'controls.resetPos': '重置位置',
         'controls.mode': '模式',
         'mode.bar': '条形磁铁',
         'mode.two': '两个条形磁铁',
         'mode.horseshoe': '马蹄形磁铁',
-        'controls.fieldlines': '磁力线密度',
+        'controls.density': '磁力线密度',
         'controls.lines': '条',
+        'controls.strength': '磁极强度',
         'controls.compass': '显示指南针',
         'controls.arrows': '显示磁场箭头',
+        'controls.flow': '显示流动粒子',
         'controls.flip': '翻转第二块磁铁',
-        'controls.reset': '重置位置',
+        'data.title': '实时数据',
+        'data.config': '配置',
+        'data.atProbe': '于探针',
+        'data.linesDrawn': '磁力线',
         'legend.title': '图例',
         'legend.north': '北极 (N)',
         'legend.south': '南极 (S)',
-        'legend.fieldline': '磁力线 (N → S)',
+        'legend.field': '磁场 B（N → S）',
         'legend.compass': '指南针',
+        'legend.compassShort': '指南针',
+        'canvas.hint': '拖动磁铁 • 空白处旋转视角 • 滚轮缩放',
         'info.title': '核心概念',
         'info.1': '同极相斥；异极相吸。',
-        'info.2': '磁力线在磁铁外部从 N 极到 S 极。',
-        'info.3': '指南针指向局部磁场方向。',
-        'info.4': '磁力线越密集，磁场越强。'
+        'info.2': '磁力线在磁铁外部由 N 至 S，形成闭合回路。',
+        'info.3': '指南针对准局部磁场方向。',
+        'info.4': '磁力线越密集，磁场越强。',
+        'formula.title': '偶极模型',
+        'formula.desc': '每块磁铁以 N、S 磁单极模拟，净场为两者叠加。磁力线不相交，密度反映 |B|。'
     }
 };
 
-let currentLang = localStorage.getItem('preferred_language') || 'en';
-
-function setLanguage(lang) {
-    currentLang = lang;
-    localStorage.setItem('preferred_language', lang);
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (translations[lang] && translations[lang][key]) {
-            if (el.tagName === 'OPTION') el.textContent = translations[lang][key];
-            else el.innerText = translations[lang][key];
-        }
-    });
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-        if (btn.getAttribute('data-lang') === lang) {
-            btn.classList.add('bg-blue-600', 'text-white');
-            btn.classList.remove('text-slate-600');
-        } else {
-            btn.classList.remove('bg-blue-600', 'text-white');
-            btn.classList.add('text-slate-600');
-        }
-    });
-    document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+function normalizeLang(raw) {
+    const s = (raw || 'en').toLowerCase();
+    if (s === 'cn' || s === 'zh-cn' || s === 'zh-hans') return 'cn';
+    if (s.startsWith('zh')) return 'zh';
+    return 'en';
 }
 
-window.addEventListener('DOMContentLoaded', () => setLanguage(currentLang));
+let currentLang = normalizeLang(localStorage.getItem('preferred_language'));
+
+function setLanguage(lang) {
+    currentLang = normalizeLang(lang);
+    localStorage.setItem('preferred_language', currentLang);
+    document.documentElement.lang = currentLang === 'cn' ? 'zh-CN' : currentLang === 'zh' ? 'zh-HK' : 'en';
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const val = translations[currentLang]?.[key];
+        if (!val) return;
+        if (el.tagName === 'OPTION') el.textContent = val;
+        else if (key.includes('desc') || key.includes('description')) el.innerHTML = val;
+        else el.textContent = val;
+    });
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        const active = btn.dataset.lang === currentLang;
+        btn.classList.toggle('bg-white', active);
+        btn.classList.toggle('shadow-sm', active);
+        btn.classList.toggle('text-blue-600', active);
+    });
+    updateReadouts();
+    if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    initThree();
+    setLanguage(currentLang);
+});
 </script>
 
-    <!-- Practice Questions Widget -->
     <script src="practice_questions.js"></script>
     <script src="practice_questions_data.js"></script>
     <script>initPracticeQuestions('magnetic_field_visualizer');</script>

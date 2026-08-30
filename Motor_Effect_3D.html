@@ -122,6 +122,11 @@
                                 <span data-i18n="controls.off">關閉 (0A)</span>
                                 <span data-i18n="controls.forward">正向 (+10A)</span>
                             </div>
+                            <div class="grid grid-cols-3 gap-2 pt-1">
+                                <button type="button" id="preset-rev" class="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition hover:-translate-y-0.5" data-i18n="preset.rev">−5 A</button>
+                                <button type="button" id="preset-off" class="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition hover:-translate-y-0.5" data-i18n="preset.off">0 A</button>
+                                <button type="button" id="preset-fwd" class="py-2 rounded-xl bg-green-100 hover:bg-green-200 text-xs font-bold text-green-700 transition hover:-translate-y-0.5" data-i18n="preset.fwd">+5 A</button>
+                            </div>
                         </div>
                     </div>
 
@@ -199,12 +204,17 @@
             polesFlipped: false,
             riderX: 0,
             fieldStrength: 2.5,
-            length: 1.0
+            length: 1.0,
+            forceLen: 0,
+            userInteracted: false
         };
+        const defaults = { current: 0, polesFlipped: false, riderX: 0 };
 
         // --- THREE.JS 初始化 ---
-        let scene, camera, renderer, rider, magnetTop, magnetBottom, currentArrowsGroup, fieldArrowsGroup;
+        let scene, camera, renderer, rider, magnetTop, magnetBottom, currentArrowsGroup, fieldArrowsGroup, forceArrow, currentParticles;
         const container = document.getElementById('three-container');
+        let camTheta = Math.atan2(13, 15), camPhi = Math.acos(10 / Math.sqrt(13*13+10*10+15*15)), camRadius = Math.sqrt(13*13+10*10+15*15);
+        const defaultCam = { theta: camTheta, phi: camPhi, radius: camRadius };
 
         function initThree() {
             scene = new THREE.Scene();
@@ -295,7 +305,102 @@
             rider = riderContainer;
             scene.add(rider);
 
+            // Force arrow (F) — lerped length in animate()
+            forceArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0.9, 0), 0.01, 0xdc2626, 0.45, 0.28);
+            forceArrow.visible = false;
+            scene.add(forceArrow);
+
+            // Flowing current particles along the rider
+            currentParticles = new THREE.Group();
+            const pGeo = new THREE.SphereGeometry(0.12, 10, 10);
+            const pMat = new THREE.MeshBasicMaterial({ color: 0x16a34a });
+            for (let i = 0; i < 10; i++) {
+                const p = new THREE.Mesh(pGeo, pMat);
+                p.userData.z = -3.2 + (i / 9) * 6.4;
+                p.position.set(0, 0.55, p.userData.z);
+                currentParticles.add(p);
+            }
+            riderContainer.add(currentParticles);
+
+            setupCameraControls();
             animate();
+        }
+
+        function updateCameraFromSpherical() {
+            camera.position.x = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+            camera.position.y = camRadius * Math.cos(camPhi);
+            camera.position.z = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function setupCameraControls() {
+            let isCameraDrag = false, startCamX, startCamY;
+            let lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+
+            container.addEventListener('mousedown', (e) => {
+                if (e.target.closest('input, button')) return;
+                isCameraDrag = true;
+                startCamX = e.clientX;
+                startCamY = e.clientY;
+                state.userInteracted = true;
+            });
+            window.addEventListener('mouseup', () => { isCameraDrag = false; });
+            window.addEventListener('mousemove', (e) => {
+                if (!isCameraDrag) return;
+                camTheta -= (e.clientX - startCamX) * 0.005;
+                camPhi -= (e.clientY - startCamY) * 0.005;
+                camPhi = Math.max(0.1, Math.min(Math.PI - 0.1, camPhi));
+                startCamX = e.clientX;
+                startCamY = e.clientY;
+                updateCameraFromSpherical();
+            });
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                state.userInteracted = true;
+                camRadius = Math.max(8, Math.min(40, camRadius + e.deltaY * 0.05));
+                updateCameraFromSpherical();
+            }, { passive: false });
+
+            container.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                state.userInteracted = true;
+                if (e.touches.length === 1) {
+                    lastTouchX = e.touches[0].clientX;
+                    lastTouchY = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    lastTouchDist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                }
+            }, { passive: false });
+
+            container.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 1 && lastTouchX !== null) {
+                    const dx = (e.touches[0].clientX - lastTouchX) * 0.008;
+                    const dy = (e.touches[0].clientY - lastTouchY) * 0.008;
+                    lastTouchX = e.touches[0].clientX;
+                    lastTouchY = e.touches[0].clientY;
+                    camTheta -= dx;
+                    camPhi -= dy;
+                    camPhi = Math.max(0.1, Math.min(Math.PI - 0.1, camPhi));
+                    updateCameraFromSpherical();
+                } else if (e.touches.length === 2 && lastTouchDist !== null) {
+                    const dist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    camRadius += (lastTouchDist - dist) * 0.1;
+                    camRadius = Math.max(8, Math.min(40, camRadius));
+                    lastTouchDist = dist;
+                    updateCameraFromSpherical();
+                }
+            }, { passive: false });
+
+            container.addEventListener('touchend', () => {
+                lastTouchX = lastTouchY = lastTouchDist = null;
+            });
         }
 
         // --- 控制邏輯 ---
@@ -306,12 +411,14 @@
         const vecB = document.getElementById('vec-b');
 
         slider.addEventListener('input', (e) => {
+            state.userInteracted = true;
             state.current = parseFloat(e.target.value);
             display.textContent = `${state.current.toFixed(1)} A`;
             updateSimulationState();
         });
 
         document.getElementById('flip-magnets').addEventListener('click', () => {
+            state.userInteracted = true;
             state.polesFlipped = !state.polesFlipped;
             if (state.polesFlipped) {
                 magnetTop.material.color.setHex(0x2563eb); // S在上
@@ -360,25 +467,66 @@
         function animate() {
             requestAnimationFrame(animate);
 
+            // Subtle idle demo: slowly ramp current until user interacts
+            if (!state.userInteracted) {
+                const demoI = Math.sin(Date.now() * 0.0004) * 4;
+                if (Math.abs(state.current - demoI) > 0.05) {
+                    state.current += (demoI - state.current) * 0.08;
+                    slider.value = state.current;
+                    display.textContent = `${state.current.toFixed(1)} A`;
+                    updateSimulationState();
+                }
+                camTheta += 0.0015;
+                updateCameraFromSpherical();
+            }
+
             // 位移運動
             const fieldDir = state.polesFlipped ? 1 : -1;
             const targetX = state.current * -fieldDir * 0.7;
             state.riderX += (targetX - state.riderX) * 0.08;
             rider.position.x = state.riderX;
 
-            // 電流箭頭動畫
+            // Force arrow lerp
+            const forceDir = (state.current > 0 ? 1 : state.current < 0 ? -1 : 0) * -fieldDir;
+            const targetLen = Math.abs(state.current) > 0.15 ? Math.min(4, Math.abs(state.current) * 0.35) : 0;
+            state.forceLen += (targetLen - state.forceLen) * 0.08;
+            if (state.forceLen > 0.05) {
+                forceArrow.visible = true;
+                forceArrow.setDirection(new THREE.Vector3(forceDir || 1, 0, 0));
+                forceArrow.setLength(state.forceLen, 0.45, 0.28);
+                forceArrow.position.set(state.riderX, 0.9, 0);
+            } else {
+                forceArrow.visible = false;
+            }
+
+            // 電流箭頭動畫 + particles
             if (Math.abs(state.current) < 0.1) {
                 currentArrowsGroup.visible = false;
+                currentParticles.visible = false;
             } else {
                 currentArrowsGroup.visible = true;
+                currentParticles.visible = true;
                 const flowDir = state.current > 0 ? 1 : -1;
+                const speed = 0.02 * (Math.abs(state.current) / 3) * flowDir;
                 currentArrowsGroup.children.forEach((arrow) => {
                     arrow.rotation.x = flowDir > 0 ? Math.PI / 2 : -Math.PI / 2;
-                    arrow.position.z += 0.02 * (Math.abs(state.current) / 3) * flowDir;
+                    arrow.position.z += speed;
                     if (arrow.position.z > 3.6) arrow.position.z = -3.6;
                     if (arrow.position.z < -3.6) arrow.position.z = 3.6;
                 });
+                currentParticles.children.forEach((p) => {
+                    p.userData.z += speed * 1.4;
+                    if (p.userData.z > 3.4) p.userData.z = -3.4;
+                    if (p.userData.z < -3.4) p.userData.z = 3.4;
+                    p.position.z = p.userData.z;
+                });
             }
+
+            // Subtle B-field arrow pulse
+            fieldArrowsGroup.children.forEach((arrow, i) => {
+                const s = 0.92 + 0.08 * Math.sin(Date.now() * 0.003 + i * 0.4);
+                arrow.scale.setScalar(s);
+            });
 
             renderer.render(scene, camera);
         }
@@ -425,25 +573,7 @@
             forceChart.update('none');
         }
 
-        // 相機控制
-        let isMouseDown = false;
-        container.addEventListener('mousedown', () => isMouseDown = true);
-        window.addEventListener('mouseup', () => isMouseDown = false);
-        window.addEventListener('mousemove', (e) => {
-            if (!isMouseDown) return;
-            const rotSpeed = 0.005;
-            const offset = camera.position.clone();
-            const radius = offset.length();
-            let theta = Math.atan2(offset.x, offset.z);
-            let phi = Math.acos(Math.max(-1, Math.min(1, offset.y / radius)));
-            theta -= e.movementX * rotSpeed;
-            phi -= e.movementY * rotSpeed;
-            phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi));
-            camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
-            camera.position.y = radius * Math.cos(phi);
-            camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
-            camera.lookAt(0, 0, 0);
-        });
+        // Camera controls are in setupCameraControls()
 
         window.addEventListener('resize', () => {
             camera.aspect = container.offsetWidth / container.offsetHeight;
@@ -451,13 +581,31 @@
             renderer.setSize(container.offsetWidth, container.offsetHeight);
         });
 
+        function setCurrent(val, fromUser = true) {
+            if (fromUser) state.userInteracted = true;
+            state.current = val;
+            slider.value = val;
+            display.textContent = `${val.toFixed(1)} A`;
+            updateSimulationState();
+        }
+
         window.onload = initThree;
         document.getElementById('reset-sim').onclick = () => {
-            slider.value = 0;
-            state.current = 0;
-            display.textContent = "0.0 A";
-            updateSimulationState();
+            state.userInteracted = true;
+            setCurrent(0);
+            if (state.polesFlipped) document.getElementById('flip-magnets').click();
+            camTheta = defaultCam.theta;
+            camPhi = defaultCam.phi;
+            camRadius = defaultCam.radius;
+            updateCameraFromSpherical();
+            state.riderX = 0;
+            state.forceLen = 0;
         };
+        document.getElementById('preset-rev').onclick = () => setCurrent(-5);
+        document.getElementById('preset-off').onclick = () => setCurrent(0);
+        document.getElementById('preset-fwd').onclick = () => setCurrent(5);
+
+        slider.addEventListener('pointerdown', () => { state.userInteracted = true; });
 
         // Language Translation System
         const translations = {
@@ -471,6 +619,9 @@
                 'controls.reverse': 'Reverse (-10A)',
                 'controls.off': 'Off (0A)',
                 'controls.forward': 'Forward (+10A)',
+                'preset.rev': '−5 A',
+                'preset.off': '0 A',
+                'preset.fwd': '+5 A',
                 'controls.magnets': 'Magnetic Poles & Field (B)',
                 'controls.flip': 'Reverse Magnetic Field Direction',
                 'status.pole.down': 'North Pole on Top / South Pole on Bottom (B Downward)',
@@ -507,6 +658,9 @@
                 'controls.reverse': '反向 (-10A)',
                 'controls.off': '關閉 (0A)',
                 'controls.forward': '正向 (+10A)',
+                'preset.rev': '−5 A',
+                'preset.off': '0 A',
+                'preset.fwd': '+5 A',
                 'controls.magnets': '磁極與磁場 (B)',
                 'controls.flip': '反轉磁場方向',
                 'status.pole.down': '北極在上 / 南極在下 (B 向下)',
@@ -543,6 +697,9 @@
                 'controls.reverse': '反向 (-10A)',
                 'controls.off': '关闭 (0A)',
                 'controls.forward': '正向 (+10A)',
+                'preset.rev': '−5 A',
+                'preset.off': '0 A',
+                'preset.fwd': '+5 A',
                 'controls.magnets': '磁极与磁场 (B)',
                 'controls.flip': '反转磁场方向',
                 'status.pole.down': '北极在上 / 南极在下 (B 向下)',

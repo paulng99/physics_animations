@@ -60,6 +60,12 @@
             <option value="normal">With step-up transformer</option>
             <option value="no-stepup">Without step-up</option>
           </select>
+
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <button type="button" id="btn-preset-efficient" class="py-2.5 rounded-xl bg-green-100 hover:bg-green-200 text-xs font-semibold text-green-800 transition hover:-translate-y-0.5" data-i18n="preset.eff">Efficient HV</button>
+            <button type="button" id="btn-preset-lossy" class="py-2.5 rounded-xl bg-red-100 hover:bg-red-200 text-xs font-semibold text-red-800 transition hover:-translate-y-0.5" data-i18n="preset.lossy">No step-up</button>
+          </div>
+          <button type="button" id="btn-reset-tx" class="mt-2 w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5" data-i18n="reset">Reset</button>
         </div>
 
         <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
@@ -115,6 +121,18 @@
 
     camera.position.set(0, 9, 15);
     camera.lookAt(0, 1, 0);
+
+    let camTheta = 0, camPhi = Math.acos(9 / Math.sqrt(9*9+15*15)), camRadius = Math.sqrt(9*9+15*15);
+    const defaultCam = { theta: camTheta, phi: camPhi, radius: camRadius };
+    let userInteracted = false;
+    let lossGlow = 0;
+
+    function updateCameraFromSpherical() {
+      camera.position.x = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+      camera.position.y = camRadius * Math.cos(camPhi);
+      camera.position.z = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+      camera.lookAt(0, 1, 0);
+    }
 
     const plant = new THREE.Mesh(
       new THREE.BoxGeometry(2.2, 1.2, 2.2),
@@ -189,7 +207,10 @@
         stepRatio: 'Step-up ratio Ns/Np',
         lineR: 'Line resistance (Ω)',
         mode: 'Comparison mode',
-        readings: 'Readings'
+        readings: 'Readings',
+        reset: 'Reset',
+        'preset.eff': 'Efficient HV',
+        'preset.lossy': 'No step-up'
       },
       'zh-hk': {
         back: '返回主題頁',
@@ -201,7 +222,10 @@
         stepRatio: '升壓比 Ns/Np',
         lineR: '線路電阻 (Ω)',
         mode: '比較模式',
-        readings: '讀數'
+        readings: '讀數',
+        reset: '重設',
+        'preset.eff': '高效高壓',
+        'preset.lossy': '無升壓'
       }
     };
 
@@ -269,23 +293,139 @@
       updateOutputs();
     }
 
-    Object.values(controls).forEach((el) => el.addEventListener('input', updateOutputs));
+    Object.values(controls).forEach((el) => el.addEventListener('input', () => {
+      userInteracted = true;
+      updateOutputs();
+    }));
+
+    document.getElementById('btn-preset-efficient').onclick = () => {
+      userInteracted = true;
+      controls.mode.value = 'normal';
+      controls.plantV.value = 11;
+      controls.stepRatio.value = 35;
+      controls.lineR.value = 5;
+      controls.loadMW.value = 3.5;
+      updateOutputs();
+    };
+    document.getElementById('btn-preset-lossy').onclick = () => {
+      userInteracted = true;
+      controls.mode.value = 'no-stepup';
+      controls.plantV.value = 11;
+      controls.stepRatio.value = 20;
+      controls.lineR.value = 8;
+      controls.loadMW.value = 3.5;
+      updateOutputs();
+    };
+    document.getElementById('btn-reset-tx').onclick = () => {
+      userInteracted = true;
+      controls.mode.value = 'normal';
+      controls.plantV.value = 11;
+      controls.stepRatio.value = 20;
+      controls.lineR.value = 5;
+      controls.loadMW.value = 3.5;
+      camTheta = defaultCam.theta;
+      camPhi = defaultCam.phi;
+      camRadius = defaultCam.radius;
+      updateCameraFromSpherical();
+      updateOutputs();
+    };
+
+    // Spherical camera + touch on canvas
+    let isCamDrag = false, startX, startY, lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+    canvas.addEventListener('mousedown', (e) => {
+      isCamDrag = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      userInteracted = true;
+    });
+    window.addEventListener('mouseup', () => { isCamDrag = false; });
+    window.addEventListener('mousemove', (e) => {
+      if (!isCamDrag) return;
+      camTheta -= (e.clientX - startX) * 0.005;
+      camPhi -= (e.clientY - startY) * 0.005;
+      camPhi = Math.max(0.15, Math.min(Math.PI / 2.2, camPhi));
+      startX = e.clientX;
+      startY = e.clientY;
+      updateCameraFromSpherical();
+    });
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      userInteracted = true;
+      camRadius = Math.max(8, Math.min(28, camRadius + e.deltaY * 0.04));
+      updateCameraFromSpherical();
+    }, { passive: false });
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      userInteracted = true;
+      if (e.touches.length === 1) {
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+      } else if (e.touches.length === 2) {
+        lastTouchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && lastTouchX !== null) {
+        camTheta -= (e.touches[0].clientX - lastTouchX) * 0.008;
+        camPhi -= (e.touches[0].clientY - lastTouchY) * 0.008;
+        camPhi = Math.max(0.15, Math.min(Math.PI / 2.2, camPhi));
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+        updateCameraFromSpherical();
+      } else if (e.touches.length === 2 && lastTouchDist !== null) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        camRadius = Math.max(8, Math.min(28, camRadius + (lastTouchDist - dist) * 0.1));
+        lastTouchDist = dist;
+        updateCameraFromSpherical();
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchend', () => { lastTouchX = lastTouchY = lastTouchDist = null; });
 
     let time = 0;
     function animate() {
-      time += 0.007 + compute().lineI * 0.00008;
+      const d = compute();
+      time += 0.007 + d.lineI * 0.00008;
       resizeRenderer();
+
+      if (!userInteracted) {
+        camTheta += 0.002;
+        updateCameraFromSpherical();
+      }
+
+      const speed = 0.0032 + d.lineI * 0.00004;
       pulses.forEach((p) => {
-        p.t = (p.t + 0.0032 + compute().lineI * 0.00004) % 1;
+        p.t = (p.t + speed) % 1;
         p.mesh.position.copy(linePoint(p.t));
+        const targetScale = 0.7 + Math.min(1.4, d.lineI / 40);
+        p.mesh.scale.x += (targetScale - p.mesh.scale.x) * 0.08;
+        p.mesh.scale.y = p.mesh.scale.z = p.mesh.scale.x;
       });
+
+      // Loss glow on line (lerp)
+      const targetGlow = Math.min(1, d.loss / 5e5);
+      lossGlow += (targetGlow - lossGlow) * 0.08;
+      line.material.opacity = 0.55 + lossGlow * 0.45;
+      line.material.transparent = true;
+
       tower.rotation.y += 0.003;
+      if (city.material.emissiveIntensity !== undefined) {
+        city.material.emissiveIntensity = 0.12 + 0.1 * Math.sin(time * 2);
+      }
+
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
     }
 
     updateOutputs();
     updateLanguage(localStorage.getItem('preferred_language') === 'zh-hk' ? 'zh-hk' : 'en');
+    updateCameraFromSpherical();
     requestAnimationFrame(animate);
   </script>
 
