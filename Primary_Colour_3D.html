@@ -475,6 +475,10 @@
             scene.add(spotlightB);
             scene.add(spotlightB.target);
             spotlightHousingB = createSpotlightHousing(0x0000ff, posB);
+
+            baseSpotPositions.r = posR.clone();
+            baseSpotPositions.g = posG.clone();
+            baseSpotPositions.b = posB.clone();
         }
 
         function createBeamCones() {
@@ -762,6 +766,13 @@
             document.getElementById('val-g').textContent = '100%';
             document.getElementById('val-b').textContent = '100%';
             document.getElementById('val-spread').textContent = '30°';
+            theta = 0;
+            phi = Math.acos(25 / Math.sqrt(25 * 25 + 45 * 45));
+            radius = Math.sqrt(25 * 25 + 45 * 45);
+            camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
+            camera.position.y = radius * Math.cos(phi);
+            camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
+            camera.lookAt(0, 0, 0);
             updateSimulation();
         });
 
