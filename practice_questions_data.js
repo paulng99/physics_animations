@@ -557,6 +557,33 @@
     ],
   };
 
+  B.em_falling_plate = {
+    en: [
+      { q: "A metal plate falls at speed \\(v\\) through a uniform magnetic field \\(B\\) pointing out of the page. In which direction is the magnetic force on the free electrons inside the plate, and which side becomes negatively charged?",
+        sol: "<p>For an electron (charge \\(-e\\)) moving downwards with velocity \\(\\vec v\\) in a field \\(\\vec B\\) out of the page:</p><p>\\[ \\vec F = (-e)\\,\\vec v \\times \\vec B \\]</p><p>\\(\\vec v \\times \\vec B\\) points to the <b>left</b>, so the force on the electron points to the <b>right</b>. Electrons accumulate on the right-hand side (XY), which becomes negative, leaving the left-hand side (WZ) positive.</p>" },
+      { q: "The plate is \\(w = 0.40\\,\\text{m}\\) wide and \\(B = 1.2\\,\\text{T}\\). Find the induced EMF across its vertical sides when the plate has fallen freely for \\(0.50\\,\\text{s}\\) from rest.",
+        sol: "<p>Free fall: \\(v = gt = (9.81)(0.50) = 4.9\\,\\text{m s}^{-1}\\).</p><p>\\[ \\varepsilon = Bvw = (1.2)(4.9)(0.40) \\approx 2.4\\,\\text{V}. \\]</p><p>The EMF grows linearly with time because \\(v = gt\\).</p>" },
+      { q: "Explain why no current flows in the plate even though an EMF is induced across it.",
+        sol: "<p>Two equivalent explanations:</p><ol class='list-decimal pl-5 space-y-1'><li><b>Circuit view:</b> the plate is isolated — there is no external closed circuit for charge to flow around.</li><li><b>Flux view:</b> the field is uniform and the plate stays fully inside it, so the magnetic flux \\(\\Phi = BA\\) through any closed loop within the plate is constant. By Faraday's law, \\(\\varepsilon_{\\text{loop}} = -d\\Phi/dt = 0\\) around every loop, so no eddy current circulates.</li></ol><p>Charges separate once and then remain in equilibrium (electric force balances magnetic force).</p>" },
+      { q: "Explain why the plate falls with acceleration exactly \\(g\\), unlike a magnet falling through a copper tube which falls slower.",
+        sol: "<p>A retarding magnetic force requires an <b>induced current</b> interacting with the field. Here no current flows (uniform field, no circuit), so there is no braking force; gravity is the only force and \\(a = g\\).</p><p>In the copper-tube demonstration, the magnet's own <b>non-uniform</b> field sweeps through the tube wall, changing the flux and driving real eddy currents; by Lenz's law these currents oppose the motion, so the magnet falls with \\(a < g\\).</p>" },
+      { q: "The same plate now falls so that it <b>exits</b> the field region through the bottom boundary. Describe what happens while the plate is crossing the boundary.",
+        sol: "<p>While part of the plate is inside and part outside, the flux through loops that straddle the boundary <b>changes</b> as the plate moves. Real eddy currents are then driven inside the plate.</p><p>By Lenz's law these currents oppose the change: the resulting magnetic force acts <b>upwards</b>, so the plate momentarily falls with \\(a < g\\) (and heats up slightly) until it is completely out of the field, after which \\(a = g\\) again.</p>" },
+    ],
+    zh: [
+      { q: "金屬板以速率 \\(v\\) 在出紙面的勻強磁場 \\(B\\) 中下落。板內自由電子所受磁力方向為何？哪一邊會帶負電？",
+        sol: "<p>電子（電荷 \\(-e\\)）以 \\(\\vec v\\) 向下運動，磁場 \\(\\vec B\\) 出紙面：</p><p>\\[ \\vec F = (-e)\\,\\vec v \\times \\vec B \\]</p><p>\\(\\vec v \\times \\vec B\\) 指向<b>左</b>，故電子所受的力指向<b>右</b>。電子累積在右邊（XY），該邊帶負電，左邊（WZ）帶正電。</p>" },
+      { q: "板寬 \\(w = 0.40\\,\\text{m}\\)，\\(B = 1.2\\,\\text{T}\\)。求由靜止自由下落 \\(0.50\\,\\text{s}\\) 後，板兩豎直邊之間的感應電動勢。",
+        sol: "<p>自由下落：\\(v = gt = (9.81)(0.50) = 4.9\\,\\text{m s}^{-1}\\)。</p><p>\\[ \\varepsilon = Bvw = (1.2)(4.9)(0.40) \\approx 2.4\\,\\text{V}. \\]</p><p>因 \\(v = gt\\)，電動勢隨時間線性增加。</p>" },
+      { q: "既然板上有感應電動勢，為何板內沒有電流流動？",
+        sol: "<p>兩種等價解釋：</p><ol class='list-decimal pl-5 space-y-1'><li><b>電路觀點：</b>板是孤立導體，沒有外部閉合電路可供電荷循環流動。</li><li><b>磁通量觀點：</b>磁場均勻且板完全在場內，板內任何閉合迴路的磁通量 \\(\\Phi = BA\\) 恆定。由法拉第定律 \\(\\varepsilon_{\\text{迴路}} = -d\\Phi/dt = 0\\)，故無渦電流。</li></ol><p>電荷分離一次後便達至平衡（電場力與磁力抵消）。</p>" },
+      { q: "為何此板以恰好 \\(g\\) 的加速度下落，而磁鐵在銅管內下落卻較慢？",
+        sol: "<p>磁性阻滯力必須由<b>感應電流</b>與磁場相互作用產生。此處無電流（均勻場、無電路），故無阻滯力；唯一的力是重力，\\(a = g\\)。</p><p>銅管實驗中，磁鐵自身的<b>非均勻</b>磁場掃過管壁，磁通量改變並驅動真實渦電流；據楞次定律，渦電流反抗運動，故磁鐵以 \\(a < g\\) 下落。</p>" },
+      { q: "若板繼續下落並從磁場區域底部<b>離開</b>，試描述板穿越邊界時的情況。",
+        sol: "<p>當板一部分在場內、一部分在場外時，跨越邊界的迴路磁通量隨板移動而<b>改變</b>，板內便有真實渦電流被驅動。</p><p>據楞次定律，渦電流反抗變化：磁力向<b>上</b>，板短暫以 \\(a < g\\) 下落（並輕微發熱），直至完全離開磁場後回復 \\(a = g\\)。</p>" },
+    ],
+  };
+
   B.cro_wave = {
     en: [
       { q: "On a CRO trace, the time-base is set to \\(2\\,\\text{ms/div}\\) and one full sine wave occupies 5 divisions horizontally. Find the period and frequency.",

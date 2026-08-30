@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Falling Plate in a Magnetic Field</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <script>
+        window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, svg: { fontCache: 'global' } };
+    </script>
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; }
+        .glass { background: rgba(255, 255, 255, 0.75); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+        canvas { background-color: white; border-radius: 0.5rem; border: 2px solid #e2e8f0; touch-action: none; }
+        mjx-container { display: inline-block !important; }
+        input[type="range"] { cursor: pointer; }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date()); gtag('config', 'G-RJQ61GJDVS');
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+    <header class="max-w-6xl mx-auto px-6 pt-6 pb-4">
+        <nav class="flex items-center justify-between">
+            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+            </a>
+            <div class="flex gap-2">
+                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="zh">繁</button>
+                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100" data-lang="cn">简</button>
+                <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white" data-lang="en">EN</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="w-full max-w-6xl mx-auto px-6 pb-16">
+        <div class="glass rounded-3xl p-6 md:p-8 border border-white/60">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-800" data-i18n="title">Falling Plate in a Magnetic Field</h1>
+                <p class="text-md md:text-lg text-slate-600 mt-2" data-i18n="subtitle">A metal plate released from rest in a uniform field out of the page — what really happens?</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <div class="w-full aspect-[4/3] bg-white rounded-lg shadow-lg border-2 border-slate-200 relative">
+                        <canvas id="simCanvas"></canvas>
+                    </div>
+                    <div class="mt-3 flex flex-wrap justify-center gap-3">
+                        <button onclick="startDrop()" id="dropBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition" data-i18n="btn.drop">▶ Release Plate</button>
+                        <button onclick="togglePause()" id="pauseBtn" class="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:border-blue-300 transition" data-i18n="btn.pause">⏸ Pause</button>
+                        <button onclick="resetSim()" class="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:border-blue-300 transition" data-i18n="btn.reset">↺ Reset</button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-3" data-i18n="controls.title">Parameters</h2>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.bfield">Magnetic Field B (T)</label>
+                                <input type="range" id="bSlider" title="Magnetic Field B (T)" min="0.1" max="2" step="0.1" value="1" class="w-full accent-amber-600 mt-1">
+                                <div class="text-xs text-amber-600 text-right font-semibold"><span id="bVal">1.0</span> T</div>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-slate-600" data-i18n="controls.width">Plate Width w (m)</label>
+                                <input type="range" id="wSlider" title="Plate Width w (m)" min="0.2" max="0.8" step="0.05" value="0.4" class="w-full accent-slate-600 mt-1">
+                                <div class="text-xs text-slate-600 text-right font-semibold"><span id="wVal">0.40</span> m</div>
+                            </div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-slate-600 cursor-pointer select-none">
+                                <input type="checkbox" id="showForces" checked class="accent-blue-600 w-4 h-4">
+                                <span data-i18n="controls.showForces">Show force on a free electron</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="data.title">Live Data</h2>
+                        <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                            <span class="text-slate-500" data-i18n="data.time">Time t</span>
+                            <span class="text-right font-semibold text-slate-700"><span id="tVal">0.00</span> s</span>
+                            <span class="text-green-600" data-i18n="data.velocity">Velocity v = gt</span>
+                            <span class="text-right font-semibold text-green-600"><span id="vVal">0.00</span> m/s</span>
+                            <span class="text-purple-600" data-i18n="data.accel">Acceleration a</span>
+                            <span class="text-right font-semibold text-purple-600"><span id="aVal">9.81</span> m/s²</span>
+                            <span class="text-blue-600" data-i18n="data.emf">EMF ε = Bvw</span>
+                            <span class="text-right font-semibold text-blue-600"><span id="emfVal">0.00</span> V</span>
+                            <span class="text-red-600" data-i18n="data.current">Induced current I</span>
+                            <span class="text-right font-semibold text-red-600"><span id="iVal" data-i18n="data.currentZero">0 (no circuit!)</span></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="graph.title">v–t Graph</h2>
+                        <canvas id="graphCanvas" class="w-full"></canvas>
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="graph.note">Straight line with slope g — free fall is unaffected.</p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="legend.title">Legend</h2>
+                        <ul class="space-y-2 text-sm">
+                            <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-600"></span><span class="text-slate-700" data-i18n="legend.velocity">Velocity (v)</span></li>
+                            <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple-600"></span><span class="text-slate-700" data-i18n="legend.accel">Acceleration (a = g)</span></li>
+                            <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-600"></span><span class="text-slate-700" data-i18n="legend.force">Magnetic force on electron (F)</span></li>
+                            <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500"></span><span class="text-slate-700" data-i18n="legend.bfield">Magnetic field B (out of page ⊙)</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MCQ -->
+            <div class="mt-8 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <h2 class="text-lg font-semibold text-slate-800 mb-1" data-i18n="mcq.title">Exam Question (HKDSE style)</h2>
+                <p class="text-sm text-slate-700 mb-4" data-i18n="mcq.question">A rectangular metal plate parallel to the vertical is released from rest inside a uniform magnetic field pointing out of the page. Neglect air resistance. Which of the following statements is correct?</p>
+                <div class="grid sm:grid-cols-2 gap-3">
+                    <button onclick="answerMCQ('A', this)" class="mcq-btn text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-blue-300 transition text-sm"><b>A.</b> <span data-i18n="mcq.a">A current is induced throughout the motion.</span></button>
+                    <button onclick="answerMCQ('B', this)" class="mcq-btn text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-blue-300 transition text-sm"><b>B.</b> <span data-i18n="mcq.b">A voltage is induced across sides WZ and XY.</span></button>
+                    <button onclick="answerMCQ('C', this)" class="mcq-btn text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-blue-300 transition text-sm"><b>C.</b> <span data-i18n="mcq.c">The plate falls with an acceleration less than g.</span></button>
+                    <button onclick="answerMCQ('D', this)" class="mcq-btn text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-blue-300 transition text-sm"><b>D.</b> <span data-i18n="mcq.d">The plate falls with a constant speed.</span></button>
+                </div>
+                <div id="mcqFeedback" class="hidden mt-4 p-4 rounded-xl text-sm"></div>
+            </div>
+
+            <!-- Explanation -->
+            <div class="mt-6 bg-blue-50 rounded-2xl border border-blue-200 p-6 shadow-sm">
+                <h2 class="text-lg font-semibold text-slate-800 mb-2" data-i18n="info.title">Physics Explained</h2>
+                <ul class="text-sm text-slate-700 space-y-2 list-disc list-inside">
+                    <li data-i18n="info.1">As the plate falls with velocity v, each free electron inside it moves through the field B. The magnetic force F = Qv×B pushes electrons towards side XY, leaving side WZ positively charged.</li>
+                    <li data-i18n="info.2">Charge separation stops growing when the internal electric force balances the magnetic force (eE = evB). A voltage ε = Bvw therefore appears across WZ and XY — statement B is correct.</li>
+                    <li data-i18n="info.3">There is no closed circuit, and the field is uniform, so the magnetic flux through any loop inside the plate never changes. No current flows — statement A is wrong.</li>
+                    <li data-i18n="info.4">With no current, there is no magnetic braking force. The only force is gravity, so the plate falls with acceleration g — statements C and D are wrong.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+const graphCanvas = document.getElementById('graphCanvas');
+const gctx = graphCanvas.getContext('2d');
+
+function resizeCanvas() {
+    const parent = canvas.parentElement;
+    canvas.width = parent.clientWidth;
+    canvas.height = parent.clientHeight;
+    graphCanvas.width = graphCanvas.parentElement.clientWidth - 32;
+    graphCanvas.height = 150;
+}
+window.addEventListener('resize', () => { resizeCanvas(); draw(); drawGraph(); });
+
+const RED = '#DC2626';
+const GREEN = '#16A34A';
+const AMBER = '#D97706';
+const PURPLE = '#9333EA';
+const BLUE = '#2563EB';
+const SLATE = '#475569';
+
+// --- Physics state ---
+const G = 9.81;               // m/s²
+const REGION_H = 2.0;         // visible field region height in metres
+const SLOWMO = 0.3;           // slow-motion factor for animation clarity
+let B = 1.0;                  // magnetic field (T), out of page
+let plateW = 0.4;             // plate width (m) — horizontal distance WZ→XY
+const plateH = 0.3;           // plate height (m)
+let t = 0;                    // elapsed physical time (s)
+let running = false;
+let paused = false;
+let animId = null;
+let lastStamp = null;
+let history = [];             // {t, v} samples for the graph
+
+const vAt = time => G * time;                       // free fall: v = gt
+const yAt = time => 0.5 * G * time * time;          // displacement: s = ½gt²
+const emfAt = time => B * vAt(time) * plateW;       // ε = Bvw across WZ / XY
+const maxDrop = () => REGION_H - plateH - 0.35;     // stop before leaving the field view
+const maxT = () => Math.sqrt(2 * maxDrop() / G);
+
+// --- Drawing ---
+function draw() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const margin = 34;
+    const pxPerM = (H - 2 * margin) / REGION_H;
+    const fx = margin, fy = margin, fw = W - 2 * margin, fh = H - 2 * margin;
+
+    // Field region: dots = B out of the page
+    ctx.strokeStyle = '#fde68a';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(fx, fy, fw, fh);
+    ctx.fillStyle = AMBER;
+    const step = 42;
+    for (let gx = fx + step / 2; gx < fx + fw; gx += step) {
+        for (let gy = fy + step / 2; gy < fy + fh; gy += step) {
+            ctx.beginPath(); ctx.arc(gx, gy, 2.4, 0, Math.PI * 2); ctx.fill();
+        }
+    }
+    ctx.font = '600 13px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('B ⊙ ' + t9n('canvas.outOfPage'), fx + 6, fy - 8);
+
+    // Plate position
+    const drop = Math.min(yAt(t), maxDrop());
+    const pw = plateW * pxPerM, ph = plateH * pxPerM;
+    const px = W / 2 - pw / 2;
+    const py = fy + 20 + drop * pxPerM;
+    const v = vAt(Math.min(t, maxT()));
+
+    // Plate body
+    ctx.fillStyle = '#e2e8f0';
+    ctx.strokeStyle = SLATE;
+    ctx.lineWidth = 2;
+    ctx.fillRect(px, py, pw, ph);
+    ctx.strokeRect(px, py, pw, ph);
+
+    // Corner labels W X Z Y (as in the exam figure)
+    ctx.fillStyle = SLATE;
+    ctx.font = 'italic 600 15px Inter, sans-serif';
+    ctx.textAlign = 'right';  ctx.fillText('W', px - 5, py - 4);
+    ctx.textAlign = 'left';   ctx.fillText('X', px + pw + 5, py - 4);
+    ctx.textAlign = 'right';  ctx.fillText('Z', px - 5, py + ph + 15);
+    ctx.textAlign = 'left';   ctx.fillText('Y', px + pw + 5, py + ph + 15);
+
+    // Charge separation: + on WZ (left), − on XY (right); strength grows with v
+    const sep = Math.min(v / (G * maxT()), 1);
+    if (sep > 0.02) {
+        const n = 4;
+        ctx.font = '700 ' + Math.max(11, Math.min(15, 4 + 12 * sep)) + 'px Inter, sans-serif';
+        for (let k = 0; k < n; k++) {
+            const cy = py + ph * (k + 0.5) / n;
+            ctx.globalAlpha = 0.25 + 0.75 * sep;
+            ctx.fillStyle = RED;   ctx.textAlign = 'left';  ctx.fillText('+', px + 4, cy + 5);
+            ctx.fillStyle = BLUE;  ctx.textAlign = 'right'; ctx.fillText('−', px + pw - 4, cy + 5);
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    // Velocity arrow (green, downward) below plate centre
+    if (v > 0.01) {
+        const len = Math.min(16 + v * 10, 50);
+        drawArrow(W / 2, py + ph + 8, W / 2, py + ph + 8 + len, GREEN, 3);
+        ctx.fillStyle = GREEN;
+        ctx.font = '600 14px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('v', W / 2 + 10, py + ph + 16 + len / 2);
+    }
+
+    // Acceleration arrow (purple, constant length) to the left of the plate
+    const ax = px - 46;
+    drawArrow(ax, py + ph / 2 - 22, ax, py + ph / 2 + 22, PURPLE, 3);
+    ctx.fillStyle = PURPLE;
+    ctx.font = '600 13px Inter, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('a = g', ax - 8, py + ph / 2 + 4);
+
+    // Magnetic force on a sample free electron (F = -e v×B points towards XY)
+    if (document.getElementById('showForces').checked && v > 0.01) {
+        const ex = px + pw * 0.35, ey = py + ph * 0.5;
+        ctx.fillStyle = BLUE;
+        ctx.beginPath(); ctx.arc(ex, ey, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.font = '700 10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('e', ex, ey + 3.5);
+        const flen = Math.min(20 + v * 8, Math.max(30, pw * 0.45));
+        drawArrow(ex + 9, ey, ex + 9 + flen, ey, RED, 2.5);
+        ctx.fillStyle = RED;
+        ctx.font = '600 12px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('F = Qv×B', ex + 9 + flen / 2, ey - 10);
+    }
+
+    // Voltmeter readout across WZ–XY (fixed top-right so it never overlaps the plate)
+    const emf = emfAt(Math.min(t, maxT()));
+    ctx.fillStyle = BLUE;
+    ctx.font = '700 14px Inter, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('ε (WZ–XY) = ' + emf.toFixed(2) + ' V', fx + fw - 8, fy + 20);
+
+    // Hint line
+    ctx.font = '13px Inter, sans-serif';
+    ctx.fillStyle = SLATE;
+    ctx.textAlign = 'center';
+    ctx.fillText(t9n(running || t > 0 ? 'canvas.hintRunning' : 'canvas.hintStart'), W / 2, H - 12);
+
+    if (t >= maxT() && running) stopAtBottom();
+}
+
+function drawArrow(x1, y1, x2, y2, color, width) {
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const head = 8;
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - head * Math.cos(angle - 0.45), y2 - head * Math.sin(angle - 0.45));
+    ctx.lineTo(x2 - head * Math.cos(angle + 0.45), y2 - head * Math.sin(angle + 0.45));
+    ctx.closePath(); ctx.fill();
+}
+
+// --- v–t graph ---
+function drawGraph() {
+    const W = graphCanvas.width, H = graphCanvas.height;
+    gctx.clearRect(0, 0, W, H);
+    const m = { l: 34, r: 8, t: 10, b: 22 };
+    const gw = W - m.l - m.r, gh = H - m.t - m.b;
+    const tMax = maxT(), vMax = G * tMax;
+
+    gctx.strokeStyle = '#cbd5e1';
+    gctx.lineWidth = 1;
+    gctx.beginPath();
+    gctx.moveTo(m.l, m.t); gctx.lineTo(m.l, m.t + gh); gctx.lineTo(m.l + gw, m.t + gh);
+    gctx.stroke();
+    gctx.fillStyle = SLATE;
+    gctx.font = '10px Inter, sans-serif';
+    gctx.textAlign = 'center';
+    gctx.fillText('t (s)', m.l + gw / 2, H - 5);
+    gctx.save();
+    gctx.translate(10, m.t + gh / 2); gctx.rotate(-Math.PI / 2);
+    gctx.fillText('v (m/s)', 0, 0);
+    gctx.restore();
+    gctx.textAlign = 'right';
+    gctx.fillText(vMax.toFixed(1), m.l - 4, m.t + 8);
+    gctx.fillText('0', m.l - 4, m.t + gh + 4);
+    gctx.textAlign = 'center';
+    gctx.fillText(tMax.toFixed(2), m.l + gw, m.t + gh + 14);
+
+    // Theoretical free-fall reference (dashed slate) — plate matches it exactly
+    gctx.strokeStyle = '#94a3b8';
+    gctx.setLineDash([4, 4]);
+    gctx.beginPath();
+    gctx.moveTo(m.l, m.t + gh);
+    gctx.lineTo(m.l + gw, m.t);
+    gctx.stroke();
+    gctx.setLineDash([]);
+
+    // Actual velocity (green)
+    if (history.length > 1) {
+        gctx.strokeStyle = GREEN;
+        gctx.lineWidth = 2.5;
+        gctx.beginPath();
+        history.forEach((p, i) => {
+            const x = m.l + (p.t / tMax) * gw;
+            const y = m.t + gh - (p.v / vMax) * gh;
+            i === 0 ? gctx.moveTo(x, y) : gctx.lineTo(x, y);
+        });
+        gctx.stroke();
+    }
+}
+
+// --- Animation loop ---
+function frame(stamp) {
+    if (!running || paused) return;
+    if (lastStamp !== null) {
+        t += ((stamp - lastStamp) / 1000) * SLOWMO;
+        if (t > maxT()) t = maxT();
+        history.push({ t, v: vAt(t) });
+    }
+    lastStamp = stamp;
+    updateReadouts();
+    draw();
+    drawGraph();
+    animId = requestAnimationFrame(frame);
+}
+
+function startDrop() {
+    if (running && !paused) return;
+    if (t >= maxT()) resetSim();
+    running = true;
+    paused = false;
+    lastStamp = null;
+    document.getElementById('pauseBtn').innerText = t9n('btn.pause');
+    animId = requestAnimationFrame(frame);
+}
+
+function togglePause() {
+    if (!running) return;
+    paused = !paused;
+    document.getElementById('pauseBtn').innerText = t9n(paused ? 'btn.resume' : 'btn.pause');
+    if (!paused) { lastStamp = null; animId = requestAnimationFrame(frame); }
+}
+
+function stopAtBottom() {
+    running = false;
+    paused = false;
+    if (animId) cancelAnimationFrame(animId);
+}
+
+function resetSim() {
+    stopAtBottom();
+    t = 0;
+    history = [];
+    lastStamp = null;
+    document.getElementById('pauseBtn').innerText = t9n('btn.pause');
+    updateReadouts();
+    draw();
+    drawGraph();
+}
+
+function updateReadouts() {
+    const tc = Math.min(t, maxT());
+    document.getElementById('tVal').textContent = tc.toFixed(2);
+    document.getElementById('vVal').textContent = vAt(tc).toFixed(2);
+    document.getElementById('emfVal').textContent = emfAt(tc).toFixed(2);
+}
+
+// --- Controls ---
+document.getElementById('bSlider').addEventListener('input', e => {
+    B = parseFloat(e.target.value);
+    document.getElementById('bVal').textContent = B.toFixed(1);
+    updateReadouts(); draw();
+});
+document.getElementById('wSlider').addEventListener('input', e => {
+    plateW = parseFloat(e.target.value);
+    document.getElementById('wVal').textContent = plateW.toFixed(2);
+    updateReadouts(); draw();
+});
+document.getElementById('showForces').addEventListener('change', draw);
+
+// --- MCQ ---
+function answerMCQ(choice, btn) {
+    const fb = document.getElementById('mcqFeedback');
+    const correct = choice === 'B';
+    document.querySelectorAll('.mcq-btn').forEach(b => {
+        b.classList.remove('bg-green-50', 'border-green-400', 'bg-red-50', 'border-red-400');
+    });
+    btn.classList.add(correct ? 'bg-green-50' : 'bg-red-50', correct ? 'border-green-400' : 'border-red-400');
+    fb.classList.remove('hidden', 'bg-green-50', 'text-green-800', 'bg-red-50', 'text-red-800');
+    fb.classList.add(correct ? 'bg-green-50' : 'bg-red-50', correct ? 'text-green-800' : 'text-red-800');
+    fb.innerHTML = t9n('mcq.fb' + choice);
+}
+
+// --- i18n ---
+const translations = {
+    en: {
+        'nav.back': 'Back to Home',
+        'title': 'Falling Plate in a Magnetic Field',
+        'subtitle': 'A metal plate released from rest in a uniform field out of the page — what really happens?',
+        'btn.drop': '▶ Release Plate',
+        'btn.pause': '⏸ Pause',
+        'btn.resume': '▶ Resume',
+        'btn.reset': '↺ Reset',
+        'controls.title': 'Parameters',
+        'controls.bfield': 'Magnetic Field B (T)',
+        'controls.width': 'Plate Width w (m)',
+        'controls.showForces': 'Show force on a free electron',
+        'data.title': 'Live Data',
+        'data.time': 'Time t',
+        'data.velocity': 'Velocity v = gt',
+        'data.accel': 'Acceleration a',
+        'data.emf': 'EMF ε = Bvw',
+        'data.current': 'Induced current I',
+        'data.currentZero': '0 (no circuit!)',
+        'graph.title': 'v–t Graph',
+        'graph.note': 'Straight line with slope g — free fall is unaffected.',
+        'legend.title': 'Legend',
+        'legend.velocity': 'Velocity (v)',
+        'legend.accel': 'Acceleration (a = g)',
+        'legend.force': 'Magnetic force on electron (F)',
+        'legend.bfield': 'Magnetic field B (out of page ⊙)',
+        'mcq.title': 'Exam Question (HKDSE style)',
+        'mcq.question': 'A rectangular metal plate parallel to the vertical is released from rest inside a uniform magnetic field pointing out of the page. Neglect air resistance. Which of the following statements is correct?',
+        'mcq.a': 'A current is induced throughout the motion.',
+        'mcq.b': 'A voltage is induced across sides WZ and XY.',
+        'mcq.c': 'The plate falls with an acceleration less than g.',
+        'mcq.d': 'The plate falls with a constant speed.',
+        'mcq.fbA': '<b>✗ Incorrect.</b> There is no closed circuit and the field is uniform, so the flux through any loop in the plate never changes. Charges separate, but no current keeps flowing.',
+        'mcq.fbB': '<b>✓ Correct!</b> The magnetic force Qv×B pushes free electrons towards XY, leaving WZ positive. Charge separation builds an EMF ε = Bvw across WZ and XY.',
+        'mcq.fbC': '<b>✗ Incorrect.</b> No current flows, so there is no magnetic braking force. The only force is gravity — the plate accelerates at exactly g.',
+        'mcq.fbD': '<b>✗ Incorrect.</b> Constant speed would need zero net force, but nothing opposes gravity here (no current → no retarding force). The plate keeps accelerating at g.',
+        'info.title': 'Physics Explained',
+        'info.1': 'As the plate falls with velocity v, each free electron inside it moves through the field B. The magnetic force F = Qv×B pushes electrons towards side XY, leaving side WZ positively charged.',
+        'info.2': 'Charge separation stops growing when the internal electric force balances the magnetic force (eE = evB). A voltage ε = Bvw therefore appears across WZ and XY — statement B is correct.',
+        'info.3': 'There is no closed circuit, and the field is uniform, so the magnetic flux through any loop inside the plate never changes. No current flows — statement A is wrong.',
+        'info.4': 'With no current, there is no magnetic braking force. The only force is gravity, so the plate falls with acceleration g — statements C and D are wrong.',
+        'canvas.outOfPage': 'out of page',
+        'canvas.hintStart': 'Press “Release Plate” to drop it from rest',
+        'canvas.hintRunning': 'Electrons pushed to XY → WZ becomes +, XY becomes − ; a stays equal to g',
+    },
+    zh: {
+        'nav.back': '返回首頁',
+        'title': '磁場中下落的金屬板',
+        'subtitle': '金屬板在出紙面的勻強磁場中由靜止釋放——實際會發生甚麼？',
+        'btn.drop': '▶ 釋放金屬板',
+        'btn.pause': '⏸ 暫停',
+        'btn.resume': '▶ 繼續',
+        'btn.reset': '↺ 重設',
+        'controls.title': '參數',
+        'controls.bfield': '磁場 B（T）',
+        'controls.width': '板寬 w（m）',
+        'controls.showForces': '顯示自由電子所受的力',
+        'data.title': '實時數據',
+        'data.time': '時間 t',
+        'data.velocity': '速度 v = gt',
+        'data.accel': '加速度 a',
+        'data.emf': '電動勢 ε = Bvw',
+        'data.current': '感應電流 I',
+        'data.currentZero': '0（沒有閉合電路！）',
+        'graph.title': 'v–t 圖',
+        'graph.note': '斜率為 g 的直線——自由下落完全不受影響。',
+        'legend.title': '圖例',
+        'legend.velocity': '速度（v）',
+        'legend.accel': '加速度（a = g）',
+        'legend.force': '電子所受磁力（F）',
+        'legend.bfield': '磁場 B（出紙面 ⊙）',
+        'mcq.title': '試題（HKDSE 風格）',
+        'mcq.question': '一塊與豎直面平行的長方形金屬板在出紙面的勻強磁場中由靜止釋放。忽略空氣阻力，下列哪項敍述正確？',
+        'mcq.a': '整個運動過程中都有感應電流。',
+        'mcq.b': 'WZ 與 XY 兩邊之間有感應電壓。',
+        'mcq.c': '金屬板下落的加速度小於 g。',
+        'mcq.d': '金屬板以恆定速率下落。',
+        'mcq.fbA': '<b>✗ 錯誤。</b>沒有閉合電路，而且磁場均勻，板內任何迴路的磁通量都不會改變。電荷會分離，但不會有持續電流。',
+        'mcq.fbB': '<b>✓ 正確！</b>磁力 Qv×B 把自由電子推向 XY 邊，令 WZ 帶正電。電荷分離在 WZ 與 XY 之間建立電動勢 ε = Bvw。',
+        'mcq.fbC': '<b>✗ 錯誤。</b>沒有電流流動，所以沒有磁性阻滯力。唯一的力是重力——金屬板以恰好 g 的加速度下落。',
+        'mcq.fbD': '<b>✗ 錯誤。</b>恆定速率需要合力為零，但這裏沒有任何力抵抗重力（無電流 → 無阻滯力）。金屬板持續以 g 加速。',
+        'info.title': '物理解說',
+        'info.1': '金屬板以速度 v 下落時，板內每個自由電子都在磁場 B 中運動。磁力 F = Qv×B 把電子推向 XY 邊，令 WZ 邊帶正電。',
+        'info.2': '當板內電場力與磁力平衡（eE = evB）時，電荷分離停止增加。因此 WZ 與 XY 之間出現電壓 ε = Bvw——選項 B 正確。',
+        'info.3': '沒有閉合電路，且磁場均勻，板內任何迴路的磁通量都不會改變，所以沒有電流——選項 A 錯誤。',
+        'info.4': '沒有電流就沒有磁性阻滯力。唯一的力是重力，金屬板以加速度 g 下落——選項 C 和 D 錯誤。',
+        'canvas.outOfPage': '出紙面',
+        'canvas.hintStart': '按「釋放金屬板」讓它由靜止下落',
+        'canvas.hintRunning': '電子被推向 XY → WZ 帶正電、XY 帶負電；加速度保持等於 g',
+    },
+    cn: {
+        'nav.back': '返回首页',
+        'title': '磁场中下落的金属板',
+        'subtitle': '金属板在出纸面的匀强磁场中由静止释放——实际会发生什么？',
+        'btn.drop': '▶ 释放金属板',
+        'btn.pause': '⏸ 暂停',
+        'btn.resume': '▶ 继续',
+        'btn.reset': '↺ 重置',
+        'controls.title': '参数',
+        'controls.bfield': '磁场 B（T）',
+        'controls.width': '板宽 w（m）',
+        'controls.showForces': '显示自由电子所受的力',
+        'data.title': '实时数据',
+        'data.time': '时间 t',
+        'data.velocity': '速度 v = gt',
+        'data.accel': '加速度 a',
+        'data.emf': '电动势 ε = Bvw',
+        'data.current': '感应电流 I',
+        'data.currentZero': '0（没有闭合电路！）',
+        'graph.title': 'v–t 图',
+        'graph.note': '斜率为 g 的直线——自由下落完全不受影响。',
+        'legend.title': '图例',
+        'legend.velocity': '速度（v）',
+        'legend.accel': '加速度（a = g）',
+        'legend.force': '电子所受磁力（F）',
+        'legend.bfield': '磁场 B（出纸面 ⊙）',
+        'mcq.title': '试题（HKDSE 风格）',
+        'mcq.question': '一块与竖直面平行的长方形金属板在出纸面的匀强磁场中由静止释放。忽略空气阻力，下列哪项叙述正确？',
+        'mcq.a': '整个运动过程中都有感应电流。',
+        'mcq.b': 'WZ 与 XY 两边之间有感应电压。',
+        'mcq.c': '金属板下落的加速度小于 g。',
+        'mcq.d': '金属板以恒定速率下落。',
+        'mcq.fbA': '<b>✗ 错误。</b>没有闭合电路，而且磁场均匀，板内任何回路的磁通量都不会改变。电荷会分离，但不会有持续电流。',
+        'mcq.fbB': '<b>✓ 正确！</b>磁力 Qv×B 把自由电子推向 XY 边，使 WZ 带正电。电荷分离在 WZ 与 XY 之间建立电动势 ε = Bvw。',
+        'mcq.fbC': '<b>✗ 错误。</b>没有电流流动，所以没有磁性阻滞力。唯一的力是重力——金属板以恰好 g 的加速度下落。',
+        'mcq.fbD': '<b>✗ 错误。</b>恒定速率需要合力为零，但这里没有任何力抵抗重力（无电流 → 无阻滞力）。金属板持续以 g 加速。',
+        'info.title': '物理解说',
+        'info.1': '金属板以速度 v 下落时，板内每个自由电子都在磁场 B 中运动。磁力 F = Qv×B 把电子推向 XY 边，使 WZ 边带正电。',
+        'info.2': '当板内电场力与磁力平衡（eE = evB）时，电荷分离停止增加。因此 WZ 与 XY 之间出现电压 ε = Bvw——选项 B 正确。',
+        'info.3': '没有闭合电路，且磁场均匀，板内任何回路的磁通量都不会改变，所以没有电流——选项 A 错误。',
+        'info.4': '没有电流就没有磁性阻滞力。唯一的力是重力，金属板以加速度 g 下落——选项 C 和 D 错误。',
+        'canvas.outOfPage': '出纸面',
+        'canvas.hintStart': '按「释放金属板」让它由静止下落',
+        'canvas.hintRunning': '电子被推向 XY → WZ 带正电、XY 带负电；加速度保持等于 g',
+    }
+};
+
+let currentLang = localStorage.getItem('preferred_language') || 'en';
+
+function t9n(key) {
+    return (translations[currentLang] && translations[currentLang][key]) || translations.en[key] || key;
+}
+
+function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('preferred_language', lang);
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+            el.innerText = translations[lang][key];
+        }
+    });
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        if (btn.getAttribute('data-lang') === lang) {
+            btn.classList.add('bg-blue-600', 'text-white');
+            btn.classList.remove('text-slate-600');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('text-slate-600');
+        }
+    });
+    document.documentElement.lang = lang === 'cn' ? 'zh-CN' : lang === 'zh' ? 'zh-TW' : 'en';
+    document.getElementById('pauseBtn').innerText = t9n(paused ? 'btn.resume' : 'btn.pause');
+    const fb = document.getElementById('mcqFeedback');
+    if (!fb.classList.contains('hidden') && fb.dataset.choice) fb.innerHTML = t9n('mcq.fb' + fb.dataset.choice);
+    draw();
+    drawGraph();
+}
+
+// Remember the last MCQ choice so language switching re-renders the feedback
+const _origAnswer = answerMCQ;
+answerMCQ = function (choice, btn) {
+    document.getElementById('mcqFeedback').dataset.choice = choice;
+    _origAnswer(choice, btn);
+};
+
+// --- Init ---
+resizeCanvas();
+updateReadouts();
+draw();
+drawGraph();
+window.addEventListener('DOMContentLoaded', () => setLanguage(currentLang));
+</script>
+
+    <!-- Practice Questions Widget -->
+    <script src="practice_questions.js"></script>
+    <script src="practice_questions_data.js"></script>
+    <script>initPracticeQuestions('em_falling_plate');</script>
+</body>
+</html>
