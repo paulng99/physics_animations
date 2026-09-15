@@ -831,6 +831,60 @@
     ],
   };
 
+  B.emission_absorption = {
+    en: [
+      { q: "Explain why the <b>emission</b> spectrum of a gas appears as bright coloured lines on a dark background.",
+        sol: "<p>In a discharge tube, collisions excite electrons to higher discrete energy levels. When an electron drops from level \\(n_i\\) to \\(n_f\\), a photon of energy</p><p>\\[ hf = E_i - E_f = \\frac{hc}{\\lambda} \\]</p><p>is emitted. Only those specific wavelengths exist, so a spectroscope shows <b>bright lines</b> at those \\(\\lambda\\) against a dark continuum.</p>" },
+      { q: "An absorption spectrum shows dark lines on a continuous rainbow. Where must the absorbing gas be placed, and why are the dark lines at the <b>same</b> wavelengths as the emission lines of that gas?",
+        sol: "<p>The cool gas must lie <b>between</b> a hot continuous source (e.g. a star) and the observer. Photons whose energy matches a level gap \\(\\Delta E\\) are absorbed, promoting an electron; those wavelengths are removed from the continuum, giving dark lines.</p><p>The gaps \\(\\Delta E\\) are identical to those that produce emission, so the dark (Fraunhofer) lines sit at the same \\(\\lambda\\) as the bright emission lines.</p>" },
+      { q: "The Balmer H-\\(\\alpha\\) line is \\(\\lambda = 656\\,\\text{nm}\\). Calculate the photon energy in eV. (\\(hc = 1240\\,\\text{eV·nm}\\))",
+        sol: "<p>\\[ E = \\frac{hc}{\\lambda} = \\frac{1240}{656} = 1.89\\,\\text{eV}. \\]</p><p>This is the gap between \\(n=3\\) (\\(E=-1.51\\,\\text{eV}\\)) and \\(n=2\\) (\\(E=-3.40\\,\\text{eV}\\)): \\(3.40-1.51=1.89\\,\\text{eV}\\).</p>" },
+      { q: "Sodium street lamps look yellow. How does this relate to the sodium emission spectrum, and what would you expect to see if cool sodium vapour sat in front of a white lamp?",
+        sol: "<p>Sodium’s strongest visible lines are the D-lines at \\(589.0\\) and \\(589.6\\,\\text{nm}\\) (yellow). A discharge therefore glows yellow.</p><p>Cool Na vapour in front of white light <b>absorbs</b> those same two wavelengths, producing two close dark lines in the yellow part of the rainbow — the absorption spectrum of sodium.</p>" },
+      { q: "Why can a photon of \\(500\\,\\text{nm}\\) pass through hydrogen gas without being absorbed, even though hydrogen has many energy levels?",
+        sol: "<p>Absorption is all-or-nothing: the photon energy must <b>exactly</b> equal a difference between two allowed levels. Hydrogen’s visible (Balmer) lines are at \\(656,\\,486,\\,434,\\,410\\,\\text{nm}\\) — \\(500\\,\\text{nm}\\) matches none of them (nor Lyman UV / Paschen IR). The photon therefore does not couple to any transition and is transmitted.</p>" },
+    ],
+    zh: [
+      { q: "為何氣體的<b>發射</b>光譜是黑暗背景上的彩色亮線？",
+        sol: "<p>放電管中電子被激發至較高離散能階。由 \\(n_i\\) 落至 \\(n_f\\) 時釋出光子</p><p>\\[ hf = E_i - E_f = hc/\\lambda \\]</p><p>只有這些特定波長，故光譜儀見到黑暗連續背景上的<b>亮線</b>。</p>" },
+      { q: "吸收光譜為彩虹上的暗線。吸收氣體應放在何處？為何暗線波長與該氣體發射線相同？",
+        sol: "<p>冷卻氣體須置於高溫連續光源（如恆星）與觀測者<b>之間</b>。能量剛好等於能階差 \\(\\Delta E\\) 的光子被吸收，從連續譜中被取走而成暗線。</p><p>此 \\(\\Delta E\\) 與發射時相同，故夫朗和費暗線與發射亮線位於同一 \\(\\lambda\\)。</p>" },
+      { q: "巴耳末 H-\\(\\alpha\\) 線 \\(\\lambda = 656\\,\\text{nm}\\)。求光子能量（eV）。（\\(hc = 1240\\,\\text{eV·nm}\\)）",
+        sol: "<p>\\(E = hc/\\lambda = 1240/656 = 1.89\\,\\text{eV}\\)。即 \\(n=3\\)（\\(-1.51\\,\\text{eV}\\)）與 \\(n=2\\)（\\(-3.40\\,\\text{eV}\\)）之差。</p>" },
+      { q: "鈉燈呈黃色與此元素發射光譜有何關係？若將冷卻鈉蒸氣置於白燈前，會見到甚麼？",
+        sol: "<p>鈉最強可見線為 D 線 \\(589.0\\) 與 \\(589.6\\,\\text{nm}\\)（黃），故放電呈黃。</p><p>冷卻鈉蒸氣會<b>吸收</b>這兩波長，在彩虹黃色區出現兩條緊貼暗線——鈉的吸收光譜。</p>" },
+      { q: "為何 \\(500\\,\\text{nm}\\) 光子可穿過氫氣而不被吸收？",
+        sol: "<p>吸收屬全有或全無：光子能量必須<b>剛好</b>等於兩允許能階差。氫的可見（巴耳末）線為 \\(656,\\,486,\\,434,\\,410\\,\\text{nm}\\)，\\(500\\,\\text{nm}\\) 並不吻合（亦不屬萊曼紫外／帕申紅外），故不耦合任何躍遷而穿透。</p>" },
+    ],
+  };
+
+  B.bohr_model = {
+    en: [
+      { q: "State Bohr’s expression for the energy of the \\(n\\)th orbit of hydrogen, and calculate \\(E_2\\) and \\(E_3\\).",
+        sol: "<p>\\[ E_n = -\\dfrac{13.6\\,\\text{eV}}{n^2}. \\]</p><p>\\(E_2 = -13.6/4 = -3.40\\,\\text{eV}\\); \\(E_3 = -13.6/9 = -1.51\\,\\text{eV}\\).</p>" },
+      { q: "A hydrogen atom in \\(n=2\\) absorbs a photon and jumps to \\(n=4\\). Find the photon energy and wavelength. (\\(hc=1240\\,\\text{eV·nm}\\))",
+        sol: "<p>\\(\\Delta E = E_4 - E_2 = (-13.6/16) - (-3.40) = -0.85 + 3.40 = 2.55\\,\\text{eV}\\).</p><p>\\[ \\lambda = hc/\\Delta E = 1240/2.55 = 486\\,\\text{nm} \\]</p><p>(H-\\(\\beta\\), blue-green Balmer line — here seen in absorption.)</p>" },
+      { q: "Why does the Bohr model forbid an electron from spiralling into the nucleus, unlike Rutherford’s classical picture?",
+        sol: "<p>Bohr postulated <b>stationary orbits</b> in which the electron does not radiate, even though it is accelerating centripetally. Only orbits with angular momentum \\(L = n\\hbar\\) are allowed. Radiation occurs solely as a photon when the electron jumps between two such orbits — never continuously — so the ground state \\(n=1\\) is stable.</p>" },
+      { q: "Identify the spectral series (Lyman, Balmer or Paschen) for the transitions (a) \\(5\\to1\\) (b) \\(4\\to2\\) (c) \\(5\\to3\\). Which are visible?",
+        sol: "<p>A series is named by the <b>lower</b> level \\(n_f\\): Lyman \\(n_f=1\\) (UV), Balmer \\(n_f=2\\) (visible), Paschen \\(n_f=3\\) (IR).</p><ul class='list-disc pl-5'><li>(a) \\(5\\to1\\) Lyman — ultraviolet, not visible.</li><li>(b) \\(4\\to2\\) Balmer (H-\\(\\beta\\), \\(486\\,\\text{nm}\\)) — visible.</li><li>(c) \\(5\\to3\\) Paschen — infrared, not visible.</li></ul>" },
+      { q: "Show that the radius of the \\(n\\)th Bohr orbit satisfies \\(r_n = n^2 a_0\\) with \\(a_0 \\approx 0.053\\,\\text{nm}\\). How many times larger is the \\(n=3\\) orbit than the ground-state orbit?",
+        sol: "<p>Centripetal force = Coulomb attraction plus the quantum condition \\(mvr = n\\hbar\\) yields \\(r_n = n^2 (4\\pi\\varepsilon_0\\hbar^2/me^2) = n^2 a_0\\).</p><p>\\(r_3/r_1 = 9\\). The \\(n=3\\) orbit is <b>nine times</b> the ground-state radius.</p>" },
+    ],
+    zh: [
+      { q: "寫出氫原子第 \\(n\\) 軌道能量公式，並計算 \\(E_2\\)、\\(E_3\\)。",
+        sol: "<p>\\(E_n = -13.6\\,\\text{eV}/n^2\\)。\\(E_2 = -3.40\\,\\text{eV}\\)；\\(E_3 = -1.51\\,\\text{eV}\\)。</p>" },
+      { q: "氫原子於 \\(n=2\\) 吸收光子躍遷至 \\(n=4\\)。求光子能量及波長。（\\(hc=1240\\,\\text{eV·nm}\\)）",
+        sol: "<p>\\(\\Delta E = E_4-E_2 = 2.55\\,\\text{eV}\\)；\\(\\lambda = 1240/2.55 = 486\\,\\text{nm}\\)（H-\\(\\beta\\)，吸收時的藍綠巴耳末線）。</p>" },
+      { q: "波耳模型如何阻止電子如拉塞福古典圖像般旋落入核？",
+        sol: "<p>波耳假設<b>定態軌道</b>：即使向心加速亦不輻射，只有 \\(L=n\\hbar\\) 的軌道被允許。輻射只在兩軌道間躍遷時以光子形式發生，故基態 \\(n=1\\) 穩定。</p>" },
+      { q: "指出躍遷 (a) \\(5\\to1\\) (b) \\(4\\to2\\) (c) \\(5\\to3\\) 所屬譜系。哪些可見？",
+        sol: "<p>以較低能階 \\(n_f\\) 命名：萊曼 \\(n_f=1\\)（紫外）、巴耳末 \\(n_f=2\\)（可見）、帕申 \\(n_f=3\\)（紅外）。(a) 萊曼，不可見；(b) 巴耳末 H-\\(\\beta\\)，可見；(c) 帕申，不可見。</p>" },
+      { q: "證明 \\(r_n = n^2 a_0\\)（\\(a_0\\approx 0.053\\,\\text{nm}\\)）。\\(n=3\\) 軌道半徑是基態的多少倍？",
+        sol: "<p>向心力 = 庫侖力，加上 \\(mvr=n\\hbar\\)，得 \\(r_n=n^2 a_0\\)。\\(r_3/r_1=9\\)，即<b>九倍</b>。</p>" },
+    ],
+  };
+
   B.photoelectric = {
     en: [
       { q: "State Einstein's photoelectric equation and define each symbol.",

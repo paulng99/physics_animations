@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emission &amp; Absorption Spectrum Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+    #three-container {
+      width: 100%; height: 380px; cursor: grab; border-radius: 12px;
+      overflow: hidden; background: #020617; touch-action: none;
+    }
+    #three-container:active { cursor: grabbing; }
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 8px;
+      border-radius: 4px; background: #d1d5db; outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 20px; height: 20px;
+      border-radius: 50%; background: #2563eb; cursor: pointer; border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+  <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex justify-between items-center">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
+        <span>←</span><span data-i18n="nav.back">Back</span>
+      </a>
+      <div class="flex gap-2">
+        <button onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-100" data-lang="zh-hk">繁</button>
+        <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" data-lang="en">EN</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-slate-800" data-i18n="page.title">Emission &amp; Absorption Spectrum Game</h1>
+          <p class="mt-2 text-slate-600 max-w-3xl" data-i18n="page.subtitle">Fire photons at a gas, compare bright emission lines with dark absorption lines, then identify mystery spectra.</p>
+        </div>
+        <button id="explainBtn" class="px-5 py-2.5 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="btn.explain">Explain</button>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <aside class="lg:col-span-4 space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <div class="flex justify-between items-center">
+            <h2 class="font-semibold" data-i18n="controls.title">Controls</h2>
+            <button id="resetBtn" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 text-sm font-semibold min-h-[44px]" data-i18n="btn.reset">Reset</button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button id="modeLab" class="mode-tab px-3 py-2.5 rounded-xl bg-blue-600 text-white font-semibold min-h-[44px]" data-i18n="mode.lab">Lab</button>
+            <button id="modeGame" class="mode-tab px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold min-h-[44px]" data-i18n="mode.game">Detective</button>
+          </div>
+
+          <div id="labPanel" class="space-y-4">
+            <div>
+              <div class="text-sm font-medium text-slate-500 mb-2" data-i18n="controls.specType">Spectrum type</div>
+              <div class="grid grid-cols-3 gap-2">
+                <button data-spec="emission" class="spec-btn px-2 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold min-h-[44px]" data-i18n="spec.emission">Emission</button>
+                <button data-spec="absorption" class="spec-btn px-2 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold min-h-[44px]" data-i18n="spec.absorption">Absorption</button>
+                <button data-spec="compare" class="spec-btn px-2 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold min-h-[44px]" data-i18n="spec.compare">Compare</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-500 mb-1" data-i18n="controls.element">Gas</label>
+              <select id="elementSelect" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm min-h-[44px] focus:ring-2 focus:ring-blue-500">
+                <option value="H">Hydrogen (H)</option>
+                <option value="He">Helium (He)</option>
+                <option value="Na">Sodium (Na)</option>
+                <option value="Hg">Mercury (Hg)</option>
+                <option value="Ne">Neon (Ne)</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-sm mb-1">
+                <span data-i18n="controls.lambda">Photon wavelength</span>
+                <span id="lambdaVal" class="font-semibold text-amber-600">656 nm</span>
+              </div>
+              <input id="lambdaSlider" type="range" min="380" max="750" value="656" step="0.5" class="w-full accent-amber-600" />
+              <div class="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                <span data-i18n="controls.energy">E = hc/λ</span>
+                <span id="energyVal" class="font-semibold text-purple-600">1.89 eV</span>
+                <span id="colorChip" class="inline-block w-3 h-3 rounded-full border border-slate-300"></span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <button id="fireBtn" class="px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="btn.fire">Fire photon</button>
+              <button id="dischargeBtn" class="px-4 py-2.5 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="btn.dischargeOn">Discharge ON</button>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <button data-preset="H-alpha" class="preset-btn px-3 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-semibold border border-red-100 min-h-[44px]">H-α 656</button>
+              <button data-preset="H-beta" class="preset-btn px-3 py-2 rounded-lg bg-sky-50 text-sky-700 text-xs font-semibold border border-sky-100 min-h-[44px]">H-β 486</button>
+              <button data-preset="Na" class="preset-btn px-3 py-2 rounded-lg bg-yellow-50 text-amber-700 text-xs font-semibold border border-yellow-100 min-h-[44px]">Na 589</button>
+              <button data-preset="Hg" class="preset-btn px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100 min-h-[44px]">Hg 546</button>
+            </div>
+          </div>
+
+          <div id="gamePanel" class="hidden space-y-4">
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="bg-slate-50 rounded-xl p-3">
+                <div class="text-xs text-slate-500" data-i18n="game.score">Score</div>
+                <div id="scoreVal" class="text-xl font-bold text-blue-600">0</div>
+              </div>
+              <div class="bg-slate-50 rounded-xl p-3">
+                <div class="text-xs text-slate-500" data-i18n="game.streak">Streak</div>
+                <div id="streakVal" class="text-xl font-bold text-green-600">0</div>
+              </div>
+              <div class="bg-slate-50 rounded-xl p-3">
+                <div class="text-xs text-slate-500" data-i18n="game.round">Round</div>
+                <div id="roundVal" class="text-xl font-bold text-slate-700">1/8</div>
+              </div>
+            </div>
+            <p class="text-sm text-slate-600" data-i18n="game.prompt">Look at the mystery spectrum. Is it emission or absorption, and which gas produced it?</p>
+            <div>
+              <div class="text-sm font-medium text-slate-500 mb-2" data-i18n="game.typeQ">1. Spectrum type</div>
+              <div class="grid grid-cols-2 gap-2">
+                <button data-guess-spec="emission" class="guess-spec px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold min-h-[44px]" data-i18n="spec.emission">Emission</button>
+                <button data-guess-spec="absorption" class="guess-spec px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold min-h-[44px]" data-i18n="spec.absorption">Absorption</button>
+              </div>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-slate-500 mb-2" data-i18n="game.elQ">2. Which gas?</div>
+              <div class="grid grid-cols-5 gap-1">
+                <button data-guess-el="H" class="guess-el px-2 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold min-h-[44px]">H</button>
+                <button data-guess-el="He" class="guess-el px-2 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold min-h-[44px]">He</button>
+                <button data-guess-el="Na" class="guess-el px-2 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold min-h-[44px]">Na</button>
+                <button data-guess-el="Hg" class="guess-el px-2 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold min-h-[44px]">Hg</button>
+                <button data-guess-el="Ne" class="guess-el px-2 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold min-h-[44px]">Ne</button>
+              </div>
+            </div>
+            <button id="submitGuess" class="w-full px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 min-h-[44px]" data-i18n="btn.submit">Check answer</button>
+            <p id="gameFeedback" class="text-sm font-semibold min-h-[2.5rem]"></p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm text-sm space-y-2">
+          <h2 class="font-semibold mb-2" data-i18n="readings.title">Live data</h2>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="readings.gas">Gas</span><span id="readGas" class="font-semibold text-slate-800">Hydrogen</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="readings.photon">Photon</span><span id="readPhoton" class="font-semibold text-amber-600">656 nm · 1.89 eV</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="readings.match">Line match</span><span id="readMatch" class="font-semibold text-slate-600">—</span></div>
+          <div id="statusMsg" class="mt-2 text-xs font-semibold text-slate-500" data-i18n="status.ready">Tune λ and fire a photon. A hit means the photon energy equals a level gap.</div>
+        </div>
+      </aside>
+
+      <section class="lg:col-span-8 space-y-4">
+        <div id="three-container" class="relative border-2 border-slate-700 shadow-lg">
+          <div class="absolute top-4 left-4 flex flex-wrap gap-2 pointer-events-none z-10">
+            <span class="bg-black/50 text-amber-300 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.photon">Photon</span>
+            <span class="bg-black/50 text-green-400 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.gas">Gas atoms</span>
+            <span class="bg-black/50 text-red-400 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.line">Spectral line</span>
+          </div>
+          <div class="absolute bottom-4 right-4 bg-gray-900/80 text-white px-4 py-2 rounded-full text-xs pointer-events-none" data-i18n="hint">Drag • Wheel • Pinch</div>
+        </div>
+
+        <div class="bg-white rounded-2xl border-2 border-slate-200 p-4 space-y-3">
+          <div class="flex justify-between items-center">
+            <h3 class="font-semibold text-sm" id="specTitleA" data-i18n="canvas.emission">Emission spectrum</h3>
+            <label class="text-xs text-slate-500 flex items-center gap-2">
+              <input type="checkbox" id="showLabels" checked class="accent-blue-600" />
+              <span data-i18n="canvas.labels">λ labels</span>
+            </label>
+          </div>
+          <canvas id="specCanvasA" width="900" height="110" class="w-full rounded-lg bg-slate-950"></canvas>
+          <div id="compareWrap" class="hidden space-y-2">
+            <h3 class="font-semibold text-sm" data-i18n="canvas.absorption">Absorption spectrum</h3>
+            <canvas id="specCanvasB" width="900" height="110" class="w-full rounded-lg bg-white"></canvas>
+            <p class="text-xs text-slate-500" data-i18n="canvas.compareHint">Dark absorption lines sit at the same wavelengths as the bright emission lines.</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border-2 border-slate-200 p-4">
+          <h3 class="font-semibold text-sm mb-2" data-i18n="canvas.levels">Energy-level jumps</h3>
+          <canvas id="levelCanvas" width="900" height="260" class="w-full rounded-lg bg-slate-50"></canvas>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="explainModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-start gap-3">
+        <h3 class="text-xl font-bold" data-i18n="modal.title">Why the two spectra match</h3>
+        <button id="closeExplain" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">&times;</button>
+      </div>
+      <div class="mt-4 text-slate-600 text-sm space-y-3 leading-relaxed">
+        <p data-i18n="modal.p1">Atoms have discrete energy levels. A photon is absorbed only if its energy exactly equals a gap ΔE between two levels: ΔE = hc/λ.</p>
+        <p data-i18n="modal.p2">Emission: an excited electron drops down and releases a photon of that same ΔE — bright coloured lines on a dark background.</p>
+        <p data-i18n="modal.p3">Absorption: a cool gas sits in front of a hot continuous source. Photons with matching λ are removed — dark lines on a rainbow.</p>
+        <p data-i18n="modal.p4">That is why every dark Fraunhofer line of an element sits at the identical wavelength as one of its bright emission lines.</p>
+        <div class="flex flex-wrap gap-2 pt-2">
+          <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">Photon / λ</span>
+          <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">Gas / electron</span>
+          <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">Force of jump ΔE</span>
+          <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold">E = hc/λ</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const HC = 1239.84193; // eV·nm
+    const PHYSICS_COLORS = { force: 0xdc2626, velocity: 0x16a34a, accel: 0x9333ea, bField: 0xd97706, displacement: 0x475569 };
+
+    const ELEMENTS = {
+      H:  { nameEn: 'Hydrogen', nameZh: '氫', lines: [656.3, 486.1, 434.0, 410.2] },
+      He: { nameEn: 'Helium',   nameZh: '氦', lines: [447.1, 471.3, 492.2, 501.6, 587.6, 667.8, 706.5] },
+      Na: { nameEn: 'Sodium',   nameZh: '鈉', lines: [589.0, 589.6] },
+      Hg: { nameEn: 'Mercury',  nameZh: '汞', lines: [404.7, 435.8, 546.1, 577.0, 579.1] },
+      Ne: { nameEn: 'Neon',     nameZh: '氖', lines: [540.1, 585.2, 640.2, 650.6, 659.9, 692.9, 703.2] }
+    };
+
+    const H_TRANS = [
+      { n1: 2, n2: 3, nm: 656.3, label: 'H-α' },
+      { n1: 2, n2: 4, nm: 486.1, label: 'H-β' },
+      { n1: 2, n2: 5, nm: 434.0, label: 'H-γ' },
+      { n1: 2, n2: 6, nm: 410.2, label: 'H-δ' }
+    ];
+
+    const translations = {
+      en: {
+        'nav.back': 'Back',
+        'page.title': 'Emission & Absorption Spectrum Game',
+        'page.subtitle': 'Fire photons at a gas, compare bright emission lines with dark absorption lines, then identify mystery spectra.',
+        'btn.explain': 'Explain', 'btn.reset': 'Reset', 'btn.fire': 'Fire photon',
+        'btn.dischargeOn': 'Discharge ON', 'btn.dischargeOff': 'Discharge OFF',
+        'btn.submit': 'Check answer', 'btn.next': 'Next round',
+        'mode.lab': 'Lab', 'mode.game': 'Detective',
+        'controls.title': 'Controls', 'controls.specType': 'Spectrum type',
+        'spec.emission': 'Emission', 'spec.absorption': 'Absorption', 'spec.compare': 'Compare',
+        'controls.element': 'Gas', 'controls.lambda': 'Photon wavelength', 'controls.energy': 'E = hc/λ',
+        'game.score': 'Score', 'game.streak': 'Streak', 'game.round': 'Round',
+        'game.prompt': 'Look at the mystery spectrum. Is it emission or absorption, and which gas produced it?',
+        'game.typeQ': '1. Spectrum type', 'game.elQ': '2. Which gas?',
+        'readings.title': 'Live data', 'readings.gas': 'Gas', 'readings.photon': 'Photon',
+        'readings.match': 'Line match',
+        'status.ready': 'Tune λ and fire a photon. A hit means the photon energy equals a level gap.',
+        'status.hit': 'Hit! Photon energy matches a discrete transition — line lights up.',
+        'status.miss': 'Miss. This λ is not a characteristic line of the gas — photon passes through.',
+        'status.absorbed': 'Absorbed! Cool atoms took this photon. A dark line appears at the same λ.',
+        'status.emitted': 'Emitted! The electron dropped and released a photon of the same colour.',
+        'legend.photon': 'Photon', 'legend.gas': 'Gas atoms', 'legend.line': 'Spectral line',
+        hint: 'Drag • Wheel • Pinch',
+        'canvas.emission': 'Emission spectrum', 'canvas.absorption': 'Absorption spectrum',
+        'canvas.labels': 'λ labels', 'canvas.levels': 'Energy-level jumps',
+        'canvas.compareHint': 'Dark absorption lines sit at the same wavelengths as the bright emission lines.',
+        'modal.title': 'Why the two spectra match',
+        'modal.p1': 'Atoms have discrete energy levels. A photon is absorbed only if its energy exactly equals a gap ΔE between two levels: ΔE = hc/λ.',
+        'modal.p2': 'Emission: an excited electron drops down and releases a photon of that same ΔE — bright coloured lines on a dark background.',
+        'modal.p3': 'Absorption: a cool gas sits in front of a hot continuous source. Photons with matching λ are removed — dark lines on a rainbow.',
+        'modal.p4': 'That is why every dark Fraunhofer line of an element sits at the identical wavelength as one of its bright emission lines.',
+        'game.needBoth': 'Pick both a spectrum type and a gas.',
+        'game.correct': 'Correct! Emission and absorption lines of the same gas share identical wavelengths.',
+        'game.wrong': 'Not quite.', 'game.done': 'Game complete. Great detective work!',
+        'status.mystery': 'Mystery gas — use the spectrum only. Glow colour is hidden on purpose.'
+      },
+      'zh-hk': {
+        'nav.back': '返回',
+        'page.title': '發射光譜與吸收光譜遊戲',
+        'page.subtitle': '向氣體發射光子，比較亮發射譜線與暗吸收譜線，再辨認未知光譜。',
+        'btn.explain': '解釋', 'btn.reset': '重設', 'btn.fire': '發射光子',
+        'btn.dischargeOn': '放電開啟', 'btn.dischargeOff': '放電關閉',
+        'btn.submit': '核對答案', 'btn.next': '下一題',
+        'mode.lab': '實驗室', 'mode.game': '偵探',
+        'controls.title': '控制', 'controls.specType': '光譜類型',
+        'spec.emission': '發射', 'spec.absorption': '吸收', 'spec.compare': '對比',
+        'controls.element': '氣體', 'controls.lambda': '光子波長', 'controls.energy': 'E = hc/λ',
+        'game.score': '分數', 'game.streak': '連勝', 'game.round': '回合',
+        'game.prompt': '觀察未知光譜：這是發射還是吸收？由哪種氣體產生？',
+        'game.typeQ': '1. 光譜類型', 'game.elQ': '2. 哪種氣體？',
+        'readings.title': '即時數據', 'readings.gas': '氣體', 'readings.photon': '光子',
+        'readings.match': '譜線吻合',
+        'status.ready': '調校 λ 並發射光子。命中代表光子能量等於能階差。',
+        'status.hit': '命中！光子能量對應離散躍遷——譜線亮起。',
+        'status.miss': '未中。此 λ 不是該氣體特徵譜線——光子穿過。',
+        'status.absorbed': '已吸收！冷卻原子取走此光子，同一 λ 出現暗線。',
+        'status.emitted': '已發射！電子下落並釋出相同顏色的光子。',
+        'legend.photon': '光子', 'legend.gas': '氣體原子', 'legend.line': '譜線',
+        hint: '拖曳 • 滾輪 • 雙指縮放',
+        'canvas.emission': '發射光譜', 'canvas.absorption': '吸收光譜',
+        'canvas.labels': 'λ 標籤', 'canvas.levels': '能階躍遷',
+        'canvas.compareHint': '暗吸收線的波長與亮發射線完全相同。',
+        'modal.title': '為何兩種光譜互相對應',
+        'modal.p1': '原子具離散能階。光子只在能量剛好等於兩能階差 ΔE 時被吸收：ΔE = hc/λ。',
+        'modal.p2': '發射：受激電子下落，釋出同一 ΔE 的光子——黑暗背景上的彩色亮線。',
+        'modal.p3': '吸收：冷卻氣體置於高溫連續光源前，對應 λ 的光子被取走——彩虹上的暗線。',
+        'modal.p4': '因此同一元素的夫朗和費暗線，必與該元素發射亮線位於相同波長。',
+        'game.needBoth': '請同時選擇光譜類型及氣體。',
+        'game.correct': '正確！同一氣體的發射線與吸收線波長完全相同。',
+        'game.wrong': '未完全正確。', 'game.done': '遊戲完成。出色的光譜偵探！',
+        'status.mystery': '未知氣體——請只靠光譜判斷。刻意隱藏輝光顏色。'
+      }
+    };
+
+    let currentLang = (localStorage.getItem('preferred_language') || 'en').toLowerCase();
+    if (currentLang.startsWith('zh') || currentLang === 'cn' || currentLang === 'hk') currentLang = 'zh-hk';
+    else currentLang = 'en';
+
+    const state = {
+      playMode: 'lab',
+      specMode: 'emission',
+      element: 'H',
+      lambda: 656,
+      discharge: true,
+      electronN: 3,
+      flashNm: null,
+      flashT: 0,
+      score: 0,
+      streak: 0,
+      round: 1,
+      maxRounds: 8,
+      mystery: null,
+      guessSpec: null,
+      guessEl: null,
+      answered: false
+    };
+
+    function t(k) { return translations[currentLang]?.[k] ?? translations.en[k] ?? k; }
+    function gasName(el) {
+      const e = ELEMENTS[el];
+      return currentLang === 'zh-hk' ? e.nameZh : e.nameEn;
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang === 'en' ? 'en' : 'zh-hk';
+      localStorage.setItem('preferred_language', currentLang);
+      document.documentElement.lang = currentLang === 'zh-hk' ? 'zh-HK' : 'en';
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const val = translations[currentLang]?.[key];
+        if (!val) return;
+        if (key.includes('modal') || key.includes('desc') || key.includes('subtitle') || key.includes('prompt') || key.includes('compareHint')) {
+          el.innerHTML = val;
+        } else {
+          el.textContent = val;
+        }
+      });
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        const a = btn.dataset.lang === currentLang;
+        btn.classList.toggle('bg-blue-600', a);
+        btn.classList.toggle('text-white', a);
+      });
+      const dBtn = document.getElementById('dischargeBtn');
+      dBtn.textContent = state.discharge ? t('btn.dischargeOn') : t('btn.dischargeOff');
+      if (!state.answered) document.getElementById('submitGuess').textContent = t('btn.submit');
+      updateReadings();
+      drawAll();
+      if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+    }
+
+    function wavelengthToRGB(nm) {
+      let r = 0, g = 0, b = 0;
+      if (nm < 380 || nm > 780) return { r: 0.35, g: 0.2, b: 0.55 };
+      if (nm < 440) { r = -(nm - 440) / 60; g = 0; b = 1; }
+      else if (nm < 490) { r = 0; g = (nm - 440) / 50; b = 1; }
+      else if (nm < 510) { r = 0; g = 1; b = -(nm - 510) / 20; }
+      else if (nm < 580) { r = (nm - 510) / 70; g = 1; b = 0; }
+      else if (nm < 645) { r = 1; g = -(nm - 645) / 65; b = 0; }
+      else { r = 1; g = 0; b = 0; }
+      let f = 1;
+      if (nm < 420) f = 0.35 + 0.65 * (nm - 380) / 40;
+      if (nm > 700) f = 0.35 + 0.65 * (780 - nm) / 80;
+      return { r: r * f, g: g * f, b: b * f };
+    }
+    function rgbCss(c) { return `rgb(${(c.r * 255) | 0},${(c.g * 255) | 0},${(c.b * 255) | 0})`; }
+    function threeColor(nm) {
+      const c = wavelengthToRGB(nm);
+      return new THREE.Color(c.r, c.g, c.b);
+    }
+    function mixGlow(lines) {
+      let r = 0, g = 0, b = 0;
+      lines.forEach(nm => { const c = wavelengthToRGB(nm); r += c.r; g += c.g; b += c.b; });
+      const n = Math.max(1, lines.length);
+      return new THREE.Color(Math.min(1, r / n * 1.4), Math.min(1, g / n * 1.4), Math.min(1, b / n * 1.4));
+    }
+    function findLineMatch(nm, el) {
+      const lines = ELEMENTS[el].lines;
+      let best = null, d = 3.0;
+      lines.forEach(L => { const dd = Math.abs(L - nm); if (dd < d) { d = dd; best = L; } });
+      return best;
+    }
+    function photonE() { return HC / state.lambda; }
+
+    /* ---------- 3D scene ---------- */
+    const container = document.getElementById('three-container');
+    let scene, camera, renderer;
+    let camTheta = 0.55, camPhi = 1.15, camRadius = 16;
+    const defaultCam = { theta: 0.55, phi: 1.15, radius: 16 };
+    let isCameraDrag = false, startCamX, startCamY, dragMoved = false;
+    let emissionGroup, absorptionGroup, photons = [], atoms = [];
+    let tubeGlow, tubeLight, starMesh, cloudMesh, screenMesh;
+
+    function updateCameraFromSpherical() {
+      camera.position.set(
+        camRadius * Math.sin(camPhi) * Math.sin(camTheta),
+        camRadius * Math.cos(camPhi),
+        camRadius * Math.sin(camPhi) * Math.cos(camTheta)
+      );
+      camera.lookAt(0, 0.4, 0);
+    }
+    function setupCameraControls() {
+      container.addEventListener('mousedown', e => {
+        if (e.target.closest('input,button,select')) return;
+        isCameraDrag = true; dragMoved = false; startCamX = e.clientX; startCamY = e.clientY;
+      });
+      window.addEventListener('mouseup', () => { isCameraDrag = false; });
+      window.addEventListener('mousemove', e => {
+        if (!isCameraDrag) return;
+        camTheta -= (e.clientX - startCamX) * 0.005;
+        camPhi -= (e.clientY - startCamY) * 0.005;
+        camPhi = Math.max(0.2, Math.min(Math.PI - 0.2, camPhi));
+        startCamX = e.clientX; startCamY = e.clientY; dragMoved = true;
+        updateCameraFromSpherical();
+      });
+      container.addEventListener('wheel', e => {
+        e.preventDefault();
+        camRadius = Math.max(8, Math.min(32, camRadius + e.deltaY * 0.02));
+        updateCameraFromSpherical();
+      }, { passive: false });
+      let ltd = null, ltx = null, lty = null;
+      container.addEventListener('touchstart', e => {
+        e.preventDefault();
+        if (e.touches.length === 1) { ltx = e.touches[0].clientX; lty = e.touches[0].clientY; }
+        else if (e.touches.length === 2) ltd = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      }, { passive: false });
+      container.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (e.touches.length === 1 && ltx !== null) {
+          camTheta -= (e.touches[0].clientX - ltx) * 0.008;
+          camPhi -= (e.touches[0].clientY - lty) * 0.008;
+          camPhi = Math.max(0.2, Math.min(Math.PI - 0.2, camPhi));
+          ltx = e.touches[0].clientX; lty = e.touches[0].clientY;
+          updateCameraFromSpherical();
+        } else if (e.touches.length === 2 && ltd !== null) {
+          const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          camRadius = Math.max(8, Math.min(32, camRadius + (ltd - d) * 0.08));
+          ltd = d; updateCameraFromSpherical();
+        }
+      }, { passive: false });
+      container.addEventListener('touchend', () => { ltx = lty = ltd = null; });
+    }
+
+    function makeAtom(x, y, z) {
+      const g = new THREE.Group();
+      const nuc = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 12), new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x7f1d1d, emissiveIntensity: 0.4 }));
+      const e = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), new THREE.MeshStandardMaterial({ color: 0x16a34a, emissive: 0x14532d, emissiveIntensity: 0.5 }));
+      e.position.set(0.28, 0, 0);
+      g.add(nuc, e);
+      g.position.set(x, y, z);
+      g.userData = { electron: e, phase: Math.random() * Math.PI * 2, speed: 0.04 + Math.random() * 0.03 };
+      return g;
+    }
+
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x020617);
+      camera = new THREE.PerspectiveCamera(45, container.offsetWidth / container.offsetHeight, 0.1, 200);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+      const sun = new THREE.DirectionalLight(0xffffff, 0.7); sun.position.set(6, 10, 8); scene.add(sun);
+
+      const bench = new THREE.Mesh(new THREE.BoxGeometry(22, 0.25, 8), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+      bench.position.y = -2.2; scene.add(bench);
+
+      emissionGroup = new THREE.Group();
+      const glass = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.9, 0.9, 8, 32, 1, true),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.1, metalness: 0.15, roughness: 0.05, side: THREE.DoubleSide })
+      );
+      glass.rotation.z = Math.PI / 2;
+      tubeGlow = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.62, 0.62, 7.2, 24),
+        new THREE.MeshStandardMaterial({ color: 0x93c5fd, emissive: 0x3b82f6, emissiveIntensity: 1.6, transparent: true, opacity: 0.7 })
+      );
+      tubeGlow.rotation.z = Math.PI / 2;
+      const tubeLightObj = new THREE.PointLight(0x93c5fd, 2.2, 14);
+      tubeLight = tubeLightObj;
+      emissionGroup.add(tubeLightObj);
+      const capMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 });
+      const capL = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.4, 24), capMat);
+      const capR = capL.clone();
+      capL.rotation.z = Math.PI / 2; capR.rotation.z = Math.PI / 2;
+      capL.position.x = -4.2; capR.position.x = 4.2;
+      emissionGroup.add(glass, tubeGlow, capL, capR);
+      for (let i = 0; i < 7; i++) {
+        const a = makeAtom(-2.4 + i * 0.8, (Math.random() - 0.5) * 0.4, (Math.random() - 0.5) * 0.4);
+        emissionGroup.add(a); atoms.push(a);
+      }
+      scene.add(emissionGroup);
+
+      absorptionGroup = new THREE.Group();
+      starMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(1.1, 32, 32),
+        new THREE.MeshStandardMaterial({ color: 0xfde68a, emissive: 0xf59e0b, emissiveIntensity: 1.2 })
+      );
+      starMesh.position.set(-7.2, 0.6, 0);
+      const starLight = new THREE.PointLight(0xfbbf24, 1.4, 28); starLight.position.copy(starMesh.position);
+      cloudMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(1.6, 24, 24),
+        new THREE.MeshStandardMaterial({ color: 0x64748b, transparent: true, opacity: 0.35, emissive: 0x334155, emissiveIntensity: 0.2 })
+      );
+      cloudMesh.position.set(0, 0.4, 0);
+      screenMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12, 3.4, 5.2),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.8 })
+      );
+      screenMesh.position.set(7.4, 0.5, 0);
+      absorptionGroup.add(starMesh, starLight, cloudMesh, screenMesh);
+      absorptionGroup.visible = false;
+      scene.add(absorptionGroup);
+
+      setupCameraControls();
+      updateCameraFromSpherical();
+      animate();
+    }
+
+    function syncSceneMode() {
+      const abs = state.specMode === 'absorption' || (state.playMode === 'game' && state.mystery?.mode === 'absorption');
+      const cmp = state.specMode === 'compare' && state.playMode === 'lab';
+      emissionGroup.visible = !abs || cmp;
+      absorptionGroup.visible = abs || cmp;
+      if (cmp) { emissionGroup.visible = true; absorptionGroup.visible = true; }
+    }
+
+    function spawnPhoton(opts) {
+      const col = threeColor(opts.nm);
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), new THREE.MeshBasicMaterial({ color: col }));
+      mesh.position.copy(opts.pos);
+      scene.add(mesh);
+      photons.push({ mesh, vel: opts.vel.clone(), nm: opts.nm, hit: opts.hit, kind: opts.kind, life: 0 });
+    }
+
+    function firePhoton() {
+      const hit = findLineMatch(state.lambda, displayedElement());
+      const colNm = state.lambda;
+      if (state.specMode === 'absorption' || (state.playMode === 'game' && state.mystery?.mode === 'absorption')) {
+        spawnPhoton({
+          nm: colNm, hit,
+          pos: new THREE.Vector3(-5.8, 0.5 + (Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.8),
+          vel: new THREE.Vector3(0.18, 0, 0),
+          kind: 'beam'
+        });
+        state.flashNm = hit; state.flashT = 40;
+        setStatus(hit ? 'status.absorbed' : 'status.miss', hit ? 'text-amber-600' : 'text-slate-500');
+      } else {
+        spawnPhoton({
+          nm: colNm, hit,
+          pos: new THREE.Vector3(-3.6, 0.2, 0),
+          vel: new THREE.Vector3(0.16, 0, 0),
+          kind: 'probe'
+        });
+        if (hit && state.discharge) {
+          for (let i = 0; i < 8; i++) {
+            const dir = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.3, Math.random() - 0.5).normalize().multiplyScalar(0.12);
+            spawnPhoton({ nm: hit, hit, pos: new THREE.Vector3((Math.random() - 0.5) * 3, 0.2, 0), vel: dir, kind: 'emit' });
+          }
+          const tr = H_TRANS.find(x => Math.abs(x.nm - hit) < 1);
+          if (tr) state.electronN = tr.n1;
+          state.flashNm = hit; state.flashT = 50;
+          setStatus('status.emitted', 'text-green-600');
+        } else {
+          setStatus(hit ? 'status.hit' : 'status.miss', hit ? 'text-green-600' : 'text-slate-500');
+          state.flashNm = hit; state.flashT = hit ? 40 : 20;
+        }
+      }
+      if (hit) {
+        const tr = H_TRANS.find(x => Math.abs(x.nm - hit) < 1);
+        if (tr) state.electronN = state.specMode === 'absorption' ? tr.n2 : tr.n1;
+      }
+      updateReadings();
+      drawAll();
+    }
+
+    function displayedElement() {
+      if (state.playMode === 'game' && state.mystery) return state.mystery.el;
+      return state.element;
+    }
+
+    function setStatus(key, cls) {
+      const el = document.getElementById('statusMsg');
+      el.textContent = t(key);
+      el.className = 'mt-2 text-xs font-semibold ' + (cls || 'text-slate-500');
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const elKey = displayedElement();
+      const glow = (state.playMode === 'game' && !state.answered) ? new THREE.Color(0xcbd5e1) : mixGlow(ELEMENTS[elKey].lines);
+      if (tubeGlow) {
+        tubeGlow.material.color.copy(glow);
+        tubeGlow.material.emissive.copy(glow);
+        tubeGlow.material.emissiveIntensity = state.discharge && emissionGroup.visible ? 1.8 : 0.05;
+        tubeGlow.material.opacity = state.discharge && emissionGroup.visible ? 0.72 : 0.1;
+        if (tubeLight) {
+          tubeLight.color.copy(glow);
+          tubeLight.intensity = state.discharge && emissionGroup.visible ? 2.4 : 0.15;
+        }
+      }
+      atoms.forEach(a => {
+        a.userData.phase += a.userData.speed;
+        const e = a.userData.electron;
+        e.position.set(Math.cos(a.userData.phase) * 0.28, Math.sin(a.userData.phase) * 0.18, Math.sin(a.userData.phase * 0.7) * 0.12);
+      });
+      if (starMesh) starMesh.rotation.y += 0.004;
+      if (cloudMesh) { cloudMesh.rotation.y += 0.003; cloudMesh.scale.setScalar(1 + 0.03 * Math.sin(Date.now() * 0.002)); }
+
+      if (state.discharge && emissionGroup.visible && Math.random() < 0.08 && !(state.playMode === 'game' && !state.answered)) {
+        const lines = ELEMENTS[elKey].lines;
+        const nm = lines[(Math.random() * lines.length) | 0];
+        const dir = new THREE.Vector3(Math.random() - 0.5, Math.random() * 0.6 + 0.1, Math.random() - 0.5).normalize().multiplyScalar(0.08);
+        spawnPhoton({ nm, hit: nm, pos: new THREE.Vector3((Math.random() - 0.5) * 4, 0.1, 0), vel: dir, kind: 'emit' });
+      }
+      if (absorptionGroup.visible && Math.random() < 0.12) {
+        const nm = 380 + Math.random() * 370;
+        const hit = findLineMatch(nm, elKey);
+        spawnPhoton({
+          nm, hit,
+          pos: new THREE.Vector3(-5.9, 0.4 + (Math.random() - 0.5), (Math.random() - 0.5) * 1.6),
+          vel: new THREE.Vector3(0.16 + Math.random() * 0.04, 0, 0),
+          kind: 'beam'
+        });
+      }
+
+      for (let i = photons.length - 1; i >= 0; i--) {
+        const p = photons[i];
+        p.life++;
+        if (p.kind === 'beam' && p.hit && p.mesh.position.x > -0.4 && p.mesh.position.x < 0.6) {
+          scene.remove(p.mesh); photons.splice(i, 1); continue;
+        }
+        p.mesh.position.add(p.vel);
+        if (p.life > 160 || Math.abs(p.mesh.position.x) > 12 || Math.abs(p.mesh.position.y) > 6) {
+          scene.remove(p.mesh); photons.splice(i, 1);
+        }
+      }
+      if (state.flashT > 0) state.flashT--;
+      renderer.render(scene, camera);
+    }
+
+    /* ---------- 2D canvases ---------- */
+    function nmX(nm, w, pad) { return pad + (nm - 380) / (750 - 380) * (w - 2 * pad); }
+
+    function drawEmissionBar(ctx, w, h, lines, mystery) {
+      ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
+      const pad = 28;
+      lines.forEach((nm, i) => {
+        const x = nmX(nm, w, pad);
+        const c = wavelengthToRGB(nm);
+        const flash = state.flashNm && Math.abs(state.flashNm - nm) < 0.8 && state.flashT > 0;
+        ctx.strokeStyle = rgbCss(c);
+        ctx.globalAlpha = flash ? 1 : 0.95;
+        ctx.lineWidth = flash ? 6 : 3;
+        ctx.beginPath(); ctx.moveTo(x, 18); ctx.lineTo(x, h - 28); ctx.stroke();
+        ctx.globalAlpha = 1;
+        if (document.getElementById('showLabels').checked && !mystery) {
+          ctx.fillStyle = '#e2e8f0'; ctx.font = '10px Inter'; ctx.textAlign = 'center';
+          ctx.fillText(nm.toFixed(0), x, h - 8 - (i % 2) * 10);
+        }
+      });
+      drawAxis(ctx, w, h, pad, '#94a3b8');
+    }
+    function drawAbsorptionBar(ctx, w, h, lines, mystery) {
+      const pad = 28;
+      for (let i = 0; i < w; i++) {
+        const nm = 380 + (750 - 380) * i / w;
+        ctx.fillStyle = rgbCss(wavelengthToRGB(nm));
+        ctx.fillRect(i, 16, 1, h - 44);
+      }
+      lines.forEach((nm, i) => {
+        const x = nmX(nm, w, pad);
+        const flash = state.flashNm && Math.abs(state.flashNm - nm) < 0.8 && state.flashT > 0;
+        ctx.fillStyle = flash ? '#111827' : '#020617';
+        ctx.fillRect(x - (flash ? 3 : 2), 16, flash ? 6 : 4, h - 44);
+        if (document.getElementById('showLabels').checked && !mystery) {
+          ctx.fillStyle = '#334155'; ctx.font = '10px Inter'; ctx.textAlign = 'center';
+          ctx.fillText(nm.toFixed(0), x, h - 8 - (i % 2) * 10);
+        }
+      });
+      drawAxis(ctx, w, h, pad, '#475569');
+    }
+    function drawAxis(ctx, w, h, pad, col) {
+      ctx.fillStyle = col; ctx.font = '10px Inter'; ctx.textAlign = 'center';
+      [400, 500, 600, 700].forEach(nm => ctx.fillText(nm + '', nmX(nm, w, pad), 12));
+    }
+
+    function drawSpectra() {
+      const a = document.getElementById('specCanvasA');
+      const ctxA = a.getContext('2d');
+      const el = displayedElement();
+      const lines = ELEMENTS[el].lines;
+      const mystery = state.playMode === 'game' && !state.answered;
+      const wrap = document.getElementById('compareWrap');
+      const titleA = document.getElementById('specTitleA');
+      let mode = state.specMode;
+      if (state.playMode === 'game' && state.mystery) mode = state.mystery.mode;
+
+      if (state.playMode === 'lab' && state.specMode === 'compare') {
+        wrap.classList.remove('hidden');
+        titleA.textContent = t('canvas.emission');
+        drawEmissionBar(ctxA, a.width, a.height, lines, false);
+        const b = document.getElementById('specCanvasB');
+        drawAbsorptionBar(b.getContext('2d'), b.width, b.height, lines, false);
+      } else {
+        wrap.classList.add('hidden');
+        titleA.textContent = mode === 'absorption' ? t('canvas.absorption') : t('canvas.emission');
+        if (mode === 'absorption') drawAbsorptionBar(ctxA, a.width, a.height, lines, mystery);
+        else drawEmissionBar(ctxA, a.width, a.height, lines, mystery);
+      }
+    }
+
+    function drawLevels() {
+      const c = document.getElementById('levelCanvas');
+      const ctx = c.getContext('2d');
+      const W = c.width, H = c.height;
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, 0, W, H);
+      const padL = 70, padR = 40, padT = 20, padB = 24;
+      const nMax = 6;
+      const E = n => -13.6 / (n * n);
+      const yOf = n => padT + (nMax - n) * (H - padT - padB) / (nMax - 1);
+      ctx.font = '12px Inter';
+      for (let n = 1; n <= nMax; n++) {
+        const y = yOf(n);
+        ctx.strokeStyle = n === state.electronN ? '#16a34a' : '#64748b';
+        ctx.lineWidth = n === state.electronN ? 3 : 1.5;
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+        ctx.fillStyle = '#334155';
+        ctx.textAlign = 'right';
+        ctx.fillText('n=' + n + '  ' + E(n).toFixed(2) + ' eV', padL - 8, y + 4);
+      }
+      const el = displayedElement();
+      if (el === 'H') {
+        H_TRANS.forEach(tr => {
+          const y2 = yOf(tr.n2), y1 = yOf(tr.n1);
+          const x = padL + 80 + (tr.n2 - 3) * 140;
+          const cRgb = wavelengthToRGB(tr.nm);
+          ctx.strokeStyle = rgbCss(cRgb);
+          ctx.fillStyle = rgbCss(cRgb);
+          ctx.lineWidth = (state.flashNm && Math.abs(state.flashNm - tr.nm) < 0.8) ? 3 : 2;
+          arrow(ctx, x, y2, x, y1);
+          ctx.font = '11px Inter'; ctx.textAlign = 'center';
+          ctx.fillText(tr.label + ' ' + tr.nm.toFixed(0) + ' nm', x, (y1 + y2) / 2);
+        });
+      } else {
+        const lines = ELEMENTS[el].lines;
+        lines.forEach((nm, i) => {
+          const x = padL + 60 + i * ((W - padL - padR - 40) / Math.max(1, lines.length));
+          const cRgb = wavelengthToRGB(nm);
+          ctx.strokeStyle = rgbCss(cRgb); ctx.fillStyle = rgbCss(cRgb); ctx.lineWidth = 2;
+          arrow(ctx, x, yOf(4), x, yOf(2));
+          ctx.font = '10px Inter'; ctx.textAlign = 'center';
+          ctx.fillText(nm.toFixed(0), x, yOf(3) - 4);
+        });
+      }
+      const ey = yOf(state.electronN);
+      ctx.fillStyle = '#16a34a';
+      ctx.beginPath(); ctx.arc(W - padR - 18, ey, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#166534'; ctx.font = '10px Inter'; ctx.textAlign = 'left';
+      ctx.fillText('e⁻', W - padR - 12, ey - 10);
+    }
+    function arrow(ctx, x1, y1, x2, y2) {
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      const ang = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - 8 * Math.cos(ang - 0.4), y2 - 8 * Math.sin(ang - 0.4));
+      ctx.lineTo(x2 - 8 * Math.cos(ang + 0.4), y2 - 8 * Math.sin(ang + 0.4));
+      ctx.closePath(); ctx.fill();
+    }
+    function drawAll() { drawSpectra(); drawLevels(); }
+
+    function updateReadings() {
+      document.getElementById('lambdaVal').textContent = state.lambda.toFixed(1) + ' nm';
+      document.getElementById('energyVal').textContent = photonE().toFixed(2) + ' eV';
+      const chip = wavelengthToRGB(state.lambda);
+      document.getElementById('colorChip').style.background = rgbCss(chip);
+      const el = displayedElement();
+      document.getElementById('readGas').textContent = (state.playMode === 'game' && !state.answered) ? '???' : gasName(el) + ' (' + el + ')';
+      document.getElementById('readPhoton').textContent = state.lambda.toFixed(0) + ' nm · ' + photonE().toFixed(2) + ' eV';
+      const hit = findLineMatch(state.lambda, el);
+      document.getElementById('readMatch').textContent = hit ? hit.toFixed(1) + ' nm' : '—';
+      document.getElementById('readMatch').className = 'font-semibold ' + (hit ? 'text-green-600' : 'text-slate-600');
+      document.getElementById('scoreVal').textContent = state.score;
+      document.getElementById('streakVal').textContent = state.streak;
+      document.getElementById('roundVal').textContent = Math.min(state.round, state.maxRounds) + '/' + state.maxRounds;
+    }
+
+    function setPlayMode(mode) {
+      state.playMode = mode;
+      document.getElementById('labPanel').classList.toggle('hidden', mode !== 'lab');
+      document.getElementById('gamePanel').classList.toggle('hidden', mode !== 'game');
+      document.getElementById('modeLab').className = 'mode-tab px-3 py-2.5 rounded-xl font-semibold min-h-[44px] ' + (mode === 'lab' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-700');
+      document.getElementById('modeGame').className = 'mode-tab px-3 py-2.5 rounded-xl font-semibold min-h-[44px] ' + (mode === 'game' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-700');
+      if (mode === 'game' && !state.mystery) startGame();
+      syncSceneMode();
+      updateReadings();
+      drawAll();
+      if (mode === 'game') setStatus('status.mystery', 'text-violet-600');
+      else setStatus('status.ready', 'text-slate-500');
+    }
+
+    function setSpecMode(m) {
+      state.specMode = m;
+      document.querySelectorAll('.spec-btn').forEach(btn => {
+        const on = btn.dataset.spec === m;
+        btn.className = 'spec-btn px-2 py-2.5 rounded-xl text-xs font-semibold min-h-[44px] ' + (on ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-700');
+      });
+      syncSceneMode();
+      drawAll();
+    }
+
+    function startGame() {
+      state.score = 0; state.streak = 0; state.round = 1; state.answered = false;
+      nextMystery(true);
+    }
+    function nextMystery(resetRound) {
+      const keys = Object.keys(ELEMENTS);
+      let el, mode;
+      do {
+        el = keys[(Math.random() * keys.length) | 0];
+        mode = Math.random() < 0.5 ? 'emission' : 'absorption';
+      } while (state.mystery && state.mystery.el === el && state.mystery.mode === mode);
+      state.mystery = { el, mode };
+      state.guessEl = null; state.guessSpec = null; state.answered = false;
+      document.getElementById('gameFeedback').textContent = '';
+      document.getElementById('submitGuess').textContent = t('btn.submit');
+      document.querySelectorAll('.guess-spec,.guess-el').forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white', 'bg-green-600', 'bg-red-500');
+        b.classList.add('bg-white', 'border', 'border-slate-200', 'text-slate-700');
+      });
+      syncSceneMode();
+      updateReadings();
+      drawAll();
+      setStatus('status.mystery', 'text-violet-600');
+    }
+
+    function submitGuess() {
+      if (state.answered) {
+        if (state.round > state.maxRounds) { startGame(); return; }
+        nextMystery();
+        return;
+      }
+      if (!state.guessEl || !state.guessSpec) {
+        document.getElementById('gameFeedback').textContent = t('game.needBoth');
+        document.getElementById('gameFeedback').className = 'text-sm font-semibold text-amber-600';
+        return;
+      }
+      const okSpec = state.guessSpec === state.mystery.mode;
+      const okEl = state.guessEl === state.mystery.el;
+      state.answered = true;
+      const fb = document.getElementById('gameFeedback');
+      if (okSpec && okEl) {
+        state.streak += 1;
+        state.score += 10 + Math.min(20, state.streak * 2);
+        fb.textContent = t('game.correct');
+        fb.className = 'text-sm font-semibold text-green-600';
+      } else {
+        state.streak = 0;
+        const right = (currentLang === 'zh-hk' ? '答案：' : 'Answer: ') +
+          (state.mystery.mode === 'emission' ? t('spec.emission') : t('spec.absorption')) +
+          ' · ' + gasName(state.mystery.el);
+        fb.textContent = t('game.wrong') + ' ' + right;
+        fb.className = 'text-sm font-semibold text-red-600';
+      }
+      document.querySelectorAll('.guess-spec').forEach(b => {
+        if (b.dataset.guessSpec === state.mystery.mode) b.className = 'guess-spec px-3 py-2.5 rounded-xl text-sm font-semibold min-h-[44px] bg-green-600 text-white';
+      });
+      document.querySelectorAll('.guess-el').forEach(b => {
+        if (b.dataset.guessEl === state.mystery.el) b.className = 'guess-el px-2 py-2.5 rounded-xl text-xs font-bold min-h-[44px] bg-green-600 text-white';
+      });
+      state.round += 1;
+      const btn = document.getElementById('submitGuess');
+      if (state.round > state.maxRounds) {
+        fb.textContent += '  ' + t('game.done') + '  ' + state.score;
+        btn.textContent = t('btn.reset');
+      } else btn.textContent = t('btn.next');
+      updateReadings();
+      drawAll();
+    }
+
+    /* ---------- events ---------- */
+    document.getElementById('modeLab').onclick = () => setPlayMode('lab');
+    document.getElementById('modeGame').onclick = () => setPlayMode('game');
+    document.querySelectorAll('.spec-btn').forEach(b => b.onclick = () => setSpecMode(b.dataset.spec));
+    document.getElementById('elementSelect').addEventListener('change', e => {
+      state.element = e.target.value;
+      updateReadings(); drawAll();
+    });
+    document.getElementById('lambdaSlider').addEventListener('input', e => {
+      state.lambda = +e.target.value;
+      updateReadings();
+    });
+    document.getElementById('fireBtn').onclick = firePhoton;
+    document.getElementById('dischargeBtn').onclick = () => {
+      state.discharge = !state.discharge;
+      document.getElementById('dischargeBtn').textContent = state.discharge ? t('btn.dischargeOn') : t('btn.dischargeOff');
+    };
+    document.getElementById('showLabels').addEventListener('change', drawAll);
+    document.querySelectorAll('.preset-btn').forEach(b => b.onclick = () => {
+      const map = { 'H-alpha': { el: 'H', nm: 656.3 }, 'H-beta': { el: 'H', nm: 486.1 }, Na: { el: 'Na', nm: 589.0 }, Hg: { el: 'Hg', nm: 546.1 } };
+      const p = map[b.dataset.preset];
+      state.element = p.el; state.lambda = p.nm;
+      document.getElementById('elementSelect').value = p.el;
+      document.getElementById('lambdaSlider').value = p.nm;
+      updateReadings(); drawAll(); firePhoton();
+    });
+    document.querySelectorAll('.guess-spec').forEach(b => b.onclick = () => {
+      if (state.answered) return;
+      state.guessSpec = b.dataset.guessSpec;
+      document.querySelectorAll('.guess-spec').forEach(x => {
+        const on = x === b;
+        x.className = 'guess-spec px-3 py-2.5 rounded-xl text-sm font-semibold min-h-[44px] ' + (on ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-700');
+      });
+    });
+    document.querySelectorAll('.guess-el').forEach(b => b.onclick = () => {
+      if (state.answered) return;
+      state.guessEl = b.dataset.guessEl;
+      document.querySelectorAll('.guess-el').forEach(x => {
+        const on = x === b;
+        x.className = 'guess-el px-2 py-2.5 rounded-xl text-xs font-bold min-h-[44px] ' + (on ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-700');
+      });
+    });
+    document.getElementById('submitGuess').onclick = submitGuess;
+    document.getElementById('resetBtn').onclick = () => {
+      state.playMode = 'lab'; state.specMode = 'emission'; state.element = 'H';
+      state.lambda = 656; state.discharge = true; state.electronN = 3;
+      state.score = 0; state.streak = 0; state.round = 1; state.mystery = null; state.answered = false;
+      document.getElementById('elementSelect').value = 'H';
+      document.getElementById('lambdaSlider').value = 656;
+      document.getElementById('dischargeBtn').textContent = t('btn.dischargeOn');
+      camTheta = defaultCam.theta; camPhi = defaultCam.phi; camRadius = defaultCam.radius;
+      updateCameraFromSpherical();
+      photons.forEach(p => scene.remove(p.mesh)); photons = [];
+      setPlayMode('lab'); setSpecMode('emission');
+      setStatus('status.ready', 'text-slate-500');
+    };
+    document.getElementById('explainBtn').onclick = () => document.getElementById('explainModal').classList.remove('hidden');
+    document.getElementById('closeExplain').onclick = () => document.getElementById('explainModal').classList.add('hidden');
+    document.getElementById('explainModal').addEventListener('click', e => { if (e.target.id === 'explainModal') e.target.classList.add('hidden'); });
+
+    window.addEventListener('resize', () => {
+      if (!camera) return;
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
+
+    window.setLanguage = setLanguage;
+    setLanguage(currentLang);
+    updateReadings();
+    drawAll();
+    initThree();
+    syncSceneMode();
+  </script>
+  <script src="practice_questions.js"></script>
+  <script src="practice_questions_data.js"></script>
+  <script>initPracticeQuestions('emission_absorption');</script>
+</body>
+</html>
