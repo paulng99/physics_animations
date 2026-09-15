@@ -186,7 +186,7 @@
 
         <div class="bg-white rounded-2xl border-2 border-slate-200 p-4">
           <h3 class="font-semibold text-sm mb-2" data-i18n="canvas.levels">Energy-level jumps</h3>
-          <canvas id="levelCanvas" width="900" height="220" class="w-full rounded-lg bg-slate-50"></canvas>
+          <canvas id="levelCanvas" width="900" height="260" class="w-full rounded-lg bg-slate-50"></canvas>
         </div>
       </section>
     </div>
@@ -403,7 +403,7 @@
     const defaultCam = { theta: 0.55, phi: 1.15, radius: 16 };
     let isCameraDrag = false, startCamX, startCamY, dragMoved = false;
     let emissionGroup, absorptionGroup, photons = [], atoms = [];
-    let tubeGlow, starMesh, cloudMesh, screenMesh;
+    let tubeGlow, tubeLight, starMesh, cloudMesh, screenMesh;
 
     function updateCameraFromSpherical() {
       camera.position.set(
@@ -483,14 +483,17 @@
       emissionGroup = new THREE.Group();
       const glass = new THREE.Mesh(
         new THREE.CylinderGeometry(0.9, 0.9, 8, 32, 1, true),
-        new THREE.MeshStandardMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.18, metalness: 0.2, roughness: 0.1, side: THREE.DoubleSide })
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.1, metalness: 0.15, roughness: 0.05, side: THREE.DoubleSide })
       );
       glass.rotation.z = Math.PI / 2;
       tubeGlow = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.55, 0.55, 7.2, 24),
-        new THREE.MeshStandardMaterial({ color: 0x60a5fa, emissive: 0x2563eb, emissiveIntensity: 0.8, transparent: true, opacity: 0.45 })
+        new THREE.CylinderGeometry(0.62, 0.62, 7.2, 24),
+        new THREE.MeshStandardMaterial({ color: 0x93c5fd, emissive: 0x3b82f6, emissiveIntensity: 1.6, transparent: true, opacity: 0.7 })
       );
       tubeGlow.rotation.z = Math.PI / 2;
+      const tubeLightObj = new THREE.PointLight(0x93c5fd, 2.2, 14);
+      tubeLight = tubeLightObj;
+      emissionGroup.add(tubeLightObj);
       const capMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 });
       const capL = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.4, 24), capMat);
       const capR = capL.clone();
@@ -604,8 +607,12 @@
       if (tubeGlow) {
         tubeGlow.material.color.copy(glow);
         tubeGlow.material.emissive.copy(glow);
-        tubeGlow.material.emissiveIntensity = state.discharge && emissionGroup.visible ? 0.9 : 0.08;
-        tubeGlow.material.opacity = state.discharge && emissionGroup.visible ? 0.5 : 0.12;
+        tubeGlow.material.emissiveIntensity = state.discharge && emissionGroup.visible ? 1.8 : 0.05;
+        tubeGlow.material.opacity = state.discharge && emissionGroup.visible ? 0.72 : 0.1;
+        if (tubeLight) {
+          tubeLight.color.copy(glow);
+          tubeLight.intensity = state.discharge && emissionGroup.visible ? 2.4 : 0.15;
+        }
       }
       atoms.forEach(a => {
         a.userData.phase += a.userData.speed;
@@ -653,7 +660,7 @@
     function drawEmissionBar(ctx, w, h, lines, mystery) {
       ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, w, h);
       const pad = 28;
-      lines.forEach(nm => {
+      lines.forEach((nm, i) => {
         const x = nmX(nm, w, pad);
         const c = wavelengthToRGB(nm);
         const flash = state.flashNm && Math.abs(state.flashNm - nm) < 0.8 && state.flashT > 0;
@@ -664,7 +671,7 @@
         ctx.globalAlpha = 1;
         if (document.getElementById('showLabels').checked && !mystery) {
           ctx.fillStyle = '#e2e8f0'; ctx.font = '10px Inter'; ctx.textAlign = 'center';
-          ctx.fillText(nm.toFixed(0), x, h - 10);
+          ctx.fillText(nm.toFixed(0), x, h - 8 - (i % 2) * 10);
         }
       });
       drawAxis(ctx, w, h, pad, '#94a3b8');
@@ -676,14 +683,14 @@
         ctx.fillStyle = rgbCss(wavelengthToRGB(nm));
         ctx.fillRect(i, 16, 1, h - 44);
       }
-      lines.forEach(nm => {
+      lines.forEach((nm, i) => {
         const x = nmX(nm, w, pad);
         const flash = state.flashNm && Math.abs(state.flashNm - nm) < 0.8 && state.flashT > 0;
         ctx.fillStyle = flash ? '#111827' : '#020617';
         ctx.fillRect(x - (flash ? 3 : 2), 16, flash ? 6 : 4, h - 44);
         if (document.getElementById('showLabels').checked && !mystery) {
           ctx.fillStyle = '#334155'; ctx.font = '10px Inter'; ctx.textAlign = 'center';
-          ctx.fillText(nm.toFixed(0), x, h - 10);
+          ctx.fillText(nm.toFixed(0), x, h - 8 - (i % 2) * 10);
         }
       });
       drawAxis(ctx, w, h, pad, '#475569');
@@ -727,7 +734,7 @@
       const padL = 70, padR = 40, padT = 20, padB = 24;
       const nMax = 6;
       const E = n => -13.6 / (n * n);
-      const yOf = n => padT + (E(n) - E(nMax)) / (E(1) - E(nMax)) * (H - padT - padB);
+      const yOf = n => padT + (nMax - n) * (H - padT - padB) / (nMax - 1);
       ctx.font = '12px Inter';
       for (let n = 1; n <= nMax; n++) {
         const y = yOf(n);
