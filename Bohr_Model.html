@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bohr's Model Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+    #three-container {
+      width: 100%; height: 420px; cursor: grab; border-radius: 12px;
+      overflow: hidden; background: #020617; touch-action: none;
+    }
+    #three-container:active { cursor: grabbing; }
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 8px;
+      border-radius: 4px; background: #d1d5db; outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 20px; height: 20px;
+      border-radius: 50%; background: #2563eb; cursor: pointer; border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+  <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex justify-between items-center">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600">
+        <span>←</span><span data-i18n="nav.back">Back</span>
+      </a>
+      <div class="flex gap-2">
+        <button onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-100" data-lang="zh-hk">繁</button>
+        <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" data-lang="en">EN</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-slate-800" data-i18n="page.title">Bohr's Model Game</h1>
+          <p class="mt-2 text-slate-600 max-w-3xl" data-i18n="page.subtitle">Click an orbit or fire a photon. The electron jumps only when \(hf = |E_i - E_f|\). Complete Balmer and Lyman missions.</p>
+        </div>
+        <button id="explainBtn" class="px-5 py-2.5 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="btn.explain">Explain</button>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <aside class="lg:col-span-4 space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <div class="flex justify-between items-center">
+            <h2 class="font-semibold" data-i18n="controls.title">Controls</h2>
+            <button id="resetBtn" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 text-sm font-semibold min-h-[44px]" data-i18n="btn.reset">Reset</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="modeExplore" class="px-3 py-2.5 rounded-xl bg-blue-600 text-white font-semibold min-h-[44px]" data-i18n="mode.explore">Explore</button>
+            <button id="modeMission" class="px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold min-h-[44px]" data-i18n="mode.mission">Missions</button>
+          </div>
+
+          <div>
+            <div class="text-sm font-medium text-slate-500 mb-2" data-i18n="controls.target">Click a target orbit</div>
+            <div id="nButtons" class="grid grid-cols-6 gap-1"></div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span data-i18n="controls.photonE">Photon energy</span>
+              <span id="eVal" class="font-semibold text-purple-600">1.89 eV</span>
+            </div>
+            <input id="eSlider" type="range" min="0.30" max="13.60" value="1.89" step="0.01" class="w-full accent-purple-600" />
+            <div class="flex justify-between text-xs text-slate-500 mt-1">
+              <span id="lamVal" class="font-semibold text-amber-600">656 nm</span>
+              <span id="seriesHint" class="text-slate-500">Balmer</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button id="fireBtn" class="px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="btn.fire">Fire photon</button>
+            <button id="emitBtn" class="px-4 py-2.5 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="btn.emit">Emit to n−1</button>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button data-pe="10.20" class="pe-btn px-3 py-2 rounded-lg bg-violet-50 text-violet-700 text-xs font-semibold border border-violet-100 min-h-[44px]">Lyman-α 10.20</button>
+            <button data-pe="1.89" class="pe-btn px-3 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-semibold border border-red-100 min-h-[44px]">H-α 1.89</button>
+            <button data-pe="2.55" class="pe-btn px-3 py-2 rounded-lg bg-sky-50 text-sky-700 text-xs font-semibold border border-sky-100 min-h-[44px]">H-β 2.55</button>
+            <button data-pe="12.09" class="pe-btn px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold border border-indigo-100 min-h-[44px]">n=1→3 12.09</button>
+          </div>
+
+          <div id="missionBox" class="hidden bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-2">
+            <div class="flex justify-between text-sm">
+              <span class="font-semibold text-blue-800" id="missionTitle">Mission 1</span>
+              <span class="text-blue-600 font-bold" id="missionScore">0</span>
+            </div>
+            <p class="text-sm text-slate-700" id="missionText"></p>
+            <div class="h-2 bg-white rounded-full overflow-hidden">
+              <div id="missionBar" class="h-full bg-blue-600 w-0 transition-all"></div>
+            </div>
+            <button id="skipMission" class="text-xs font-semibold text-blue-600 hover:underline" data-i18n="btn.skip">Skip mission</button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm text-sm space-y-2">
+          <h2 class="font-semibold mb-2" data-i18n="readings.title">Live data</h2>
+          <div class="flex justify-between"><span class="text-slate-500">n</span><span id="readN" class="font-semibold text-green-600">2</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="readings.energy">E<sub>n</sub> = −13.6/n²</span><span id="readE" class="font-semibold text-purple-600">−3.40 eV</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="readings.radius">r<sub>n</sub> = n² a₀</span><span id="readR" class="font-semibold text-slate-600">4 a₀</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="readings.delta">Needed ΔE</span><span id="readD" class="font-semibold text-red-600">—</span></div>
+          <div id="statusMsg" class="mt-2 text-xs font-semibold text-slate-500" data-i18n="status.ready">Click a higher orbit then fire a matching photon, or click a lower orbit to emit.</div>
+        </div>
+      </aside>
+
+      <section class="lg:col-span-8 space-y-4">
+        <div id="three-container" class="relative border-2 border-slate-700 shadow-lg">
+          <div class="absolute top-4 left-4 flex flex-wrap gap-2 pointer-events-none z-10">
+            <span class="bg-black/50 text-red-400 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.nucleus">Proton (+)</span>
+            <span class="bg-black/50 text-green-400 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.electron">Electron</span>
+            <span class="bg-black/50 text-amber-300 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.photon">Photon</span>
+            <span class="bg-black/50 text-slate-200 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.orbit">Orbit n²</span>
+          </div>
+          <div class="absolute bottom-4 right-4 bg-gray-900/80 text-white px-4 py-2 rounded-full text-xs pointer-events-none" data-i18n="hint">Drag • Wheel • Pinch • Tap orbit</div>
+        </div>
+        <div class="bg-white rounded-2xl border-2 border-slate-200 p-4">
+          <h3 class="font-semibold text-sm mb-2" data-i18n="canvas.levels">Energy levels</h3>
+          <canvas id="levelCanvas" width="900" height="240" class="w-full rounded-lg bg-slate-50"></canvas>
+        </div>
+        <div class="bg-white rounded-2xl border-2 border-slate-200 p-4">
+          <h3 class="font-semibold text-sm mb-2" data-i18n="canvas.emitted">Collected emission lines</h3>
+          <canvas id="specCanvas" width="900" height="90" class="w-full rounded-lg bg-slate-950"></canvas>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="explainModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-start gap-3">
+        <h3 class="text-xl font-bold" data-i18n="modal.title">Bohr postulates</h3>
+        <button id="closeExplain" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">&times;</button>
+      </div>
+      <div class="mt-4 text-slate-600 text-sm space-y-3 leading-relaxed">
+        <p data-i18n="modal.p1">Electrons occupy stationary orbits with angular momentum nħ and energy E<sub>n</sub> = −13.6 eV / n². Radius grows as n².</p>
+        <p data-i18n="modal.p2">A photon is absorbed only if hf exactly equals the gap to a higher level. Emission occurs when the electron falls, releasing a photon of the same colour.</p>
+        <p data-i18n="modal.p3">Series: Lyman (to n=1, UV), Balmer (to n=2, visible), Paschen (to n=3, IR). Rydberg: 1/λ = R(1/n<sub>f</sub>² − 1/n<sub>i</sub>²).</p>
+        <div class="flex flex-wrap gap-2 pt-2">
+          <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">Nucleus / ΔE</span>
+          <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">Electron / orbit</span>
+          <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">Photon</span>
+          <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold">E<sub>n</sub></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const HC = 1239.84193;
+    const E1 = 13.6;
+    const NMAX = 6;
+    const TOL = 0.06; // eV
+    const PHYSICS_COLORS = { force: 0xdc2626, velocity: 0x16a34a, accel: 0x9333ea, bField: 0xd97706, displacement: 0x475569 };
+
+    const translations = {
+      en: {
+        'nav.back': 'Back',
+        'page.title': "Bohr's Model Game",
+        'page.subtitle': 'Click an orbit or fire a photon. The electron jumps only when hf = |Ei − Ef|. Complete Balmer and Lyman missions.',
+        'btn.explain': 'Explain', 'btn.reset': 'Reset', 'btn.fire': 'Fire photon', 'btn.emit': 'Emit to n−1',
+        'btn.skip': 'Skip mission',
+        'mode.explore': 'Explore', 'mode.mission': 'Missions',
+        'controls.title': 'Controls', 'controls.target': 'Click a target orbit',
+        'controls.photonE': 'Photon energy',
+        'readings.title': 'Live data', 'readings.energy': 'En = −13.6/n²',
+        'readings.radius': 'rn = n² a₀', 'readings.delta': 'Needed ΔE',
+        'status.ready': 'Click a higher orbit then fire a matching photon, or click a lower orbit to emit.',
+        'status.absorbed': 'Absorbed — electron jumped up.',
+        'status.emitted': 'Emitted — photon released.',
+        'status.nomatch': 'No allowed jump: hf must equal |Ei − Ef|.',
+        'status.ground': 'Already in the ground state n = 1. Absorb a UV photon to excite.',
+        'status.needhigher': 'To go up, fire a photon whose energy matches the gap.',
+        'legend.nucleus': 'Proton (+)', 'legend.electron': 'Electron', 'legend.photon': 'Photon', 'legend.orbit': 'Orbit n²',
+        hint: 'Drag • Wheel • Pinch • Tap orbit',
+        'canvas.levels': 'Energy levels', 'canvas.emitted': 'Collected emission lines',
+        'modal.title': 'Bohr postulates',
+        'modal.p1': 'Electrons occupy stationary orbits with angular momentum nħ and energy En = −13.6 eV / n². Radius grows as n².',
+        'modal.p2': 'A photon is absorbed only if hf exactly equals the gap to a higher level. Emission occurs when the electron falls, releasing a photon of the same colour.',
+        'modal.p3': 'Series: Lyman (to n=1, UV), Balmer (to n=2, visible), Paschen (to n=3, IR). Rydberg: 1/λ = R(1/nf² − 1/ni²).',
+        'mission.done': 'Mission complete!',
+        'm1.title': 'Mission 1 · H-α',
+        'm1.text': 'Produce the red Balmer photon: excite to n = 3, then emit n = 3 → 2 (656 nm).',
+        'm2.title': 'Mission 2 · Balmer set',
+        'm2.text': 'Collect all four visible Balmer lines: H-α, H-β, H-γ, H-δ.',
+        'm3.title': 'Mission 3 · Lyman-α',
+        'm3.text': 'From any n > 1, emit down to n = 1 to produce Lyman-α (or a Lyman photon).',
+        'm4.title': 'Mission 4 · Cascade',
+        'm4.text': 'Start at n = 4 and cascade to the ground state using only emissions (no absorption).'
+      },
+      'zh-hk': {
+        'nav.back': '返回',
+        'page.title': '波耳模型遊戲',
+        'page.subtitle': '點擊軌道或發射光子。電子只在 hf = |Ei − Ef| 時躍遷。完成巴耳末系與萊曼系任務。',
+        'btn.explain': '解釋', 'btn.reset': '重設', 'btn.fire': '發射光子', 'btn.emit': '發射至 n−1',
+        'btn.skip': '跳過任務',
+        'mode.explore': '探索', 'mode.mission': '任務',
+        'controls.title': '控制', 'controls.target': '點擊目標軌道',
+        'controls.photonE': '光子能量',
+        'readings.title': '即時數據', 'readings.energy': 'En = −13.6/n²',
+        'readings.radius': 'rn = n² a₀', 'readings.delta': '所需 ΔE',
+        'status.ready': '點擊較高軌道後發射對應光子，或點擊較低軌道以發射。',
+        'status.absorbed': '已吸收——電子向上躍遷。',
+        'status.emitted': '已發射——釋出光子。',
+        'status.nomatch': '不允許躍遷：hf 必須等於 |Ei − Ef|。',
+        'status.ground': '已在基態 n = 1。吸收紫外光子以激發。',
+        'status.needhigher': '要向上躍遷，請發射能量剛好等於能階差的光子。',
+        'legend.nucleus': '質子 (+)', 'legend.electron': '電子', 'legend.photon': '光子', 'legend.orbit': '軌道 n²',
+        hint: '拖曳 • 滾輪 • 雙指縮放 • 點軌道',
+        'canvas.levels': '能階', 'canvas.emitted': '已收集發射譜線',
+        'modal.title': '波耳假設',
+        'modal.p1': '電子處於角動量為 nħ 的定態軌道，能量 En = −13.6 eV / n²。半徑隨 n² 增大。',
+        'modal.p2': '光子只在 hf 剛好等於較高能階差時被吸收。電子下落時發射相同顏色的光子。',
+        'modal.p3': '譜系：萊曼（至 n=1，紫外）、巴耳末（至 n=2，可見）、帕申（至 n=3，紅外）。里德伯：1/λ = R(1/nf² − 1/ni²)。',
+        'mission.done': '任務完成！',
+        'm1.title': '任務 1 · H-α',
+        'm1.text': '產生紅色巴耳末光子：先激發至 n = 3，再發射 n = 3 → 2（656 nm）。',
+        'm2.title': '任務 2 · 巴耳末全套',
+        'm2.text': '收集四條可見巴耳末線：H-α、H-β、H-γ、H-δ。',
+        'm3.title': '任務 3 · 萊曼-α',
+        'm3.text': '從任何 n > 1 發射至 n = 1，產生萊曼光子。',
+        'm4.title': '任務 4 · 級聯',
+        'm4.text': '由 n = 4 出發，只用發射（不可吸收）級聯至基態。'
+      }
+    };
+
+    let currentLang = (localStorage.getItem('preferred_language') || 'en').toLowerCase();
+    if (currentLang.startsWith('zh') || currentLang === 'cn' || currentLang === 'hk') currentLang = 'zh-hk';
+    else currentLang = 'en';
+
+    function En(n) { return -E1 / (n * n); }
+    function dE(ni, nf) { return Math.abs(En(ni) - En(nf)); }
+    function lam(ni, nf) { return HC / dE(ni, nf); }
+    function seriesName(nf) { return nf === 1 ? 'Lyman' : nf === 2 ? 'Balmer' : nf === 3 ? 'Paschen' : nf === 4 ? 'Brackett' : 'Pfund'; }
+
+    const state = {
+      n: 2,
+      target: 3,
+      photonE: 1.89,
+      play: 'explore',
+      mission: 0,
+      missionScore: 0,
+      collected: [],
+      lastJump: null,
+      flash: 0,
+      m1saw3: false,
+      m4lockAbsorb: false,
+      m4started: false
+    };
+
+    const MISSIONS = 4;
+
+    function t(k) { return translations[currentLang]?.[k] ?? translations.en[k] ?? k; }
+
+    function setLanguage(lang) {
+      currentLang = lang === 'en' ? 'en' : 'zh-hk';
+      localStorage.setItem('preferred_language', currentLang);
+      document.documentElement.lang = currentLang === 'zh-hk' ? 'zh-HK' : 'en';
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const val = translations[currentLang]?.[key];
+        if (!val) return;
+        if (key.includes('modal') || key.includes('subtitle')) el.innerHTML = val;
+        else el.textContent = val;
+      });
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        const a = btn.dataset.lang === currentLang;
+        btn.classList.toggle('bg-blue-600', a);
+        btn.classList.toggle('text-white', a);
+      });
+      updateMissionUI();
+      updateReadings();
+      drawAll();
+      if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+    }
+
+    function wavelengthToRGB(nm) {
+      let r = 0, g = 0, b = 0;
+      if (nm < 380) return { r: 0.45, g: 0.2, b: 0.75 };
+      if (nm > 780) return { r: 0.55, g: 0.15, b: 0.15 };
+      if (nm < 440) { r = -(nm - 440) / 60; g = 0; b = 1; }
+      else if (nm < 490) { r = 0; g = (nm - 440) / 50; b = 1; }
+      else if (nm < 510) { r = 0; g = 1; b = -(nm - 510) / 20; }
+      else if (nm < 580) { r = (nm - 510) / 70; g = 1; b = 0; }
+      else if (nm < 645) { r = 1; g = -(nm - 645) / 65; b = 0; }
+      else { r = 1; g = 0; b = 0; }
+      let f = 1;
+      if (nm < 420) f = 0.4 + 0.6 * (nm - 380) / 40;
+      if (nm > 700) f = 0.4 + 0.6 * (780 - nm) / 80;
+      return { r: r * f, g: g * f, b: b * f };
+    }
+    function rgbCss(c) { return `rgb(${(c.r * 255) | 0},${(c.g * 255) | 0},${(c.b * 255) | 0})`; }
+    function threeCol(nm) { const c = wavelengthToRGB(nm); return new THREE.Color(c.r, c.g, c.b); }
+
+    /* ---------- 3D ---------- */
+    const container = document.getElementById('three-container');
+    let scene, camera, renderer, nucleus, electron, orbitRings = [], photons = [];
+    let electronAngle = 0;
+    let camTheta = 0.7, camPhi = 1.05, camRadius = 18;
+    const defaultCam = { theta: 0.7, phi: 1.05, radius: 18 };
+    let isCameraDrag = false, startCamX, startCamY, dragMoved = false;
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    function orbitRadius(n) { return 0.55 * n * n; }
+
+    function updateCameraFromSpherical() {
+      camera.position.set(
+        camRadius * Math.sin(camPhi) * Math.sin(camTheta),
+        camRadius * Math.cos(camPhi),
+        camRadius * Math.sin(camPhi) * Math.cos(camTheta)
+      );
+      camera.lookAt(0, 0, 0);
+    }
+    function setupCameraControls() {
+      container.addEventListener('mousedown', e => {
+        if (e.target.closest('input,button,select')) return;
+        isCameraDrag = true; dragMoved = false; startCamX = e.clientX; startCamY = e.clientY;
+      });
+      window.addEventListener('mouseup', e => {
+        if (isCameraDrag && !dragMoved) pickOrbit(e.clientX, e.clientY);
+        isCameraDrag = false;
+      });
+      window.addEventListener('mousemove', e => {
+        if (!isCameraDrag) return;
+        const dx = e.clientX - startCamX, dy = e.clientY - startCamY;
+        if (Math.hypot(dx, dy) > 4) dragMoved = true;
+        camTheta -= dx * 0.005; camPhi -= dy * 0.005;
+        camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi));
+        startCamX = e.clientX; startCamY = e.clientY;
+        updateCameraFromSpherical();
+      });
+      container.addEventListener('wheel', e => {
+        e.preventDefault();
+        camRadius = Math.max(8, Math.min(40, camRadius + e.deltaY * 0.02));
+        updateCameraFromSpherical();
+      }, { passive: false });
+      let ltd = null, ltx = null, lty = null, tMoved = false;
+      container.addEventListener('touchstart', e => {
+        e.preventDefault(); tMoved = false;
+        if (e.touches.length === 1) { ltx = e.touches[0].clientX; lty = e.touches[0].clientY; }
+        else if (e.touches.length === 2) ltd = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      }, { passive: false });
+      container.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (e.touches.length === 1 && ltx !== null) {
+          const dx = e.touches[0].clientX - ltx, dy = e.touches[0].clientY - lty;
+          if (Math.hypot(dx, dy) > 6) tMoved = true;
+          camTheta -= dx * 0.008; camPhi -= dy * 0.008;
+          camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi));
+          ltx = e.touches[0].clientX; lty = e.touches[0].clientY;
+          updateCameraFromSpherical();
+        } else if (e.touches.length === 2 && ltd !== null) {
+          tMoved = true;
+          const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          camRadius = Math.max(8, Math.min(40, camRadius + (ltd - d) * 0.08));
+          ltd = d; updateCameraFromSpherical();
+        }
+      }, { passive: false });
+      container.addEventListener('touchend', e => {
+        if (!tMoved && e.changedTouches[0]) pickOrbit(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+        ltx = lty = ltd = null;
+      });
+    }
+
+    function pickOrbit(cx, cy) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((cx - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((cy - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(orbitRings, true);
+      if (hits.length) {
+        const n = hits[0].object.userData.n;
+        onSelectN(n);
+      }
+    }
+
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x020617);
+      camera = new THREE.PerspectiveCamera(45, container.offsetWidth / container.offsetHeight, 0.1, 200);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+      const sun = new THREE.DirectionalLight(0xffffff, 0.7); sun.position.set(8, 12, 6); scene.add(sun);
+
+      nucleus = new THREE.Mesh(
+        new THREE.SphereGeometry(0.28, 24, 24),
+        new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x7f1d1d, emissiveIntensity: 0.55 })
+      );
+      scene.add(nucleus);
+      const glow = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 16), new THREE.MeshBasicMaterial({ color: 0xdc2626, transparent: true, opacity: 0.18 }));
+      scene.add(glow);
+
+      for (let n = 1; n <= NMAX; n++) {
+        const r = orbitRadius(n);
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(r, 0.045, 10, 80),
+          new THREE.MeshStandardMaterial({ color: 0x64748b, emissive: 0x1e293b, emissiveIntensity: 0.2 })
+        );
+        ring.rotation.x = Math.PI / 2;
+        ring.userData.n = n;
+        scene.add(ring);
+        orbitRings.push(ring);
+        const sprite = makeLabel('n=' + n);
+        sprite.position.set(r * 0.72, 0.35 + n * 0.08, r * 0.72);
+        scene.add(sprite);
+      }
+
+      electron = new THREE.Mesh(
+        new THREE.SphereGeometry(0.16, 16, 16),
+        new THREE.MeshStandardMaterial({ color: 0x16a34a, emissive: 0x166534, emissiveIntensity: 0.8 })
+      );
+      scene.add(electron);
+
+      setupCameraControls();
+      updateCameraFromSpherical();
+      animate();
+    }
+
+    function makeLabel(text) {
+      const cv = document.createElement('canvas');
+      cv.width = 128; cv.height = 64;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = 'rgba(15,23,42,0.75)';
+      ctx.fillRect(8, 16, 112, 32);
+      ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 28px Inter'; ctx.textAlign = 'center';
+      ctx.fillText(text, 64, 40);
+      const tex = new THREE.CanvasTexture(cv);
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+      const sp = new THREE.Sprite(mat);
+      sp.scale.set(1.6, 0.8, 1);
+      return sp;
+    }
+
+    function spawnPhoton(from, to, nm, outward) {
+      const col = threeCol(nm);
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), new THREE.MeshBasicMaterial({ color: col }));
+      mesh.position.copy(from);
+      scene.add(mesh);
+      const dir = outward ? to.clone().sub(from).normalize() : to.clone().sub(from).normalize();
+      photons.push({ mesh, vel: dir.multiplyScalar(0.16), life: 0 });
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      electronAngle += 0.03 / Math.max(1, state.n * 0.45);
+      const r = orbitRadius(state.n);
+      electron.position.set(Math.cos(electronAngle) * r, 0.02, Math.sin(electronAngle) * r);
+      orbitRings.forEach(ring => {
+        const n = ring.userData.n;
+        const on = n === state.n;
+        const tgt = n === state.target;
+        ring.material.color.set(on ? 0x16a34a : tgt ? 0x2563eb : 0x64748b);
+        ring.material.emissive.set(on ? 0x166534 : tgt ? 0x1e3a8a : 0x1e293b);
+        ring.material.emissiveIntensity = on ? 0.7 : tgt ? 0.45 : 0.15;
+      });
+      for (let i = photons.length - 1; i >= 0; i--) {
+        const p = photons[i];
+        p.mesh.position.add(p.vel);
+        p.life++;
+        if (p.life > 90) { scene.remove(p.mesh); photons.splice(i, 1); }
+      }
+      if (state.flash > 0) state.flash--;
+      renderer.render(scene, camera);
+    }
+
+    /* ---------- physics actions ---------- */
+    function matchUpFrom(n, E) {
+      for (let nf = n + 1; nf <= NMAX; nf++) {
+        if (Math.abs(dE(n, nf) - E) < TOL) return nf;
+      }
+      return null;
+    }
+
+    function jumpTo(nf, kind) {
+      const ni = state.n;
+      if (nf === ni) return;
+      const nm = lam(ni, nf);
+      const from = electron.position.clone();
+      const to = new THREE.Vector3(orbitRadius(nf), 0, 0);
+      if (kind === 'absorb') spawnPhoton(new THREE.Vector3(-8, 2.5, 0), from, nm, true);
+      else spawnPhoton(from, new THREE.Vector3(8, 3, (Math.random() - 0.5) * 4), nm, true);
+      state.lastJump = { ni, nf, nm, kind };
+      state.n = nf;
+      state.flash = 40;
+      if (kind === 'emit') {
+        const key = ni + '→' + nf;
+        if (!state.collected.find(x => x.key === key)) state.collected.push({ key, ni, nf, nm });
+      }
+      if (state.play === 'mission') checkMission(ni, nf, kind);
+      updateReadings();
+      drawAll();
+      refreshNButtons();
+    }
+
+    function firePhoton() {
+      if (state.play === 'mission' && state.mission === 3 && state.m4lockAbsorb) {
+        setStatus('status.nomatch', 'text-red-600');
+        return;
+      }
+      const nf = matchUpFrom(state.n, state.photonE);
+      if (nf) {
+        jumpTo(nf, 'absorb');
+        setStatus('status.absorbed', 'text-amber-600');
+      } else {
+        spawnPhoton(new THREE.Vector3(-8, 2.2, 0), electron.position.clone(), HC / state.photonE, true);
+        setStatus('status.nomatch', 'text-red-600');
+      }
+    }
+
+    function emitTo(nf) {
+      if (nf >= state.n) { setStatus('status.needhigher', 'text-slate-500'); return; }
+      if (state.n === 1) { setStatus('status.ground', 'text-slate-500'); return; }
+      jumpTo(nf, 'emit');
+      setStatus('status.emitted', 'text-green-600');
+    }
+
+    function onSelectN(n) {
+      state.target = n;
+      refreshNButtons();
+      if (n < state.n) emitTo(n);
+      else if (n > state.n) {
+        const need = dE(state.n, n);
+        state.photonE = +need.toFixed(2);
+        document.getElementById('eSlider').value = state.photonE;
+        updateReadings();
+        setStatus('status.needhigher', 'text-blue-600');
+      }
+    }
+
+    function setStatus(key, cls) {
+      const el = document.getElementById('statusMsg');
+      el.textContent = t(key);
+      el.className = 'mt-2 text-xs font-semibold ' + cls;
+    }
+
+    /* ---------- missions ---------- */
+    function startMissions() {
+      state.play = 'mission';
+      state.mission = 0;
+      state.missionScore = 0;
+      state.m1saw3 = false;
+      state.m4lockAbsorb = false;
+      state.n = 1;
+      document.getElementById('missionBox').classList.remove('hidden');
+      document.getElementById('modeExplore').className = 'px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold min-h-[44px]';
+      document.getElementById('modeMission').className = 'px-3 py-2.5 rounded-xl bg-blue-600 text-white font-semibold min-h-[44px]';
+      updateMissionUI();
+      updateReadings(); refreshNButtons(); drawAll();
+    }
+    function stopMissions() {
+      state.play = 'explore';
+      document.getElementById('missionBox').classList.add('hidden');
+      document.getElementById('modeExplore').className = 'px-3 py-2.5 rounded-xl bg-blue-600 text-white font-semibold min-h-[44px]';
+      document.getElementById('modeMission').className = 'px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold min-h-[44px]';
+    }
+    function updateMissionUI() {
+      if (state.play !== 'mission') return;
+      const i = Math.min(state.mission, MISSIONS - 1) + 1;
+      document.getElementById('missionTitle').textContent = t('m' + i + '.title');
+      document.getElementById('missionText').textContent = t('m' + i + '.text');
+      document.getElementById('missionScore').textContent = state.missionScore;
+      let p = 0;
+      if (state.mission === 0) p = (state.m1saw3 ? 50 : 0) + (state.lastJump && state.lastJump.ni === 3 && state.lastJump.nf === 2 && state.lastJump.kind === 'emit' ? 50 : 0);
+      if (state.mission === 1) {
+        const need = ['3→2', '4→2', '5→2', '6→2'];
+        p = 100 * need.filter(k => state.collected.some(c => c.key === k)).length / 4;
+      }
+      if (state.mission === 2) p = state.collected.some(c => c.nf === 1) ? 100 : 0;
+      if (state.mission === 3) p = state.n === 1 && state.m4started ? 100 : ((4 - Math.min(state.n, 4)) / 3) * 80;
+      document.getElementById('missionBar').style.width = Math.min(100, p) + '%';
+    }
+    function completeMission() {
+      state.missionScore += 50;
+      if (state.mission < MISSIONS - 1) {
+        state.mission += 1;
+        if (state.mission === 3) { state.n = 4; state.m4lockAbsorb = true; state.m4started = true; }
+        setStatus('mission.done', 'text-green-600');
+      } else {
+        setStatus('mission.done', 'text-green-600');
+      }
+      updateMissionUI();
+    }
+    function checkMission(ni, nf, kind) {
+      if (state.mission === 0) {
+        if (nf === 3) state.m1saw3 = true;
+        if (kind === 'emit' && ni === 3 && nf === 2 && state.m1saw3) completeMission();
+      } else if (state.mission === 1) {
+        const need = ['3→2', '4→2', '5→2', '6→2'];
+        if (need.every(k => state.collected.some(c => c.key === k))) completeMission();
+      } else if (state.mission === 2) {
+        if (kind === 'emit' && nf === 1) completeMission();
+      } else if (state.mission === 3) {
+        if (kind === 'emit' && nf === 1) completeMission();
+      }
+      updateMissionUI();
+    }
+
+    /* ---------- UI draw ---------- */
+    function refreshNButtons() {
+      const wrap = document.getElementById('nButtons');
+      wrap.innerHTML = '';
+      for (let n = 1; n <= NMAX; n++) {
+        const b = document.createElement('button');
+        const on = n === state.n, tgt = n === state.target;
+        b.className = 'px-2 py-2.5 rounded-xl text-xs font-bold min-h-[44px] ' +
+          (on ? 'bg-green-600 text-white' : tgt ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-700');
+        b.textContent = n;
+        b.onclick = () => onSelectN(n);
+        wrap.appendChild(b);
+      }
+    }
+
+    function updateReadings() {
+      document.getElementById('eVal').textContent = state.photonE.toFixed(2) + ' eV';
+      const nm = HC / state.photonE;
+      document.getElementById('lamVal').textContent = nm < 1000 ? nm.toFixed(0) + ' nm' : (nm / 1000).toFixed(2) + ' μm';
+      let hint = '—';
+      const nf = matchUpFrom(state.n, state.photonE);
+      if (nf) hint = seriesName(state.n) + ' n=' + state.n + '→' + nf;
+      else if (state.target > state.n) hint = 'need ' + dE(state.n, state.target).toFixed(2) + ' eV';
+      document.getElementById('seriesHint').textContent = hint;
+      document.getElementById('readN').textContent = state.n;
+      document.getElementById('readE').textContent = En(state.n).toFixed(2) + ' eV';
+      document.getElementById('readR').textContent = (state.n * state.n) + ' a₀';
+      if (state.target !== state.n) {
+        document.getElementById('readD').textContent = dE(state.n, state.target).toFixed(2) + ' eV → n=' + state.target;
+        document.getElementById('readD').className = 'font-semibold text-red-600';
+      } else {
+        document.getElementById('readD').textContent = '—';
+      }
+    }
+
+    function drawLevels() {
+      const c = document.getElementById('levelCanvas');
+      const ctx = c.getContext('2d');
+      const W = c.width, H = c.height;
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, 0, W, H);
+      const padL = 80, padR = 36, padT = 16, padB = 20;
+      const yOf = n => padT + (En(n) - En(NMAX)) / (En(1) - En(NMAX)) * (H - padT - padB);
+      ctx.font = '12px Inter';
+      for (let n = 1; n <= NMAX; n++) {
+        const y = yOf(n);
+        ctx.strokeStyle = n === state.n ? '#16a34a' : n === state.target ? '#2563eb' : '#64748b';
+        ctx.lineWidth = n === state.n ? 3 : 1.5;
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+        ctx.fillStyle = '#334155'; ctx.textAlign = 'right';
+        ctx.fillText('n=' + n + '  ' + En(n).toFixed(2) + ' eV', padL - 8, y + 4);
+      }
+      if (state.lastJump) {
+        const { ni, nf, nm, kind } = state.lastJump;
+        const x = padL + 180;
+        const cRgb = wavelengthToRGB(nm);
+        ctx.strokeStyle = rgbCss(cRgb); ctx.fillStyle = rgbCss(cRgb); ctx.lineWidth = 2.5;
+        arrow(ctx, x, yOf(ni), x, yOf(nf));
+        ctx.font = '11px Inter'; ctx.textAlign = 'left';
+        ctx.fillText((kind === 'absorb' ? 'abs ' : 'em ') + ni + '→' + nf + '  ' + nm.toFixed(0) + ' nm', x + 10, (yOf(ni) + yOf(nf)) / 2);
+      }
+      ctx.fillStyle = '#16a34a';
+      ctx.beginPath(); ctx.arc(W - padR - 16, yOf(state.n), 7, 0, Math.PI * 2); ctx.fill();
+    }
+    function arrow(ctx, x1, y1, x2, y2) {
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      const ang = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - 8 * Math.cos(ang - 0.4), y2 - 8 * Math.sin(ang - 0.4));
+      ctx.lineTo(x2 - 8 * Math.cos(ang + 0.4), y2 - 8 * Math.sin(ang + 0.4));
+      ctx.closePath(); ctx.fill();
+    }
+    function drawSpec() {
+      const c = document.getElementById('specCanvas');
+      const ctx = c.getContext('2d');
+      const W = c.width, H = c.height;
+      ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, W, H);
+      const pad = 24;
+      const xOf = nm => pad + (Math.min(750, Math.max(380, nm)) - 380) / 370 * (W - 2 * pad);
+      state.collected.forEach(line => {
+        const vis = line.nm >= 380 && line.nm <= 750;
+        const x = vis ? xOf(line.nm) : pad + (line.nf === 1 ? 8 : W - pad - 8);
+        ctx.strokeStyle = rgbCss(wavelengthToRGB(line.nm));
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(x, 12); ctx.lineTo(x, H - 22); ctx.stroke();
+        ctx.fillStyle = '#e2e8f0'; ctx.font = '9px Inter'; ctx.textAlign = 'center';
+        ctx.fillText(line.nm.toFixed(0), x, H - 8);
+      });
+    }
+    function drawAll() { drawLevels(); drawSpec(); }
+
+    /* events */
+    document.getElementById('eSlider').addEventListener('input', e => {
+      state.photonE = +e.target.value;
+      updateReadings();
+    });
+    document.getElementById('fireBtn').onclick = firePhoton;
+    document.getElementById('emitBtn').onclick = () => emitTo(Math.max(1, state.n - 1));
+    document.querySelectorAll('.pe-btn').forEach(b => b.onclick = () => {
+      state.photonE = +b.dataset.pe;
+      document.getElementById('eSlider').value = state.photonE;
+      updateReadings();
+      firePhoton();
+    });
+    document.getElementById('modeExplore').onclick = stopMissions;
+    document.getElementById('modeMission').onclick = startMissions;
+    document.getElementById('skipMission').onclick = () => {
+      if (state.mission < MISSIONS - 1) {
+        state.mission += 1;
+        if (state.mission === 3) { state.n = 4; state.m4lockAbsorb = true; state.m4started = true; }
+        updateMissionUI(); updateReadings(); refreshNButtons();
+      }
+    };
+    document.getElementById('resetBtn').onclick = () => {
+      state.n = 2; state.target = 3; state.photonE = 1.89;
+      state.collected = []; state.lastJump = null; state.m1saw3 = false; state.m4lockAbsorb = false;
+      document.getElementById('eSlider').value = 1.89;
+      camTheta = defaultCam.theta; camPhi = defaultCam.phi; camRadius = defaultCam.radius;
+      updateCameraFromSpherical();
+      photons.forEach(p => scene.remove(p.mesh)); photons = [];
+      stopMissions();
+      updateReadings(); refreshNButtons(); drawAll();
+      setStatus('status.ready', 'text-slate-500');
+    };
+    document.getElementById('explainBtn').onclick = () => document.getElementById('explainModal').classList.remove('hidden');
+    document.getElementById('closeExplain').onclick = () => document.getElementById('explainModal').classList.add('hidden');
+    document.getElementById('explainModal').addEventListener('click', e => { if (e.target.id === 'explainModal') e.target.classList.add('hidden'); });
+    window.addEventListener('resize', () => {
+      if (!camera) return;
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
+
+    window.setLanguage = setLanguage;
+    refreshNButtons();
+    setLanguage(currentLang);
+    updateReadings();
+    drawAll();
+    initThree();
+  </script>
+  <script src="practice_questions.js"></script>
+  <script src="practice_questions_data.js"></script>
+  <script>initPracticeQuestions('bohr_model');</script>
+</body>
+</html>
