@@ -259,18 +259,35 @@
       return { m, uVal, vVal, dtSec, dp, J: dp, favg };
     }
 
+    function syncContactWindow(c) {
+      // Keep contact duration equal to Δt so animation and F–t graph match
+      const mid = state.duration * 0.45;
+      const half = Math.max(c.dtSec * 0.5, 0.005);
+      state.phaseStart = Math.max(0.15, mid - half);
+      state.phaseEnd = Math.min(state.duration - 0.15, mid + half);
+    }
+
     function pulseAt(t, c) {
+      // Normalize each shape so ∫ F dt = J = Δp exactly (over infinite/full support)
+      syncContactWindow(c);
       const center = (state.phaseStart + state.phaseEnd) * 0.5;
-      const width = Math.max(c.dtSec * 0.7, 0.01);
+      const dt = Math.max(c.dtSec, 1e-4);
       if (shape.value === 'gaussian') {
-        const x = (t - center) / width;
-        return c.favg * Math.exp(-x * x);
+        // ∫ A exp(-(t/σ)²) dt = A σ √π  →  A = J / (σ √π)
+        const sigma = dt / (2 * Math.SQRT2);
+        const A = c.J / (sigma * Math.sqrt(Math.PI));
+        const x = (t - center) / sigma;
+        return A * Math.exp(-x * x);
       }
       if (shape.value === 'triangular') {
-        const d = Math.abs(t - center) / (width * 1.2);
-        return d > 1 ? 0 : c.favg * (1 - d);
+        // Triangle base = Δt, height H: area = ½·Δt·H = J → H = 2 F_avg
+        const half = dt * 0.5;
+        const d = Math.abs(t - center) / half;
+        return d > 1 ? 0 : (2 * c.favg) * (1 - d);
       }
-      if (t < center - width || t > center + width) return 0;
+      // Rectangular: width = Δt, height = F_avg → area = J
+      const half = dt * 0.5;
+      if (Math.abs(t - center) > half) return 0;
       return c.favg;
     }
 
