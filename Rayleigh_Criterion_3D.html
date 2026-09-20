@@ -90,7 +90,7 @@
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-4 space-y-6">
+            <div class="lg:col-span-4 space-y-6 order-2 lg:order-1">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
                     <div class="flex justify-between items-center pb-4 border-b border-slate-100">
                         <h3 class="font-bold text-slate-800" data-i18n="controls.title">Parameters</h3>
@@ -116,7 +116,7 @@
 
                     <div id="voltage-wrap" class="hidden">
                         <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
-                            <span data-i18n="controls.voltage">Accelerating voltage ($V$)</span>
+                            <span data-i18n="controls.voltage">Accelerating voltage (V)</span>
                             <span id="voltage-val" class="text-green-600 font-bold font-mono">100 kV</span>
                         </label>
                         <input type="range" id="voltage-slider" min="20" max="200" step="1" value="100" class="w-full accent-green-600">
@@ -184,12 +184,12 @@
                 </div>
             </div>
 
-            <div class="lg:col-span-8 space-y-6">
+            <div class="lg:col-span-8 space-y-6 order-1 lg:order-2">
                 <div class="relative">
                     <div id="three-container"></div>
                     <div class="absolute top-3 left-3 bg-slate-900/75 text-white text-xs font-semibold px-3 py-1 rounded-full pointer-events-none" data-i18n="three.title">3D optical bench</div>
-                    <div class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur text-white px-5 py-3 rounded-full text-sm pointer-events-none" data-i18n="three.hint">Drag source • rotate • pinch zoom</div>
-                    <div class="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
+                    <div class="absolute bottom-3 right-3 bg-slate-900/75 text-white text-xs px-3 py-1 rounded-full pointer-events-none" data-i18n="three.hint">Drag source • rotate • pinch zoom</div>
+                    <div class="absolute top-3 right-3 left-14 sm:left-3 sm:top-auto sm:bottom-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
                         <span class="bg-white/90 text-red-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.sourceA">Source A</span>
                         <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.sourceB">Source B</span>
                         <span class="bg-white/90 text-slate-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.aperture">Aperture $d$</span>
@@ -296,7 +296,7 @@
         let isCameraDrag = false, isDraggingSource = false;
         let pinchDistance = null;
         const lastPointer = { x: 0, y: 0 };
-        const defaultCamera = { radius: 12.5, theta: 0.62, phi: 1.18 };
+        const defaultCamera = { radius: 13.5, theta: 2.52, phi: 1.12 };
         const cameraState = { ...defaultCamera };
         let animT = 0;
         const raycaster = new THREE.Raycaster();
@@ -402,7 +402,7 @@
                 cameraState.radius * Math.cos(cameraState.phi),
                 cameraState.radius * sinPhi * Math.sin(cameraState.theta)
             );
-            camera.lookAt(0.4, 0.15, 0);
+            camera.lookAt(-0.6, 0.1, 0);
         }
 
         function resetCameraView() {
@@ -455,7 +455,7 @@
             scene.add(bench);
 
             sourceA = new THREE.Mesh(
-                new THREE.SphereGeometry(0.16, 24, 24),
+                new THREE.SphereGeometry(0.22, 24, 24),
                 new THREE.MeshStandardMaterial({
                     color: PHYSICS_COLORS.force,
                     emissive: PHYSICS_COLORS.force,
@@ -465,7 +465,7 @@
             sourceA.name = 'sourceA';
             sourceA.position.set(-7.2, 0.7, 0);
             sourceB = new THREE.Mesh(
-                new THREE.SphereGeometry(0.16, 24, 24),
+                new THREE.SphereGeometry(0.22, 24, 24),
                 new THREE.MeshStandardMaterial({
                     color: PHYSICS_COLORS.velocity,
                     emissive: PHYSICS_COLORS.velocity,
@@ -739,7 +739,7 @@
         function drawAiryImage(ctx, w, h, colorObj, thMin, theta) {
             const img = ctx.createImageData(w, h);
             const data = img.data;
-            const span = Math.max(2.6 * thMin, 1.4 * theta);
+            const span = Math.max(2.15 * thMin, 1.25 * theta);
             const uSpan = span / (thMin / 1.22);
             const halfU = theta / 2 / (thMin / 1.22);
             let rgb = [colorObj.hex >> 16 & 255, colorObj.hex >> 8 & 255, colorObj.hex & 255];
@@ -762,7 +762,7 @@
             }
             ctx.putImageData(img, 0, 0);
 
-            ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+            ctx.strokeStyle = 'rgba(255,255,255,0.18)';
             ctx.lineWidth = 1;
             const rPx = (1.22 / (2 * uSpan)) * h;
             const c1 = h / 2 - (halfU / uSpan) * (h / 2);
@@ -1056,7 +1056,7 @@
                 'controls.microscope': 'Microscope',
                 'controls.tem': 'TEM',
                 'controls.wavelength': 'Wavelength ($\\lambda$)',
-                'controls.voltage': 'Accelerating voltage ($V$)',
+                'controls.voltage': 'Accelerating voltage (V)',
                 'controls.voltage_hint': 'de Broglie $\\lambda = h/\\sqrt{2m_e eV}$ (Atomic World).',
                 'controls.aperture': 'Aperture diameter ($d$)',
                 'controls.separation': 'Angular separation ($\\theta$)',
@@ -1108,7 +1108,7 @@
                 'controls.microscope': '顯微鏡',
                 'controls.tem': 'TEM',
                 'controls.wavelength': '波長 ($\\lambda$)',
-                'controls.voltage': '加速電壓 ($V$)',
+                'controls.voltage': '加速電壓 (V)',
                 'controls.voltage_hint': '德布罗意波長 $\\lambda = h/\\sqrt{2m_e eV}$（原子世界）。',
                 'controls.aperture': '光闌直徑 ($d$)',
                 'controls.separation': '角距 ($\\theta$)',
