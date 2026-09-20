@@ -236,10 +236,12 @@
       const lineR = Number(controls.lineR.value);
       const noStep = controls.mode.value === 'no-stepup';
       const lineV = noStep ? plantV : plantV * ratio;
+      // loadP = city demand (delivered). Line current ≈ P_load / V; sending power = load + I²R
       const lineI = loadP / Math.max(lineV, 1);
       const loss = lineI * lineI * lineR;
-      const eff = Math.max(0, ((loadP - loss) / loadP) * 100);
-      return { plantV, loadP, ratio, lineR, lineV, lineI, loss, eff, noStep };
+      const sendP = loadP + loss;
+      const eff = (loadP / Math.max(sendP, 1e-9)) * 100;
+      return { plantV, loadP, ratio, lineR, lineV, lineI, loss, sendP, eff, noStep };
     }
 
     function linePoint(t) {

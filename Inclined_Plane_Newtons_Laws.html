@@ -130,7 +130,7 @@
           <div class="space-y-1.5">
             <div class="flex justify-between"><span class="text-slate-600">mg sinθ</span><span id="downslopeOut" class="font-semibold text-red-600">13.80 N</span></div>
             <div class="flex justify-between"><span class="text-slate-600">N = mg cosθ</span><span id="normalOut" class="font-semibold text-slate-700">25.98 N</span></div>
-            <div class="flex justify-between"><span class="text-slate-600">f = μN</span><span id="frictionOut" class="font-semibold text-red-600">5.72 N</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" id="frictionLabel">f (static/kinetic)</span><span id="frictionOut" class="font-semibold text-red-600">5.72 N</span></div>
             <div class="flex justify-between"><span class="text-slate-600" data-i18n="netForce">ΣF (down-slope +)</span><span id="netOut" class="font-semibold text-red-600">3.08 N</span></div>
             <div class="flex justify-between"><span class="text-slate-600">a = ΣF/m</span><span id="accOut" class="font-semibold text-purple-600">1.03 m/s²</span></div>
             <div class="flex justify-between"><span class="text-slate-600" data-i18n="motionState">Motion state</span><span id="stateOut" class="font-semibold text-green-700">Accelerating down slope</span></div>
@@ -162,8 +162,9 @@
 
       <article class="glass rounded-2xl border border-white/70 p-4">
         <h3 class="font-bold text-slate-900 panel-title" data-i18n="formulaTitle">Formula Bank</h3>
-        <div class="mt-2 text-sm text-slate-700 space-y-1">
-          <p><strong>ΣF = mg sinθ - μmg cosθ - F<sub>push</sub></strong></p>
+        <div class="mt-2 text-sm text-slate-700 space-y-1" id="formulaBank">
+          <p id="formulaNet"><strong>ΣF = mg sinθ − F<sub>push</sub> − f</strong></p>
+          <p><strong>f<sub>s</sub> ≤ μN (static) · f<sub>k</sub> = μN (kinetic)</strong></p>
           <p><strong>a = ΣF / m</strong></p>
           <p><strong>v² = u² + 2as</strong></p>
         </div>
@@ -422,10 +423,31 @@
       const push = Number(controls.push.value);
       const mgSin = m * g * Math.sin(theta);
       const normal = m * g * Math.cos(theta);
-      const friction = mu * normal * Math.sign(state.velocity || mgSin - push || 1);
-      const net = mgSin - friction - push;
+      const maxF = mu * normal;
+      // Down-slope positive: applied = mg sinθ − F_push (before friction)
+      const applied = mgSin - push;
+      const vEps = 0.02;
+      let friction;
+      let net;
+      let stuck = false;
+      if (Math.abs(state.velocity) < vEps) {
+        // Static friction: can cancel applied force up to μN
+        if (Math.abs(applied) <= maxF) {
+          friction = applied;
+          net = 0;
+          stuck = true;
+        } else {
+          // Breakaway → kinetic friction opposes impending motion
+          friction = maxF * Math.sign(applied || 1);
+          net = applied - friction;
+        }
+      } else {
+        // Kinetic friction opposes velocity
+        friction = maxF * Math.sign(state.velocity);
+        net = applied - friction;
+      }
       const acc = net / m;
-      return { m, thetaDeg, theta, mu, push, mgSin, normal, friction, net, acc };
+      return { m, thetaDeg, theta, mu, push, mgSin, normal, friction, maxF, net, acc, stuck, applied };
     }
 
     function setPreset(value) {
@@ -462,6 +484,12 @@
       outputs.pushValue.textContent = p.push.toFixed(1);
       outputs.downslopeOut.textContent = `${p.mgSin.toFixed(2)} N`;
       outputs.normalOut.textContent = `${p.normal.toFixed(2)} N`;
+      const frictionLabel = document.getElementById('frictionLabel');
+      if (frictionLabel) {
+        frictionLabel.textContent = p.stuck
+          ? (document.documentElement.lang === 'zh-HK' ? 'fₛ（靜摩擦）' : 'fₛ (static)')
+          : (document.documentElement.lang === 'zh-HK' ? 'fₖ = μN（動摩擦）' : 'fₖ = μN (kinetic)');
+      }
       outputs.frictionOut.textContent = `${Math.abs(p.friction).toFixed(2)} N`;
       outputs.netOut.textContent = `${p.net.toFixed(2)} N`;
       outputs.accOut.textContent = `${p.acc.toFixed(2)} m/s²`;
@@ -469,7 +497,9 @@
       outputs.cardAcc.textContent = `${p.acc.toFixed(2)} m/s²`;
       outputs.cardVel.textContent = `${state.velocity.toFixed(2)} m/s`;
       outputs.cardDisp.textContent = `${state.distance.toFixed(2)} m`;
-      outputs.stateOut.textContent = motionText(p.acc);
+      outputs.stateOut.textContent = p.stuck
+        ? (document.documentElement.lang === 'zh-HK' ? '靜止／靜摩擦平衡' : 'At rest (static equilibrium)')
+        : motionText(p.acc);
     }
 
     function drawScene() {
@@ -533,10 +563,18 @@
       state.lastTime = now;
       if (state.running) {
         const p = getParams();
-        state.velocity += p.acc * dt;
+        if (p.stuck) {
+          state.velocity = 0;
+        } else {
+          state.velocity += p.acc * dt;
+          // Stop cleanly when kinetic friction brings speed through zero into the static region
+          if (Math.abs(state.velocity) < 0.02 && Math.abs(p.applied) <= p.maxF) {
+            state.velocity = 0;
+          }
+        }
         state.distance += state.velocity * dt;
         if (state.distance <= 0.2 || state.distance >= 8) {
-          state.velocity *= -0.22;
+          state.velocity = 0;
           state.distance = Math.max(0.2, Math.min(8, state.distance));
         }
       }

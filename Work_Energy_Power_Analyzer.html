@@ -51,8 +51,8 @@
           <button id="pauseBtn" class="px-4 py-2 rounded-xl bg-slate-700 text-white font-semibold hover:bg-slate-800 transition min-h-[44px]" data-i18n="pause">Pause</button>
         </div>
         <div class="mt-4 grid sm:grid-cols-4 gap-3 text-sm">
-          <div class="rounded-xl border border-red-200 bg-red-50 px-3 py-2"><div class="text-red-700 font-semibold">W</div><div id="workOut" class="text-red-700 text-lg font-bold">0 J</div></div>
-          <div class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2"><div class="text-blue-700 font-semibold">P</div><div id="powerOut" class="text-blue-700 text-lg font-bold">0 W</div></div>
+          <div class="rounded-xl border border-red-200 bg-red-50 px-3 py-2"><div class="text-red-700 font-semibold" data-i18n="wUseful">W<sub>useful</sub></div><div id="workOut" class="text-red-700 text-lg font-bold">0 J</div></div>
+          <div class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2"><div class="text-blue-700 font-semibold" data-i18n="pUseful">P<sub>useful</sub></div><div id="powerOut" class="text-blue-700 text-lg font-bold">0 W</div></div>
           <div class="rounded-xl border border-green-200 bg-green-50 px-3 py-2"><div class="text-green-700 font-semibold">v</div><div id="speedOut" class="text-green-700 text-lg font-bold">0 m/s</div></div>
           <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2"><div class="text-amber-700 font-semibold">E<sub>k</sub></div><div id="keOut" class="text-amber-700 text-lg font-bold">0 J</div></div>
         </div>
@@ -76,10 +76,10 @@
         <div class="glass rounded-2xl border border-white/70 p-4 text-sm">
           <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">Formula Bank</h2>
           <ul class="list-disc ml-5 space-y-1 text-slate-700">
-            <li>W = Fs</li>
-            <li>P = W / t</li>
-            <li>E<sub>k</sub> = 1/2 mv²</li>
-            <li>η = useful output / input × 100%</li>
+            <li>W<sub>in</sub> = Fs (constant-speed conveyor)</li>
+            <li>W<sub>useful</sub> = η · W<sub>in</sub></li>
+            <li>P<sub>useful</sub> = W<sub>useful</sub> / t</li>
+            <li>v = s / t · E<sub>k</sub> = ½ mv² (cargo KE at speed v)</li>
           </ul>
         </div>
       </aside>
@@ -118,6 +118,8 @@
         mass: 'Mass m (kg)',
         efficiencyInput: 'Efficiency (%)',
         formulaTitle: 'Formula Bank',
+        wUseful: 'Useful W',
+        pUseful: 'Useful P',
         reset: 'Reset', resetCam: 'Reset Camera', pause: 'Pause', resume: 'Resume',
         camHint: 'Drag to rotate • Scroll / pinch zoom',
         'legend.f': 'F — Force', 'legend.v': 'v — Velocity', 'legend.a': 'a / Power'
@@ -133,6 +135,8 @@
         mass: '質量 m (kg)',
         efficiencyInput: '效率 (%)',
         formulaTitle: '公式庫',
+        wUseful: '有用功 W',
+        pUseful: '有用功率 P',
         reset: '重設', resetCam: '重設視角', pause: '暫停', resume: '繼續',
         camHint: '拖曳旋轉 • 滾輪／雙指縮放',
         'legend.f': 'F — 力', 'legend.v': 'v — 速度', 'legend.a': 'a / 功率'
@@ -200,11 +204,14 @@
       const t = Number(controls.time.value);
       const m = Number(controls.mass.value);
       const eff = Number(controls.efficiency.value) / 100;
-      const W = F * s;
+      // Constant-speed conveyor: input work Win = Fs; useful output scaled by η
+      const Win = F * s;
+      const W = eff * Win;
+      const Pin = Win / t;
       const P = W / t;
       const v = s / t;
       const Ek = 0.5 * m * v * v;
-      return { F, s, t, m, eff, W, P, v, Ek };
+      return { F, s, t, m, eff, Win, W, Pin, P, v, Ek };
     }
 
     const canvas = document.getElementById('sceneCanvas');
