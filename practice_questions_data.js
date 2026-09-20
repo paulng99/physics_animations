@@ -65,6 +65,33 @@
     ],
   };
 
+  B.rayleigh_criterion = {
+    en: [
+      { q: "State Rayleigh's criterion for resolving two point sources, and write the HKDSE formula for a circular aperture.",
+        sol: "<p>Two images are <b>just resolvable</b> when the <b>central maximum</b> of one diffraction pattern coincides with the <b>first minimum</b> of the other.</p><p>For a circular aperture, lens or mirror of diameter \\(d\\) and wavelength \\(\\lambda\\):</p><p>\\[ \\theta \\approx 1.22\\,\\frac{\\lambda}{d} \\]</p><p>where \\(\\theta\\) is the minimum angular separation in radians.</p>" },
+      { q: "A telescope objective has diameter \\(d = 0.15\\,\\text{m}\\). Find the minimum angular separation of two stars for light of wavelength \\(\\lambda = 550\\,\\text{nm}\\). Give your answer in radians and in arcseconds. (\\(1\\,\\text{rad} = 206265''\\))",
+        sol: "<p>\\[ \\theta_{\\min} = 1.22\\,\\frac{\\lambda}{d} = 1.22\\times\\frac{550\\times10^{-9}}{0.15} = 4.47\\times10^{-6}\\,\\text{rad}. \\]</p><p>In arcseconds:</p><p>\\[ \\theta_{\\min} = (4.47\\times10^{-6})\\times 206265 \\approx 0.92''. \\]</p>" },
+      { q: "Explain two ways to improve the resolving power of an optical microscope, referring to \\(\\theta \\approx 1.22\\lambda/d\\).",
+        sol: "<p>Resolving power is higher when \\(\\theta_{\\min}\\) is <b>smaller</b>.</p><ul class='list-disc pl-5 space-y-1'><li><b>Shorter wavelength</b> \\(\\lambda\\): use blue/violet light (or UV). \\(\\theta_{\\min}\\propto\\lambda\\).</li><li><b>Larger aperture</b> \\(d\\) (wider objective): \\(\\theta_{\\min}\\propto 1/d\\).</li></ul><p>Immersion oil increases the effective numerical aperture, which is equivalent to using a larger effective \\(d\\).</p>" },
+      { q: "(Atomic World) Why does a transmission electron microscope (TEM) have a much higher resolving power than an optical microscope? Refer to the de Broglie relation and Rayleigh's criterion.",
+        sol: "<p>Electrons have de Broglie wavelength \\(\\lambda = h/p\\). For typical accelerating voltages (tens of kV), \\(\\lambda\\) is of order picometres — far shorter than visible light (\\(\\sim 500\\,\\text{nm}\\)).</p><p>From \\(\\theta \\approx 1.22\\lambda/d\\), a much smaller \\(\\lambda\\) gives a much smaller \\(\\theta_{\\min}\\) even if the aperture \\(d\\) is not larger. Hence two nearby object points can still be resolved. (Magnetic coils act as the converging “lenses”.)</p>" },
+      { q: "(Medical Physics) A lens of diameter \\(d = 4.0\\,\\text{mm}\\) is used with light of wavelength \\(600\\,\\text{nm}\\). Two point objects lie \\(L = 2.0\\,\\text{m}\\) from the lens. Find the smallest separation \\(s\\) at which they are just resolved.",
+        sol: "<p>\\[ \\theta_{\\min} = 1.22\\,\\frac{\\lambda}{d} = 1.22\\times\\frac{600\\times10^{-9}}{4.0\\times10^{-3}} = 1.83\\times10^{-4}\\,\\text{rad}. \\]</p><p>For small angles \\(\\theta \\approx s/L\\), so</p><p>\\[ s = \\theta_{\\min} L = (1.83\\times10^{-4})(2.0) = 3.66\\times10^{-4}\\,\\text{m} = 0.37\\,\\text{mm}. \\]</p>" },
+    ],
+    zh: [
+      { q: "陳述瑞利判據（分辨兩個點光源的條件），並寫出圓孔光闌的 HKDSE 公式。",
+        sol: "<p>當一個衍射圖樣的<b>中央極大</b>剛好與另一個的<b>第一極小</b>重合時，兩像<b>剛可分辨</b>。</p><p>直徑為 \\(d\\) 的圓孔、透鏡或反射鏡，波長 \\(\\lambda\\)：</p><p>\\[ \\theta \\approx 1.22\\,\\frac{\\lambda}{d} \\]</p><p>其中 \\(\\theta\\) 為最小角距，單位為弧度。</p>" },
+      { q: "望遠鏡物鏡直徑 \\(d = 0.15\\,\\text{m}\\)。求波長 \\(\\lambda = 550\\,\\text{nm}\\) 時兩恆星的最小角距。以弧度及角秒作答。（\\(1\\,\\text{rad} = 206265''\\)）",
+        sol: "<p>\\[ \\theta_{\\min} = 1.22\\,\\frac{\\lambda}{d} = 1.22\\times\\frac{550\\times10^{-9}}{0.15} = 4.47\\times10^{-6}\\,\\text{rad}. \\]</p><p>化為角秒：</p><p>\\[ \\theta_{\\min} = (4.47\\times10^{-6})\\times 206265 \\approx 0.92''. \\]</p>" },
+      { q: "根據 \\(\\theta \\approx 1.22\\lambda/d\\)，說明兩種提高光學顯微鏡分辨本領的方法。",
+        sol: "<p>分辨本領較高即 \\(\\theta_{\\min}\\) 較<b>小</b>。</p><ul class='list-disc pl-5 space-y-1'><li><b>較短波長</b> \\(\\lambda\\)：用藍／紫光（或紫外）。\\(\\theta_{\\min}\\propto\\lambda\\)。</li><li><b>較大光闌</b> \\(d\\)（更寬的物鏡）：\\(\\theta_{\\min}\\propto 1/d\\)。</li></ul><p>浸油可增大有效數值孔徑，相當於使用更大的有效 \\(d\\)。</p>" },
+      { q: "（原子世界）為何透射電子顯微鏡（TEM）的分辨本領遠高於光學顯微鏡？請同時提及德布罗意關係及瑞利判據。",
+        sol: "<p>電子具德布罗意波長 \\(\\lambda = h/p\\)。在典型加速電壓（數十 kV）下，\\(\\lambda\\) 約為皮米量級，遠短於可見光（\\(\\sim 500\\,\\text{nm}\\)）。</p><p>由 \\(\\theta \\approx 1.22\\lambda/d\\)，即使光闌 \\(d\\) 沒有更大，較短的 \\(\\lambda\\) 仍使 \\(\\theta_{\\min}\\) 小得多，故兩靠近物點仍可分辨。（載流線圈提供會聚「透鏡」作用。）</p>" },
+      { q: "（醫學物理）一直徑 \\(d = 4.0\\,\\text{mm}\\) 的透鏡，配以波長 \\(600\\,\\text{nm}\\) 的光。兩點物體距透鏡 \\(L = 2.0\\,\\text{m}\\)。求剛可分辨時的最小間隔 \\(s\\)。",
+        sol: "<p>\\[ \\theta_{\\min} = 1.22\\,\\frac{\\lambda}{d} = 1.22\\times\\frac{600\\times10^{-9}}{4.0\\times10^{-3}} = 1.83\\times10^{-4}\\,\\text{rad}. \\]</p><p>小角近似 \\(\\theta \\approx s/L\\)，故</p><p>\\[ s = \\theta_{\\min} L = (1.83\\times10^{-4})(2.0) = 3.66\\times10^{-4}\\,\\text{m} = 0.37\\,\\text{mm}. \\]</p>" },
+    ],
+  };
+
   B.convex_lens = {
     en: [
       { q: "An object is placed \\(30\\,\\text{cm}\\) from a thin convex lens of focal length \\(f = 10\\,\\text{cm}\\). Find the image distance and magnification.",

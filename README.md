@@ -6,6 +6,7 @@ Interactive physics education simulations — single-file HTML, Three.js 3D, Tai
 
 - [Physics Animations Home](https://paulng99.github.io/physics_animations/)
 - [Young's Double-Slit Experiment](https://paulng99.github.io/physics_animations/Youngs_Double-Slit_Experiment.html)
+- [Rayleigh Criterion](https://paulng99.github.io/physics_animations/Rayleigh_Criterion_3D.html)
 - [Seating Plan](https://paulng99.github.io/physics_animations/seating_plan.html)
 
 ## Agent Skills
