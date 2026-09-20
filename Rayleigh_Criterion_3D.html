@@ -316,15 +316,24 @@
         function besselJ1(x) {
             if (x === 0) return 0;
             const ax = Math.abs(x);
-            let term = ax / 2;
-            let sum = term;
-            const y = (ax * ax) / 4;
-            for (let k = 1; k < 30; k++) {
-                term *= -y / (k * (k + 1));
-                sum += term;
-                if (Math.abs(term) < 1e-14 * (Math.abs(sum) + 1e-30)) break;
+            let val;
+            if (ax < 12) {
+                let term = ax / 2;
+                let sum = term;
+                const y = (ax * ax) / 4;
+                for (let k = 1; k < 40; k++) {
+                    term *= -y / (k * (k + 1));
+                    sum += term;
+                    if (Math.abs(term) < 1e-14 * (Math.abs(sum) + 1e-30)) break;
+                }
+                val = sum;
+            } else {
+                const inv = 1 / ax;
+                const theta = ax - 0.75 * Math.PI;
+                const am = Math.sqrt(2 / (Math.PI * ax));
+                val = am * (Math.cos(theta) * (1 - 0.234375 * inv * inv) - Math.sin(theta) * (0.375 * inv));
             }
-            return x < 0 ? -sum : sum;
+            return x < 0 ? -val : val;
         }
 
         function airyI(u) {
@@ -566,8 +575,8 @@
                 raycaster.setFromCamera(pointerNDC, camera);
                 const hit = new THREE.Vector3();
                 if (!raycaster.ray.intersectPlane(dragPlane, hit)) return;
-                const y = THREE.MathUtils.clamp(Math.abs(hit.y), 0.12, 1.65);
-                const ratio = y / 0.85;
+                const y = THREE.MathUtils.clamp(Math.abs(hit.y), 0.14, 0.95);
+                const ratio = y / 0.72;
                 const thMin = thetaMin();
                 state.thetaRad = THREE.MathUtils.clamp(ratio * thMin, 0.15 * thMin, 4.5 * thMin);
                 syncSepSlider();
@@ -793,11 +802,14 @@
             const tmp = document.createElement('canvas');
             tmp.width = 256; tmp.height = 256;
             drawAiryImage(tmp.getContext('2d'), 256, 256, colorObj, thMin, theta);
-            ctx.drawImage(tmp, 0, 0, w, h);
+            const side = Math.min(w, h);
+            const ox = (w - side) / 2;
+            const oy = (h - side) / 2;
+            ctx.drawImage(tmp, ox, oy, side, side);
             ctx.fillStyle = 'rgba(255,255,255,0.7)';
             ctx.font = '12px Inter, sans-serif';
-            ctx.fillText('A', w / 2 + 8, 18);
-            ctx.fillText('B', w / 2 + 8, h - 10);
+            ctx.fillText('A', ox + side / 2 + 8, oy + 16);
+            ctx.fillText('B', ox + side / 2 + 8, oy + side - 8);
         }
 
         function combinedProfile(u, halfU) {
@@ -892,7 +904,7 @@
                 rayGroup.remove(c);
                 if (c.geometry) c.geometry.dispose();
             }
-            const y = THREE.MathUtils.clamp(0.85 * (theta / thMin), 0.12, 1.65);
+            const y = THREE.MathUtils.clamp(0.72 * (theta / thMin), 0.14, 0.95);
             sourceA.position.set(-7.2, y, 0);
             sourceB.position.set(-7.2, -y, 0);
 
