@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rayleigh Criterion 3D Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script"></script>
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); }
+        #three-container {
+            width: 100%;
+            height: 420px;
+            background: #020617;
+            cursor: grab;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            touch-action: none;
+        }
+        #three-container:active { cursor: grabbing; }
+        #three-container.dragging-source { cursor: ns-resize; }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #d1d5db;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        mjx-container { display: inline-block !important; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+
+    <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+            </a>
+            <div class="flex items-center gap-2">
+                <button id="explain-btn" class="px-3 py-2 rounded-xl bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="modal.open">Explain</button>
+                <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                    <button onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white" data-lang="zh-hk">繁</button>
+                    <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white bg-white shadow-sm text-blue-600" data-lang="en">EN</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-6 w-full">
+        <header class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-1" data-i18n="page.tag">HKDSE • Wave optics / Atomic World / Medical Physics</p>
+                    <h1 class="text-3xl font-bold text-slate-800 mb-2" data-i18n="page.title">Rayleigh Criterion</h1>
+                    <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="page.description">
+                        Two point sources are just resolvable when the central maximum of one Airy disk sits on the first minimum of the other. For a circular aperture, $\theta \approx 1.22\,\lambda/d$. Drag a source, then watch $\lambda$ and $d$ change the blur.
+                    </p>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800" data-i18n="controls.title">Parameters</h3>
+                        <button id="reset-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-red-50 hover:text-red-600 transition-all" data-i18n="controls.reset">Reset</button>
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 mb-2" data-i18n="controls.instrument">Instrument</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button data-mode="telescope" class="mode-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border transition" data-i18n="controls.telescope">Telescope</button>
+                            <button data-mode="microscope" class="mode-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border transition" data-i18n="controls.microscope">Microscope</button>
+                            <button data-mode="tem" class="mode-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border transition" data-i18n="controls.tem">TEM</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.wavelength">Wavelength ($\lambda$)</span>
+                            <span id="lambda-val" class="text-blue-600 font-bold font-mono">550 nm</span>
+                        </label>
+                        <input type="range" id="lambda-slider" min="400" max="700" step="1" value="550" class="w-full accent-blue-600">
+                    </div>
+
+                    <div id="voltage-wrap" class="hidden">
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.voltage">Accelerating voltage ($V$)</span>
+                            <span id="voltage-val" class="text-green-600 font-bold font-mono">100 kV</span>
+                        </label>
+                        <input type="range" id="voltage-slider" min="20" max="200" step="1" value="100" class="w-full accent-green-600">
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="controls.voltage_hint">de Broglie $\lambda = h/\sqrt{2m_e eV}$ (Atomic World).</p>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.aperture">Aperture diameter ($d$)</span>
+                            <span id="d-val" class="text-blue-600 font-bold font-mono">80 mm</span>
+                        </label>
+                        <input type="range" id="d-slider" min="10" max="400" step="1" value="80" class="w-full accent-blue-600">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span id="sep-label" data-i18n="controls.separation">Angular separation ($\theta$)</span>
+                            <span id="sep-val" class="text-slate-600 font-bold font-mono">1.74″</span>
+                        </label>
+                        <input type="range" id="sep-slider" min="0.3" max="8" step="0.01" value="1.74" class="w-full accent-slate-600">
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="controls.drag_hint">Drag a source in 3D, or snap to the Rayleigh limit.</p>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2">
+                        <button id="snap-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="controls.snap">Just resolved</button>
+                        <button id="preset-unresolved-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition" data-i18n="controls.presetUnresolved">Unresolved</button>
+                        <button id="preset-resolved-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold transition" data-i18n="controls.presetResolved">Well resolved</button>
+                        <button id="preset-blue-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-semibold transition" data-i18n="controls.presetBlue">Blue light</button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide" data-i18n="data.title">Results</h3>
+                    <div id="status-card" class="p-3 rounded-lg border text-center font-bold tracking-wide">JUST RESOLVED</div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.theta_min">$\theta_{\min} = 1.22\,\lambda/d$</span>
+                        <span id="theta-min-val" class="text-lg font-bold text-blue-600 font-mono">1.74″</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.theta">Actual $\theta$</span>
+                        <span id="theta-val" class="text-lg font-bold text-slate-700 font-mono">1.74″</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.ratio">$\theta / \theta_{\min}$</span>
+                        <span id="ratio-val" class="text-lg font-bold text-amber-600 font-mono">1.00</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.dip">Central dip</span>
+                        <span id="dip-val" class="text-lg font-bold text-purple-600 font-mono">26%</span>
+                    </div>
+                    <p id="extra-readout" class="text-xs text-slate-500"></p>
+                </div>
+
+                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3" data-i18n="formula.title">HKDSE formula</h3>
+                    <div class="text-center text-xl font-serif mb-4">$$ \theta \approx 1.22\,\frac{\lambda}{d} $$</div>
+                    <div class="grid grid-cols-1 gap-2 text-sm text-slate-300">
+                        <div><span class="text-blue-400 font-bold">$\theta$:</span> <span data-i18n="formula.theta">minimum angular separation (rad)</span></div>
+                        <div><span class="text-blue-400 font-bold">$\lambda$:</span> <span data-i18n="formula.lambda">wavelength</span></div>
+                        <div><span class="text-blue-400 font-bold">$d$:</span> <span data-i18n="formula.d">aperture / lens diameter</span></div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3 leading-relaxed" data-i18n="formula.note">
+                        Just resolved: the central maximum of one diffraction pattern coincides with the first minimum of the other.
+                    </p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-6">
+                <div class="relative">
+                    <div id="three-container"></div>
+                    <div class="absolute top-3 left-3 bg-slate-900/75 text-white text-xs font-semibold px-3 py-1 rounded-full pointer-events-none" data-i18n="three.title">3D optical bench</div>
+                    <div class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur text-white px-5 py-3 rounded-full text-sm pointer-events-none" data-i18n="three.hint">Drag source • rotate • pinch zoom</div>
+                    <div class="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
+                        <span class="bg-white/90 text-red-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.sourceA">Source A</span>
+                        <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.sourceB">Source B</span>
+                        <span class="bg-white/90 text-slate-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.aperture">Aperture $d$</span>
+                        <span class="bg-white/90 text-amber-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.screen">Image plane</span>
+                    </div>
+                </div>
+
+                <div class="bg-black rounded-xl p-1 shadow-lg border-4 border-slate-800">
+                    <div class="relative w-full h-44 bg-black overflow-hidden rounded-lg">
+                        <canvas id="disk-canvas" class="w-full h-full"></canvas>
+                    </div>
+                    <div class="text-center text-slate-400 text-xs py-2 uppercase tracking-widest font-bold">
+                        <span data-i18n="screen.view">Focal-plane Airy disks</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 h-64 relative">
+                    <h3 class="text-sm font-bold text-slate-500 absolute top-4 left-4 z-10" data-i18n="graph.title">Intensity along the line of centres</h3>
+                    <canvas id="graph-canvas" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+            <div class="flex items-start gap-4">
+                <div class="p-3 bg-blue-600 rounded-xl text-white shrink-0">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-slate-800 mb-2" data-i18n="ai.title">Physics note</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed" data-i18n="ai.desc">
+                        A circular aperture diffracts each point source into an Airy disk. Larger $d$ or shorter $\lambda$ shrinks $\theta_{\min}$, so two close objects become distinct. This is why a TEM (very small de Broglie $\lambda$) out-resolves an optical microscope, and why a wider lens or telescope objective has higher resolving power.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="explain-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[88vh] overflow-y-auto p-6 md:p-8">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <h2 class="text-xl font-bold text-slate-800" data-i18n="modal.title">Rayleigh criterion — HKDSE</h2>
+                <button id="explain-close" class="min-h-[44px] min-w-[44px] rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200">×</button>
+            </div>
+            <div class="space-y-4 text-sm text-slate-600 leading-relaxed" data-i18n="modal.body" id="modal-body">
+                <p>Two images are <b>just resolvable</b> when the centre of one diffraction pattern lies on the first minimum of the other.</p>
+                <p>For a <b>circular</b> aperture, lens or mirror the first dark ring is at $\theta \approx 1.22\,\lambda/d$ (HKDSE Data Booklet, Atomic World &amp; Medical Physics).</p>
+                <p>A single slit uses $\lambda/a$ instead of $1.22\,\lambda/d$. The extra factor $1.22$ comes from the first zero of the Bessel function $J_1$ for circular diffraction.</p>
+                <p><b>Atomic World:</b> a TEM uses electrons with de Broglie wavelength far shorter than visible light, so $\theta_{\min}$ is much smaller and resolving power is much higher.</p>
+                <p><b>Medical Physics:</b> the resolving power of a lens is this diffraction-limited $\theta$ (or the corresponding object spacing $s \approx \theta L$).</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PHYSICS_COLORS = {
+            force: 0xdc2626,
+            velocity: 0x16a34a,
+            accel: 0x9333ea,
+            bField: 0xd97706,
+            displacement: 0x475569
+        };
+
+        const H = 6.63e-34;
+        const ME = 9.11e-31;
+        const QE = 1.60e-19;
+        const ARCSEC = 206265;
+
+        const lambdaSlider = document.getElementById('lambda-slider');
+        const dSlider = document.getElementById('d-slider');
+        const sepSlider = document.getElementById('sep-slider');
+        const voltageSlider = document.getElementById('voltage-slider');
+        const diskCanvas = document.getElementById('disk-canvas');
+        const graphCanvas = document.getElementById('graph-canvas');
+        const threeContainer = document.getElementById('three-container');
+
+        const MODE_PRESETS = {
+            telescope: {
+                lambdaNm: 550, dMM: 80, voltagekV: 100,
+                sepArcsec: null, dMin: 20, dMax: 400, dStep: 1
+            },
+            microscope: {
+                lambdaNm: 550, dMM: 6, voltagekV: 100,
+                sepArcsec: null, dMin: 1, dMax: 20, dStep: 0.1
+            },
+            tem: {
+                lambdaNm: 0.0037, dMM: 0.05, voltagekV: 100,
+                sepArcsec: null, dMin: 0.01, dMax: 0.2, dStep: 0.001
+            }
+        };
+
+        const defaults = { mode: 'telescope', lambdaNm: 550, dMM: 80, voltagekV: 100, thetaRad: null };
+        const state = {
+            mode: 'telescope',
+            lambdaNm: 550,
+            dM: 0.080,
+            voltagekV: 100,
+            thetaRad: 1.22 * 550e-9 / 0.080
+        };
+
+        let scene, camera, renderer;
+        let sourceA, sourceB, apertureGroup, screenMesh, rayGroup, labelSprites;
+        let screenPatternCanvas, screenPatternCtx, screenPatternTexture;
+        let isCameraDrag = false, isDraggingSource = false;
+        let pinchDistance = null;
+        const lastPointer = { x: 0, y: 0 };
+        const defaultCamera = { radius: 12.5, theta: 0.62, phi: 1.18 };
+        const cameraState = { ...defaultCamera };
+        let animT = 0;
+        const raycaster = new THREE.Raycaster();
+        const pointerNDC = new THREE.Vector2();
+        const dragPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 7.2);
+
+        function t(key) {
+            return translations[currentLang]?.[key] ?? translations.en[key] ?? key;
+        }
+
+        function deBroglieNm(kV) {
+            const V = kV * 1000;
+            const p = Math.sqrt(2 * ME * QE * V);
+            return (H / p) * 1e9;
+        }
+
+        function besselJ1(x) {
+            if (x === 0) return 0;
+            const ax = Math.abs(x);
+            let term = ax / 2;
+            let sum = term;
+            const y = (ax * ax) / 4;
+            for (let k = 1; k < 30; k++) {
+                term *= -y / (k * (k + 1));
+                sum += term;
+                if (Math.abs(term) < 1e-14 * (Math.abs(sum) + 1e-30)) break;
+            }
+            return x < 0 ? -sum : sum;
+        }
+
+        function airyI(u) {
+            const x = Math.PI * u;
+            if (Math.abs(x) < 1e-8) return 1;
+            const v = 2 * besselJ1(x) / x;
+            return v * v;
+        }
+
+        function wavelengthToColor(lambdaNm) {
+            let r, g, b;
+            const lambda = lambdaNm < 380 ? 450 : (lambdaNm > 780 ? 650 : lambdaNm);
+            if (lambda >= 380 && lambda < 440) { r = -(lambda - 440) / 60; g = 0; b = 1; }
+            else if (lambda >= 440 && lambda < 490) { r = 0; g = (lambda - 440) / 50; b = 1; }
+            else if (lambda >= 490 && lambda < 510) { r = 0; g = 1; b = -(lambda - 510) / 20; }
+            else if (lambda >= 510 && lambda < 580) { r = (lambda - 510) / 70; g = 1; b = 0; }
+            else if (lambda >= 580 && lambda < 645) { r = 1; g = -(lambda - 645) / 65; b = 0; }
+            else { r = 1; g = 0; b = 0; }
+            if (state.mode === 'tem') { r = 0.2; g = 0.85; b = 0.45; }
+            const R = Math.floor(r * 255), G = Math.floor(g * 255), B = Math.floor(b * 255);
+            return {
+                css: `rgb(${R},${G},${B})`,
+                rgba: (a) => `rgba(${R},${G},${B},${a})`,
+                hex: (R << 16) | (G << 8) | B
+            };
+        }
+
+        function currentLambdaM() {
+            if (state.mode === 'tem') return deBroglieNm(state.voltagekV) * 1e-9;
+            return state.lambdaNm * 1e-9;
+        }
+
+        function thetaMin() {
+            return 1.22 * currentLambdaM() / state.dM;
+        }
+
+        function formatAngle(rad) {
+            const arcsec = rad * ARCSEC;
+            if (arcsec >= 1) return `${arcsec.toFixed(2)}″`;
+            if (rad >= 1e-3) return `${(rad * 1e3).toFixed(3)} mrad`;
+            if (rad >= 1e-6) return `${(rad * 1e6).toFixed(2)} μrad`;
+            return `${(rad * 1e9).toFixed(2)} nrad`;
+        }
+
+        function formatLength(m) {
+            if (m >= 1e-3) return `${(m * 1e3).toFixed(2)} mm`;
+            if (m >= 1e-6) return `${(m * 1e6).toFixed(2)} μm`;
+            if (m >= 1e-9) return `${(m * 1e9).toFixed(2)} nm`;
+            return `${(m * 1e12).toFixed(2)} pm`;
+        }
+
+        function formatLambda(m) {
+            if (m >= 1e-8) return `${(m * 1e9).toFixed(0)} nm`;
+            if (m >= 1e-12) return `${(m * 1e12).toFixed(2)} pm`;
+            return `${(m * 1e15).toFixed(2)} fm`;
+        }
+
+        function formatD(m) {
+            if (m >= 1e-2) return `${(m * 1e3).toFixed(0)} mm`;
+            if (m >= 1e-3) return `${(m * 1e3).toFixed(2)} mm`;
+            if (m >= 1e-6) return `${(m * 1e6).toFixed(1)} μm`;
+            return `${(m * 1e9).toFixed(1)} nm`;
+        }
+
+        function resolutionStatus(ratio, dip) {
+            if (ratio < 0.92) return 'unresolved';
+            if (ratio <= 1.08) return 'just';
+            return 'resolved';
+        }
+
+        function setCameraFromState() {
+            const sinPhi = Math.sin(cameraState.phi);
+            camera.position.set(
+                cameraState.radius * sinPhi * Math.cos(cameraState.theta),
+                cameraState.radius * Math.cos(cameraState.phi),
+                cameraState.radius * sinPhi * Math.sin(cameraState.theta)
+            );
+            camera.lookAt(0.4, 0.15, 0);
+        }
+
+        function resetCameraView() {
+            Object.assign(cameraState, defaultCamera);
+            setCameraFromState();
+        }
+
+        function makeLabelSprite(text, color) {
+            const c = document.createElement('canvas');
+            c.width = 128; c.height = 64;
+            const ctx = c.getContext('2d');
+            ctx.clearRect(0, 0, 128, 64);
+            ctx.fillStyle = color;
+            ctx.font = 'bold 42px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 64, 32);
+            const tex = new THREE.CanvasTexture(c);
+            const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+            const spr = new THREE.Sprite(mat);
+            spr.scale.set(0.7, 0.35, 1);
+            return spr;
+        }
+
+        function initThreeScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020617);
+
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            renderer.setSize(w, h);
+            renderer.shadowMap.enabled = true;
+            threeContainer.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+            const key = new THREE.DirectionalLight(0xffffff, 0.85);
+            key.position.set(6, 9, 5);
+            key.castShadow = true;
+            scene.add(key);
+
+            const bench = new THREE.Mesh(
+                new THREE.BoxGeometry(14, 0.16, 3.4),
+                new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 })
+            );
+            bench.position.set(0.3, -1.35, 0);
+            bench.receiveShadow = true;
+            scene.add(bench);
+
+            sourceA = new THREE.Mesh(
+                new THREE.SphereGeometry(0.16, 24, 24),
+                new THREE.MeshStandardMaterial({
+                    color: PHYSICS_COLORS.force,
+                    emissive: PHYSICS_COLORS.force,
+                    emissiveIntensity: 0.9
+                })
+            );
+            sourceA.name = 'sourceA';
+            sourceA.position.set(-7.2, 0.7, 0);
+            sourceB = new THREE.Mesh(
+                new THREE.SphereGeometry(0.16, 24, 24),
+                new THREE.MeshStandardMaterial({
+                    color: PHYSICS_COLORS.velocity,
+                    emissive: PHYSICS_COLORS.velocity,
+                    emissiveIntensity: 0.9
+                })
+            );
+            sourceB.name = 'sourceB';
+            sourceB.position.set(-7.2, -0.7, 0);
+            scene.add(sourceA, sourceB);
+
+            const la = makeLabelSprite('A', '#DC2626');
+            la.position.set(0, 0.38, 0);
+            sourceA.add(la);
+            const lb = makeLabelSprite('B', '#16A34A');
+            lb.position.set(0, -0.38, 0);
+            sourceB.add(lb);
+
+            apertureGroup = new THREE.Group();
+            const tube = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.72, 0.78, 1.6, 28, 1, true),
+                new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.45, roughness: 0.4, side: THREE.DoubleSide })
+            );
+            tube.rotation.z = Math.PI / 2;
+            const ring = new THREE.Mesh(
+                new THREE.TorusGeometry(0.55, 0.06, 12, 40),
+                new THREE.MeshStandardMaterial({ color: PHYSICS_COLORS.displacement, metalness: 0.3, roughness: 0.45 })
+            );
+            ring.rotation.y = Math.PI / 2;
+            const lens = new THREE.Mesh(
+                new THREE.CircleGeometry(0.52, 40),
+                new THREE.MeshStandardMaterial({
+                    color: 0x93c5fd,
+                    transparent: true,
+                    opacity: 0.28,
+                    side: THREE.DoubleSide,
+                    emissive: 0x2563eb,
+                    emissiveIntensity: 0.15
+                })
+            );
+            lens.rotation.y = Math.PI / 2;
+            apertureGroup.add(tube, ring, lens);
+            apertureGroup.position.set(-0.2, 0, 0);
+            scene.add(apertureGroup);
+
+            screenPatternCanvas = document.createElement('canvas');
+            screenPatternCanvas.width = 256;
+            screenPatternCanvas.height = 256;
+            screenPatternCtx = screenPatternCanvas.getContext('2d');
+            screenPatternTexture = new THREE.CanvasTexture(screenPatternCanvas);
+
+            screenMesh = new THREE.Mesh(
+                new THREE.PlaneGeometry(2.6, 2.6),
+                new THREE.MeshStandardMaterial({
+                    color: 0xffffff,
+                    map: screenPatternTexture,
+                    emissive: 0xffffff,
+                    emissiveMap: screenPatternTexture,
+                    emissiveIntensity: 1.05,
+                    side: THREE.DoubleSide
+                })
+            );
+            screenMesh.rotation.y = -Math.PI / 2;
+            screenMesh.position.set(5.4, 0, 0);
+            scene.add(screenMesh);
+
+            const screenFrame = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08, 2.8, 2.8),
+                new THREE.MeshStandardMaterial({ color: PHYSICS_COLORS.bField, metalness: 0.2, roughness: 0.6 })
+            );
+            screenFrame.position.set(5.48, 0, 0);
+            scene.add(screenFrame);
+
+            rayGroup = new THREE.Group();
+            scene.add(rayGroup);
+
+            attachCameraControls();
+            resetCameraView();
+        }
+
+        function pointerToNDC(clientX, clientY) {
+            const rect = threeContainer.getBoundingClientRect();
+            pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+        }
+
+        function attachCameraControls() {
+            const dom = renderer.domElement;
+
+            function hitSource(clientX, clientY) {
+                pointerToNDC(clientX, clientY);
+                raycaster.setFromCamera(pointerNDC, camera);
+                const hits = raycaster.intersectObjects([sourceA, sourceB], true);
+                return hits.length ? hits[0].object : null;
+            }
+
+            function applySourceDrag(clientX, clientY) {
+                pointerToNDC(clientX, clientY);
+                raycaster.setFromCamera(pointerNDC, camera);
+                const hit = new THREE.Vector3();
+                if (!raycaster.ray.intersectPlane(dragPlane, hit)) return;
+                const y = THREE.MathUtils.clamp(Math.abs(hit.y), 0.12, 1.65);
+                const ratio = y / 0.85;
+                const thMin = thetaMin();
+                state.thetaRad = THREE.MathUtils.clamp(ratio * thMin, 0.15 * thMin, 4.5 * thMin);
+                syncSepSlider();
+                updateSimulation();
+            }
+
+            dom.addEventListener('mousedown', (e) => {
+                const obj = hitSource(e.clientX, e.clientY);
+                if (obj) {
+                    isDraggingSource = true;
+                    threeContainer.classList.add('dragging-source');
+                } else {
+                    isCameraDrag = true;
+                    lastPointer.x = e.clientX;
+                    lastPointer.y = e.clientY;
+                }
+            });
+            window.addEventListener('mouseup', () => {
+                isCameraDrag = false;
+                isDraggingSource = false;
+                threeContainer.classList.remove('dragging-source');
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (isDraggingSource) {
+                    applySourceDrag(e.clientX, e.clientY);
+                    return;
+                }
+                if (!isCameraDrag) return;
+                const dx = e.clientX - lastPointer.x;
+                const dy = e.clientY - lastPointer.y;
+                lastPointer.x = e.clientX;
+                lastPointer.y = e.clientY;
+                cameraState.theta -= dx * 0.0055;
+                cameraState.phi = THREE.MathUtils.clamp(cameraState.phi + dy * 0.0055, 0.2, Math.PI - 0.2);
+                setCameraFromState();
+            });
+            dom.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                cameraState.radius = THREE.MathUtils.clamp(cameraState.radius + e.deltaY * 0.01, 6, 22);
+                setCameraFromState();
+            }, { passive: false });
+
+            dom.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    const obj = hitSource(e.touches[0].clientX, e.touches[0].clientY);
+                    if (obj) {
+                        isDraggingSource = true;
+                    } else {
+                        isCameraDrag = true;
+                        lastPointer.x = e.touches[0].clientX;
+                        lastPointer.y = e.touches[0].clientY;
+                    }
+                } else if (e.touches.length === 2) {
+                    isCameraDrag = false;
+                    isDraggingSource = false;
+                    pinchDistance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                }
+            }, { passive: true });
+
+            dom.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && isDraggingSource) {
+                    e.preventDefault();
+                    applySourceDrag(e.touches[0].clientX, e.touches[0].clientY);
+                } else if (e.touches.length === 1 && isCameraDrag) {
+                    e.preventDefault();
+                    const dx = e.touches[0].clientX - lastPointer.x;
+                    const dy = e.touches[0].clientY - lastPointer.y;
+                    lastPointer.x = e.touches[0].clientX;
+                    lastPointer.y = e.touches[0].clientY;
+                    cameraState.theta -= dx * 0.0055;
+                    cameraState.phi = THREE.MathUtils.clamp(cameraState.phi + dy * 0.0055, 0.2, Math.PI - 0.2);
+                    setCameraFromState();
+                } else if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const dist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    if (pinchDistance !== null) {
+                        cameraState.radius = THREE.MathUtils.clamp(
+                            cameraState.radius - (dist - pinchDistance) * 0.02, 6, 22
+                        );
+                        setCameraFromState();
+                    }
+                    pinchDistance = dist;
+                }
+            }, { passive: false });
+
+            dom.addEventListener('touchend', () => {
+                isCameraDrag = false;
+                isDraggingSource = false;
+                pinchDistance = null;
+            }, { passive: true });
+        }
+
+        function syncSepSlider() {
+            if (state.mode === 'telescope') {
+                sepSlider.min = '0.20';
+                sepSlider.max = '12';
+                sepSlider.step = '0.01';
+                sepSlider.value = (state.thetaRad * ARCSEC).toFixed(2);
+            } else if (state.mode === 'microscope') {
+                const L = 0.003;
+                const sUm = state.thetaRad * L * 1e6;
+                sepSlider.min = '0.05';
+                sepSlider.max = '4';
+                sepSlider.step = '0.01';
+                sepSlider.value = sUm.toFixed(2);
+            } else {
+                const L = 0.002;
+                const sNm = state.thetaRad * L * 1e9;
+                sepSlider.min = '0.02';
+                sepSlider.max = '8';
+                sepSlider.step = '0.01';
+                sepSlider.value = sNm.toFixed(2);
+            }
+        }
+
+        function readSepFromSlider() {
+            if (state.mode === 'telescope') {
+                state.thetaRad = parseFloat(sepSlider.value) / ARCSEC;
+            } else if (state.mode === 'microscope') {
+                const L = 0.003;
+                state.thetaRad = (parseFloat(sepSlider.value) * 1e-6) / L;
+            } else {
+                const L = 0.002;
+                state.thetaRad = (parseFloat(sepSlider.value) * 1e-9) / L;
+            }
+        }
+
+        function configureModeControls() {
+            const p = MODE_PRESETS[state.mode];
+            const voltageWrap = document.getElementById('voltage-wrap');
+            if (state.mode === 'tem') {
+                voltageWrap.classList.remove('hidden');
+                lambdaSlider.disabled = true;
+                lambdaSlider.classList.add('opacity-40');
+                dSlider.min = String(p.dMin);
+                dSlider.max = String(p.dMax);
+                dSlider.step = String(p.dStep);
+                dSlider.value = String(p.dMM);
+            } else {
+                voltageWrap.classList.add('hidden');
+                lambdaSlider.disabled = false;
+                lambdaSlider.classList.remove('opacity-40');
+                lambdaSlider.min = '400';
+                lambdaSlider.max = '700';
+                lambdaSlider.step = '1';
+                lambdaSlider.value = String(p.lambdaNm);
+                dSlider.min = String(p.dMin);
+                dSlider.max = String(p.dMax);
+                dSlider.step = String(p.dStep);
+                dSlider.value = String(p.dMM);
+            }
+            document.querySelectorAll('.mode-btn').forEach((btn) => {
+                const on = btn.dataset.mode === state.mode;
+                btn.classList.toggle('bg-blue-600', on);
+                btn.classList.toggle('text-white', on);
+                btn.classList.toggle('border-blue-600', on);
+                btn.classList.toggle('bg-white', !on);
+                btn.classList.toggle('text-slate-700', !on);
+                btn.classList.toggle('border-slate-200', !on);
+            });
+        }
+
+        function drawAiryImage(ctx, w, h, colorObj, thMin, theta) {
+            const img = ctx.createImageData(w, h);
+            const data = img.data;
+            const span = Math.max(2.6 * thMin, 1.4 * theta);
+            const uSpan = span / (thMin / 1.22);
+            const halfU = theta / 2 / (thMin / 1.22);
+            let rgb = [colorObj.hex >> 16 & 255, colorObj.hex >> 8 & 255, colorObj.hex & 255];
+            if (state.mode === 'tem') rgb = [34, 197, 94];
+
+            for (let y = 0; y < h; y++) {
+                const uy = ((y + 0.5) / h - 0.5) * 2 * uSpan;
+                for (let x = 0; x < w; x++) {
+                    const ux = ((x + 0.5) / w - 0.5) * 2 * uSpan;
+                    const r1 = Math.hypot(ux, uy - halfU);
+                    const r2 = Math.hypot(ux, uy + halfU);
+                    const I = Math.min(1, 0.5 * airyI(r1) + 0.5 * airyI(r2));
+                    const i = (y * w + x) * 4;
+                    const glow = Math.pow(I, 0.72);
+                    data[i] = Math.round(rgb[0] * glow);
+                    data[i + 1] = Math.round(rgb[1] * glow);
+                    data[i + 2] = Math.round(rgb[2] * glow);
+                    data[i + 3] = 255;
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+            ctx.lineWidth = 1;
+            const rPx = (1.22 / (2 * uSpan)) * h;
+            const c1 = h / 2 - (halfU / uSpan) * (h / 2);
+            const c2 = h / 2 + (halfU / uSpan) * (h / 2);
+            ctx.beginPath();
+            ctx.arc(w / 2, c1, Math.max(4, rPx), 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(w / 2, c2, Math.max(4, rPx), 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        function drawScreenTexture(colorObj, thMin, theta) {
+            drawAiryImage(screenPatternCtx, screenPatternCanvas.width, screenPatternCanvas.height, colorObj, thMin, theta);
+            screenPatternTexture.needsUpdate = true;
+        }
+
+        function drawDiskCanvas(colorObj, thMin, theta) {
+            const ctx = diskCanvas.getContext('2d');
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const w = Math.max(diskCanvas.clientWidth, 200);
+            const h = Math.max(diskCanvas.clientHeight, 120);
+            diskCanvas.width = w * dpr;
+            diskCanvas.height = h * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(0, 0, w, h);
+            const tmp = document.createElement('canvas');
+            tmp.width = 256; tmp.height = 256;
+            drawAiryImage(tmp.getContext('2d'), 256, 256, colorObj, thMin, theta);
+            ctx.drawImage(tmp, 0, 0, w, h);
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.font = '12px Inter, sans-serif';
+            ctx.fillText('A', w / 2 + 8, 18);
+            ctx.fillText('B', w / 2 + 8, h - 10);
+        }
+
+        function combinedProfile(u, halfU) {
+            return 0.5 * airyI(Math.abs(u - halfU)) + 0.5 * airyI(Math.abs(u + halfU));
+        }
+
+        function drawGraph(thMin, theta, colorObj) {
+            const ctx = graphCanvas.getContext('2d');
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const w = Math.max(graphCanvas.clientWidth, 240);
+            const h = Math.max(graphCanvas.clientHeight, 180);
+            graphCanvas.width = w * dpr;
+            graphCanvas.height = h * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, w, h);
+
+            const left = 48, right = 16, top = 36, bottom = 36;
+            const gw = w - left - right, gh = h - top - bottom;
+            const uMax = 2.8;
+            const halfU = (theta / 2) / (thMin / 1.22);
+
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(left, top);
+            ctx.lineTo(left, top + gh);
+            ctx.lineTo(left + gw, top + gh);
+            ctx.stroke();
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.fillText('I', 18, top + 8);
+            ctx.fillText('−2 θmin', left, h - 12);
+            ctx.fillText('0', left + gw / 2 - 4, h - 12);
+            ctx.fillText('+2 θmin', left + gw - 48, h - 12);
+
+            const samples = 360;
+            function xOf(u) { return left + ((u + uMax) / (2 * uMax)) * gw; }
+            function yOf(I) { return top + gh - I * gh; }
+
+            ctx.strokeStyle = 'rgba(220,38,38,0.55)';
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            for (let i = 0; i <= samples; i++) {
+                const u = -uMax + (2 * uMax) * i / samples;
+                const I = 0.5 * airyI(Math.abs(u - halfU));
+                const x = xOf(u), y = yOf(I);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(22,163,74,0.55)';
+            ctx.beginPath();
+            for (let i = 0; i <= samples; i++) {
+                const u = -uMax + (2 * uMax) * i / samples;
+                const I = 0.5 * airyI(Math.abs(u + halfU));
+                const x = xOf(u), y = yOf(I);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let i = 0; i <= samples; i++) {
+                const u = -uMax + (2 * uMax) * i / samples;
+                const I = combinedProfile(u, halfU);
+                const x = xOf(u), y = yOf(I);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            ctx.setLineDash([3, 3]);
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 1.2;
+            const uFirst = halfU - 1.22;
+            ctx.beginPath();
+            ctx.moveTo(xOf(uFirst), top);
+            ctx.lineTo(xOf(uFirst), top + gh);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#64748b';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.fillText(t('graph.legend'), left + 8, top + 14);
+        }
+
+        function updateRays(colorObj, thMin, theta) {
+            while (rayGroup.children.length) {
+                const c = rayGroup.children[0];
+                rayGroup.remove(c);
+                if (c.geometry) c.geometry.dispose();
+            }
+            const y = THREE.MathUtils.clamp(0.85 * (theta / thMin), 0.12, 1.65);
+            sourceA.position.set(-7.2, y, 0);
+            sourceB.position.set(-7.2, -y, 0);
+
+            const aperture = new THREE.Vector3(-0.2, 0, 0);
+            const screenX = 5.4;
+            const imgY = THREE.MathUtils.clamp(0.55 * (theta / thMin), 0.08, 1.05);
+
+            function addLine(p1, p2, hex, pulse) {
+                const mat = new THREE.LineBasicMaterial({ color: hex, transparent: true, opacity: 0.7 });
+                const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1, p2]), mat);
+                line.userData.pulse = pulse;
+                rayGroup.add(line);
+            }
+
+            addLine(sourceA.position.clone(), new THREE.Vector3(-0.2, 0.42, 0), PHYSICS_COLORS.force, true);
+            addLine(sourceA.position.clone(), new THREE.Vector3(-0.2, -0.18, 0), PHYSICS_COLORS.force, true);
+            addLine(new THREE.Vector3(0.35, 0.28, 0), new THREE.Vector3(screenX, imgY, 0), PHYSICS_COLORS.force, true);
+            addLine(new THREE.Vector3(0.35, -0.12, 0), new THREE.Vector3(screenX, imgY, 0), PHYSICS_COLORS.force, true);
+
+            addLine(sourceB.position.clone(), new THREE.Vector3(-0.2, -0.42, 0), PHYSICS_COLORS.velocity, true);
+            addLine(sourceB.position.clone(), new THREE.Vector3(-0.2, 0.18, 0), PHYSICS_COLORS.velocity, true);
+            addLine(new THREE.Vector3(0.35, -0.28, 0), new THREE.Vector3(screenX, -imgY, 0), PHYSICS_COLORS.velocity, true);
+            addLine(new THREE.Vector3(0.35, 0.12, 0), new THREE.Vector3(screenX, -imgY, 0), PHYSICS_COLORS.velocity, true);
+        }
+
+        function updateSimulation() {
+            if (state.mode === 'tem') {
+                state.voltagekV = parseFloat(voltageSlider.value);
+                state.lambdaNm = deBroglieNm(state.voltagekV);
+                state.dM = parseFloat(dSlider.value) / 1000;
+            } else {
+                state.lambdaNm = parseFloat(lambdaSlider.value);
+                state.dM = parseFloat(dSlider.value) / 1000;
+            }
+            if (!isDraggingSource) readSepFromSlider();
+
+            const thMin = thetaMin();
+            const theta = state.thetaRad;
+            const ratio = theta / thMin;
+            const halfU = (theta / 2) / (thMin / 1.22);
+            const I0 = combinedProfile(halfU, halfU);
+            const Imid = combinedProfile(0, halfU);
+            const dip = I0 > 1e-6 ? Math.max(0, (1 - Imid / I0) * 100) : 0;
+            const status = resolutionStatus(ratio, dip);
+            const colorObj = wavelengthToColor(state.mode === 'tem' ? 530 : state.lambdaNm);
+
+            document.getElementById('lambda-val').textContent = formatLambda(currentLambdaM());
+            document.getElementById('d-val').textContent = formatD(state.dM);
+            document.getElementById('voltage-val').textContent = `${state.voltagekV.toFixed(0)} kV`;
+
+            if (state.mode === 'telescope') {
+                document.getElementById('sep-val').textContent = `${(theta * ARCSEC).toFixed(2)}″`;
+            } else if (state.mode === 'microscope') {
+                document.getElementById('sep-val').textContent = formatLength(theta * 0.003);
+            } else {
+                document.getElementById('sep-val').textContent = formatLength(theta * 0.002);
+            }
+
+            document.getElementById('theta-min-val').textContent = formatAngle(thMin);
+            document.getElementById('theta-val').textContent = formatAngle(theta);
+            document.getElementById('ratio-val').textContent = ratio.toFixed(2);
+            document.getElementById('dip-val').textContent = `${dip.toFixed(0)}%`;
+
+            const statusCard = document.getElementById('status-card');
+            statusCard.textContent = t('status.' + status);
+            statusCard.className = 'p-3 rounded-lg border text-center font-bold tracking-wide ' + (
+                status === 'resolved'
+                    ? 'bg-green-50 border-green-200 text-green-700'
+                    : status === 'just'
+                        ? 'bg-amber-50 border-amber-200 text-amber-700'
+                        : 'bg-red-50 border-red-200 text-red-700'
+            );
+
+            const extra = document.getElementById('extra-readout');
+            if (state.mode === 'microscope') {
+                extra.textContent = t('data.smin') + ' ' + formatLength(thMin * 0.003) + '  (L = 3.00 mm)';
+            } else if (state.mode === 'tem') {
+                extra.textContent = t('data.smin') + ' ' + formatLength(thMin * 0.002) + '  (L = 2.00 mm)';
+            } else {
+                extra.textContent = t('data.telescope_note');
+            }
+
+            if (sourceA && sourceB) {
+                sourceA.material.color.setHex(PHYSICS_COLORS.force);
+                sourceA.material.emissive.setHex(PHYSICS_COLORS.force);
+                sourceB.material.color.setHex(PHYSICS_COLORS.velocity);
+                sourceB.material.emissive.setHex(PHYSICS_COLORS.velocity);
+            }
+
+            updateRays(colorObj, thMin, theta);
+            drawScreenTexture(colorObj, thMin, theta);
+            drawDiskCanvas(colorObj, thMin, theta);
+            drawGraph(thMin, theta, colorObj);
+        }
+
+        function setMode(mode, snapRayleigh) {
+            state.mode = mode;
+            const p = MODE_PRESETS[mode];
+            configureModeControls();
+            if (mode === 'tem') {
+                state.voltagekV = p.voltagekV;
+                voltageSlider.value = p.voltagekV;
+                state.dM = p.dMM / 1000;
+            } else {
+                state.lambdaNm = p.lambdaNm;
+                state.dM = p.dMM / 1000;
+            }
+            state.thetaRad = thetaMin();
+            syncSepSlider();
+            updateSepLabel();
+            if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+            updateSimulation();
+        }
+
+        function updateSepLabel() {
+            const el = document.getElementById('sep-label');
+            const key = state.mode === 'telescope' ? 'controls.separation' : 'controls.spacing';
+            el.setAttribute('data-i18n', key);
+            el.textContent = t(key);
+        }
+
+        function snapToRayleigh() {
+            state.thetaRad = thetaMin();
+            syncSepSlider();
+            updateSimulation();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            animT += 0.016;
+            if (sourceA) sourceA.material.emissiveIntensity = 0.75 + 0.2 * Math.sin(animT * 3.2);
+            if (sourceB) sourceB.material.emissiveIntensity = 0.75 + 0.2 * Math.sin(animT * 3.2 + 1.2);
+            rayGroup && rayGroup.children.forEach((line, i) => {
+                if (line.material && line.userData.pulse) {
+                    line.material.opacity = 0.4 + 0.35 * (0.5 + 0.5 * Math.sin(animT * 3 + i * 0.35));
+                }
+            });
+            if (renderer && scene && camera) renderer.render(scene, camera);
+        }
+
+        function resizeThree() {
+            if (!renderer || !camera) return;
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            updateSimulation();
+        }
+
+        const translations = {
+            en: {
+                'nav.back': 'Back to Home',
+                'page.tag': 'HKDSE • Wave optics / Atomic World / Medical Physics',
+                'page.title': 'Rayleigh Criterion',
+                'page.description': 'Two point sources are just resolvable when the central maximum of one Airy disk sits on the first minimum of the other. For a circular aperture, $\\theta \\approx 1.22\\,\\lambda/d$. Drag a source, then watch $\\lambda$ and $d$ change the blur.',
+                'controls.title': 'Parameters',
+                'controls.reset': 'Reset',
+                'controls.instrument': 'Instrument',
+                'controls.telescope': 'Telescope',
+                'controls.microscope': 'Microscope',
+                'controls.tem': 'TEM',
+                'controls.wavelength': 'Wavelength ($\\lambda$)',
+                'controls.voltage': 'Accelerating voltage ($V$)',
+                'controls.voltage_hint': 'de Broglie $\\lambda = h/\\sqrt{2m_e eV}$ (Atomic World).',
+                'controls.aperture': 'Aperture diameter ($d$)',
+                'controls.separation': 'Angular separation ($\\theta$)',
+                'controls.spacing': 'Object spacing ($s$)',
+                'controls.drag_hint': 'Drag a source in 3D, or snap to the Rayleigh limit.',
+                'controls.snap': 'Just resolved',
+                'controls.presetUnresolved': 'Unresolved',
+                'controls.presetResolved': 'Well resolved',
+                'controls.presetBlue': 'Blue light',
+                'data.title': 'Results',
+                'data.theta_min': '$\\theta_{\\min} = 1.22\\,\\lambda/d$',
+                'data.theta': 'Actual $\\theta$',
+                'data.ratio': '$\\theta / \\theta_{\\min}$',
+                'data.dip': 'Central dip',
+                'data.smin': 'Minimum spacing $s_{\\min} \\approx \\theta_{\\min} L$ =',
+                'data.telescope_note': 'Larger $d$ or shorter $\\lambda$ lowers $\\theta_{\\min}$ (higher resolving power).',
+                'status.resolved': 'RESOLVED',
+                'status.just': 'JUST RESOLVED',
+                'status.unresolved': 'UNRESOLVED',
+                'three.title': '3D optical bench',
+                'three.hint': 'Drag source • rotate • pinch zoom',
+                'legend.sourceA': 'Source A',
+                'legend.sourceB': 'Source B',
+                'legend.aperture': 'Aperture $d$',
+                'legend.screen': 'Image plane',
+                'screen.view': 'Focal-plane Airy disks',
+                'graph.title': 'Intensity along the line of centres',
+                'graph.legend': 'Red A • Green B • Blue sum • Amber: 1st min of A',
+                'formula.title': 'HKDSE formula',
+                'formula.theta': 'minimum angular separation (rad)',
+                'formula.lambda': 'wavelength',
+                'formula.d': 'aperture / lens diameter',
+                'formula.note': 'Just resolved: the central maximum of one diffraction pattern coincides with the first minimum of the other.',
+                'ai.title': 'Physics note',
+                'ai.desc': 'A circular aperture diffracts each point source into an Airy disk. Larger $d$ or shorter $\\lambda$ shrinks $\\theta_{\\min}$, so two close objects become distinct. This is why a TEM (very small de Broglie $\\lambda$) out-resolves an optical microscope, and why a wider lens or telescope objective has higher resolving power.',
+                'modal.open': 'Explain',
+                'modal.title': 'Rayleigh criterion — HKDSE',
+                'modal.body': '<p>Two images are <b>just resolvable</b> when the centre of one diffraction pattern lies on the first minimum of the other.</p><p>For a <b>circular</b> aperture, lens or mirror the first dark ring is at $\\theta \\approx 1.22\\,\\lambda/d$ (HKDSE Data Booklet: Atomic World and Medical Physics).</p><p>A single slit uses $\\lambda/a$ instead of $1.22\\,\\lambda/d$. The extra factor $1.22$ comes from the first zero of the Bessel function $J_1$ for circular diffraction.</p><p><b>Atomic World:</b> a TEM uses electrons with de Broglie wavelength far shorter than visible light, so $\\theta_{\\min}$ is much smaller and resolving power is much higher.</p><p><b>Medical Physics:</b> the resolving power of a lens is this diffraction-limited $\\theta$ (or the corresponding object spacing $s \\approx \\theta L$).</p>'
+            },
+            'zh-hk': {
+                'nav.back': '返回首頁',
+                'page.tag': 'HKDSE • 波動光學／原子世界／醫學物理',
+                'page.title': '瑞利判據',
+                'page.description': '當一個艾里斑的中央極大剛好落在另一個的第一極小上，兩點光源便剛可分辨。圓孔光闌： $\\theta \\approx 1.22\\,\\lambda/d$。可拖曳光源，並觀察 $\\lambda$ 與 $d$ 如何改變模糊程度。',
+                'controls.title': '參數',
+                'controls.reset': '重設',
+                'controls.instrument': '儀器',
+                'controls.telescope': '望遠鏡',
+                'controls.microscope': '顯微鏡',
+                'controls.tem': 'TEM',
+                'controls.wavelength': '波長 ($\\lambda$)',
+                'controls.voltage': '加速電壓 ($V$)',
+                'controls.voltage_hint': '德布罗意波長 $\\lambda = h/\\sqrt{2m_e eV}$（原子世界）。',
+                'controls.aperture': '光闌直徑 ($d$)',
+                'controls.separation': '角距 ($\\theta$)',
+                'controls.spacing': '物距間隔 ($s$)',
+                'controls.drag_hint': '可在 3D 中拖曳光源，或一鍵設為瑞利極限。',
+                'controls.snap': '剛可分辨',
+                'controls.presetUnresolved': '未能分辨',
+                'controls.presetResolved': '清晰可分辨',
+                'controls.presetBlue': '藍光',
+                'data.title': '結果',
+                'data.theta_min': '$\\theta_{\\min} = 1.22\\,\\lambda/d$',
+                'data.theta': '實際 $\\theta$',
+                'data.ratio': '$\\theta / \\theta_{\\min}$',
+                'data.dip': '中央凹陷',
+                'data.smin': '最小間隔 $s_{\\min} \\approx \\theta_{\\min} L$ =',
+                'data.telescope_note': '增大 $d$ 或縮短 $\\lambda$ 會降低 $\\theta_{\\min}$（提高分辨本領）。',
+                'status.resolved': '可分辨',
+                'status.just': '剛可分辨',
+                'status.unresolved': '未能分辨',
+                'three.title': '3D 光學實驗台',
+                'three.hint': '拖曳光源 • 旋轉 • 雙指縮放',
+                'legend.sourceA': '光源 A',
+                'legend.sourceB': '光源 B',
+                'legend.aperture': '光闌 $d$',
+                'legend.screen': '像平面',
+                'screen.view': '焦平面艾里斑',
+                'graph.title': '沿兩斑連線的強度',
+                'graph.legend': '紅 A • 綠 B • 藍為總和 • 琥珀：A 的第一極小',
+                'formula.title': 'HKDSE 公式',
+                'formula.theta': '最小角距（弧度）',
+                'formula.lambda': '波長',
+                'formula.d': '光闌／透鏡直徑',
+                'formula.note': '剛可分辨：一個衍射圖樣的中央極大與另一個的第一極小重合。',
+                'ai.title': '物理說明',
+                'ai.desc': '圓孔把每個點光源衍射成艾里斑。較大的 $d$ 或較短的 $\\lambda$ 會縮小 $\\theta_{\\min}$，使兩靠近物體變得可分辨。這正是 TEM（德布罗意波長極短）分辨本領遠高於光學顯微鏡、以及大口徑透鏡／物鏡分辨本領較高的原因。',
+                'modal.open': '解釋',
+                'modal.title': '瑞利判據 — HKDSE',
+                'modal.body': '<p>當一個衍射圖樣的<b>中心</b>剛好落在另一個的<b>第一極小</b>上，兩像便<b>剛可分辨</b>。</p><p>對於<b>圓形</b>光闌、透鏡或反射鏡，第一暗環位於 $\\theta \\approx 1.22\\,\\lambda/d$（HKDSE 數據冊：原子世界及醫學物理）。</p><p>單狹縫則用 $\\lambda/a$ 而非 $1.22\\,\\lambda/d$。$1.22$ 來自圓孔衍射貝塞爾函數 $J_1$ 的第一零點。</p><p><b>原子世界：</b>TEM 電子的德布罗意波長遠短於可見光，故 $\\theta_{\\min}$ 小得多，分辨本領高得多。</p><p><b>醫學物理：</b>透鏡的分辨本領就是此衍射極限 $\\theta$（或對應物距間隔 $s \\approx \\theta L$）。</p>'
+            }
+        };
+
+        let currentLang = localStorage.getItem('preferred_language') || 'en';
+        if (currentLang === 'zh' || currentLang === 'cn' || currentLang === 'zh-TW' || currentLang === 'zh-CN') {
+            currentLang = 'zh-hk';
+        }
+
+        function setLanguage(lang) {
+            if (lang === 'zh' || lang === 'cn') lang = 'zh-hk';
+            currentLang = lang;
+            localStorage.setItem('preferred_language', lang);
+            document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+            document.querySelectorAll('[data-i18n]').forEach((el) => {
+                const key = el.getAttribute('data-i18n');
+                const val = translations[lang]?.[key];
+                if (!val) return;
+                if (key.includes('desc') || key.includes('body') || key.includes('note') || key.includes('hint')) {
+                    el.innerHTML = val;
+                } else {
+                    el.textContent = val;
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach((btn) => {
+                const active = btn.dataset.lang === lang;
+                btn.classList.toggle('bg-white', active);
+                btn.classList.toggle('shadow-sm', active);
+                btn.classList.toggle('text-blue-600', active);
+            });
+            updateSepLabel();
+            updateSimulation();
+            if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+        }
+        window.setLanguage = setLanguage;
+
+        lambdaSlider.addEventListener('input', updateSimulation);
+        dSlider.addEventListener('input', updateSimulation);
+        sepSlider.addEventListener('input', updateSimulation);
+        voltageSlider.addEventListener('input', updateSimulation);
+
+        document.querySelectorAll('.mode-btn').forEach((btn) => {
+            btn.addEventListener('click', () => setMode(btn.dataset.mode));
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            setMode('telescope');
+            resetCameraView();
+        });
+        document.getElementById('snap-btn').addEventListener('click', snapToRayleigh);
+        document.getElementById('preset-unresolved-btn').addEventListener('click', () => {
+            state.thetaRad = 0.55 * thetaMin();
+            syncSepSlider();
+            updateSimulation();
+        });
+        document.getElementById('preset-resolved-btn').addEventListener('click', () => {
+            state.thetaRad = 2.2 * thetaMin();
+            syncSepSlider();
+            updateSimulation();
+        });
+        document.getElementById('preset-blue-btn').addEventListener('click', () => {
+            if (state.mode === 'tem') return;
+            lambdaSlider.value = 450;
+            updateSimulation();
+        });
+
+        const modal = document.getElementById('explain-modal');
+        document.getElementById('explain-btn').addEventListener('click', () => modal.classList.remove('hidden'));
+        document.getElementById('explain-close').addEventListener('click', () => modal.classList.add('hidden'));
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+        window.addEventListener('resize', resizeThree);
+
+        initThreeScene();
+        configureModeControls();
+        syncSepSlider();
+        setLanguage(currentLang === 'zh-hk' ? 'zh-hk' : 'en');
+        animate();
+    </script>
+
+    <script src="practice_questions.js"></script>
+    <script src="practice_questions_data.js"></script>
+    <script>initPracticeQuestions('rayleigh_criterion');</script>
+</body>
+</html>
