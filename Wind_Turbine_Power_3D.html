@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wind Turbine Power 3D Simulator (HKDSE E3)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script"></script>
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: 'Inter', sans-serif; }
+        #three-container {
+            width: 100%;
+            height: 440px;
+            background: #e0f2fe;
+            cursor: grab;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            touch-action: none;
+            border: 2px solid #e2e8f0;
+        }
+        #three-container:active { cursor: grabbing; }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #d1d5db;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        input[type="range"].accent-green-600::-webkit-slider-thumb { background: #16a34a; }
+        input[type="range"].accent-amber-600::-webkit-slider-thumb { background: #d97706; }
+        input[type="range"].accent-slate-600::-webkit-slider-thumb { background: #475569; }
+        mjx-container { display: inline-block !important; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+
+    <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+            </a>
+            <div class="flex items-center gap-2">
+                <button id="explain-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="modal.open">Explain</button>
+                <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                    <button onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-2 rounded-md text-xs font-medium transition hover:bg-white" data-lang="zh-hk">繁</button>
+                    <button onclick="setLanguage('en')" class="lang-btn px-3 py-2 rounded-md text-xs font-medium transition hover:bg-white bg-white shadow-sm text-blue-600" data-lang="en">EN</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-6 w-full">
+        <header class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <p class="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-1" data-i18n="page.tag">HKDSE • Elective 3: Energy and Use of Energy • Wind energy</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2" data-i18n="page.title">Wind Turbine Power</h1>
+            <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="page.description">
+                The kinetic energy of the air passing through the rotor each second gives the wind power $P = \tfrac12 \rho A v^3$. Drag the wind-speed slider and watch the power grow with the <b>cube</b> of $v$; lengthen the blades to grow the swept area $A = \pi r^2$.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800" data-i18n="controls.title">Parameters</h3>
+                        <button id="reset-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-red-50 hover:text-red-600 transition-all" data-i18n="controls.reset">Reset</button>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.windSpeed">Wind speed ($v$)</span>
+                            <span id="v-val" class="text-green-600 font-bold font-mono">8.0 m/s</span>
+                        </label>
+                        <input type="range" id="v-slider" min="0" max="25" step="0.1" value="8" class="w-full accent-green-600">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.bladeLength">Blade length ($r$)</span>
+                            <span id="r-val" class="text-blue-600 font-bold font-mono">40 m</span>
+                        </label>
+                        <input type="range" id="r-slider" min="10" max="80" step="1" value="40" class="w-full accent-blue-600">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.density">Air density ($\rho$)</span>
+                            <span id="rho-val" class="text-slate-600 font-bold font-mono">1.225 kg/m³</span>
+                        </label>
+                        <input type="range" id="rho-slider" min="1.00" max="1.30" step="0.005" value="1.225" class="w-full accent-slate-600">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.efficiency">Turbine efficiency ($\eta$)</span>
+                            <span id="eta-val" class="text-amber-600 font-bold font-mono">40%</span>
+                        </label>
+                        <input type="range" id="eta-slider" min="5" max="59" step="1" value="40" class="w-full accent-amber-600">
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="controls.efficiency_hint">Betz limit: no turbine can extract more than 59% of the wind's kinetic energy.</p>
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 mb-2" data-i18n="controls.presets">Presets</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="preset-breeze" class="px-3 py-2 min-h-[44px] rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-semibold transition" data-i18n="controls.presetBreeze">Gentle breeze</button>
+                            <button id="preset-strong" class="px-3 py-2 min-h-[44px] rounded-xl bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold transition" data-i18n="controls.presetStrong">Strong wind</button>
+                            <button id="preset-offshore" class="px-3 py-2 min-h-[44px] rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="controls.presetOffshore">Offshore giant</button>
+                            <button id="preset-double" class="px-3 py-2 min-h-[44px] rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold transition" data-i18n="controls.presetDouble">Double v</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide" data-i18n="data.title">Live readings</h3>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.area">Swept area $A = \pi r^2$</span>
+                        <span id="area-val" class="text-lg font-bold text-blue-600 font-mono">5027 m²</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.massFlow">Air mass per second $\rho A v$</span>
+                        <span id="mass-val" class="text-lg font-bold text-slate-700 font-mono">49.3 t/s</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.windPower">Wind power $\tfrac12 \rho A v^3$</span>
+                        <span id="pwind-val" class="text-lg font-bold text-green-600 font-mono">1.58 MW</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.outputPower">Electrical output $\eta P$</span>
+                        <span id="pout-val" class="text-lg font-bold text-amber-600 font-mono">0.63 MW</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.energyDay">Energy in 24 h</span>
+                        <span id="eday-val" class="text-lg font-bold text-purple-600 font-mono">15.1 MWh</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.doubleV">If $v$ doubles ($\times 8$)</span>
+                        <span id="pdouble-val" class="text-lg font-bold text-red-600 font-mono">5.05 MW</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3" data-i18n="formula.title">HKDSE formula</h3>
+                    <div class="text-center text-xl font-serif mb-4">$$ P = \tfrac12 \rho A v^3 $$</div>
+                    <div class="grid grid-cols-1 gap-2 text-sm text-slate-300">
+                        <div><span class="text-blue-400 font-bold">$\rho$:</span> <span data-i18n="formula.rho">air density (kg m⁻³)</span></div>
+                        <div><span class="text-blue-400 font-bold">$A$:</span> <span data-i18n="formula.A">area swept by the blades, $\pi r^2$ (m²)</span></div>
+                        <div><span class="text-blue-400 font-bold">$v$:</span> <span data-i18n="formula.v">wind speed (m s⁻¹)</span></div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3 leading-relaxed" data-i18n="formula.note">
+                        Derivation: mass of air arriving per second $= \rho A v$; its kinetic energy per second $= \tfrac12(\rho A v)v^2$.
+                    </p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-6">
+                <div class="relative">
+                    <div id="three-container"></div>
+                    <div class="absolute top-3 left-3 bg-slate-900/75 text-white text-xs font-semibold px-3 py-1 rounded-full pointer-events-none" data-i18n="three.title">3D wind farm</div>
+                    <div class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur text-white px-5 py-3 rounded-full text-sm pointer-events-none" data-i18n="three.hint">Drag to rotate • pinch / scroll to zoom</div>
+                    <div class="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
+                        <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.wind">Wind velocity $v$</span>
+                        <span class="bg-white/90 text-blue-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.area">Swept area $A$</span>
+                        <span class="bg-white/90 text-amber-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.power">Electrical output</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 h-72 relative">
+                    <h3 class="text-sm font-bold text-slate-500 absolute top-4 left-4 z-10" data-i18n="graph.title">Power against wind speed (cubic law)</h3>
+                    <canvas id="graph-canvas" class="w-full h-full"></canvas>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                    <div class="flex items-start gap-4">
+                        <div class="p-3 bg-blue-600 rounded-xl text-white shrink-0">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-slate-800 mb-2" data-i18n="ai.title">Physics note</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed" data-i18n="ai.desc">
+                                Because $P \propto v^3$, a site with twice the average wind speed offers <b>eight</b> times the power — this is why turbines are placed on ridges and offshore. Because $P \propto r^2$, doubling the blade length gives four times the power, which explains the trend towards ever-larger turbines. A real turbine extracts only a fraction $\eta$ of the wind's kinetic energy (Betz limit ≈ 59%), because the air must keep moving to leave the rotor.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="explain-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[88vh] overflow-y-auto p-6 md:p-8">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <h2 class="text-xl font-bold text-slate-800" data-i18n="modal.title">Wind power — HKDSE E3</h2>
+                <button id="explain-close" class="min-h-[44px] min-w-[44px] rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200">×</button>
+            </div>
+            <div class="space-y-4 text-sm text-slate-600 leading-relaxed" data-i18n="modal.body" id="modal-body">
+                <p>Consider a cylinder of air of cross-sectional area $A$ (the rotor's swept area) moving at speed $v$. In one second a length $v$ of this cylinder passes the rotor, so the <b>mass arriving per second</b> is $\rho A v$.</p>
+                <p>Its kinetic energy per second is $\tfrac12 (\rho A v) v^2 = \tfrac12 \rho A v^3$. This is the <b>wind power</b> available to the turbine.</p>
+                <p><b>Efficiency:</b> the electrical output is $P_{\text{out}} = \eta \cdot \tfrac12 \rho A v^3$. The Betz limit shows $\eta$ can never exceed $16/27 \approx 59\%$; commercial turbines achieve 35–45%.</p>
+                <p><b>Cut-in and cut-out:</b> real turbines do not turn below ≈ 3 m s⁻¹ and are braked above ≈ 25 m s⁻¹ to prevent damage, so the cubic law applies only in between.</p>
+                <p><b>Colour code:</b> <span class="text-green-600 font-semibold">green</span> = wind velocity, <span class="text-blue-600 font-semibold">blue</span> = swept area, <span class="text-amber-600 font-semibold">amber</span> = electrical energy delivered.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PHYSICS_COLORS = {
+            force: 0xdc2626,
+            velocity: 0x16a34a,
+            accel: 0x9333ea,
+            bField: 0xd97706,
+            displacement: 0x475569
+        };
+
+        const SCALE = 0.1;         // 1 scene unit = 10 m
+        const TIP_SPEED_RATIO = 7; // blade tip speed / wind speed, typical for a 3-blade turbine
+
+        const defaults = { v: 8, r: 40, rho: 1.225, eta: 40 };
+        const state = { ...defaults };
+
+        const sliders = {
+            v: document.getElementById('v-slider'),
+            r: document.getElementById('r-slider'),
+            rho: document.getElementById('rho-slider'),
+            eta: document.getElementById('eta-slider')
+        };
+        const threeContainer = document.getElementById('three-container');
+        const graphCanvas = document.getElementById('graph-canvas');
+
+        let scene, camera, renderer, clock;
+        let tower, nacelle, rotor, sweptDisc, windArrow, windArrowLabel, cable, cablePulses = [], substation, glowLight;
+        const streaks = [];
+        let rotorOmega = 0;
+        let isCameraDrag = false, pinchDistance = null;
+        const lastPointer = { x: 0, y: 0 };
+        const defaultCamera = { radius: 26, theta: 1.0, phi: 1.28 };
+        const cameraState = { ...defaultCamera };
+
+        // ---------- physics ----------
+        // A = pi r^2 ; mass flow = rho A v ; P_wind = 1/2 rho A v^3 ; P_out = eta P_wind
+        function compute(s = state) {
+            const A = Math.PI * s.r * s.r;
+            const massFlow = s.rho * A * s.v;
+            const pWind = 0.5 * s.rho * A * Math.pow(s.v, 3);
+            const pOut = (s.eta / 100) * pWind;
+            return { A, massFlow, pWind, pOut };
+        }
+
+        function fmtPower(W) {
+            if (W < 1e3) return `${W.toFixed(0)} W`;
+            if (W < 1e6) return `${(W / 1e3).toFixed(1)} kW`;
+            return `${(W / 1e6).toFixed(2)} MW`;
+        }
+        function fmtEnergy(Wh) {
+            if (Wh < 1e3) return `${Wh.toFixed(0)} Wh`;
+            if (Wh < 1e6) return `${(Wh / 1e3).toFixed(1)} kWh`;
+            return `${(Wh / 1e6).toFixed(1)} MWh`;
+        }
+        function fmtMass(kgps) {
+            if (kgps < 1000) return `${kgps.toFixed(0)} kg/s`;
+            return `${(kgps / 1000).toFixed(1)} t/s`;
+        }
+
+        function towerHeight() { return state.r * SCALE + 1.6; }
+        function rotorRadius() { return state.r * SCALE; }
+
+        // ---------- three.js ----------
+        function makeLabelSprite(text, color, w = 160, h = 64, scale = 1) {
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = color;
+            ctx.font = 'bold 44px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, w / 2, h / 2);
+            const tex = new THREE.CanvasTexture(c);
+            const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+            spr.scale.set((w / 64) * scale, (h / 64) * scale, 1);
+            return spr;
+        }
+
+        function initThree() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xe0f2fe);
+            scene.fog = new THREE.Fog(0xe0f2fe, 45, 110);
+            clock = new THREE.Clock();
+
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 300);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            renderer.setSize(w, h);
+            renderer.shadowMap.enabled = true;
+            threeContainer.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+            sun.position.set(12, 24, 10);
+            sun.castShadow = true;
+            sun.shadow.mapSize.set(1024, 1024);
+            sun.shadow.camera.left = -25; sun.shadow.camera.right = 25;
+            sun.shadow.camera.top = 25; sun.shadow.camera.bottom = -25;
+            scene.add(sun);
+
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(200, 200),
+                new THREE.MeshStandardMaterial({ color: 0xd9f99d, roughness: 1 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            const grid = new THREE.GridHelper(200, 40, 0xbef264, 0xd9f99d);
+            grid.position.y = 0.01;
+            scene.add(grid);
+
+            // Tower (unit height, scaled on update)
+            tower = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.16, 0.32, 1, 20),
+                new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5, metalness: 0.1 })
+            );
+            tower.geometry.translate(0, 0.5, 0);
+            tower.castShadow = true;
+            scene.add(tower);
+
+            nacelle = new THREE.Group();
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(1.1, 0.42, 0.42),
+                new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.4 })
+            );
+            body.castShadow = true;
+            nacelle.add(body);
+            const hub = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.16, 0.2, 0.3, 20),
+                new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.4 })
+            );
+            hub.rotation.z = Math.PI / 2;
+            hub.position.x = -0.68;
+            nacelle.add(hub);
+            scene.add(nacelle);
+
+            // Rotor: 3 blades rotating about the x-axis (wind blows along +x)
+            rotor = new THREE.Group();
+            const bladeGeo = new THREE.CylinderGeometry(0.035, 0.13, 1, 10);
+            bladeGeo.translate(0, 0.5, 0);
+            bladeGeo.scale(1.7, 1, 0.45);
+            const bladeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35 });
+            for (let i = 0; i < 3; i++) {
+                const blade = new THREE.Mesh(bladeGeo, bladeMat);
+                blade.castShadow = true;
+                const holder = new THREE.Group();
+                holder.rotation.x = (i * 2 * Math.PI) / 3;
+                holder.add(blade);
+                rotor.add(holder);
+            }
+            scene.add(rotor);
+
+            sweptDisc = new THREE.Mesh(
+                new THREE.CircleGeometry(1, 72),
+                new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.13, side: THREE.DoubleSide, depthWrite: false })
+            );
+            sweptDisc.rotation.y = Math.PI / 2;
+            scene.add(sweptDisc);
+            const discRing = new THREE.Mesh(
+                new THREE.RingGeometry(0.985, 1, 96),
+                new THREE.MeshBasicMaterial({ color: 0x2563eb, transparent: true, opacity: 0.7, side: THREE.DoubleSide })
+            );
+            sweptDisc.add(discRing);
+
+            // Wind velocity arrow (green) upstream of the rotor
+            windArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(-10, 4, 0), 3, PHYSICS_COLORS.velocity, 0.7, 0.4);
+            scene.add(windArrow);
+            windArrowLabel = makeLabelSprite('v', '#16A34A', 96, 64, 0.9);
+            scene.add(windArrowLabel);
+
+            // Wind streaks (particles) - green velocity streaks
+            const streakGeo = new THREE.BoxGeometry(1, 0.045, 0.045);
+            for (let i = 0; i < 170; i++) {
+                const m = new THREE.Mesh(streakGeo, new THREE.MeshBasicMaterial({ color: PHYSICS_COLORS.velocity, transparent: true, opacity: 0.75 }));
+                respawnStreak(m, true);
+                scene.add(m);
+                streaks.push(m);
+            }
+
+            // Substation + cable (amber = electrical energy)
+            substation = new THREE.Mesh(
+                new THREE.BoxGeometry(1.4, 0.9, 1.1),
+                new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.6, emissive: 0xd97706, emissiveIntensity: 0.15 })
+            );
+            substation.position.set(3.2, 0.45, 4.2);
+            substation.castShadow = true;
+            scene.add(substation);
+            glowLight = new THREE.PointLight(0xf59e0b, 0.6, 8);
+            glowLight.position.set(3.2, 1.6, 4.2);
+            scene.add(glowLight);
+
+            const cablePts = [
+                new THREE.Vector3(0.25, 0.05, 0.25),
+                new THREE.Vector3(1.6, 0.05, 2.2),
+                new THREE.Vector3(3.2, 0.05, 3.6)
+            ];
+            cable = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints(cablePts),
+                new THREE.LineBasicMaterial({ color: PHYSICS_COLORS.bField })
+            );
+            cable.userData.pts = cablePts;
+            scene.add(cable);
+            for (let i = 0; i < 10; i++) {
+                const p = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.09, 10, 10),
+                    new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xf59e0b, emissiveIntensity: 0.8 })
+                );
+                p.userData.t = i / 10;
+                scene.add(p);
+                cablePulses.push(p);
+            }
+
+            attachCameraControls();
+            resetCameraView();
+        }
+
+        function respawnStreak(m, randomX = false) {
+            const R = rotorRadius();
+            const H = towerHeight();
+            m.position.x = randomX ? -16 + Math.random() * 32 : -16 - Math.random() * 4;
+            m.position.y = 0.3 + Math.random() * (H + R + 1);
+            m.position.z = (Math.random() * 2 - 1) * (R + 2.5);
+            m.userData.phase = Math.random() * Math.PI * 2;
+        }
+
+        function cablePoint(t) {
+            const pts = cable.userData.pts;
+            const seg = (pts.length - 1) * t;
+            const i = Math.min(pts.length - 2, Math.floor(seg));
+            return pts[i].clone().lerp(pts[i + 1], seg - i);
+        }
+
+        function cameraTarget() {
+            return new THREE.Vector3(0, towerHeight() * 0.6, 0);
+        }
+
+        function setCameraFromState() {
+            const sinPhi = Math.sin(cameraState.phi);
+            const target = cameraTarget();
+            camera.position.set(
+                target.x + cameraState.radius * sinPhi * Math.cos(cameraState.theta),
+                target.y + cameraState.radius * Math.cos(cameraState.phi),
+                target.z + cameraState.radius * sinPhi * Math.sin(cameraState.theta)
+            );
+            camera.lookAt(target);
+        }
+
+        function resetCameraView() {
+            Object.assign(cameraState, defaultCamera);
+            setCameraFromState();
+        }
+
+        function attachCameraControls() {
+            const dom = renderer.domElement;
+            dom.addEventListener('mousedown', (e) => {
+                isCameraDrag = true;
+                lastPointer.x = e.clientX;
+                lastPointer.y = e.clientY;
+            });
+            window.addEventListener('mouseup', () => { isCameraDrag = false; });
+            window.addEventListener('mousemove', (e) => {
+                if (!isCameraDrag) return;
+                const dx = e.clientX - lastPointer.x;
+                const dy = e.clientY - lastPointer.y;
+                lastPointer.x = e.clientX;
+                lastPointer.y = e.clientY;
+                cameraState.theta -= dx * 0.0055;
+                cameraState.phi = THREE.MathUtils.clamp(cameraState.phi + dy * 0.0055, 0.15, Math.PI / 2 - 0.02);
+                setCameraFromState();
+            });
+            dom.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                cameraState.radius = THREE.MathUtils.clamp(cameraState.radius + e.deltaY * 0.02, 8, 70);
+                setCameraFromState();
+            }, { passive: false });
+
+            dom.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isCameraDrag = true;
+                    lastPointer.x = e.touches[0].clientX;
+                    lastPointer.y = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    isCameraDrag = false;
+                    pinchDistance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                }
+            }, { passive: true });
+            dom.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && isCameraDrag) {
+                    e.preventDefault();
+                    const dx = e.touches[0].clientX - lastPointer.x;
+                    const dy = e.touches[0].clientY - lastPointer.y;
+                    lastPointer.x = e.touches[0].clientX;
+                    lastPointer.y = e.touches[0].clientY;
+                    cameraState.theta -= dx * 0.0055;
+                    cameraState.phi = THREE.MathUtils.clamp(cameraState.phi + dy * 0.0055, 0.15, Math.PI / 2 - 0.02);
+                    setCameraFromState();
+                } else if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const dist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    if (pinchDistance !== null) {
+                        cameraState.radius = THREE.MathUtils.clamp(cameraState.radius - (dist - pinchDistance) * 0.05, 8, 70);
+                        setCameraFromState();
+                    }
+                    pinchDistance = dist;
+                }
+            }, { passive: false });
+            dom.addEventListener('touchend', () => {
+                isCameraDrag = false;
+                pinchDistance = null;
+            }, { passive: true });
+        }
+
+        // ---------- update ----------
+        function readSliders() {
+            state.v = parseFloat(sliders.v.value);
+            state.r = parseFloat(sliders.r.value);
+            state.rho = parseFloat(sliders.rho.value);
+            state.eta = parseFloat(sliders.eta.value);
+        }
+
+        function syncSliders() {
+            sliders.v.value = state.v;
+            sliders.r.value = state.r;
+            sliders.rho.value = state.rho;
+            sliders.eta.value = state.eta;
+        }
+
+        function updateSimulation() {
+            readSliders();
+            const d = compute();
+
+            document.getElementById('v-val').textContent = `${state.v.toFixed(1)} m/s`;
+            document.getElementById('r-val').textContent = `${state.r.toFixed(0)} m`;
+            document.getElementById('rho-val').textContent = `${state.rho.toFixed(3)} kg/m³`;
+            document.getElementById('eta-val').textContent = `${state.eta.toFixed(0)}%`;
+
+            document.getElementById('area-val').textContent = `${d.A.toFixed(0)} m²`;
+            document.getElementById('mass-val').textContent = fmtMass(d.massFlow);
+            document.getElementById('pwind-val').textContent = fmtPower(d.pWind);
+            document.getElementById('pout-val').textContent = fmtPower(d.pOut);
+            document.getElementById('eday-val').textContent = fmtEnergy(d.pOut * 24);
+            document.getElementById('pdouble-val').textContent = fmtPower(d.pOut * 8);
+
+            // 3D geometry
+            const H = towerHeight();
+            const R = rotorRadius();
+            tower.scale.set(1, H, 1);
+            nacelle.position.set(0, H, 0);
+            rotor.position.set(-0.85, H, 0);
+            rotor.children.forEach((holder) => { holder.children[0].scale.set(1, R, 1); });
+            sweptDisc.position.set(-0.86, H, 0);
+            sweptDisc.scale.set(R, R, 1);
+
+            const arrowLen = 0.8 + state.v * 0.28;
+            windArrow.position.set(-9 - arrowLen, H, 0);
+            windArrow.setLength(arrowLen, Math.min(0.9, 0.3 + arrowLen * 0.12), Math.min(0.5, 0.18 + arrowLen * 0.06));
+            windArrowLabel.position.set(-9 - arrowLen / 2, H + 0.9, 0);
+
+            substation.material.emissiveIntensity = 0.1 + Math.min(1, d.pOut / 8e6) * 1.2;
+            glowLight.intensity = 0.2 + Math.min(1, d.pOut / 8e6) * 2.5;
+
+            setCameraFromState();
+            drawGraph();
+        }
+
+        // ---------- graph ----------
+        function drawGraph() {
+            const ctx = graphCanvas.getContext('2d');
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const W = graphCanvas.clientWidth, Hh = graphCanvas.clientHeight;
+            if (!W || !Hh) return;
+            graphCanvas.width = W * dpr; graphCanvas.height = Hh * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, W, Hh);
+
+            const pad = { l: 58, r: 18, t: 34, b: 34 };
+            const gw = W - pad.l - pad.r, gh = Hh - pad.t - pad.b;
+            const vMax = 25;
+            const pMax = compute({ ...state, v: vMax }).pWind * 1.05;
+            const X = (v) => pad.l + (v / vMax) * gw;
+            const Y = (P) => pad.t + gh - (P / pMax) * gh;
+            const unit = pMax >= 1e6 ? 1e6 : (pMax >= 1e3 ? 1e3 : 1);
+            const unitLabel = unit === 1e6 ? 'MW' : (unit === 1e3 ? 'kW' : 'W');
+
+            // grid + axes
+            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+            ctx.fillStyle = '#64748b'; ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+            for (let i = 0; i <= 4; i++) {
+                const P = (pMax * i) / 4;
+                ctx.beginPath(); ctx.moveTo(pad.l, Y(P)); ctx.lineTo(W - pad.r, Y(P)); ctx.stroke();
+                ctx.fillText((P / unit).toFixed(P / unit < 10 ? 1 : 0), pad.l - 6, Y(P));
+            }
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            for (let v = 0; v <= vMax; v += 5) {
+                ctx.beginPath(); ctx.moveTo(X(v), pad.t); ctx.lineTo(X(v), pad.t + gh); ctx.stroke();
+                ctx.fillText(v.toString(), X(v), pad.t + gh + 6);
+            }
+            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + gh); ctx.lineTo(W - pad.r, pad.t + gh); ctx.stroke();
+            ctx.fillStyle = '#475569'; ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+            ctx.fillText(t('graph.x'), W - pad.r, pad.t + gh - 4);
+            ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+            ctx.fillText(`P (${unitLabel})`, pad.l + 6, pad.t - 14);
+
+            // curves: wind power (green, faint) and electrical output (amber)
+            const curve = (key, color, width, dash) => {
+                ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash);
+                ctx.beginPath();
+                for (let i = 0; i <= 120; i++) {
+                    const v = (vMax * i) / 120;
+                    const P = compute({ ...state, v })[key];
+                    i === 0 ? ctx.moveTo(X(v), Y(P)) : ctx.lineTo(X(v), Y(P));
+                }
+                ctx.stroke(); ctx.setLineDash([]);
+            };
+            curve('pWind', 'rgba(22,163,74,0.45)', 2, [6, 4]);
+            curve('pOut', '#d97706', 2.5, []);
+
+            // current point + doubling marker
+            const d = compute();
+            ctx.strokeStyle = '#2563eb'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(X(state.v), pad.t + gh); ctx.lineTo(X(state.v), Y(d.pOut)); ctx.lineTo(pad.l, Y(d.pOut)); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#2563eb';
+            ctx.beginPath(); ctx.arc(X(state.v), Y(d.pOut), 5.5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#1e293b'; ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.textAlign = state.v > 18 ? 'right' : 'left'; ctx.textBaseline = 'bottom';
+            ctx.fillText(`${state.v.toFixed(1)} m/s → ${fmtPower(d.pOut)}`, X(state.v) + (state.v > 18 ? -9 : 9), Y(d.pOut) - 6);
+
+            if (state.v * 2 <= vMax && state.v > 0) {
+                const P2 = d.pOut * 8;
+                ctx.fillStyle = '#dc2626';
+                ctx.beginPath(); ctx.arc(X(state.v * 2), Y(P2), 5, 0, Math.PI * 2); ctx.fill();
+                ctx.textAlign = state.v * 2 > 18 ? 'right' : 'left'; ctx.textBaseline = 'bottom';
+                ctx.fillText(`2v → 8P = ${fmtPower(P2)}`, X(state.v * 2) + (state.v * 2 > 18 ? -9 : 9), Y(P2) - 6);
+            }
+
+            // legend
+            ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            const lx = pad.l + 8, ly = pad.t + 10;
+            ctx.strokeStyle = 'rgba(22,163,74,0.7)'; ctx.setLineDash([6, 4]); ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 22, ly); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillStyle = '#334155'; ctx.fillText(t('graph.windPower'), lx + 28, ly);
+            ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.moveTo(lx, ly + 16); ctx.lineTo(lx + 22, ly + 16); ctx.stroke();
+            ctx.fillText(t('graph.outputPower'), lx + 28, ly + 16);
+        }
+
+        // ---------- animation ----------
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const d = compute();
+            const R = rotorRadius();
+            const H = towerHeight();
+
+            // omega = (tip speed ratio) * v / r
+            const targetOmega = state.r > 0 ? (TIP_SPEED_RATIO * state.v) / state.r : 0;
+            rotorOmega += (targetOmega - rotorOmega) * 0.05;
+            rotor.rotation.x -= rotorOmega * dt;
+
+            // wind streaks flow along +x; slow down in the wake behind the rotor
+            const speed = state.v * 0.32;
+            const len = 0.35 + state.v * 0.09;
+            streaks.forEach((m) => {
+                const inWake = m.position.x > -0.86 && Math.hypot(m.position.y - H, m.position.z) < R;
+                const factor = inWake ? 1 - 0.55 * (state.eta / 100) : 1;
+                m.position.x += speed * factor * dt;
+                m.scale.x = len * factor;
+                m.material.opacity = inWake ? 0.4 : 0.75;
+                if (m.position.x > 16) respawnStreak(m);
+            });
+
+            // electrical pulses along the cable: speed grows with output power
+            const pulseSpeed = 0.15 + Math.min(1.6, d.pOut / 3e6);
+            cablePulses.forEach((p) => {
+                p.userData.t = (p.userData.t + pulseSpeed * dt) % 1;
+                p.position.copy(cablePoint(p.userData.t));
+                p.visible = d.pOut > 0;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        function resizeThree() {
+            if (!renderer || !camera) return;
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            drawGraph();
+        }
+
+        // ---------- i18n ----------
+        const translations = {
+            en: {
+                'nav.back': 'Back to Home',
+                'page.tag': 'HKDSE • Elective 3: Energy and Use of Energy • Wind energy',
+                'page.title': 'Wind Turbine Power',
+                'page.description': 'The kinetic energy of the air passing through the rotor each second gives the wind power $P = \\tfrac12 \\rho A v^3$. Drag the wind-speed slider and watch the power grow with the <b>cube</b> of $v$; lengthen the blades to grow the swept area $A = \\pi r^2$.',
+                'controls.title': 'Parameters',
+                'controls.reset': 'Reset',
+                'controls.windSpeed': 'Wind speed ($v$)',
+                'controls.bladeLength': 'Blade length ($r$)',
+                'controls.density': 'Air density ($\\rho$)',
+                'controls.efficiency': 'Turbine efficiency ($\\eta$)',
+                'controls.efficiency_hint': 'Betz limit: no turbine can extract more than 59% of the wind\'s kinetic energy.',
+                'controls.presets': 'Presets',
+                'controls.presetBreeze': 'Gentle breeze',
+                'controls.presetStrong': 'Strong wind',
+                'controls.presetOffshore': 'Offshore giant',
+                'controls.presetDouble': 'Double v',
+                'data.title': 'Live readings',
+                'data.area': 'Swept area $A = \\pi r^2$',
+                'data.massFlow': 'Air mass per second $\\rho A v$',
+                'data.windPower': 'Wind power $\\tfrac12 \\rho A v^3$',
+                'data.outputPower': 'Electrical output $\\eta P$',
+                'data.energyDay': 'Energy in 24 h',
+                'data.doubleV': 'If $v$ doubles ($\\times 8$)',
+                'formula.title': 'HKDSE formula',
+                'formula.rho': 'air density (kg m⁻³)',
+                'formula.A': 'area swept by the blades, $\\pi r^2$ (m²)',
+                'formula.v': 'wind speed (m s⁻¹)',
+                'formula.note': 'Derivation: mass of air arriving per second $= \\rho A v$; its kinetic energy per second $= \\tfrac12(\\rho A v)v^2$.',
+                'three.title': '3D wind farm',
+                'three.hint': 'Drag to rotate • pinch / scroll to zoom',
+                'legend.wind': 'Wind velocity $v$',
+                'legend.area': 'Swept area $A$',
+                'legend.power': 'Electrical output',
+                'graph.title': 'Power against wind speed (cubic law)',
+                'graph.x': 'v (m/s)',
+                'graph.windPower': 'Wind power ½ρAv³',
+                'graph.outputPower': 'Electrical output ηP',
+                'ai.title': 'Physics note',
+                'ai.desc': 'Because $P \\propto v^3$, a site with twice the average wind speed offers <b>eight</b> times the power — this is why turbines are placed on ridges and offshore. Because $P \\propto r^2$, doubling the blade length gives four times the power, which explains the trend towards ever-larger turbines. A real turbine extracts only a fraction $\\eta$ of the wind\'s kinetic energy (Betz limit ≈ 59%), because the air must keep moving to leave the rotor.',
+                'modal.open': 'Explain',
+                'modal.title': 'Wind power — HKDSE E3',
+                'modal.body': '<p>Consider a cylinder of air of cross-sectional area $A$ (the rotor\'s swept area) moving at speed $v$. In one second a length $v$ of this cylinder passes the rotor, so the <b>mass arriving per second</b> is $\\rho A v$.</p><p>Its kinetic energy per second is $\\tfrac12 (\\rho A v) v^2 = \\tfrac12 \\rho A v^3$. This is the <b>wind power</b> available to the turbine.</p><p><b>Efficiency:</b> the electrical output is $P_{\\text{out}} = \\eta \\cdot \\tfrac12 \\rho A v^3$. The Betz limit shows $\\eta$ can never exceed $16/27 \\approx 59\\%$; commercial turbines achieve 35–45%.</p><p><b>Cut-in and cut-out:</b> real turbines do not turn below ≈ 3 m s⁻¹ and are braked above ≈ 25 m s⁻¹ to prevent damage, so the cubic law applies only in between.</p><p><b>Colour code:</b> <span class="text-green-600 font-semibold">green</span> = wind velocity, <span class="text-blue-600 font-semibold">blue</span> = swept area, <span class="text-amber-600 font-semibold">amber</span> = electrical energy delivered.</p>'
+            },
+            'zh-hk': {
+                'nav.back': '返回首頁',
+                'page.tag': 'HKDSE • 選修部分 3：能量和能源的使用 • 風能',
+                'page.title': '風力發電機功率',
+                'page.description': '每秒通過轉子的空氣所帶的動能，就是風功率 $P = \\tfrac12 \\rho A v^3$。拖動風速滑桿，觀察功率如何隨 $v$ 的<b>三次方</b>增長；加長葉片則可增大掃掠面積 $A = \\pi r^2$。',
+                'controls.title': '參數',
+                'controls.reset': '重設',
+                'controls.windSpeed': '風速 ($v$)',
+                'controls.bladeLength': '葉片長度 ($r$)',
+                'controls.density': '空氣密度 ($\\rho$)',
+                'controls.efficiency': '發電機效率 ($\\eta$)',
+                'controls.efficiency_hint': '貝茲極限：任何風力機最多只能提取風動能的 59%。',
+                'controls.presets': '預設情境',
+                'controls.presetBreeze': '微風',
+                'controls.presetStrong': '強風',
+                'controls.presetOffshore': '海上巨型風機',
+                'controls.presetDouble': '風速加倍',
+                'data.title': '即時讀數',
+                'data.area': '掃掠面積 $A = \\pi r^2$',
+                'data.massFlow': '每秒空氣質量 $\\rho A v$',
+                'data.windPower': '風功率 $\\tfrac12 \\rho A v^3$',
+                'data.outputPower': '電功率輸出 $\\eta P$',
+                'data.energyDay': '24 小時發電量',
+                'data.doubleV': '若 $v$ 加倍（$\\times 8$）',
+                'formula.title': 'HKDSE 公式',
+                'formula.rho': '空氣密度 (kg m⁻³)',
+                'formula.A': '葉片掃掠面積 $\\pi r^2$ (m²)',
+                'formula.v': '風速 (m s⁻¹)',
+                'formula.note': '推導：每秒到達的空氣質量 $= \\rho A v$；其每秒動能 $= \\tfrac12(\\rho A v)v^2$。',
+                'three.title': '3D 風場',
+                'three.hint': '拖曳旋轉 • 雙指／滾輪縮放',
+                'legend.wind': '風速 $v$',
+                'legend.area': '掃掠面積 $A$',
+                'legend.power': '電能輸出',
+                'graph.title': '功率與風速關係（三次方定律）',
+                'graph.x': 'v (m/s)',
+                'graph.windPower': '風功率 ½ρAv³',
+                'graph.outputPower': '電功率輸出 ηP',
+                'ai.title': '物理說明',
+                'ai.desc': '由於 $P \\propto v^3$，平均風速加倍的選址可提供<b>八倍</b>功率——這正是風機多建於山脊及海上的原因。由於 $P \\propto r^2$，葉片加倍可得四倍功率，解釋了風機愈造愈大的趨勢。實際風機只能提取風動能的一部分 $\\eta$（貝茲極限約 59%），因為空氣必須保持流動才能離開轉子。',
+                'modal.open': '解釋',
+                'modal.title': '風能 — HKDSE 選修 3',
+                'modal.body': '<p>考慮一段橫截面積為 $A$（轉子掃掠面積）、以速率 $v$ 流動的空氣柱。每秒有長度 $v$ 的空氣柱通過轉子，故<b>每秒到達的質量</b>為 $\\rho A v$。</p><p>其每秒動能為 $\\tfrac12 (\\rho A v) v^2 = \\tfrac12 \\rho A v^3$，即風機可利用的<b>風功率</b>。</p><p><b>效率：</b>電功率輸出 $P_{\\text{out}} = \\eta \\cdot \\tfrac12 \\rho A v^3$。貝茲極限指出 $\\eta$ 不可能超過 $16/27 \\approx 59\\%$；商用風機約達 35–45%。</p><p><b>切入與切出風速：</b>實際風機在低於約 3 m s⁻¹ 時不會轉動，高於約 25 m s⁻¹ 時會剎停以免損毀，故三次方定律只在此範圍內適用。</p><p><b>顏色編碼：</b><span class="text-green-600 font-semibold">綠色</span>＝風速，<span class="text-blue-600 font-semibold">藍色</span>＝掃掠面積，<span class="text-amber-600 font-semibold">琥珀色</span>＝輸出的電能。</p>'
+            }
+        };
+
+        let currentLang = localStorage.getItem('preferred_language') || 'en';
+        if (currentLang === 'zh' || currentLang === 'cn' || currentLang === 'zh-TW' || currentLang === 'zh-CN') {
+            currentLang = 'zh-hk';
+        }
+
+        function t(key) {
+            return translations[currentLang]?.[key] ?? translations.en[key] ?? key;
+        }
+
+        function setLanguage(lang) {
+            if (lang === 'zh' || lang === 'cn') lang = 'zh-hk';
+            currentLang = lang;
+            localStorage.setItem('preferred_language', lang);
+            document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+            document.querySelectorAll('[data-i18n]').forEach((el) => {
+                const key = el.getAttribute('data-i18n');
+                const val = translations[lang]?.[key];
+                if (!val) return;
+                if (key.includes('desc') || key.includes('body') || key.includes('note') || key.includes('hint')) {
+                    el.innerHTML = val;
+                } else {
+                    el.textContent = val;
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach((btn) => {
+                const active = btn.dataset.lang === lang;
+                btn.classList.toggle('bg-white', active);
+                btn.classList.toggle('shadow-sm', active);
+                btn.classList.toggle('text-blue-600', active);
+            });
+            drawGraph();
+            if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+        }
+        window.setLanguage = setLanguage;
+
+        // ---------- events ----------
+        Object.values(sliders).forEach((s) => s.addEventListener('input', updateSimulation));
+
+        function applyPreset(p) {
+            Object.assign(state, p);
+            syncSliders();
+            updateSimulation();
+        }
+        document.getElementById('preset-breeze').addEventListener('click', () => applyPreset({ v: 5, r: 40, rho: 1.225, eta: 40 }));
+        document.getElementById('preset-strong').addEventListener('click', () => applyPreset({ v: 14, r: 40, rho: 1.225, eta: 40 }));
+        document.getElementById('preset-offshore').addEventListener('click', () => applyPreset({ v: 11, r: 80, rho: 1.225, eta: 45 }));
+        document.getElementById('preset-double').addEventListener('click', () => {
+            readSliders();
+            applyPreset({ v: Math.min(25, +(state.v * 2).toFixed(1)) });
+        });
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            Object.assign(state, defaults);
+            syncSliders();
+            resetCameraView();
+            updateSimulation();
+        });
+
+        const modal = document.getElementById('explain-modal');
+        document.getElementById('explain-btn').addEventListener('click', () => modal.classList.remove('hidden'));
+        document.getElementById('explain-close').addEventListener('click', () => modal.classList.add('hidden'));
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+        window.addEventListener('resize', resizeThree);
+
+        initThree();
+        syncSliders();
+        updateSimulation();
+        setLanguage(currentLang === 'zh-hk' ? 'zh-hk' : 'en');
+        animate();
+    </script>
+
+    <script src="practice_questions.js"></script>
+    <script src="practice_questions_data.js"></script>
+    <script>initPracticeQuestions('wind_turbine_power');</script>
+</body>
+</html>
