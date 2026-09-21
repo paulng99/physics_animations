@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Heat Gain &amp; Air Conditioner COP 3D Simulator (HKDSE E3)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script"></script>
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: 'Inter', sans-serif; }
+        #three-container {
+            width: 100%;
+            height: 440px;
+            background: #e0f2fe;
+            cursor: grab;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            touch-action: none;
+            border: 2px solid #e2e8f0;
+        }
+        #three-container:active { cursor: grabbing; }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #d1d5db;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        input[type="range"].accent-red-600::-webkit-slider-thumb { background: #dc2626; }
+        input[type="range"].accent-orange-600::-webkit-slider-thumb { background: #ea580c; }
+        input[type="range"].accent-amber-600::-webkit-slider-thumb { background: #d97706; }
+        input[type="range"].accent-green-600::-webkit-slider-thumb { background: #16a34a; }
+        input[type="range"].accent-slate-600::-webkit-slider-thumb { background: #475569; }
+        .opt-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
+        mjx-container { display: inline-block !important; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+
+    <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+            </a>
+            <div class="flex items-center gap-2">
+                <button id="explain-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="modal.open">Explain</button>
+                <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                    <button onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-2 rounded-md text-xs font-medium transition hover:bg-white" data-lang="zh-hk">繁</button>
+                    <button onclick="setLanguage('en')" class="lang-btn px-3 py-2 rounded-md text-xs font-medium transition hover:bg-white bg-white shadow-sm text-blue-600" data-lang="en">EN</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-6 w-full">
+        <header class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <p class="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-1" data-i18n="page.tag">HKDSE • Elective 3: Energy and Use of Energy • Buildings &amp; air conditioning</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2" data-i18n="page.title">Building Heat Gain, U-value &amp; Air-Conditioner COP</h1>
+            <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="page.description">
+                Heat leaks into a cooled room through its envelope at a rate $Q/t = U A\,\Delta T$, and sunlight adds more through the window. An air conditioner must pump all of it back out, using electrical power $P = (Q/t)/\text{COP}$. Change the wall, window, shading and air conditioner and watch the energy bill respond.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800" data-i18n="controls.title">Parameters</h3>
+                        <button id="reset-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-red-50 hover:text-red-600 transition-all" data-i18n="controls.reset">Reset</button>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.tout">Outdoor temperature $T_{\text{out}}$</span>
+                            <span id="tout-val" class="text-red-600 font-bold font-mono">33 °C</span>
+                        </label>
+                        <input type="range" id="tout-slider" min="20" max="38" step="0.5" value="33" class="w-full accent-red-600">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.tin">Indoor set temperature $T_{\text{in}}$</span>
+                            <span id="tin-val" class="text-blue-600 font-bold font-mono">25 °C</span>
+                        </label>
+                        <input type="range" id="tin-slider" min="18" max="28" step="0.5" value="25" class="w-full accent-blue-600">
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="controls.tin_hint">Hong Kong's recommended summer setting is 25.5 °C.</p>
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 mb-2" data-i18n="controls.material">Wall material ($k$ in W m⁻¹ K⁻¹)</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button data-material="concrete" class="opt-btn mat-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition active" data-i18n="controls.concrete">Concrete 1.7</button>
+                            <button data-material="brick" class="opt-btn mat-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition" data-i18n="controls.brick">Brick 0.8</button>
+                            <button data-material="timber" class="opt-btn mat-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition" data-i18n="controls.timber">Timber 0.15</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.dwall">Wall thickness $d$</span>
+                            <span id="dwall-val" class="text-slate-600 font-bold font-mono">0.20 m</span>
+                        </label>
+                        <input type="range" id="dwall-slider" min="0.10" max="0.50" step="0.01" value="0.20" class="w-full accent-slate-600">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.dins">Insulation layer (foam, $k$ = 0.035)</span>
+                            <span id="dins-val" class="text-amber-600 font-bold font-mono">0 mm</span>
+                        </label>
+                        <input type="range" id="dins-slider" min="0" max="100" step="5" value="0" class="w-full accent-amber-600">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.awin">Window area $A_{\text{win}}$ (south wall)</span>
+                            <span id="awin-val" class="text-blue-600 font-bold font-mono">4.0 m²</span>
+                        </label>
+                        <input type="range" id="awin-slider" min="0" max="8" step="0.5" value="4" class="w-full accent-blue-600">
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <button data-glazing="single" class="opt-btn glz-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition active" data-i18n="controls.single">Single glazing U = 5.8</button>
+                            <button data-glazing="double" class="opt-btn glz-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition" data-i18n="controls.double">Double glazing U = 2.8</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.irr">Sunlight on window $I$</span>
+                            <span id="irr-val" class="text-amber-600 font-bold font-mono">400 W/m²</span>
+                        </label>
+                        <input type="range" id="irr-slider" min="0" max="800" step="10" value="400" class="w-full accent-amber-600">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.sc">Shading coefficient $SC$</span>
+                            <span id="sc-val" class="text-amber-600 font-bold font-mono">0.80</span>
+                        </label>
+                        <input type="range" id="sc-slider" min="0.10" max="0.90" step="0.05" value="0.80" class="w-full accent-amber-600">
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="controls.sc_hint">Fraction of solar radiation transmitted; sunshades, blinds and tinted glass lower $SC$.</p>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.cop">Air-conditioner COP</span>
+                            <span id="cop-val" class="text-green-600 font-bold font-mono">3.0</span>
+                        </label>
+                        <input type="range" id="cop-slider" min="1.5" max="5.0" step="0.1" value="3.0" class="w-full accent-green-600">
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="controls.cop_hint">$\text{COP} = Q_{\text{removed}} / W_{\text{electrical}}$. A Grade 1 energy-label unit has a higher COP.</p>
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 mb-2" data-i18n="controls.presets">Presets</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="preset-bare" class="px-3 py-2 min-h-[44px] rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition" data-i18n="controls.presetBare">Bare concrete</button>
+                            <button id="preset-insulated" class="px-3 py-2 min-h-[44px] rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="controls.presetInsulated">Insulated + double glazing</button>
+                            <button id="preset-sunny" class="px-3 py-2 min-h-[44px] rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold transition" data-i18n="controls.presetSunny">Big sunny window</button>
+                            <button id="preset-grade1" class="px-3 py-2 min-h-[44px] rounded-xl bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold transition" data-i18n="controls.presetGrade1">Grade 1 AC</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide" data-i18n="data.title">Live readings</h3>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.uwall">Wall $U$-value</span>
+                        <span id="uwall-val" class="text-lg font-bold text-slate-700 font-mono">8.50 W/m²K</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.qwall">Conduction: walls + roof</span>
+                        <span id="qwall-val" class="text-lg font-bold text-orange-600 font-mono">6.26 kW</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.qwin">Conduction: window</span>
+                        <span id="qwin-val" class="text-lg font-bold text-orange-600 font-mono">186 W</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.qsolar">Solar gain: $SC \cdot I \cdot A_{\text{win}}$</span>
+                        <span id="qsolar-val" class="text-lg font-bold text-amber-600 font-mono">1.28 kW</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-red-100">
+                        <span class="text-sm text-slate-600 font-semibold" data-i18n="data.qtotal">Total heat gain</span>
+                        <span id="qtotal-val" class="text-lg font-bold text-red-600 font-mono">7.72 kW</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.ottv">OTTV (gain per m² of envelope)</span>
+                        <span id="ottv-val" class="text-lg font-bold text-slate-700 font-mono">80 W/m²</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-green-100">
+                        <span class="text-sm text-slate-600 font-semibold" data-i18n="data.pelec">AC electrical power $= Q/\text{COP}$</span>
+                        <span id="pelec-val" class="text-lg font-bold text-green-600 font-mono">2.57 kW</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.qrej">Heat rejected outdoors $= Q + W$</span>
+                        <span id="qrej-val" class="text-lg font-bold text-orange-600 font-mono">10.3 kW</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.energy">8 h of cooling (≈ HK$1.3/kWh)</span>
+                        <span id="energy-val" class="text-base font-bold text-purple-600 font-mono">20.6 kWh · HK$27</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3" data-i18n="formula.title">HKDSE formulae</h3>
+                    <div class="text-center text-lg font-serif mb-2">$$ \frac{Q}{t} = U A\,\Delta T, \qquad U = \frac{k}{d} $$</div>
+                    <div class="text-center text-lg font-serif mb-4">$$ \text{COP} = \frac{Q_{\text{removed}}}{W} $$</div>
+                    <div class="grid grid-cols-1 gap-2 text-sm text-slate-300">
+                        <div><span class="text-blue-400 font-bold">$U$:</span> <span data-i18n="formula.U">thermal transmittance (W m⁻² K⁻¹)</span></div>
+                        <div><span class="text-blue-400 font-bold">$k$:</span> <span data-i18n="formula.k">thermal conductivity of the material (W m⁻¹ K⁻¹)</span></div>
+                        <div><span class="text-blue-400 font-bold">OTTV:</span> <span data-i18n="formula.ottv">overall thermal transfer value = total envelope heat gain ÷ envelope area</span></div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3 leading-relaxed" data-i18n="formula.note">
+                        Layers in series add their thermal resistances: $\frac{1}{U} = \frac{d_1}{k_1} + \frac{d_2}{k_2}$ (surface air films are ignored here).
+                    </p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-6">
+                <div class="relative">
+                    <div id="three-container"></div>
+                    <div class="absolute top-3 left-3 bg-slate-900/75 text-white text-xs font-semibold px-3 py-1 rounded-full pointer-events-none" data-i18n="three.title">3D room 6 m × 5 m × 3 m, window faces south</div>
+                    <div class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur text-white px-5 py-3 rounded-full text-sm pointer-events-none" data-i18n="three.hint">Drag to rotate • pinch / scroll to zoom</div>
+                    <div class="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
+                        <span class="bg-white/90 text-orange-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.heat">Heat conduction</span>
+                        <span class="bg-white/90 text-amber-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.solar">Solar gain</span>
+                        <span class="bg-white/90 text-sky-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.cool">Cooled air</span>
+                        <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.elec">Electrical input</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 h-72 relative">
+                    <h3 class="text-sm font-bold text-slate-500 absolute top-4 left-4 z-10" data-i18n="graph.title">Heat gain breakdown and air-conditioner input</h3>
+                    <canvas id="graph-canvas" class="w-full h-full"></canvas>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                    <div class="flex items-start gap-4">
+                        <div class="p-3 bg-blue-600 rounded-xl text-white shrink-0">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-slate-800 mb-2" data-i18n="ai.title">Physics note</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed" data-i18n="ai.desc">
+                                A thin layer of foam ($k$ = 0.035) adds far more thermal resistance $d/k$ than a thick concrete wall, so the $U$-value — and the conduction gain — collapses. Solar gain through glass does not depend on $\Delta T$ at all: only shading, tinting or a smaller window reduces it. The air conditioner is a heat pump; by energy conservation it dumps $Q + W$ outdoors, and a higher COP means less electrical work $W$ for the same cooling. Hong Kong's Building (Energy Efficiency) Regulation limits the OTTV of commercial building envelopes.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="explain-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[88vh] overflow-y-auto p-6 md:p-8">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <h2 class="text-xl font-bold text-slate-800" data-i18n="modal.title">Building energy &amp; COP — HKDSE E3</h2>
+                <button id="explain-close" class="min-h-[44px] min-w-[44px] rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200">×</button>
+            </div>
+            <div class="space-y-4 text-sm text-slate-600 leading-relaxed" data-i18n="modal.body" id="modal-body">
+                <p><b>Thermal transmittance $U$</b> is the rate of heat flow through 1 m² of a building element for a 1 K temperature difference. For a single homogeneous layer $U = k/d$; the rate of heat transfer through area $A$ is $Q/t = U A\,\Delta T$.</p>
+                <p><b>Composite walls:</b> resistances add in series, $1/U = d_1/k_1 + d_2/k_2 + \dots$, which is why a few centimetres of insulation dominate.</p>
+                <p><b>OTTV</b> (overall thermal transfer value) averages the total heat gain through the envelope — conduction through opaque walls, conduction through glass and solar radiation through glass ($SC \cdot I \cdot A_{\text{win}}$) — over the envelope area. Lower OTTV means less cooling load.</p>
+                <p><b>Coefficient of performance</b> of an air conditioner is $\text{COP} = Q_{\text{removed}}/W$, where $W$ is the electrical energy used. Since it moves heat rather than creating it, COP is normally 2.5–5. By energy conservation the outdoor unit rejects $Q_{\text{removed}} + W$.</p>
+                <p><b>Energy label:</b> Hong Kong's Mandatory Energy Efficiency Labelling Scheme grades room coolers 1 (most efficient) to 5, based on their cooling seasonal performance factor.</p>
+                <p><b>Colour code:</b> <span class="text-orange-600 font-semibold">orange</span> = heat conducted through the envelope and rejected outdoors, <span class="text-amber-600 font-semibold">amber</span> = solar radiation, <span class="text-sky-600 font-semibold">sky blue</span> = cooled air, <span class="text-green-600 font-semibold">green</span> = electrical energy input.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PHYSICS_COLORS = {
+            force: 0xdc2626,
+            velocity: 0x16a34a,
+            accel: 0x9333ea,
+            bField: 0xd97706,
+            displacement: 0x475569
+        };
+        const COLOR_HEAT = 0xf97316;   // conducted / rejected heat
+        const COLOR_SOLAR = 0xf59e0b;  // solar radiation
+        const COLOR_COOL = 0x0ea5e9;   // cooled air
+        const COLOR_ELEC = 0x16a34a;   // electrical energy
+
+        // Room interior dimensions (m)
+        const L = 6, WD = 5, H = 3;
+        const A_WALLS = 2 * (L + WD) * H;   // 66 m²
+        const A_ROOF = L * WD;               // 30 m²
+        const A_ENVELOPE = A_WALLS + A_ROOF; // 96 m²
+        const WIN_H = 1.5;
+
+        const MATERIALS = {
+            concrete: { k: 1.7, color: 0x94a3b8 },
+            brick: { k: 0.8, color: 0xc2775b },
+            timber: { k: 0.15, color: 0xd6a15c }
+        };
+        const K_INSULATION = 0.035;
+        const U_GLAZING = { single: 5.8, double: 2.8 };
+        const TARIFF = 1.3; // HK$ per kWh (assumed)
+        const SUN_DIR = new THREE.Vector3(0.35, 0.62, 0.70).normalize(); // from the south-south-east, ~38° up
+
+        const defaults = { tout: 33, tin: 25, material: 'concrete', dwall: 0.20, dins: 0, awin: 4, glazing: 'single', irr: 400, sc: 0.8, cop: 3.0 };
+        const state = { ...defaults };
+
+        const sliders = {
+            tout: document.getElementById('tout-slider'),
+            tin: document.getElementById('tin-slider'),
+            dwall: document.getElementById('dwall-slider'),
+            dins: document.getElementById('dins-slider'),
+            awin: document.getElementById('awin-slider'),
+            irr: document.getElementById('irr-slider'),
+            sc: document.getElementById('sc-slider'),
+            cop: document.getElementById('cop-slider')
+        };
+        const threeContainer = document.getElementById('three-container');
+        const graphCanvas = document.getElementById('graph-canvas');
+
+        let scene, camera, renderer, clock;
+        let envelope = null, indoorAir, sunMesh, acIndoor, acOutdoor, fan, meterBox, cable, toutLabel, tinLabel;
+        const flows = {};
+        const cablePulses = [];
+        let isCameraDrag = false, pinchDistance = null;
+        const lastPointer = { x: 0, y: 0 };
+        const defaultCamera = { radius: 17, theta: 0.65, phi: 1.12 };
+        const cameraState = { ...defaultCamera };
+        const TARGET = new THREE.Vector3(0, 1.4, 0);
+
+        // ---------- physics ----------
+        // 1/U = d_wall/k_wall + d_ins/k_ins ; Q/t = U A dT ; solar = SC I A ; W = Q_total / COP
+        function compute(s = state) {
+            const dT = s.tout - s.tin;
+            const dInsM = s.dins / 1000;
+            const R = s.dwall / MATERIALS[s.material].k + dInsM / K_INSULATION;
+            const uWall = 1 / R;
+            const uWin = U_GLAZING[s.glazing];
+            const aOpaque = A_ENVELOPE - s.awin;
+            const qWall = uWall * aOpaque * dT;
+            const qWin = uWin * s.awin * dT;
+            const qSolar = s.sc * s.irr * s.awin;
+            const qTotal = qWall + qWin + qSolar;
+            const ottv = qTotal / A_ENVELOPE;
+            const pElec = qTotal > 0 ? qTotal / s.cop : 0;
+            const qRej = qTotal > 0 ? qTotal + pElec : 0;
+            const energy8h = (pElec * 8) / 1000; // kWh
+            return { dT, uWall, uWin, aOpaque, qWall, qWin, qSolar, qTotal, ottv, pElec, qRej, energy8h, cost: energy8h * TARIFF };
+        }
+
+        function fmtPower(W) {
+            const a = Math.abs(W);
+            const sign = W < 0 ? '−' : '';
+            if (a < 1e3) return `${sign}${a.toFixed(0)} W`;
+            return `${sign}${(a / 1e3).toFixed(2)} kW`;
+        }
+
+        // ---------- three.js helpers ----------
+        function makeTextSprite(color, w = 360, h = 84) {
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            const ctx = c.getContext('2d');
+            const tex = new THREE.CanvasTexture(c);
+            const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+            spr.scale.set(w / 110, h / 110, 1);
+            spr.userData.setText = (text) => {
+                ctx.clearRect(0, 0, w, h);
+                ctx.fillStyle = 'rgba(255,255,255,0.88)';
+                ctx.beginPath();
+                ctx.roundRect ? ctx.roundRect(4, 4, w - 8, h - 8, 20) : ctx.rect(4, 4, w - 8, h - 8);
+                ctx.fill();
+                ctx.fillStyle = color;
+                ctx.font = 'bold 40px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, w / 2, h / 2 + 2);
+                tex.needsUpdate = true;
+            };
+            return spr;
+        }
+
+        function makeFlow(count, color) {
+            const arrows = [];
+            for (let i = 0; i < count; i++) {
+                const a = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 0.5, color, 0.2, 0.12);
+                a.line.material.transparent = true;
+                a.cone.material.transparent = true;
+                a.userData.t = Math.random();
+                a.visible = false;
+                scene.add(a);
+                arrows.push(a);
+            }
+            return { arrows, starts: [], dir: new THREE.Vector3(0, 0, 1), travel: 1, speed: 0, len: 0.4, opacity: 0 };
+        }
+
+        // q = flux density driving the animation (W/m² or scaled W)
+        function setFlow(flow, starts, dir, travel, q, qScale) {
+            flow.starts = starts;
+            flow.dir.copy(dir).normalize();
+            flow.travel = travel;
+            const mag = Math.abs(q) / qScale;
+            flow.speed = 0.35 + Math.min(2.2, mag * 1.8);
+            flow.len = THREE.MathUtils.clamp(0.28 + mag * 0.5, 0.28, 0.85);
+            flow.opacity = THREE.MathUtils.clamp(mag * 4, 0, 0.95);
+        }
+
+        function initThree() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xe0f2fe);
+            clock = new THREE.Clock();
+
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 200);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            renderer.setSize(w, h);
+            renderer.shadowMap.enabled = true;
+            threeContainer.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const sun = new THREE.DirectionalLight(0xfff7ed, 0.9);
+            sun.position.copy(SUN_DIR).multiplyScalar(25);
+            sun.castShadow = true;
+            sun.shadow.mapSize.set(1024, 1024);
+            sun.shadow.camera.left = -14; sun.shadow.camera.right = 14;
+            sun.shadow.camera.top = 14; sun.shadow.camera.bottom = -14;
+            scene.add(sun);
+
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(80, 80),
+                new THREE.MeshStandardMaterial({ color: 0xd9f99d, roughness: 1 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.16;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            const grid = new THREE.GridHelper(80, 40, 0xbef264, 0xd9f99d);
+            grid.position.y = -0.15;
+            scene.add(grid);
+
+            indoorAir = new THREE.Mesh(
+                new THREE.BoxGeometry(L - 0.02, H - 0.02, WD - 0.02),
+                new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.12, depthWrite: false })
+            );
+            indoorAir.position.set(0, H / 2, 0);
+            scene.add(indoorAir);
+
+            sunMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.7, 24, 24),
+                new THREE.MeshBasicMaterial({ color: 0xfbbf24 })
+            );
+            sunMesh.position.copy(new THREE.Vector3(0, 1.5, WD / 2)).add(SUN_DIR.clone().multiplyScalar(11));
+            scene.add(sunMesh);
+
+            // Air conditioner: indoor unit high on the north wall, outdoor unit outside it
+            acIndoor = new THREE.Mesh(
+                new THREE.BoxGeometry(0.95, 0.3, 0.26),
+                new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 })
+            );
+            scene.add(acIndoor);
+            const vent = new THREE.Mesh(
+                new THREE.BoxGeometry(0.8, 0.05, 0.1),
+                new THREE.MeshStandardMaterial({ color: COLOR_COOL })
+            );
+            vent.position.set(0, -0.14, 0.1);
+            acIndoor.add(vent);
+
+            acOutdoor = new THREE.Group();
+            const box = new THREE.Mesh(
+                new THREE.BoxGeometry(0.85, 0.65, 0.38),
+                new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.6, metalness: 0.2 })
+            );
+            box.castShadow = true;
+            acOutdoor.add(box);
+            fan = new THREE.Group();
+            const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.06, 12), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+            hub.rotation.x = Math.PI / 2;
+            fan.add(hub);
+            for (let i = 0; i < 3; i++) {
+                const blade = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.24, 0.02), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+                blade.position.y = 0.14;
+                const holder = new THREE.Group();
+                holder.rotation.z = (i * 2 * Math.PI) / 3;
+                holder.add(blade);
+                fan.add(holder);
+            }
+            fan.position.set(0, 0.05, -0.2);
+            acOutdoor.add(fan);
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.015, 8, 32), new THREE.MeshStandardMaterial({ color: 0x475569 }));
+            ring.position.set(0, 0.05, -0.19);
+            acOutdoor.add(ring);
+            scene.add(acOutdoor);
+
+            meterBox = new THREE.Mesh(
+                new THREE.BoxGeometry(0.4, 0.55, 0.25),
+                new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, emissive: COLOR_ELEC, emissiveIntensity: 0.3 })
+            );
+            scene.add(meterBox);
+            cable = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: COLOR_ELEC }));
+            scene.add(cable);
+            for (let i = 0; i < 8; i++) {
+                const p = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.07, 10, 10),
+                    new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x22c55e, emissiveIntensity: 0.9 })
+                );
+                p.userData.t = i / 8;
+                scene.add(p);
+                cablePulses.push(p);
+            }
+
+            toutLabel = makeTextSprite('#dc2626');
+            scene.add(toutLabel);
+            tinLabel = makeTextSprite('#2563eb');
+            scene.add(tinLabel);
+
+            flows.north = makeFlow(4, COLOR_HEAT);
+            flows.south = makeFlow(4, COLOR_HEAT);
+            flows.east = makeFlow(6, COLOR_HEAT);
+            flows.west = makeFlow(6, COLOR_HEAT);
+            flows.roof = makeFlow(6, COLOR_HEAT);
+            flows.winCond = makeFlow(2, COLOR_HEAT);
+            flows.solar = makeFlow(4, COLOR_SOLAR);
+            flows.reject = makeFlow(3, COLOR_HEAT);
+            flows.cool = makeFlow(3, COLOR_COOL);
+
+            attachCameraControls();
+            resetCameraView();
+        }
+
+        function buildEnvelope() {
+            if (envelope) {
+                envelope.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+                scene.remove(envelope);
+            }
+            envelope = new THREE.Group();
+            const dW = state.dwall, dI = state.dins / 1000, dT = dW + dI;
+            const matWall = new THREE.MeshStandardMaterial({ color: MATERIALS[state.material].color, transparent: true, opacity: 0.6, roughness: 0.9, depthWrite: false });
+            const matIns = new THREE.MeshStandardMaterial({ color: 0xfde047, transparent: true, opacity: 0.85, roughness: 1, depthWrite: false });
+            const matFloor = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9 });
+            const add = (w, h, d, x, y, z, mat, shadow = true) => {
+                const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+                m.position.set(x, y, z);
+                m.castShadow = shadow;
+                envelope.add(m);
+                return m;
+            };
+            // north / south walls (normal along z)
+            [-1, 1].forEach((sgn) => {
+                const zi = (sgn * WD) / 2;
+                if (dI > 0) add(L + 2 * dI, H, dI, 0, H / 2, zi + (sgn * dI) / 2, matIns);
+                add(L + 2 * dT, H, dW, 0, H / 2, zi + sgn * (dI + dW / 2), matWall);
+            });
+            // east / west walls (normal along x)
+            [-1, 1].forEach((sgn) => {
+                const xi = (sgn * L) / 2;
+                if (dI > 0) add(dI, H, WD, xi + (sgn * dI) / 2, H / 2, 0, matIns);
+                add(dW, H, WD + 2 * dI, xi + sgn * (dI + dW / 2), H / 2, 0, matWall);
+            });
+            // roof
+            if (dI > 0) add(L + 2 * dT, dI, WD + 2 * dT, 0, H + dI / 2, 0, matIns);
+            add(L + 2 * dT, dW, WD + 2 * dT, 0, H + dI + dW / 2, 0, matWall);
+            // floor slab (assumed adiabatic)
+            add(L + 2 * dT, 0.15, WD + 2 * dT, 0, -0.075, 0, matFloor, false);
+
+            // window in the south wall
+            if (state.awin > 0) {
+                const ww = Math.min(5.6, state.awin / WIN_H);
+                const glass = new THREE.MeshStandardMaterial({
+                    color: state.glazing === 'double' ? 0x38bdf8 : 0xbae6fd,
+                    transparent: true, opacity: state.glazing === 'double' ? 0.55 : 0.4, roughness: 0.1, metalness: 0.3, depthWrite: false
+                });
+                add(ww, WIN_H, dT + 0.06, 0, 1.5, WD / 2 + dT / 2, glass, false);
+                const frameMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+                add(ww + 0.1, 0.06, dT + 0.08, 0, 1.5 + WIN_H / 2, WD / 2 + dT / 2, frameMat, false);
+                add(ww + 0.1, 0.06, dT + 0.08, 0, 1.5 - WIN_H / 2, WD / 2 + dT / 2, frameMat, false);
+                add(0.06, WIN_H, dT + 0.08, ww / 2, 1.5, WD / 2 + dT / 2, frameMat, false);
+                add(0.06, WIN_H, dT + 0.08, -ww / 2, 1.5, WD / 2 + dT / 2, frameMat, false);
+                if (state.glazing === 'double') {
+                    add(ww, WIN_H, 0.01, 0, 1.5, WD / 2 + dT + 0.05, glass, false);
+                }
+            }
+            scene.add(envelope);
+        }
+
+        function setCameraFromState() {
+            const sinPhi = Math.sin(cameraState.phi);
+            camera.position.set(
+                TARGET.x + cameraState.radius * sinPhi * Math.cos(cameraState.theta),
+                TARGET.y + cameraState.radius * Math.cos(cameraState.phi),
+                TARGET.z + cameraState.radius * sinPhi * Math.sin(cameraState.theta)
+            );
+            camera.lookAt(TARGET);
+        }
+        function resetCameraView() {
+            Object.assign(cameraState, defaultCamera);
+            setCameraFromState();
+        }
+
+        function attachCameraControls() {
+            const dom = renderer.domElement;
+            const rotate = (dx, dy) => {
+                cameraState.theta -= dx * 0.0055;
+                cameraState.phi = THREE.MathUtils.clamp(cameraState.phi + dy * 0.0055, 0.15, Math.PI / 2 - 0.03);
+                setCameraFromState();
+            };
+            dom.addEventListener('mousedown', (e) => {
+                isCameraDrag = true;
+                lastPointer.x = e.clientX; lastPointer.y = e.clientY;
+            });
+            window.addEventListener('mouseup', () => { isCameraDrag = false; });
+            window.addEventListener('mousemove', (e) => {
+                if (!isCameraDrag) return;
+                const dx = e.clientX - lastPointer.x, dy = e.clientY - lastPointer.y;
+                lastPointer.x = e.clientX; lastPointer.y = e.clientY;
+                rotate(dx, dy);
+            });
+            dom.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                cameraState.radius = THREE.MathUtils.clamp(cameraState.radius + e.deltaY * 0.015, 7, 40);
+                setCameraFromState();
+            }, { passive: false });
+            dom.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isCameraDrag = true;
+                    lastPointer.x = e.touches[0].clientX; lastPointer.y = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    isCameraDrag = false;
+                    pinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                }
+            }, { passive: true });
+            dom.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && isCameraDrag) {
+                    e.preventDefault();
+                    const dx = e.touches[0].clientX - lastPointer.x, dy = e.touches[0].clientY - lastPointer.y;
+                    lastPointer.x = e.touches[0].clientX; lastPointer.y = e.touches[0].clientY;
+                    rotate(dx, dy);
+                } else if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                    if (pinchDistance !== null) {
+                        cameraState.radius = THREE.MathUtils.clamp(cameraState.radius - (dist - pinchDistance) * 0.04, 7, 40);
+                        setCameraFromState();
+                    }
+                    pinchDistance = dist;
+                }
+            }, { passive: false });
+            dom.addEventListener('touchend', () => { isCameraDrag = false; pinchDistance = null; }, { passive: true });
+        }
+
+        // ---------- update ----------
+        function readSliders() {
+            state.tout = parseFloat(sliders.tout.value);
+            state.tin = parseFloat(sliders.tin.value);
+            state.dwall = parseFloat(sliders.dwall.value);
+            state.dins = parseFloat(sliders.dins.value);
+            state.awin = parseFloat(sliders.awin.value);
+            state.irr = parseFloat(sliders.irr.value);
+            state.sc = parseFloat(sliders.sc.value);
+            state.cop = parseFloat(sliders.cop.value);
+        }
+        function syncSliders() {
+            Object.keys(sliders).forEach((k) => { sliders[k].value = state[k]; });
+            document.querySelectorAll('.mat-btn').forEach((b) => b.classList.toggle('active', b.dataset.material === state.material));
+            document.querySelectorAll('.glz-btn').forEach((b) => b.classList.toggle('active', b.dataset.glazing === state.glazing));
+        }
+
+        let envelopeKey = '';
+        function updateSimulation() {
+            readSliders();
+            const d = compute();
+
+            document.getElementById('tout-val').textContent = `${state.tout.toFixed(1)} °C`;
+            document.getElementById('tin-val').textContent = `${state.tin.toFixed(1)} °C`;
+            document.getElementById('dwall-val').textContent = `${state.dwall.toFixed(2)} m`;
+            document.getElementById('dins-val').textContent = `${state.dins.toFixed(0)} mm`;
+            document.getElementById('awin-val').textContent = `${state.awin.toFixed(1)} m²`;
+            document.getElementById('irr-val').textContent = `${state.irr.toFixed(0)} W/m²`;
+            document.getElementById('sc-val').textContent = state.sc.toFixed(2);
+            document.getElementById('cop-val').textContent = state.cop.toFixed(1);
+
+            document.getElementById('uwall-val').textContent = `${d.uWall.toFixed(2)} W/m²K`;
+            document.getElementById('qwall-val').textContent = fmtPower(d.qWall);
+            document.getElementById('qwin-val').textContent = fmtPower(d.qWin);
+            document.getElementById('qsolar-val').textContent = fmtPower(d.qSolar);
+            document.getElementById('qtotal-val').textContent = fmtPower(d.qTotal);
+            document.getElementById('ottv-val').textContent = `${d.ottv.toFixed(1)} W/m²`;
+            document.getElementById('pelec-val').textContent = d.qTotal > 0 ? fmtPower(d.pElec) : t('data.noCooling');
+            document.getElementById('qrej-val').textContent = fmtPower(d.qRej);
+            document.getElementById('energy-val').textContent = `${d.energy8h.toFixed(1)} kWh · HK$${d.cost.toFixed(0)}`;
+
+            // rebuild the envelope only when its geometry changes
+            const key = `${state.material}|${state.dwall}|${state.dins}|${state.awin}|${state.glazing}`;
+            if (key !== envelopeKey) { buildEnvelope(); envelopeKey = key; }
+
+            const dT_ = state.dwall + state.dins / 1000;
+            const zOut = -WD / 2 - dT_;
+            acIndoor.position.set(1.9, H - 0.45, -WD / 2 + 0.14);
+            acOutdoor.position.set(1.9, 0.5, zOut - 0.3);
+            meterBox.position.set(L / 2 + dT_ + 0.9, 0.35, -0.6);
+            const cablePts = [
+                new THREE.Vector3(L / 2 + dT_ + 0.9, 0.02, -0.6),
+                new THREE.Vector3(L / 2 + dT_ + 0.9, 0.02, zOut - 0.5),
+                new THREE.Vector3(2.4, 0.02, zOut - 0.5)
+            ];
+            cable.geometry.dispose();
+            cable.geometry = new THREE.BufferGeometry().setFromPoints(cablePts);
+            cable.userData.pts = cablePts;
+
+            // indoor air tint: cooler = bluer
+            const cool = THREE.MathUtils.clamp((28 - state.tin) / 10, 0, 1);
+            indoorAir.material.color.copy(new THREE.Color(0xfda4af).lerp(new THREE.Color(0x38bdf8), cool));
+            indoorAir.material.opacity = 0.08 + 0.1 * cool;
+
+            toutLabel.userData.setText(`T out = ${state.tout.toFixed(1)} °C`);
+            toutLabel.position.set(-L / 2 - 1.2, H + 1.6, WD / 2 + 0.5);
+            tinLabel.userData.setText(`T in = ${state.tin.toFixed(1)} °C`);
+            tinLabel.position.set(-0.6, H / 2 + 0.2, 0);
+
+            sunMesh.visible = state.irr > 0;
+
+            // heat flows: conduction through each face (flux density U dT)
+            const sign = d.dT >= 0 ? 1 : -1;      // inward when hotter outside
+            const qc = d.uWall * d.dT;             // W/m² through opaque envelope
+            const travel = dT_ + 1.8;
+            const outsideStart = (facePoint, inwardDir) =>
+                facePoint.clone().addScaledVector(inwardDir, sign > 0 ? -(dT_ + 0.9) : 0.9);
+
+            const northIn = new THREE.Vector3(0, 0, 1), southIn = new THREE.Vector3(0, 0, -1);
+            const eastIn = new THREE.Vector3(-1, 0, 0), westIn = new THREE.Vector3(1, 0, 0), roofIn = new THREE.Vector3(0, -1, 0);
+            setFlow(flows.north,
+                [[-2, 1], [-2, 2.2], [0, 1], [0, 2.2]].map(([x, y]) => outsideStart(new THREE.Vector3(x, y, -WD / 2), northIn)),
+                northIn.clone().multiplyScalar(sign), travel, qc, 40);
+            const winW = state.awin > 0 ? Math.min(5.6, state.awin / WIN_H) : 0;
+            const sx = Math.min(2.6, winW / 2 + 0.5);
+            setFlow(flows.south,
+                [[-sx, 0.6], [-sx, 2.6], [sx, 0.6], [sx, 2.6]].map(([x, y]) => outsideStart(new THREE.Vector3(x, y, WD / 2), southIn)),
+                southIn.clone().multiplyScalar(sign), travel, qc, 40);
+            setFlow(flows.east,
+                [[-1.5, 1], [-1.5, 2.2], [0, 1], [0, 2.2], [1.5, 1], [1.5, 2.2]].map(([z, y]) => outsideStart(new THREE.Vector3(L / 2, y, z), eastIn)),
+                eastIn.clone().multiplyScalar(sign), travel, qc, 40);
+            setFlow(flows.west,
+                [[-1.5, 1], [-1.5, 2.2], [0, 1], [0, 2.2], [1.5, 1], [1.5, 2.2]].map(([z, y]) => outsideStart(new THREE.Vector3(-L / 2, y, z), westIn)),
+                westIn.clone().multiplyScalar(sign), travel, qc, 40);
+            setFlow(flows.roof,
+                [[-1.8, -1.2], [-1.8, 1.2], [0, -1.2], [0, 1.2], [1.8, -1.2], [1.8, 1.2]].map(([x, z]) => outsideStart(new THREE.Vector3(x, H, z), roofIn)),
+                roofIn.clone().multiplyScalar(sign), travel, qc, 40);
+
+            // window conduction (flux U_win dT) and solar transmission (SC I)
+            const qw = state.awin > 0 ? d.uWin * d.dT : 0;
+            setFlow(flows.winCond,
+                [[-winW / 4, 1.2], [winW / 4, 1.2]].map(([x, y]) => outsideStart(new THREE.Vector3(x, y, WD / 2), southIn)),
+                southIn.clone().multiplyScalar(sign), travel, qw, 40);
+            const qs = state.awin > 0 ? state.sc * state.irr : 0;
+            const solarTravel = 5.5;
+            setFlow(flows.solar,
+                [[-winW / 3, 1.1], [-winW / 3, 1.9], [winW / 3, 1.1], [winW / 3, 1.9]].map(([x, y]) =>
+                    new THREE.Vector3(x, y, WD / 2 + dT_ / 2).addScaledVector(SUN_DIR, 3.2)),
+                SUN_DIR.clone().negate(), solarTravel, qs, 300);
+            flows.solar.opacity = THREE.MathUtils.clamp(qs / 120, 0, 0.95);
+
+            // heat rejected by the outdoor unit and cooled air from the indoor unit (scaled by power in kW)
+            const out = new THREE.Vector3(0, 0, -1);
+            setFlow(flows.reject,
+                [[-0.25, 0.55], [0, 0.55], [0.25, 0.55]].map(([dx, y]) => new THREE.Vector3(1.9 + dx, y, zOut - 0.5)),
+                out, 1.8, d.qRej / 1000, 4);
+            const coolDir = new THREE.Vector3(0.25, -0.8, 0.55);
+            setFlow(flows.cool,
+                [[-0.3], [0], [0.3]].map(([dx]) => new THREE.Vector3(1.9 + dx, H - 0.65, -WD / 2 + 0.3)),
+                coolDir, 1.6, d.pElec / 1000, 1.2);
+            meterBox.material.emissiveIntensity = 0.15 + THREE.MathUtils.clamp(d.pElec / 4000, 0, 1) * 0.8;
+
+            drawGraph();
+        }
+
+        // ---------- graph ----------
+        function drawGraph() {
+            const ctx = graphCanvas.getContext('2d');
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const W = graphCanvas.clientWidth, Hh = graphCanvas.clientHeight;
+            if (!W || !Hh) return;
+            graphCanvas.width = W * dpr; graphCanvas.height = Hh * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, W, Hh);
+
+            const d = compute();
+            const bars = [
+                { label: t('graph.wall'), value: d.qWall, color: '#f97316' },
+                { label: t('graph.window'), value: d.qWin, color: '#fb923c' },
+                { label: t('graph.solar'), value: d.qSolar, color: '#f59e0b' },
+                { label: t('graph.total'), value: d.qTotal, color: '#dc2626' },
+                { label: t('graph.elec'), value: d.pElec, color: '#16a34a' }
+            ];
+            const pad = { l: 56, r: 18, t: 40, b: 44 };
+            const gw = W - pad.l - pad.r, gh = Hh - pad.t - pad.b;
+            const vMax = Math.max(500, ...bars.map((b) => b.value)) * 1.15;
+            const vMin = Math.min(0, ...bars.map((b) => b.value)) * 1.15;
+            const Y = (v) => pad.t + gh - ((v - vMin) / (vMax - vMin)) * gh;
+            const unit = vMax >= 1000 ? 1000 : 1;
+            const unitLabel = unit === 1000 ? 'kW' : 'W';
+
+            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+            ctx.fillStyle = '#64748b'; ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+            const ticks = 4;
+            for (let i = 0; i <= ticks; i++) {
+                const v = vMin + ((vMax - vMin) * i) / ticks;
+                ctx.beginPath(); ctx.moveTo(pad.l, Y(v)); ctx.lineTo(W - pad.r, Y(v)); ctx.stroke();
+                ctx.fillText((v / unit).toFixed(v / unit < 10 && v !== 0 ? 1 : 0), pad.l - 6, Y(v));
+            }
+            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + gh); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(pad.l, Y(0)); ctx.lineTo(W - pad.r, Y(0)); ctx.stroke();
+            ctx.fillStyle = '#475569'; ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+            ctx.fillText(`P (${unitLabel})`, pad.l + 6, pad.t - 16);
+
+            const slot = gw / bars.length;
+            const bw = slot * 0.56;
+            bars.forEach((b, i) => {
+                const x = pad.l + slot * i + (slot - bw) / 2;
+                const y0 = Y(0), y1 = Y(b.value);
+                ctx.fillStyle = b.color;
+                ctx.beginPath();
+                ctx.rect(x, Math.min(y0, y1), bw, Math.max(2, Math.abs(y0 - y1)));
+                ctx.fill();
+                ctx.fillStyle = '#1e293b'; ctx.font = 'bold 11px Inter, sans-serif';
+                ctx.textAlign = 'center'; ctx.textBaseline = b.value >= 0 ? 'bottom' : 'top';
+                ctx.fillText(fmtPower(b.value), x + bw / 2, b.value >= 0 ? y1 - 4 : y1 + 4);
+                ctx.fillStyle = '#475569'; ctx.font = '11px Inter, sans-serif';
+                ctx.textBaseline = 'top';
+                const words = b.label.split(' ');
+                if (words.length > 1 && b.label.length > 12) {
+                    const mid = Math.ceil(words.length / 2);
+                    ctx.fillText(words.slice(0, mid).join(' '), x + bw / 2, pad.t + gh + 6);
+                    ctx.fillText(words.slice(mid).join(' '), x + bw / 2, pad.t + gh + 20);
+                } else {
+                    ctx.fillText(b.label, x + bw / 2, pad.t + gh + 6);
+                }
+            });
+
+            // COP annotation
+            ctx.fillStyle = '#16a34a'; ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+            ctx.fillText(`COP = ${fmtPower(d.qTotal)} ÷ ${fmtPower(d.pElec)} = ${d.qTotal > 0 ? state.cop.toFixed(1) : '—'}`, W - pad.r, pad.t - 16);
+        }
+
+        // ---------- animation ----------
+        function cablePoint(tt) {
+            const pts = cable.userData.pts;
+            const seg = (pts.length - 1) * tt;
+            const i = Math.min(pts.length - 2, Math.floor(seg));
+            return pts[i].clone().lerp(pts[i + 1], seg - i);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const d = compute();
+
+            Object.values(flows).forEach((f) => {
+                f.arrows.forEach((a, i) => {
+                    if (f.opacity <= 0.03 || !f.starts[i]) { a.visible = false; return; }
+                    a.visible = true;
+                    a.userData.t = (a.userData.t + (f.speed * dt) / f.travel) % 1;
+                    a.position.copy(f.starts[i]).addScaledVector(f.dir, a.userData.t * f.travel);
+                    a.setDirection(f.dir);
+                    a.setLength(f.len, Math.min(0.24, f.len * 0.45), Math.min(0.13, f.len * 0.25));
+                    const fade = Math.min(1, Math.min(a.userData.t, 1 - a.userData.t) * 6);
+                    a.line.material.opacity = a.cone.material.opacity = f.opacity * fade;
+                });
+            });
+
+            const pulseSpeed = 0.1 + THREE.MathUtils.clamp(d.pElec / 3000, 0, 1) * 1.3;
+            cablePulses.forEach((p) => {
+                p.userData.t = (p.userData.t + pulseSpeed * dt) % 1;
+                p.position.copy(cablePoint(p.userData.t));
+                p.visible = d.pElec > 0;
+            });
+            fan.rotation.z -= dt * (0.5 + THREE.MathUtils.clamp(d.pElec / 1500, 0, 1) * 14) * (d.pElec > 0 ? 1 : 0);
+
+            renderer.render(scene, camera);
+        }
+
+        function resizeThree() {
+            if (!renderer || !camera) return;
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            drawGraph();
+        }
+
+        // ---------- i18n ----------
+        const translations = {
+            en: {
+                'nav.back': 'Back to Home',
+                'page.tag': 'HKDSE • Elective 3: Energy and Use of Energy • Buildings & air conditioning',
+                'page.title': 'Building Heat Gain, U-value & Air-Conditioner COP',
+                'page.description': 'Heat leaks into a cooled room through its envelope at a rate $Q/t = U A\\,\\Delta T$, and sunlight adds more through the window. An air conditioner must pump all of it back out, using electrical power $P = (Q/t)/\\text{COP}$. Change the wall, window, shading and air conditioner and watch the energy bill respond.',
+                'controls.title': 'Parameters',
+                'controls.reset': 'Reset',
+                'controls.tout': 'Outdoor temperature $T_{\\text{out}}$',
+                'controls.tin': 'Indoor set temperature $T_{\\text{in}}$',
+                'controls.tin_hint': 'Hong Kong\'s recommended summer setting is 25.5 °C.',
+                'controls.material': 'Wall material ($k$ in W m⁻¹ K⁻¹)',
+                'controls.concrete': 'Concrete 1.7',
+                'controls.brick': 'Brick 0.8',
+                'controls.timber': 'Timber 0.15',
+                'controls.dwall': 'Wall thickness $d$',
+                'controls.dins': 'Insulation layer (foam, $k$ = 0.035)',
+                'controls.awin': 'Window area $A_{\\text{win}}$ (south wall)',
+                'controls.single': 'Single glazing U = 5.8',
+                'controls.double': 'Double glazing U = 2.8',
+                'controls.irr': 'Sunlight on window $I$',
+                'controls.sc': 'Shading coefficient $SC$',
+                'controls.sc_hint': 'Fraction of solar radiation transmitted; sunshades, blinds and tinted glass lower $SC$.',
+                'controls.cop': 'Air-conditioner COP',
+                'controls.cop_hint': '$\\text{COP} = Q_{\\text{removed}} / W_{\\text{electrical}}$. A Grade 1 energy-label unit has a higher COP.',
+                'controls.presets': 'Presets',
+                'controls.presetBare': 'Bare concrete',
+                'controls.presetInsulated': 'Insulated + double glazing',
+                'controls.presetSunny': 'Big sunny window',
+                'controls.presetGrade1': 'Grade 1 AC',
+                'data.title': 'Live readings',
+                'data.uwall': 'Wall $U$-value',
+                'data.qwall': 'Conduction: walls + roof',
+                'data.qwin': 'Conduction: window',
+                'data.qsolar': 'Solar gain: $SC \\cdot I \\cdot A_{\\text{win}}$',
+                'data.qtotal': 'Total heat gain',
+                'data.ottv': 'OTTV (gain per m² of envelope)',
+                'data.pelec': 'AC electrical power $= Q/\\text{COP}$',
+                'data.noCooling': 'no cooling needed',
+                'data.qrej': 'Heat rejected outdoors $= Q + W$',
+                'data.energy': '8 h of cooling (≈ HK$1.3/kWh)',
+                'formula.title': 'HKDSE formulae',
+                'formula.U': 'thermal transmittance (W m⁻² K⁻¹)',
+                'formula.k': 'thermal conductivity of the material (W m⁻¹ K⁻¹)',
+                'formula.ottv': 'overall thermal transfer value = total envelope heat gain ÷ envelope area',
+                'formula.note': 'Layers in series add their thermal resistances: $\\frac{1}{U} = \\frac{d_1}{k_1} + \\frac{d_2}{k_2}$ (surface air films are ignored here).',
+                'three.title': '3D room 6 m × 5 m × 3 m, window faces south',
+                'three.hint': 'Drag to rotate • pinch / scroll to zoom',
+                'legend.heat': 'Heat conduction',
+                'legend.solar': 'Solar gain',
+                'legend.cool': 'Cooled air',
+                'legend.elec': 'Electrical input',
+                'graph.title': 'Heat gain breakdown and air-conditioner input',
+                'graph.wall': 'Walls + roof',
+                'graph.window': 'Window conduction',
+                'graph.solar': 'Solar gain',
+                'graph.total': 'Total gain',
+                'graph.elec': 'AC electrical',
+                'ai.title': 'Physics note',
+                'ai.desc': 'A thin layer of foam ($k$ = 0.035) adds far more thermal resistance $d/k$ than a thick concrete wall, so the $U$-value — and the conduction gain — collapses. Solar gain through glass does not depend on $\\Delta T$ at all: only shading, tinting or a smaller window reduces it. The air conditioner is a heat pump; by energy conservation it dumps $Q + W$ outdoors, and a higher COP means less electrical work $W$ for the same cooling. Hong Kong\'s Building (Energy Efficiency) Regulation limits the OTTV of commercial building envelopes.',
+                'modal.open': 'Explain',
+                'modal.title': 'Building energy & COP — HKDSE E3',
+                'modal.body': '<p><b>Thermal transmittance $U$</b> is the rate of heat flow through 1 m² of a building element for a 1 K temperature difference. For a single homogeneous layer $U = k/d$; the rate of heat transfer through area $A$ is $Q/t = U A\\,\\Delta T$.</p><p><b>Composite walls:</b> resistances add in series, $1/U = d_1/k_1 + d_2/k_2 + \\dots$, which is why a few centimetres of insulation dominate.</p><p><b>OTTV</b> (overall thermal transfer value) averages the total heat gain through the envelope — conduction through opaque walls, conduction through glass and solar radiation through glass ($SC \\cdot I \\cdot A_{\\text{win}}$) — over the envelope area. Lower OTTV means less cooling load.</p><p><b>Coefficient of performance</b> of an air conditioner is $\\text{COP} = Q_{\\text{removed}}/W$, where $W$ is the electrical energy used. Since it moves heat rather than creating it, COP is normally 2.5–5. By energy conservation the outdoor unit rejects $Q_{\\text{removed}} + W$.</p><p><b>Energy label:</b> Hong Kong\'s Mandatory Energy Efficiency Labelling Scheme grades room coolers 1 (most efficient) to 5, based on their cooling seasonal performance factor.</p><p><b>Colour code:</b> <span class="text-orange-600 font-semibold">orange</span> = heat conducted through the envelope and rejected outdoors, <span class="text-amber-600 font-semibold">amber</span> = solar radiation, <span class="text-sky-600 font-semibold">sky blue</span> = cooled air, <span class="text-green-600 font-semibold">green</span> = electrical energy input.</p>'
+            },
+            'zh-hk': {
+                'nav.back': '返回首頁',
+                'page.tag': 'HKDSE • 選修部分 3：能量和能源的使用 • 建築物與空調',
+                'page.title': '建築物熱增益、U 值與空調機 COP',
+                'page.description': '熱以 $Q/t = U A\\,\\Delta T$ 的速率經外殼傳入受冷卻的房間，陽光更經窗戶帶來額外熱量。空調機必須把全部熱量泵回室外，消耗電功率 $P = (Q/t)/\\text{COP}$。改變牆身、窗戶、遮陽及空調機，觀察電費如何變化。',
+                'controls.title': '參數',
+                'controls.reset': '重設',
+                'controls.tout': '室外溫度 $T_{\\text{out}}$',
+                'controls.tin': '室內設定溫度 $T_{\\text{in}}$',
+                'controls.tin_hint': '香港建議夏季室溫設定為 25.5 °C。',
+                'controls.material': '牆身物料（$k$，W m⁻¹ K⁻¹）',
+                'controls.concrete': '混凝土 1.7',
+                'controls.brick': '磚 0.8',
+                'controls.timber': '木材 0.15',
+                'controls.dwall': '牆身厚度 $d$',
+                'controls.dins': '隔熱層（發泡膠，$k$ = 0.035）',
+                'controls.awin': '窗戶面積 $A_{\\text{win}}$（南牆）',
+                'controls.single': '單層玻璃 U = 5.8',
+                'controls.double': '雙層玻璃 U = 2.8',
+                'controls.irr': '照射窗戶的陽光 $I$',
+                'controls.sc': '遮陽係數 $SC$',
+                'controls.sc_hint': '透過玻璃的太陽輻射比例；遮陽板、百葉簾及有色玻璃可降低 $SC$。',
+                'controls.cop': '空調機 COP（性能系數）',
+                'controls.cop_hint': '$\\text{COP} = Q_{\\text{移除}} / W_{\\text{電}}$。能源標籤 1 級的空調機 COP 較高。',
+                'controls.presets': '預設情境',
+                'controls.presetBare': '無隔熱混凝土',
+                'controls.presetInsulated': '隔熱 + 雙層玻璃',
+                'controls.presetSunny': '大窗戶強陽光',
+                'controls.presetGrade1': '1 級空調機',
+                'data.title': '即時讀數',
+                'data.uwall': '牆身 $U$ 值',
+                'data.qwall': '傳導：牆身＋天花',
+                'data.qwin': '傳導：窗戶',
+                'data.qsolar': '太陽熱增益：$SC \\cdot I \\cdot A_{\\text{win}}$',
+                'data.qtotal': '總熱增益',
+                'data.ottv': 'OTTV（每 m² 外殼的熱增益）',
+                'data.pelec': '空調電功率 $= Q/\\text{COP}$',
+                'data.noCooling': '無需製冷',
+                'data.qrej': '排出室外的熱 $= Q + W$',
+                'data.energy': '製冷 8 小時（約 HK$1.3/kWh）',
+                'formula.title': 'HKDSE 公式',
+                'formula.U': '熱傳透率 (W m⁻² K⁻¹)',
+                'formula.k': '物料的熱導率 (W m⁻¹ K⁻¹)',
+                'formula.ottv': '總熱傳透值 = 外殼總熱增益 ÷ 外殼面積',
+                'formula.note': '串聯各層的熱阻相加：$\\frac{1}{U} = \\frac{d_1}{k_1} + \\frac{d_2}{k_2}$（此處忽略表面空氣層）。',
+                'three.title': '3D 房間 6 m × 5 m × 3 m，窗戶向南',
+                'three.hint': '拖曳旋轉 • 雙指／滾輪縮放',
+                'legend.heat': '熱傳導',
+                'legend.solar': '太陽熱增益',
+                'legend.cool': '冷空氣',
+                'legend.elec': '電能輸入',
+                'graph.title': '熱增益分佈及空調輸入功率',
+                'graph.wall': '牆身＋天花',
+                'graph.window': '窗戶傳導',
+                'graph.solar': '太陽熱增益',
+                'graph.total': '總熱增益',
+                'graph.elec': '空調電功率',
+                'ai.title': '物理說明',
+                'ai.desc': '一層薄薄的發泡膠（$k$ = 0.035）所增加的熱阻 $d/k$ 遠大於厚厚的混凝土牆，故 $U$ 值及傳導熱增益會大幅下降。經玻璃的太陽熱增益完全與 $\\Delta T$ 無關：只有遮陽、有色玻璃或縮小窗戶才能減少。空調機是一部熱泵；由能量守恆可知它向室外排出 $Q + W$，而 COP 愈高，同樣的製冷量所需的電功 $W$ 便愈少。香港《建築物（能源效益）規例》對商業建築外殼的 OTTV 設有上限。',
+                'modal.open': '解釋',
+                'modal.title': '建築能源與 COP — HKDSE 選修 3',
+                'modal.body': '<p><b>熱傳透率 $U$</b> 是溫差 1 K 時，每 1 m² 建築構件的熱流率。單一均勻層 $U = k/d$；經面積 $A$ 的傳熱率為 $Q/t = U A\\,\\Delta T$。</p><p><b>複合牆身：</b>各層熱阻串聯相加，$1/U = d_1/k_1 + d_2/k_2 + \\dots$，所以幾厘米隔熱層便起主導作用。</p><p><b>OTTV</b>（總熱傳透值）把經外殼的總熱增益——不透明牆的傳導、玻璃的傳導及經玻璃的太陽輻射（$SC \\cdot I \\cdot A_{\\text{win}}$）——平均到外殼面積上。OTTV 愈低，製冷負荷愈小。</p><p><b>空調機的性能系數</b> $\\text{COP} = Q_{\\text{移除}}/W$，其中 $W$ 為所耗電能。由於它只是搬移熱而非製造熱，COP 通常為 2.5–5。由能量守恆，室外機排出的熱為 $Q_{\\text{移除}} + W$。</p><p><b>能源標籤：</b>香港強制性能源效益標籤計劃按製冷季節性能系數，把冷氣機分為 1 級（最高效）至 5 級。</p><p><b>顏色編碼：</b><span class="text-orange-600 font-semibold">橙色</span>＝經外殼傳導及排出室外的熱，<span class="text-amber-600 font-semibold">琥珀色</span>＝太陽輻射，<span class="text-sky-600 font-semibold">天藍色</span>＝冷空氣，<span class="text-green-600 font-semibold">綠色</span>＝輸入的電能。</p>'
+            }
+        };
+
+        let currentLang = localStorage.getItem('preferred_language') || 'en';
+        if (currentLang === 'zh' || currentLang === 'cn' || currentLang === 'zh-TW' || currentLang === 'zh-CN') {
+            currentLang = 'zh-hk';
+        }
+
+        function t(key) {
+            return translations[currentLang]?.[key] ?? translations.en[key] ?? key;
+        }
+
+        function setLanguage(lang) {
+            if (lang === 'zh' || lang === 'cn') lang = 'zh-hk';
+            currentLang = lang;
+            localStorage.setItem('preferred_language', lang);
+            document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+            document.querySelectorAll('[data-i18n]').forEach((el) => {
+                const key = el.getAttribute('data-i18n');
+                const val = translations[lang]?.[key];
+                if (!val) return;
+                if (key.includes('desc') || key.includes('body') || key.includes('note') || key.includes('hint')) {
+                    el.innerHTML = val;
+                } else {
+                    el.textContent = val;
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach((btn) => {
+                const active = btn.dataset.lang === lang;
+                btn.classList.toggle('bg-white', active);
+                btn.classList.toggle('shadow-sm', active);
+                btn.classList.toggle('text-blue-600', active);
+            });
+            updateSimulation();
+            if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+        }
+        window.setLanguage = setLanguage;
+
+        // ---------- events ----------
+        Object.values(sliders).forEach((s) => s.addEventListener('input', updateSimulation));
+        document.querySelectorAll('.mat-btn').forEach((b) => b.addEventListener('click', () => {
+            state.material = b.dataset.material; syncSliders(); updateSimulation();
+        }));
+        document.querySelectorAll('.glz-btn').forEach((b) => b.addEventListener('click', () => {
+            state.glazing = b.dataset.glazing; syncSliders(); updateSimulation();
+        }));
+
+        function applyPreset(p) {
+            readSliders();
+            Object.assign(state, p);
+            syncSliders();
+            updateSimulation();
+        }
+        document.getElementById('preset-bare').addEventListener('click', () => applyPreset({ material: 'concrete', dwall: 0.2, dins: 0, glazing: 'single', awin: 4, cop: 3.0 }));
+        document.getElementById('preset-insulated').addEventListener('click', () => applyPreset({ material: 'concrete', dwall: 0.2, dins: 50, glazing: 'double', awin: 4, sc: 0.5 }));
+        document.getElementById('preset-sunny').addEventListener('click', () => applyPreset({ awin: 8, irr: 800, sc: 0.9, glazing: 'single' }));
+        document.getElementById('preset-grade1').addEventListener('click', () => applyPreset({ cop: 4.5, tin: 25.5 }));
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            Object.assign(state, defaults);
+            syncSliders();
+            resetCameraView();
+            updateSimulation();
+        });
+
+        const modal = document.getElementById('explain-modal');
+        document.getElementById('explain-btn').addEventListener('click', () => modal.classList.remove('hidden'));
+        document.getElementById('explain-close').addEventListener('click', () => modal.classList.add('hidden'));
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+        window.addEventListener('resize', resizeThree);
+
+        initThree();
+        syncSliders();
+        updateSimulation();
+        setLanguage(currentLang === 'zh-hk' ? 'zh-hk' : 'en');
+        animate();
+    </script>
+
+    <script src="practice_questions.js"></script>
+    <script src="practice_questions_data.js"></script>
+    <script>initPracticeQuestions('building_heat_cop');</script>
+</body>
+</html>

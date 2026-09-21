@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Panel Power 3D Simulator (HKDSE E3)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script"></script>
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: 'Inter', sans-serif; }
+        #three-container {
+            width: 100%;
+            height: 440px;
+            background: #bae6fd;
+            cursor: grab;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            touch-action: none;
+            border: 2px solid #e2e8f0;
+        }
+        #three-container:active { cursor: grabbing; }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #d1d5db;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        input[type="range"].accent-amber-600::-webkit-slider-thumb { background: #d97706; }
+        input[type="range"].accent-slate-600::-webkit-slider-thumb { background: #475569; }
+        input[type="range"].accent-green-600::-webkit-slider-thumb { background: #16a34a; }
+        .season-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
+        mjx-container { display: inline-block !important; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+
+    <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+            </a>
+            <div class="flex items-center gap-2">
+                <button id="explain-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="modal.open">Explain</button>
+                <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                    <button onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-2 rounded-md text-xs font-medium transition hover:bg-white" data-lang="zh-hk">繁</button>
+                    <button onclick="setLanguage('en')" class="lang-btn px-3 py-2 rounded-md text-xs font-medium transition hover:bg-white bg-white shadow-sm text-blue-600" data-lang="en">EN</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-6 w-full">
+        <header class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <p class="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-1" data-i18n="page.tag">HKDSE • Elective 3: Energy and Use of Energy • Solar energy</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2" data-i18n="page.title">Solar Panel Power &amp; Sun Path</h1>
+            <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="page.description">
+                A photovoltaic panel delivers $P = \eta\, I\, A \cos\theta$, where $\theta$ is the angle between the sunlight and the panel's normal. Move the sun across the Hong Kong sky, tilt the panel, and find the tilt that captures the most energy in a day.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800" data-i18n="controls.title">Parameters</h3>
+                        <button id="reset-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-red-50 hover:text-red-600 transition-all" data-i18n="controls.reset">Reset</button>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.hour">Solar time</span>
+                            <span id="hour-val" class="text-amber-600 font-bold font-mono">12:00</span>
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input type="range" id="hour-slider" min="0" max="24" step="0.05" value="12" class="w-full accent-amber-600">
+                            <button id="play-btn" class="shrink-0 min-h-[44px] min-w-[44px] px-3 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition" data-i18n="controls.play">▶ Play</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 mb-2" data-i18n="controls.season">Season (solar declination $\delta$)</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button data-season="summer" class="season-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition" data-i18n="controls.summer">Summer +23.4°</button>
+                            <button data-season="equinox" class="season-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition active" data-i18n="controls.equinox">Equinox 0°</button>
+                            <button data-season="winter" class="season-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 transition" data-i18n="controls.winter">Winter −23.4°</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.latitude">Latitude ($\phi$)</span>
+                            <span id="lat-val" class="text-slate-600 font-bold font-mono">22.3° N</span>
+                        </label>
+                        <input type="range" id="lat-slider" min="0" max="60" step="0.1" value="22.3" class="w-full accent-slate-600">
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="controls.latitude_hint">Hong Kong ≈ 22.3° N. Panel faces due south.</p>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.tilt">Panel tilt ($\beta$)</span>
+                            <span id="tilt-val" class="text-blue-600 font-bold font-mono">22°</span>
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input type="range" id="tilt-slider" min="0" max="90" step="1" value="22" class="w-full accent-blue-600">
+                            <button id="optimal-btn" class="shrink-0 min-h-[44px] px-3 rounded-xl bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 transition" data-i18n="controls.optimal">Noon-optimal</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.area">Panel area ($A$)</span>
+                            <span id="area-val" class="text-blue-600 font-bold font-mono">10 m²</span>
+                        </label>
+                        <input type="range" id="area-slider" min="1" max="50" step="1" value="10" class="w-full accent-blue-600">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.efficiency">Cell efficiency ($\eta$)</span>
+                            <span id="eta-val" class="text-green-600 font-bold font-mono">20%</span>
+                        </label>
+                        <input type="range" id="eta-slider" min="5" max="25" step="1" value="20" class="w-full accent-green-600">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.intensity">Sunlight intensity ($I$, normal incidence)</span>
+                            <span id="i-val" class="text-amber-600 font-bold font-mono">1000 W/m²</span>
+                        </label>
+                        <input type="range" id="i-slider" min="200" max="1000" step="10" value="1000" class="w-full accent-amber-600">
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="controls.intensity_hint">Solar constant above the atmosphere ≈ 1370 W/m²; a clear sky at ground level gives ≈ 1000 W/m².</p>
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 mb-2" data-i18n="controls.presets">Presets</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="preset-hk" class="px-3 py-2 min-h-[44px] rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="controls.presetHK">HK noon</button>
+                            <button id="preset-morning" class="px-3 py-2 min-h-[44px] rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold transition" data-i18n="controls.presetMorning">Summer 9 am</button>
+                            <button id="preset-winter" class="px-3 py-2 min-h-[44px] rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-semibold transition" data-i18n="controls.presetWinter">Winter noon</button>
+                            <button id="preset-flat" class="px-3 py-2 min-h-[44px] rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition" data-i18n="controls.presetFlat">Flat panel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide" data-i18n="data.title">Live readings</h3>
+                    <div id="status-card" class="p-3 rounded-lg border text-center font-bold tracking-wide bg-amber-50 border-amber-200 text-amber-700">SUNLIT</div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.altitude">Sun altitude / azimuth</span>
+                        <span id="sun-val" class="text-base font-bold text-amber-600 font-mono">67.7° / 180°</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.theta">Angle of incidence $\theta$</span>
+                        <span id="theta-val" class="text-lg font-bold text-slate-700 font-mono">0.3°</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.effective">Effective intensity $I\cos\theta$</span>
+                        <span id="ieff-val" class="text-lg font-bold text-amber-600 font-mono">1000 W/m²</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.power">Electrical output $P$</span>
+                        <span id="p-val" class="text-lg font-bold text-green-600 font-mono">2.00 kW</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.energy">Energy today (this tilt)</span>
+                        <span id="eday-val" class="text-lg font-bold text-blue-600 font-mono">14.5 kWh</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.energyFlat">Energy today (flat, $\beta = 0$)</span>
+                        <span id="eflat-val" class="text-lg font-bold text-slate-500 font-mono">13.9 kWh</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3" data-i18n="formula.title">HKDSE formula</h3>
+                    <div class="text-center text-xl font-serif mb-4">$$ P = \eta\, I\, A \cos\theta $$</div>
+                    <div class="grid grid-cols-1 gap-2 text-sm text-slate-300">
+                        <div><span class="text-blue-400 font-bold">$\eta$:</span> <span data-i18n="formula.eta">efficiency of the solar cells</span></div>
+                        <div><span class="text-blue-400 font-bold">$I$:</span> <span data-i18n="formula.I">intensity of sunlight at normal incidence (W m⁻²)</span></div>
+                        <div><span class="text-blue-400 font-bold">$A$:</span> <span data-i18n="formula.A">area of the panel (m²)</span></div>
+                        <div><span class="text-blue-400 font-bold">$\theta$:</span> <span data-i18n="formula.theta">angle between the rays and the panel's normal</span></div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3 leading-relaxed" data-i18n="formula.note">
+                        $A\cos\theta$ is the panel's area projected perpendicular to the rays — the only part of the beam it intercepts.
+                    </p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 space-y-6">
+                <div class="relative">
+                    <div id="three-container"></div>
+                    <div class="absolute top-3 left-3 bg-slate-900/75 text-white text-xs font-semibold px-3 py-1 rounded-full pointer-events-none" data-i18n="three.title">3D rooftop, panel faces south</div>
+                    <div class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur text-white px-5 py-3 rounded-full text-sm pointer-events-none" data-i18n="three.hint">Drag to rotate • pinch / scroll to zoom</div>
+                    <div class="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
+                        <span class="bg-white/90 text-amber-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.rays">Sunlight $I$</span>
+                        <span class="bg-white/90 text-slate-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.normal">Panel normal &amp; $\theta$</span>
+                        <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.output">Electrical output</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 h-72 relative">
+                    <h3 class="text-sm font-bold text-slate-500 absolute top-4 left-4 z-10" data-i18n="graph.title">Output power through the day</h3>
+                    <canvas id="graph-canvas" class="w-full h-full"></canvas>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                    <div class="flex items-start gap-4">
+                        <div class="p-3 bg-blue-600 rounded-xl text-white shrink-0">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-slate-800 mb-2" data-i18n="ai.title">Physics note</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed" data-i18n="ai.desc">
+                                Power peaks when the rays strike the panel head-on ($\theta = 0$). At noon the sun's altitude is $90° - \phi + \delta$, so a south-facing panel tilted at $\beta = \phi - \delta$ is perpendicular to the noon sun. For a fixed panel in Hong Kong a tilt of about 20° gives the best <b>annual</b> yield, while a steeper tilt favours winter and a flatter one favours summer. Efficiency $\eta$ is limited to 15–25% because photons below the band-gap energy cannot free electrons and excess photon energy is lost as heat.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="explain-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[88vh] overflow-y-auto p-6 md:p-8">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <h2 class="text-xl font-bold text-slate-800" data-i18n="modal.title">Solar cells — HKDSE E3</h2>
+                <button id="explain-close" class="min-h-[44px] min-w-[44px] rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200">×</button>
+            </div>
+            <div class="space-y-4 text-sm text-slate-600 leading-relaxed" data-i18n="modal.body" id="modal-body">
+                <p><b>Solar constant:</b> above the atmosphere sunlight carries about 1370 W m⁻² (the power from the Sun divided by the area of a sphere of radius 1 AU). Absorption and scattering leave ≈ 1000 W m⁻² at the ground on a clear day at normal incidence.</p>
+                <p><b>Why $\cos\theta$?</b> A beam of cross-section $A\cos\theta$ falls on a panel of area $A$ tilted by $\theta$ from the beam, so the power intercepted is $I A\cos\theta$. The panel converts a fraction $\eta$ of this into electrical power.</p>
+                <p><b>Sun path:</b> for latitude $\phi$, declination $\delta$ and hour angle $H = 15°\times(t - 12\text{ h})$, the altitude $a$ obeys $\sin a = \sin\phi\sin\delta + \cos\phi\cos\delta\cos H$. The simulation uses this to place the Sun.</p>
+                <p><b>Daily energy</b> is the area under the $P$–$t$ graph: $E = \int P\,dt$, shown in kWh (1 kWh = 3.6 MJ). Compare the tilted and flat panels to see why installers tilt panels towards the equator.</p>
+                <p><b>Colour code:</b> <span class="text-amber-600 font-semibold">amber</span> = sunlight, <span class="text-slate-600 font-semibold">slate</span> = panel normal and angle $\theta$, <span class="text-green-600 font-semibold">green</span> = electrical output.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PHYSICS_COLORS = {
+            force: 0xdc2626,
+            velocity: 0x16a34a,
+            accel: 0x9333ea,
+            bField: 0xd97706,
+            displacement: 0x475569
+        };
+        const DEG = Math.PI / 180;
+        const DECLINATION = { summer: 23.4, equinox: 0, winter: -23.4 };
+        const PANEL_SCALE = 0.5; // scene units per metre of panel edge
+        const SUN_DIST = 13;
+
+        const defaults = { hour: 12, season: 'equinox', lat: 22.3, tilt: 22, area: 10, eta: 20, I: 1000 };
+        const state = { ...defaults };
+
+        const sliders = {
+            hour: document.getElementById('hour-slider'),
+            lat: document.getElementById('lat-slider'),
+            tilt: document.getElementById('tilt-slider'),
+            area: document.getElementById('area-slider'),
+            eta: document.getElementById('eta-slider'),
+            I: document.getElementById('i-slider')
+        };
+        const threeContainer = document.getElementById('three-container');
+        const graphCanvas = document.getElementById('graph-canvas');
+
+        let scene, camera, renderer, clock, sunLight, ambient;
+        let panelGroup, panelMesh, normalArrow, normalLabel, thetaArc, thetaLabel, sunMesh, sunGlow, sunPathLine;
+        let cable, house, houseLight;
+        const rays = [];
+        const cablePulses = [];
+        let playing = false;
+        let isCameraDrag = false, pinchDistance = null;
+        const lastPointer = { x: 0, y: 0 };
+        const defaultCamera = { radius: 17, theta: 0.75, phi: 1.2 };
+        const cameraState = { ...defaultCamera };
+        const PANEL_CENTRE = new THREE.Vector3(0, 1.3, 0);
+
+        // ---------- physics ----------
+        // Sun direction from latitude, declination and hour angle.
+        // World axes: x = east, y = up, z = south.
+        function sunPosition(hour, s = state) {
+            const phi = s.lat * DEG;
+            const delta = DECLINATION[s.season] * DEG;
+            const H = (hour - 12) * 15 * DEG;
+            const sinAlt = THREE.MathUtils.clamp(
+                Math.sin(phi) * Math.sin(delta) + Math.cos(phi) * Math.cos(delta) * Math.cos(H), -1, 1);
+            const alt = Math.asin(sinAlt);
+            const cosAlt = Math.cos(alt);
+            let az;
+            if (Math.abs(cosAlt) < 1e-6 || Math.abs(Math.cos(phi)) < 1e-6) {
+                az = Math.PI;
+            } else {
+                const cosAz = THREE.MathUtils.clamp((Math.sin(delta) - Math.sin(phi) * sinAlt) / (Math.cos(phi) * cosAlt), -1, 1);
+                az = Math.acos(cosAz);           // measured clockwise from north
+                if (H > 0) az = 2 * Math.PI - az; // afternoon: sun in the west
+            }
+            const vec = new THREE.Vector3(cosAlt * Math.sin(az), sinAlt, -cosAlt * Math.cos(az));
+            return { alt, az, vec };
+        }
+
+        function panelNormal(tiltDeg) {
+            const b = tiltDeg * DEG;
+            return new THREE.Vector3(0, Math.cos(b), Math.sin(b)); // tilted towards south (+z)
+        }
+
+        // P = eta * I * A * cos(theta), zero at night or when the sun is behind the panel
+        function computeAt(hour, tiltDeg, s = state) {
+            const sun = sunPosition(hour, s);
+            const n = panelNormal(tiltDeg);
+            let cosTheta = n.dot(sun.vec);
+            const night = sun.alt <= 0;
+            const behind = cosTheta <= 0;
+            if (night || behind) cosTheta = 0;
+            const theta = Math.acos(THREE.MathUtils.clamp(n.dot(sun.vec), -1, 1));
+            const Ieff = s.I * cosTheta;
+            const P = (s.eta / 100) * Ieff * s.area;
+            return { sun, n, cosTheta, theta, Ieff, P, night, behind };
+        }
+
+        function dailyEnergyWh(tiltDeg, s = state) {
+            const dt = 0.05;
+            let E = 0;
+            for (let h = 0; h <= 24; h += dt) E += computeAt(h, tiltDeg, s).P * dt;
+            return E;
+        }
+
+        function fmtPower(W) {
+            if (W < 1e3) return `${W.toFixed(0)} W`;
+            return `${(W / 1e3).toFixed(2)} kW`;
+        }
+        function fmtHour(h) {
+            const hh = Math.floor(h) % 24;
+            const mm = Math.round((h - Math.floor(h)) * 60);
+            return `${String(hh).padStart(2, '0')}:${String(mm === 60 ? 0 : mm).padStart(2, '0')}`;
+        }
+
+        // ---------- three.js ----------
+        function makeLabelSprite(text, color, w = 128, h = 64, scale = 1) {
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = color;
+            ctx.font = 'bold 44px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, w / 2, h / 2);
+            const tex = new THREE.CanvasTexture(c);
+            const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+            spr.scale.set((w / 64) * scale, (h / 64) * scale, 1);
+            return spr;
+        }
+
+        function makePanelTexture() {
+            const c = document.createElement('canvas');
+            c.width = 512; c.height = 320;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#1e3a8a';
+            ctx.fillRect(0, 0, c.width, c.height);
+            ctx.strokeStyle = '#93c5fd';
+            ctx.lineWidth = 4;
+            for (let x = 0; x <= 512; x += 64) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 320); ctx.stroke(); }
+            for (let y = 0; y <= 320; y += 64) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke(); }
+            return new THREE.CanvasTexture(c);
+        }
+
+        function initThree() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xbae6fd);
+            clock = new THREE.Clock();
+
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 200);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            renderer.setSize(w, h);
+            renderer.shadowMap.enabled = true;
+            threeContainer.appendChild(renderer.domElement);
+
+            ambient = new THREE.AmbientLight(0xffffff, 0.55);
+            scene.add(ambient);
+            sunLight = new THREE.DirectionalLight(0xfff7ed, 1.0);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.set(1024, 1024);
+            sunLight.shadow.camera.left = -12; sunLight.shadow.camera.right = 12;
+            sunLight.shadow.camera.top = 12; sunLight.shadow.camera.bottom = -12;
+            scene.add(sunLight);
+
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(60, 60),
+                new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 1 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            const grid = new THREE.GridHelper(60, 30, 0xcbd5e1, 0xe2e8f0);
+            grid.position.y = 0.01;
+            scene.add(grid);
+
+            // compass labels
+            const compass = [['N', 0, -9], ['S', 0, 9], ['E', 9, 0], ['W', -9, 0]];
+            compass.forEach(([txt, x, z]) => {
+                const s = makeLabelSprite(txt, '#475569', 64, 64, 1.1);
+                s.position.set(x, 0.6, z);
+                scene.add(s);
+            });
+
+            // panel + stand
+            const stand = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.08, 0.12, 1.3, 12),
+                new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5, metalness: 0.4 })
+            );
+            stand.position.set(0, 0.65, 0);
+            stand.castShadow = true;
+            scene.add(stand);
+
+            panelGroup = new THREE.Group();
+            panelGroup.position.copy(PANEL_CENTRE);
+            panelMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(1, 0.08, 1),
+                [
+                    new THREE.MeshStandardMaterial({ color: 0x94a3b8 }),
+                    new THREE.MeshStandardMaterial({ color: 0x94a3b8 }),
+                    new THREE.MeshStandardMaterial({ map: makePanelTexture(), roughness: 0.25, metalness: 0.3 }),
+                    new THREE.MeshStandardMaterial({ color: 0x94a3b8 }),
+                    new THREE.MeshStandardMaterial({ color: 0x94a3b8 }),
+                    new THREE.MeshStandardMaterial({ color: 0x94a3b8 })
+                ]
+            );
+            panelMesh.castShadow = true;
+            panelMesh.receiveShadow = true;
+            panelGroup.add(panelMesh);
+            scene.add(panelGroup);
+
+            normalArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), PANEL_CENTRE, 2.4, PHYSICS_COLORS.displacement, 0.4, 0.22);
+            scene.add(normalArrow);
+            normalLabel = makeLabelSprite('n', '#475569', 64, 64, 0.8);
+            scene.add(normalLabel);
+
+            thetaArc = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+                new THREE.LineDashedMaterial({ color: 0x475569, dashSize: 0.12, gapSize: 0.08 })
+            );
+            scene.add(thetaArc);
+            thetaLabel = makeLabelSprite('θ', '#475569', 64, 64, 0.8);
+            scene.add(thetaLabel);
+
+            // sun
+            sunMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.75, 32, 32),
+                new THREE.MeshBasicMaterial({ color: 0xfbbf24 })
+            );
+            scene.add(sunMesh);
+            sunGlow = new THREE.Mesh(
+                new THREE.SphereGeometry(1.15, 32, 32),
+                new THREE.MeshBasicMaterial({ color: 0xfde68a, transparent: true, opacity: 0.35 })
+            );
+            scene.add(sunGlow);
+
+            for (let i = 0; i < 9; i++) {
+                const a = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(), 5.5, 0xf59e0b, 0.45, 0.22);
+                scene.add(a);
+                rays.push(a);
+            }
+
+            sunPathLine = new THREE.Line(
+                new THREE.BufferGeometry(),
+                new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.6 })
+            );
+            scene.add(sunPathLine);
+
+            // house + cable (green = electrical output)
+            house = new THREE.Group();
+            const hb = new THREE.Mesh(
+                new THREE.BoxGeometry(1.8, 1.3, 1.6),
+                new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6, emissive: 0x16a34a, emissiveIntensity: 0.05 })
+            );
+            hb.position.y = 0.65;
+            hb.castShadow = true;
+            const roof = new THREE.Mesh(
+                new THREE.ConeGeometry(1.45, 0.8, 4),
+                new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.7 })
+            );
+            roof.position.y = 1.7;
+            roof.rotation.y = Math.PI / 4;
+            house.add(hb, roof);
+            house.position.set(4.6, 0, -3.4);
+            scene.add(house);
+            house.userData.body = hb;
+            houseLight = new THREE.PointLight(0x22c55e, 0.3, 6);
+            houseLight.position.set(4.6, 1.2, -3.4);
+            scene.add(houseLight);
+
+            const cablePts = [
+                new THREE.Vector3(0, 0.05, 0.2),
+                new THREE.Vector3(2.2, 0.05, -1.3),
+                new THREE.Vector3(4.0, 0.05, -2.6)
+            ];
+            cable = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints(cablePts),
+                new THREE.LineBasicMaterial({ color: PHYSICS_COLORS.velocity })
+            );
+            cable.userData.pts = cablePts;
+            scene.add(cable);
+            for (let i = 0; i < 8; i++) {
+                const p = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.09, 10, 10),
+                    new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x22c55e, emissiveIntensity: 0.9 })
+                );
+                p.userData.t = i / 8;
+                scene.add(p);
+                cablePulses.push(p);
+            }
+
+            attachCameraControls();
+            resetCameraView();
+        }
+
+        function cablePoint(t) {
+            const pts = cable.userData.pts;
+            const seg = (pts.length - 1) * t;
+            const i = Math.min(pts.length - 2, Math.floor(seg));
+            return pts[i].clone().lerp(pts[i + 1], seg - i);
+        }
+
+        function setCameraFromState() {
+            const sinPhi = Math.sin(cameraState.phi);
+            camera.position.set(
+                PANEL_CENTRE.x + cameraState.radius * sinPhi * Math.cos(cameraState.theta),
+                PANEL_CENTRE.y + cameraState.radius * Math.cos(cameraState.phi),
+                PANEL_CENTRE.z + cameraState.radius * sinPhi * Math.sin(cameraState.theta)
+            );
+            camera.lookAt(PANEL_CENTRE);
+        }
+
+        function resetCameraView() {
+            Object.assign(cameraState, defaultCamera);
+            setCameraFromState();
+        }
+
+        function attachCameraControls() {
+            const dom = renderer.domElement;
+            const rotate = (dx, dy) => {
+                cameraState.theta -= dx * 0.0055;
+                cameraState.phi = THREE.MathUtils.clamp(cameraState.phi + dy * 0.0055, 0.15, Math.PI / 2 - 0.03);
+                setCameraFromState();
+            };
+            dom.addEventListener('mousedown', (e) => {
+                isCameraDrag = true;
+                lastPointer.x = e.clientX;
+                lastPointer.y = e.clientY;
+            });
+            window.addEventListener('mouseup', () => { isCameraDrag = false; });
+            window.addEventListener('mousemove', (e) => {
+                if (!isCameraDrag) return;
+                const dx = e.clientX - lastPointer.x, dy = e.clientY - lastPointer.y;
+                lastPointer.x = e.clientX; lastPointer.y = e.clientY;
+                rotate(dx, dy);
+            });
+            dom.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                cameraState.radius = THREE.MathUtils.clamp(cameraState.radius + e.deltaY * 0.015, 6, 40);
+                setCameraFromState();
+            }, { passive: false });
+            dom.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isCameraDrag = true;
+                    lastPointer.x = e.touches[0].clientX;
+                    lastPointer.y = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    isCameraDrag = false;
+                    pinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                }
+            }, { passive: true });
+            dom.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && isCameraDrag) {
+                    e.preventDefault();
+                    const dx = e.touches[0].clientX - lastPointer.x, dy = e.touches[0].clientY - lastPointer.y;
+                    lastPointer.x = e.touches[0].clientX; lastPointer.y = e.touches[0].clientY;
+                    rotate(dx, dy);
+                } else if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                    if (pinchDistance !== null) {
+                        cameraState.radius = THREE.MathUtils.clamp(cameraState.radius - (dist - pinchDistance) * 0.04, 6, 40);
+                        setCameraFromState();
+                    }
+                    pinchDistance = dist;
+                }
+            }, { passive: false });
+            dom.addEventListener('touchend', () => { isCameraDrag = false; pinchDistance = null; }, { passive: true });
+        }
+
+        // ---------- update ----------
+        function readSliders() {
+            state.hour = parseFloat(sliders.hour.value);
+            state.lat = parseFloat(sliders.lat.value);
+            state.tilt = parseFloat(sliders.tilt.value);
+            state.area = parseFloat(sliders.area.value);
+            state.eta = parseFloat(sliders.eta.value);
+            state.I = parseFloat(sliders.I.value);
+        }
+        function syncSliders() {
+            sliders.hour.value = state.hour;
+            sliders.lat.value = state.lat;
+            sliders.tilt.value = state.tilt;
+            sliders.area.value = state.area;
+            sliders.eta.value = state.eta;
+            sliders.I.value = state.I;
+            document.querySelectorAll('.season-btn').forEach((b) => b.classList.toggle('active', b.dataset.season === state.season));
+        }
+
+        function updateSunPath() {
+            const pts = [];
+            for (let h = 0; h <= 24; h += 0.1) {
+                const s = sunPosition(h);
+                if (s.alt > 0) pts.push(PANEL_CENTRE.clone().add(s.vec.clone().multiplyScalar(SUN_DIST)));
+            }
+            sunPathLine.geometry.dispose();
+            sunPathLine.geometry = new THREE.BufferGeometry().setFromPoints(pts.length ? pts : [new THREE.Vector3(), new THREE.Vector3()]);
+        }
+
+        let lastGraphKey = '';
+        function updateSimulation() {
+            readSliders();
+            const d = computeAt(state.hour, state.tilt);
+
+            document.getElementById('hour-val').textContent = fmtHour(state.hour);
+            document.getElementById('lat-val').textContent = `${state.lat.toFixed(1)}° N`;
+            document.getElementById('tilt-val').textContent = `${state.tilt.toFixed(0)}°`;
+            document.getElementById('area-val').textContent = `${state.area.toFixed(0)} m²`;
+            document.getElementById('eta-val').textContent = `${state.eta.toFixed(0)}%`;
+            document.getElementById('i-val').textContent = `${state.I.toFixed(0)} W/m²`;
+
+            const altDeg = d.sun.alt / DEG, azDeg = d.sun.az / DEG;
+            document.getElementById('sun-val').textContent = `${altDeg.toFixed(1)}° / ${azDeg.toFixed(0)}°`;
+            document.getElementById('theta-val').textContent = d.night ? '—' : `${(d.theta / DEG).toFixed(1)}°`;
+            document.getElementById('ieff-val').textContent = `${d.Ieff.toFixed(0)} W/m²`;
+            document.getElementById('p-val').textContent = fmtPower(d.P);
+
+            const status = document.getElementById('status-card');
+            status.className = 'p-3 rounded-lg border text-center font-bold tracking-wide ';
+            if (d.night) { status.className += 'bg-slate-800 border-slate-700 text-slate-200'; status.textContent = t('status.night'); }
+            else if (d.behind) { status.className += 'bg-slate-100 border-slate-300 text-slate-600'; status.textContent = t('status.behind'); }
+            else { status.className += 'bg-amber-50 border-amber-200 text-amber-700'; status.textContent = t('status.sunlit'); }
+
+            // daily energy + sun path only depend on the non-hour parameters
+            const key = `${state.season}|${state.lat}|${state.tilt}|${state.area}|${state.eta}|${state.I}`;
+            if (key !== lastGraphKey) {
+                document.getElementById('eday-val').textContent = `${(dailyEnergyWh(state.tilt) / 1000).toFixed(1)} kWh`;
+                document.getElementById('eflat-val').textContent = `${(dailyEnergyWh(0) / 1000).toFixed(1)} kWh`;
+                updateSunPath();
+                lastGraphKey = key;
+            }
+
+            // 3D: panel size and tilt
+            const wM = Math.sqrt(state.area * 1.6), dM = Math.sqrt(state.area / 1.6);
+            panelMesh.scale.set(wM * PANEL_SCALE, 1, dM * PANEL_SCALE);
+            panelGroup.rotation.x = state.tilt * DEG;
+
+            // normal arrow + label
+            normalArrow.setDirection(d.n);
+            normalLabel.position.copy(PANEL_CENTRE).add(d.n.clone().multiplyScalar(2.75));
+
+            // sun + light
+            const sunPos = PANEL_CENTRE.clone().add(d.sun.vec.clone().multiplyScalar(SUN_DIST));
+            sunMesh.position.copy(sunPos);
+            sunGlow.position.copy(sunPos);
+            sunMesh.visible = sunGlow.visible = d.sun.alt > -0.06;
+            sunLight.position.copy(PANEL_CENTRE).add(d.sun.vec.clone().multiplyScalar(20));
+            const dayFactor = THREE.MathUtils.clamp(Math.sin(d.sun.alt) * 2.2, 0, 1);
+            sunLight.intensity = 0.15 + 0.95 * dayFactor;
+            ambient.intensity = 0.25 + 0.35 * dayFactor;
+            const sky = new THREE.Color(0x0f172a).lerp(new THREE.Color(0xbae6fd), dayFactor);
+            scene.background = sky;
+            threeContainer.style.background = `#${sky.getHexString()}`;
+
+            // rays: a 3x3 grid over the panel surface, pointing along -sun
+            const showRays = !d.night && !d.behind;
+            const halfW = (wM * PANEL_SCALE) / 2, halfD = (dM * PANEL_SCALE) / 2;
+            let k = 0;
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    const local = new THREE.Vector3(i * halfW * 0.65, 0.05, j * halfD * 0.65);
+                    const hit = panelGroup.localToWorld(local);
+                    const rayLen = 5.5;
+                    const a = rays[k++];
+                    a.visible = showRays;
+                    a.position.copy(hit).add(d.sun.vec.clone().multiplyScalar(rayLen));
+                    a.setDirection(d.sun.vec.clone().negate());
+                    a.setLength(rayLen, 0.45, 0.22);
+                }
+            }
+
+            // theta arc between normal and sun direction
+            const arcPts = [];
+            const R = 1.5;
+            if (showRays) {
+                const steps = 24;
+                for (let i = 0; i <= steps; i++) {
+                    const q = d.n.clone().lerp(d.sun.vec, i / steps).normalize().multiplyScalar(R);
+                    arcPts.push(PANEL_CENTRE.clone().add(q));
+                }
+            } else {
+                arcPts.push(PANEL_CENTRE.clone(), PANEL_CENTRE.clone());
+            }
+            thetaArc.geometry.dispose();
+            thetaArc.geometry = new THREE.BufferGeometry().setFromPoints(arcPts);
+            thetaArc.computeLineDistances();
+            thetaArc.visible = showRays && d.theta > 0.02;
+            thetaLabel.visible = thetaArc.visible;
+            thetaLabel.position.copy(PANEL_CENTRE).add(d.n.clone().lerp(d.sun.vec, 0.5).normalize().multiplyScalar(R + 0.45));
+
+            // house glow ∝ P
+            const glow = THREE.MathUtils.clamp(d.P / 6000, 0, 1);
+            house.userData.body.material.emissiveIntensity = 0.03 + glow * 0.6;
+            houseLight.intensity = 0.1 + glow * 2.0;
+
+            drawGraph();
+        }
+
+        // ---------- graph ----------
+        function drawGraph() {
+            const ctx = graphCanvas.getContext('2d');
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const W = graphCanvas.clientWidth, Hh = graphCanvas.clientHeight;
+            if (!W || !Hh) return;
+            graphCanvas.width = W * dpr; graphCanvas.height = Hh * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, W, Hh);
+
+            const pad = { l: 56, r: 18, t: 34, b: 34 };
+            const gw = W - pad.l - pad.r, gh = Hh - pad.t - pad.b;
+            const N = 144;
+            const tilted = [], flat = [];
+            let pMax = 1;
+            for (let i = 0; i <= N; i++) {
+                const h = (24 * i) / N;
+                const a = computeAt(h, state.tilt).P, b = computeAt(h, 0).P;
+                tilted.push(a); flat.push(b);
+                pMax = Math.max(pMax, a, b);
+            }
+            pMax *= 1.12;
+            const X = (h) => pad.l + (h / 24) * gw;
+            const Y = (P) => pad.t + gh - (P / pMax) * gh;
+            const unit = pMax >= 1000 ? 1000 : 1;
+            const unitLabel = unit === 1000 ? 'kW' : 'W';
+
+            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+            ctx.fillStyle = '#64748b'; ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+            for (let i = 0; i <= 4; i++) {
+                const P = (pMax * i) / 4;
+                ctx.beginPath(); ctx.moveTo(pad.l, Y(P)); ctx.lineTo(W - pad.r, Y(P)); ctx.stroke();
+                ctx.fillText((P / unit).toFixed(P / unit < 10 ? 1 : 0), pad.l - 6, Y(P));
+            }
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            for (let h = 0; h <= 24; h += 3) {
+                ctx.beginPath(); ctx.moveTo(X(h), pad.t); ctx.lineTo(X(h), pad.t + gh); ctx.stroke();
+                ctx.fillText(`${h}`, X(h), pad.t + gh + 6);
+            }
+            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + gh); ctx.lineTo(W - pad.r, pad.t + gh); ctx.stroke();
+            ctx.fillStyle = '#475569'; ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+            ctx.fillText(t('graph.x'), W - pad.r, pad.t + gh - 4);
+            ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+            ctx.fillText(`P (${unitLabel})`, pad.l + 6, pad.t - 14);
+
+            // filled area under tilted curve = daily energy
+            ctx.fillStyle = 'rgba(217,119,6,0.12)';
+            ctx.beginPath(); ctx.moveTo(X(0), Y(0));
+            tilted.forEach((P, i) => ctx.lineTo(X((24 * i) / N), Y(P)));
+            ctx.lineTo(X(24), Y(0)); ctx.closePath(); ctx.fill();
+
+            const curve = (arr, color, width, dash) => {
+                ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash);
+                ctx.beginPath();
+                arr.forEach((P, i) => { const x = X((24 * i) / N), y = Y(P); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+                ctx.stroke(); ctx.setLineDash([]);
+            };
+            curve(flat, '#64748b', 1.8, [6, 4]);
+            curve(tilted, '#d97706', 2.6, []);
+
+            // current time marker
+            const d = computeAt(state.hour, state.tilt);
+            ctx.strokeStyle = '#2563eb'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(X(state.hour), pad.t + gh); ctx.lineTo(X(state.hour), pad.t); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#16a34a';
+            ctx.beginPath(); ctx.arc(X(state.hour), Y(d.P), 5.5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#1e293b'; ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.textAlign = state.hour > 17 ? 'right' : 'left'; ctx.textBaseline = 'bottom';
+            ctx.fillText(`${fmtHour(state.hour)} → ${fmtPower(d.P)}`, X(state.hour) + (state.hour > 17 ? -9 : 9), Y(d.P) - 8);
+
+            // legend
+            ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            const lx = pad.l + 8, ly = pad.t + 10;
+            ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2.6;
+            ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 22, ly); ctx.stroke();
+            ctx.fillStyle = '#334155'; ctx.fillText(`${t('graph.tilted')} β = ${state.tilt.toFixed(0)}°`, lx + 28, ly);
+            ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1.8; ctx.setLineDash([6, 4]);
+            ctx.beginPath(); ctx.moveTo(lx, ly + 16); ctx.lineTo(lx + 22, ly + 16); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillText(t('graph.flat'), lx + 28, ly + 16);
+        }
+
+        // ---------- animation ----------
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            if (playing) {
+                let h = state.hour + dt * 1.6;
+                if (h > 20) h = 4;
+                sliders.hour.value = h.toFixed(2);
+                updateSimulation();
+            }
+            const d = computeAt(state.hour, state.tilt);
+            const pulseSpeed = 0.1 + THREE.MathUtils.clamp(d.P / 4000, 0, 1) * 1.4;
+            cablePulses.forEach((p) => {
+                p.userData.t = (p.userData.t + pulseSpeed * dt) % 1;
+                p.position.copy(cablePoint(p.userData.t));
+                p.visible = d.P > 0;
+            });
+            if (sunGlow.visible) sunGlow.scale.setScalar(1 + 0.06 * Math.sin(clock.elapsedTime * 2.5));
+            renderer.render(scene, camera);
+        }
+
+        function resizeThree() {
+            if (!renderer || !camera) return;
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            drawGraph();
+        }
+
+        // ---------- i18n ----------
+        const translations = {
+            en: {
+                'nav.back': 'Back to Home',
+                'page.tag': 'HKDSE • Elective 3: Energy and Use of Energy • Solar energy',
+                'page.title': 'Solar Panel Power & Sun Path',
+                'page.description': 'A photovoltaic panel delivers $P = \\eta\\, I\\, A \\cos\\theta$, where $\\theta$ is the angle between the sunlight and the panel\'s normal. Move the sun across the Hong Kong sky, tilt the panel, and find the tilt that captures the most energy in a day.',
+                'controls.title': 'Parameters',
+                'controls.reset': 'Reset',
+                'controls.hour': 'Solar time',
+                'controls.play': '▶ Play',
+                'controls.pause': '❚❚ Pause',
+                'controls.season': 'Season (solar declination $\\delta$)',
+                'controls.summer': 'Summer +23.4°',
+                'controls.equinox': 'Equinox 0°',
+                'controls.winter': 'Winter −23.4°',
+                'controls.latitude': 'Latitude ($\\phi$)',
+                'controls.latitude_hint': 'Hong Kong ≈ 22.3° N. Panel faces due south.',
+                'controls.tilt': 'Panel tilt ($\\beta$)',
+                'controls.optimal': 'Noon-optimal',
+                'controls.area': 'Panel area ($A$)',
+                'controls.efficiency': 'Cell efficiency ($\\eta$)',
+                'controls.intensity': 'Sunlight intensity ($I$, normal incidence)',
+                'controls.intensity_hint': 'Solar constant above the atmosphere ≈ 1370 W/m²; a clear sky at ground level gives ≈ 1000 W/m².',
+                'controls.presets': 'Presets',
+                'controls.presetHK': 'HK noon',
+                'controls.presetMorning': 'Summer 9 am',
+                'controls.presetWinter': 'Winter noon',
+                'controls.presetFlat': 'Flat panel',
+                'data.title': 'Live readings',
+                'data.altitude': 'Sun altitude / azimuth',
+                'data.theta': 'Angle of incidence $\\theta$',
+                'data.effective': 'Effective intensity $I\\cos\\theta$',
+                'data.power': 'Electrical output $P$',
+                'data.energy': 'Energy today (this tilt)',
+                'data.energyFlat': 'Energy today (flat, $\\beta = 0$)',
+                'status.sunlit': 'SUNLIT',
+                'status.behind': 'SUN BEHIND PANEL',
+                'status.night': 'NIGHT',
+                'formula.title': 'HKDSE formula',
+                'formula.eta': 'efficiency of the solar cells',
+                'formula.I': 'intensity of sunlight at normal incidence (W m⁻²)',
+                'formula.A': 'area of the panel (m²)',
+                'formula.theta': 'angle between the rays and the panel\'s normal',
+                'formula.note': '$A\\cos\\theta$ is the panel\'s area projected perpendicular to the rays — the only part of the beam it intercepts.',
+                'three.title': '3D rooftop, panel faces south',
+                'three.hint': 'Drag to rotate • pinch / scroll to zoom',
+                'legend.rays': 'Sunlight $I$',
+                'legend.normal': 'Panel normal & $\\theta$',
+                'legend.output': 'Electrical output',
+                'graph.title': 'Output power through the day',
+                'graph.x': 'solar time (h)',
+                'graph.tilted': 'Tilted panel',
+                'graph.flat': 'Flat panel (β = 0)',
+                'ai.title': 'Physics note',
+                'ai.desc': 'Power peaks when the rays strike the panel head-on ($\\theta = 0$). At noon the sun\'s altitude is $90° - \\phi + \\delta$, so a south-facing panel tilted at $\\beta = \\phi - \\delta$ is perpendicular to the noon sun. For a fixed panel in Hong Kong a tilt of about 20° gives the best <b>annual</b> yield, while a steeper tilt favours winter and a flatter one favours summer. Efficiency $\\eta$ is limited to 15–25% because photons below the band-gap energy cannot free electrons and excess photon energy is lost as heat.',
+                'modal.open': 'Explain',
+                'modal.title': 'Solar cells — HKDSE E3',
+                'modal.body': '<p><b>Solar constant:</b> above the atmosphere sunlight carries about 1370 W m⁻² (the power from the Sun divided by the area of a sphere of radius 1 AU). Absorption and scattering leave ≈ 1000 W m⁻² at the ground on a clear day at normal incidence.</p><p><b>Why $\\cos\\theta$?</b> A beam of cross-section $A\\cos\\theta$ falls on a panel of area $A$ tilted by $\\theta$ from the beam, so the power intercepted is $I A\\cos\\theta$. The panel converts a fraction $\\eta$ of this into electrical power.</p><p><b>Sun path:</b> for latitude $\\phi$, declination $\\delta$ and hour angle $H = 15°\\times(t - 12\\text{ h})$, the altitude $a$ obeys $\\sin a = \\sin\\phi\\sin\\delta + \\cos\\phi\\cos\\delta\\cos H$. The simulation uses this to place the Sun.</p><p><b>Daily energy</b> is the area under the $P$–$t$ graph: $E = \\int P\\,dt$, shown in kWh (1 kWh = 3.6 MJ). Compare the tilted and flat panels to see why installers tilt panels towards the equator.</p><p><b>Colour code:</b> <span class="text-amber-600 font-semibold">amber</span> = sunlight, <span class="text-slate-600 font-semibold">slate</span> = panel normal and angle $\\theta$, <span class="text-green-600 font-semibold">green</span> = electrical output.</p>'
+            },
+            'zh-hk': {
+                'nav.back': '返回首頁',
+                'page.tag': 'HKDSE • 選修部分 3：能量和能源的使用 • 太陽能',
+                'page.title': '太陽能板功率與太陽軌跡',
+                'page.description': '光伏板的輸出功率 $P = \\eta\\, I\\, A \\cos\\theta$，其中 $\\theta$ 為陽光與板面法線的夾角。移動太陽橫過香港天空、調整板的傾角，找出一天內收集最多能量的傾角。',
+                'controls.title': '參數',
+                'controls.reset': '重設',
+                'controls.hour': '太陽時',
+                'controls.play': '▶ 播放',
+                'controls.pause': '❚❚ 暫停',
+                'controls.season': '季節（太陽赤緯 $\\delta$）',
+                'controls.summer': '夏至 +23.4°',
+                'controls.equinox': '春／秋分 0°',
+                'controls.winter': '冬至 −23.4°',
+                'controls.latitude': '緯度 ($\\phi$)',
+                'controls.latitude_hint': '香港約北緯 22.3°。太陽能板正向南方。',
+                'controls.tilt': '板面傾角 ($\\beta$)',
+                'controls.optimal': '正午最佳',
+                'controls.area': '板面面積 ($A$)',
+                'controls.efficiency': '電池效率 ($\\eta$)',
+                'controls.intensity': '陽光強度（$I$，垂直入射）',
+                'controls.intensity_hint': '大氣層外的太陽常數約 1370 W/m²；晴天地面垂直入射約 1000 W/m²。',
+                'controls.presets': '預設情境',
+                'controls.presetHK': '香港正午',
+                'controls.presetMorning': '夏至上午 9 時',
+                'controls.presetWinter': '冬至正午',
+                'controls.presetFlat': '水平放置',
+                'data.title': '即時讀數',
+                'data.altitude': '太陽高度角／方位角',
+                'data.theta': '入射角 $\\theta$',
+                'data.effective': '有效強度 $I\\cos\\theta$',
+                'data.power': '電功率輸出 $P$',
+                'data.energy': '今日發電量（此傾角）',
+                'data.energyFlat': '今日發電量（水平，$\\beta = 0$）',
+                'status.sunlit': '受光',
+                'status.behind': '太陽在板背後',
+                'status.night': '夜間',
+                'formula.title': 'HKDSE 公式',
+                'formula.eta': '太陽能電池效率',
+                'formula.I': '垂直入射時的陽光強度 (W m⁻²)',
+                'formula.A': '板面面積 (m²)',
+                'formula.theta': '光線與板面法線的夾角',
+                'formula.note': '$A\\cos\\theta$ 是板面垂直於光線的投影面積——即板面所截取的光束部分。',
+                'three.title': '3D 天台，板面向南',
+                'three.hint': '拖曳旋轉 • 雙指／滾輪縮放',
+                'legend.rays': '陽光 $I$',
+                'legend.normal': '板面法線及 $\\theta$',
+                'legend.output': '電能輸出',
+                'graph.title': '一天內的輸出功率',
+                'graph.x': '太陽時 (h)',
+                'graph.tilted': '傾斜板',
+                'graph.flat': '水平板 (β = 0)',
+                'ai.title': '物理說明',
+                'ai.desc': '光線垂直射向板面（$\\theta = 0$）時功率最大。正午太陽高度角為 $90° - \\phi + \\delta$，故向南、傾角 $\\beta = \\phi - \\delta$ 的板面剛好垂直於正午陽光。在香港，固定板面約 20° 傾角可得最佳<b>全年</b>發電量；傾角較大有利冬季，較平則有利夏季。效率 $\\eta$ 只有 15–25%，因為能量低於能隙的光子無法釋放電子，而多出的光子能量則以熱散失。',
+                'modal.open': '解釋',
+                'modal.title': '太陽能電池 — HKDSE 選修 3',
+                'modal.body': '<p><b>太陽常數：</b>大氣層外的陽光強度約 1370 W m⁻²（太陽總功率除以半徑 1 AU 的球面面積）。經大氣吸收及散射後，晴天地面垂直入射約為 1000 W m⁻²。</p><p><b>為何有 $\\cos\\theta$？</b>與光束成 $\\theta$ 角、面積為 $A$ 的板面，只截取橫截面為 $A\\cos\\theta$ 的光束，故截獲功率為 $I A\\cos\\theta$。板面再把其中 $\\eta$ 的比例轉為電能。</p><p><b>太陽軌跡：</b>對於緯度 $\\phi$、赤緯 $\\delta$ 及時角 $H = 15°\\times(t - 12\\text{ h})$，高度角 $a$ 滿足 $\\sin a = \\sin\\phi\\sin\\delta + \\cos\\phi\\cos\\delta\\cos H$。模擬以此決定太陽位置。</p><p><b>每日能量</b>等於 $P$–$t$ 圖下的面積：$E = \\int P\\,dt$，以 kWh 顯示（1 kWh = 3.6 MJ）。比較傾斜與水平板面，便明白為何安裝時會把板面朝赤道傾斜。</p><p><b>顏色編碼：</b><span class="text-amber-600 font-semibold">琥珀色</span>＝陽光，<span class="text-slate-600 font-semibold">灰藍色</span>＝板面法線及夾角 $\\theta$，<span class="text-green-600 font-semibold">綠色</span>＝電能輸出。</p>'
+            }
+        };
+
+        let currentLang = localStorage.getItem('preferred_language') || 'en';
+        if (currentLang === 'zh' || currentLang === 'cn' || currentLang === 'zh-TW' || currentLang === 'zh-CN') {
+            currentLang = 'zh-hk';
+        }
+
+        function t(key) {
+            return translations[currentLang]?.[key] ?? translations.en[key] ?? key;
+        }
+
+        function setLanguage(lang) {
+            if (lang === 'zh' || lang === 'cn') lang = 'zh-hk';
+            currentLang = lang;
+            localStorage.setItem('preferred_language', lang);
+            document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+            document.querySelectorAll('[data-i18n]').forEach((el) => {
+                const key = el.getAttribute('data-i18n');
+                const val = translations[lang]?.[key];
+                if (!val) return;
+                if (key.includes('desc') || key.includes('body') || key.includes('note') || key.includes('hint')) {
+                    el.innerHTML = val;
+                } else {
+                    el.textContent = val;
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach((btn) => {
+                const active = btn.dataset.lang === lang;
+                btn.classList.toggle('bg-white', active);
+                btn.classList.toggle('shadow-sm', active);
+                btn.classList.toggle('text-blue-600', active);
+            });
+            document.getElementById('play-btn').textContent = t(playing ? 'controls.pause' : 'controls.play');
+            updateSimulation();
+            if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+        }
+        window.setLanguage = setLanguage;
+
+        // ---------- events ----------
+        Object.values(sliders).forEach((s) => s.addEventListener('input', () => updateSimulation()));
+        sliders.hour.addEventListener('input', () => { if (playing) togglePlay(false); });
+
+        function togglePlay(force) {
+            playing = typeof force === 'boolean' ? force : !playing;
+            document.getElementById('play-btn').textContent = t(playing ? 'controls.pause' : 'controls.play');
+        }
+        document.getElementById('play-btn').addEventListener('click', () => togglePlay());
+
+        document.querySelectorAll('.season-btn').forEach((b) => b.addEventListener('click', () => {
+            state.season = b.dataset.season;
+            syncSliders();
+            updateSimulation();
+        }));
+
+        function applyPreset(p) {
+            readSliders();
+            Object.assign(state, p);
+            syncSliders();
+            updateSimulation();
+        }
+        document.getElementById('optimal-btn').addEventListener('click', () => {
+            readSliders();
+            applyPreset({ tilt: Math.round(THREE.MathUtils.clamp(state.lat - DECLINATION[state.season], 0, 90)) });
+        });
+        document.getElementById('preset-hk').addEventListener('click', () => applyPreset({ hour: 12, season: 'equinox', lat: 22.3, tilt: 22 }));
+        document.getElementById('preset-morning').addEventListener('click', () => applyPreset({ hour: 9, season: 'summer', lat: 22.3 }));
+        document.getElementById('preset-winter').addEventListener('click', () => applyPreset({ hour: 12, season: 'winter', lat: 22.3, tilt: 46 }));
+        document.getElementById('preset-flat').addEventListener('click', () => applyPreset({ tilt: 0 }));
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            togglePlay(false);
+            Object.assign(state, defaults);
+            syncSliders();
+            resetCameraView();
+            updateSimulation();
+        });
+
+        const modal = document.getElementById('explain-modal');
+        document.getElementById('explain-btn').addEventListener('click', () => modal.classList.remove('hidden'));
+        document.getElementById('explain-close').addEventListener('click', () => modal.classList.add('hidden'));
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+        window.addEventListener('resize', resizeThree);
+
+        initThree();
+        syncSliders();
+        updateSimulation();
+        setLanguage(currentLang === 'zh-hk' ? 'zh-hk' : 'en');
+        animate();
+    </script>
+
+    <script src="practice_questions.js"></script>
+    <script src="practice_questions_data.js"></script>
+    <script>initPracticeQuestions('solar_panel_power');</script>
+</body>
+</html>

@@ -1020,4 +1020,87 @@
     ],
   };
 
+  /* ===== ELECTIVE 3: ENERGY AND USE OF ENERGY ============================== */
+
+  B.wind_turbine_power = {
+    en: [
+      { q: "Derive the expression for the power carried by wind of speed \\(v\\) and density \\(\\rho\\) through a rotor of swept area \\(A\\).",
+        sol: "<p>In time \\(t\\) a cylinder of air of length \\(vt\\) and cross-section \\(A\\) passes the rotor. Its mass is \\(m = \\rho A v t\\), so the <b>mass arriving per second</b> is \\(\\rho A v\\).</p><p>Kinetic energy arriving per second:</p><p>\\[ P = \\tfrac12 (\\rho A v) v^2 = \\tfrac12 \\rho A v^3. \\]</p><p>Hence \\(P \\propto v^3\\) and \\(P \\propto A \\propto r^2\\).</p>" },
+      { q: "A turbine has blades of length \\(40\\,\\text{m}\\). The wind speed is \\(10\\,\\text{m s}^{-1}\\) and the air density is \\(1.2\\,\\text{kg m}^{-3}\\). Find (a) the wind power passing through the rotor and (b) the electrical output if the turbine's efficiency is 40%.",
+        sol: "<p>(a) \\(A = \\pi r^2 = \\pi (40)^2 = 5.03\\times10^{3}\\,\\text{m}^2\\).</p><p>\\[ P = \\tfrac12 \\rho A v^3 = \\tfrac12 (1.2)(5.03\\times10^3)(10)^3 = 3.02\\times10^{6}\\,\\text{W} \\approx 3.0\\,\\text{MW}. \\]</p><p>(b) \\(P_{\\text{out}} = 0.40 \\times 3.02\\,\\text{MW} = 1.2\\,\\text{MW}\\).</p>" },
+      { q: "On a calm day the wind speed at a wind farm falls from \\(12\\,\\text{m s}^{-1}\\) to \\(6\\,\\text{m s}^{-1}\\). By what factor does the power output fall? Explain why the choice of site is so important for wind farms.",
+        sol: "<p>\\(P \\propto v^3\\), so \\(\\dfrac{P_2}{P_1} = \\left(\\dfrac{6}{12}\\right)^3 = \\dfrac{1}{8}\\). The output falls to <b>one-eighth</b>.</p><p>Because of the cubic dependence, a small increase in average wind speed gives a large increase in power. Ridges, coasts and offshore sites have higher and steadier winds, so they yield far more energy per turbine than sheltered inland sites.</p>" },
+      { q: "A turbine produces \\(2.0\\,\\text{MW}\\) at a certain wind speed. A second turbine of identical design but with blades 1.5 times as long operates at the same wind speed. Estimate its output.",
+        sol: "<p>\\(P \\propto A \\propto r^2\\) (other factors equal).</p><p>\\[ P_2 = 2.0 \\times (1.5)^2 = 2.0 \\times 2.25 = 4.5\\,\\text{MW}. \\]</p><p>This is why modern turbines have very long blades — power grows with the square of the blade length.</p>" },
+      { q: "Explain why a wind turbine cannot convert 100% of the wind's kinetic energy into electricity, and state two disadvantages of wind power.",
+        sol: "<p>If the turbine removed all the kinetic energy, the air behind the rotor would stop and block further air from flowing through. The air must leave with some speed, so only part of the energy can be extracted — the theoretical maximum (Betz limit) is about 59%. Friction in the gearbox and generator losses reduce it further to 35–45%.</p><p>Disadvantages (any two): output is intermittent and unpredictable; low energy density so large land/sea areas are needed; visual impact and noise; hazard to birds; suitable sites are often far from cities, requiring long transmission lines.</p>" },
+    ],
+    zh: [
+      { q: "試推導速率 \\(v\\)、密度 \\(\\rho\\) 的風通過掃掠面積 \\(A\\) 的轉子時所帶的功率表達式。",
+        sol: "<p>時間 \\(t\\) 內，長度 \\(vt\\)、橫截面 \\(A\\) 的空氣柱通過轉子，質量 \\(m = \\rho A v t\\)，故<b>每秒到達的質量</b>為 \\(\\rho A v\\)。</p><p>每秒到達的動能：</p><p>\\[ P = \\tfrac12 (\\rho A v) v^2 = \\tfrac12 \\rho A v^3. \\]</p><p>故 \\(P \\propto v^3\\) 及 \\(P \\propto A \\propto r^2\\)。</p>" },
+      { q: "某風力機葉片長 \\(40\\,\\text{m}\\)，風速 \\(10\\,\\text{m s}^{-1}\\)，空氣密度 \\(1.2\\,\\text{kg m}^{-3}\\)。求 (a) 通過轉子的風功率；(b) 若效率為 40%，電功率輸出。",
+        sol: "<p>(a) \\(A = \\pi r^2 = \\pi (40)^2 = 5.03\\times10^{3}\\,\\text{m}^2\\)。</p><p>\\[ P = \\tfrac12 \\rho A v^3 = \\tfrac12 (1.2)(5.03\\times10^3)(10)^3 = 3.02\\times10^{6}\\,\\text{W} \\approx 3.0\\,\\text{MW}. \\]</p><p>(b) \\(P_{\\text{out}} = 0.40 \\times 3.02\\,\\text{MW} = 1.2\\,\\text{MW}\\)。</p>" },
+      { q: "風場的風速由 \\(12\\,\\text{m s}^{-1}\\) 降至 \\(6\\,\\text{m s}^{-1}\\)，輸出功率下降多少倍？解釋為何風場選址如此重要。",
+        sol: "<p>\\(P \\propto v^3\\)，故 \\(\\dfrac{P_2}{P_1} = \\left(\\dfrac{6}{12}\\right)^3 = \\dfrac{1}{8}\\)，輸出降至<b>八分之一</b>。</p><p>由於三次方關係，平均風速略為提高便可大幅增加功率。山脊、海岸及海上風速較高且穩定，每台風機所得能量遠多於內陸背風處。</p>" },
+      { q: "某風力機在某風速下輸出 \\(2.0\\,\\text{MW}\\)。另一台設計相同但葉片長 1.5 倍的風機在同一風速下運作，估計其輸出。",
+        sol: "<p>\\(P \\propto A \\propto r^2\\)（其他因素相同）。</p><p>\\[ P_2 = 2.0 \\times (1.5)^2 = 2.0 \\times 2.25 = 4.5\\,\\text{MW}. \\]</p><p>這解釋了現代風機葉片愈來愈長——功率與葉片長度的平方成正比。</p>" },
+      { q: "解釋為何風力機不能把風的動能 100% 轉為電能，並指出風能的兩項缺點。",
+        sol: "<p>若風機取走全部動能，轉子後方的空氣便會停止，阻礙後續空氣流過。空氣必須以一定速率離開，故只能提取部分能量——理論上限（貝茲極限）約 59%。齒輪箱摩擦及發電機損耗令實際效率進一步降至 35–45%。</p><p>缺點（任選兩項）：輸出間歇且難以預測；能量密度低，需佔用大片陸地或海面；影響景觀及產生噪音；危及雀鳥；合適地點多遠離城市，需長距離輸電。</p>" },
+    ],
+  };
+
+  B.solar_panel_power = {
+    en: [
+      { q: "What is meant by the <b>solar constant</b>? Why is the intensity of sunlight at the ground on a clear day only about \\(1000\\,\\text{W m}^{-2}\\)?",
+        sol: "<p>The solar constant is the power of solar radiation per unit area falling on a surface perpendicular to the rays just outside the Earth's atmosphere, about \\(1.37\\,\\text{kW m}^{-2}\\).</p><p>At the ground the value is lower because part of the radiation is absorbed and scattered by the atmosphere (gases, water vapour, dust and clouds). The longer path through the atmosphere when the Sun is low reduces it further.</p>" },
+      { q: "A solar panel of area \\(2.0\\,\\text{m}^2\\) has an efficiency of 18%. Sunlight of intensity \\(800\\,\\text{W m}^{-2}\\) falls on it at normal incidence. Find the electrical power output.",
+        sol: "<p>\\[ P = \\eta I A = 0.18 \\times 800 \\times 2.0 = 288\\,\\text{W} \\approx 290\\,\\text{W}. \\]</p>" },
+      { q: "The same panel is now tilted so that the rays make an angle of \\(60°\\) with its normal. Find the new output and explain the origin of the \\(\\cos\\theta\\) factor.",
+        sol: "<p>\\[ P = \\eta I A\\cos\\theta = 288 \\times \\cos 60° = 144\\,\\text{W}. \\]</p><p>The panel intercepts only the part of the beam whose cross-section equals the panel's <b>projected area</b> perpendicular to the rays, \\(A\\cos\\theta\\). Equivalently, the same beam power is spread over a larger area of panel, so the intensity on the panel falls to \\(I\\cos\\theta\\).</p>" },
+      { q: "Hong Kong is at latitude \\(22.3°\\,\\text{N}\\). (a) Find the altitude of the Sun at noon on the equinox. (b) At what angle should a south-facing panel be tilted from the horizontal to face the noon Sun directly? (c) Repeat (b) for the winter solstice, when the Sun's declination is \\(-23.4°\\).",
+        sol: "<p>(a) Noon altitude \\(= 90° - \\phi + \\delta = 90° - 22.3° + 0° = 67.7°\\).</p><p>(b) The panel's normal must point at the Sun, so tilt \\(\\beta = 90° - 67.7° = 22.3°\\) (equal to the latitude).</p><p>(c) Winter noon altitude \\(= 90° - 22.3° - 23.4° = 44.3°\\), so \\(\\beta = 45.7°\\). A steeper tilt suits winter; the annual optimum for a fixed panel is close to the latitude.</p>" },
+      { q: "A rooftop array of area \\(10\\,\\text{m}^2\\) and efficiency 20% receives an average effective intensity \\(I\\cos\\theta = 500\\,\\text{W m}^{-2}\\) for 6 hours. Calculate the energy generated in kWh and in MJ, and state one advantage and one disadvantage of solar photovoltaic power.",
+        sol: "<p>\\(P = 0.20 \\times 500 \\times 10 = 1000\\,\\text{W} = 1.0\\,\\text{kW}\\).</p><p>\\(E = Pt = 1.0\\,\\text{kW} \\times 6\\,\\text{h} = 6.0\\,\\text{kWh} = 6.0 \\times 3.6\\,\\text{MJ} = 21.6\\,\\text{MJ}\\).</p><p>Advantage: renewable, no fuel cost or greenhouse-gas emissions during operation, silent, can be installed on existing roofs. Disadvantage: output is zero at night and reduced by clouds, so storage or backup is needed; low efficiency means large areas are required; manufacturing cells has an environmental cost.</p>" },
+    ],
+    zh: [
+      { q: "何謂<b>太陽常數</b>？為何晴天地面的陽光強度只有約 \\(1000\\,\\text{W m}^{-2}\\)？",
+        sol: "<p>太陽常數是在地球大氣層外、垂直於光線的表面上，單位面積所接收的太陽輻射功率，約為 \\(1.37\\,\\text{kW m}^{-2}\\)。</p><p>地面數值較低，因為部分輻射被大氣（氣體、水汽、塵埃及雲）吸收及散射。太陽較低時光線穿越大氣的路程較長，強度會進一步下降。</p>" },
+      { q: "一塊面積 \\(2.0\\,\\text{m}^2\\)、效率 18% 的太陽能板，受強度 \\(800\\,\\text{W m}^{-2}\\) 的陽光垂直照射。求電功率輸出。",
+        sol: "<p>\\[ P = \\eta I A = 0.18 \\times 800 \\times 2.0 = 288\\,\\text{W} \\approx 290\\,\\text{W}. \\]</p>" },
+      { q: "同一塊板現傾斜至光線與其法線成 \\(60°\\)。求新的輸出功率，並解釋 \\(\\cos\\theta\\) 因子的來源。",
+        sol: "<p>\\[ P = \\eta I A\\cos\\theta = 288 \\times \\cos 60° = 144\\,\\text{W}. \\]</p><p>板面只截取橫截面等於其垂直於光線的<b>投影面積</b> \\(A\\cos\\theta\\) 的光束。等價地說，同一光束功率分佈在較大的板面上，板面上的強度降至 \\(I\\cos\\theta\\)。</p>" },
+      { q: "香港位於北緯 \\(22.3°\\)。(a) 求春分／秋分正午的太陽高度角。(b) 向南的太陽能板應與水平成多少度傾角，才可正對正午太陽？(c) 冬至時太陽赤緯為 \\(-23.4°\\)，重做 (b)。",
+        sol: "<p>(a) 正午高度角 \\(= 90° - \\phi + \\delta = 90° - 22.3° + 0° = 67.7°\\)。</p><p>(b) 板面法線須指向太陽，故傾角 \\(\\beta = 90° - 67.7° = 22.3°\\)（等於緯度）。</p><p>(c) 冬至正午高度角 \\(= 90° - 22.3° - 23.4° = 44.3°\\)，故 \\(\\beta = 45.7°\\)。傾角較大適合冬季；固定板面的全年最佳傾角接近當地緯度。</p>" },
+      { q: "天台太陽能板陣列面積 \\(10\\,\\text{m}^2\\)、效率 20%，在 6 小時內平均有效強度 \\(I\\cos\\theta = 500\\,\\text{W m}^{-2}\\)。計算所產生的能量（以 kWh 及 MJ 表示），並各舉一項太陽能光伏發電的優點及缺點。",
+        sol: "<p>\\(P = 0.20 \\times 500 \\times 10 = 1000\\,\\text{W} = 1.0\\,\\text{kW}\\)。</p><p>\\(E = Pt = 1.0\\,\\text{kW} \\times 6\\,\\text{h} = 6.0\\,\\text{kWh} = 6.0 \\times 3.6\\,\\text{MJ} = 21.6\\,\\text{MJ}\\)。</p><p>優點：可再生、運作時無燃料成本及溫室氣體排放、無噪音、可安裝於現有屋頂。缺點：夜間無輸出、陰天輸出下降，需儲能或後備電源；效率低，需大面積；製造電池對環境有一定影響。</p>" },
+    ],
+  };
+
+  B.building_heat_cop = {
+    en: [
+      { q: "Define the <b>thermal transmittance</b> (\\(U\\)-value) of a wall and state its unit. A solid concrete wall is \\(0.25\\,\\text{m}\\) thick and the thermal conductivity of concrete is \\(1.5\\,\\text{W m}^{-1}\\text{K}^{-1}\\). Find its \\(U\\)-value.",
+        sol: "<p>The \\(U\\)-value is the rate of heat transfer through unit area of the wall per unit temperature difference between its two sides. Unit: \\(\\text{W m}^{-2}\\text{K}^{-1}\\).</p><p>For a single layer, \\(U = \\dfrac{k}{d} = \\dfrac{1.5}{0.25} = 6.0\\,\\text{W m}^{-2}\\text{K}^{-1}\\).</p>" },
+      { q: "An external wall of area \\(20\\,\\text{m}^2\\) has \\(U = 2.5\\,\\text{W m}^{-2}\\text{K}^{-1}\\). The outdoor temperature is \\(33\\,°\\text{C}\\) and the room is kept at \\(24\\,°\\text{C}\\). Calculate the rate of heat gain through the wall and the energy that enters in 8 hours.",
+        sol: "<p>\\[ \\frac{Q}{t} = U A\\,\\Delta T = 2.5 \\times 20 \\times (33 - 24) = 450\\,\\text{W}. \\]</p><p>In 8 h: \\(E = 450 \\times 8 \\times 3600 = 1.3\\times10^{7}\\,\\text{J} = 13\\,\\text{MJ}\\) (\\(= 3.6\\,\\text{kWh}\\)).</p>" },
+      { q: "A \\(0.20\\,\\text{m}\\) concrete wall (\\(k = 1.7\\,\\text{W m}^{-1}\\text{K}^{-1}\\)) is lined with \\(40\\,\\text{mm}\\) of foam insulation (\\(k = 0.035\\,\\text{W m}^{-1}\\text{K}^{-1}\\)). Find the \\(U\\)-value of the composite wall and the percentage reduction in heat gain compared with the bare concrete wall.",
+        sol: "<p>Thermal resistances add in series:</p><p>\\[ \\frac{1}{U} = \\frac{d_1}{k_1} + \\frac{d_2}{k_2} = \\frac{0.20}{1.7} + \\frac{0.040}{0.035} = 0.118 + 1.143 = 1.26\\,\\text{m}^2\\text{K W}^{-1} \\]</p><p>\\(U = 0.79\\,\\text{W m}^{-2}\\text{K}^{-1}\\).</p><p>Bare wall: \\(U_0 = 1.7/0.20 = 8.5\\,\\text{W m}^{-2}\\text{K}^{-1}\\). Reduction \\(= (8.5 - 0.79)/8.5 \\approx 91\\%\\). A few centimetres of insulation dominate because \\(k\\) is so small.</p>" },
+      { q: "An air conditioner removes heat from a room at \\(3.6\\,\\text{kW}\\) while drawing \\(1.2\\,\\text{kW}\\) of electrical power. (a) Find its coefficient of performance. (b) At what rate is heat rejected to the outdoors? (c) Explain why a COP greater than 1 does not violate the conservation of energy.",
+        sol: "<p>(a) \\(\\text{COP} = \\dfrac{Q_{\\text{removed}}}{W} = \\dfrac{3.6}{1.2} = 3.0\\).</p><p>(b) By conservation of energy, \\(Q_{\\text{rejected}} = Q_{\\text{removed}} + W = 3.6 + 1.2 = 4.8\\,\\text{kW}\\).</p><p>(c) The air conditioner does not <i>create</i> the 3.6 kW; it <i>moves</i> heat that already exists from the cool room to the hot outdoors. The electrical work only drives the transfer, so the heat moved can exceed the work done. Total energy is conserved: energy out (4.8 kW) equals energy in (3.6 + 1.2 kW).</p>" },
+      { q: "What is the <b>overall thermal transfer value</b> (OTTV) of a building envelope, and which three heat-gain components does it include? Suggest three design features that reduce the OTTV of a Hong Kong office tower.",
+        sol: "<p>OTTV is the average rate of heat gain into the building through its external envelope per unit envelope area (\\(\\text{W m}^{-2}\\)). It includes: (1) conduction through opaque walls, (2) conduction through windows, and (3) solar radiation transmitted through windows.</p><p>Design features (any three): insulate walls to lower \\(U\\); use double glazing or low-emissivity glass; reduce the window-to-wall ratio; add external sunshades, fins or balconies to cut the shading coefficient; use tinted or reflective glass; orient large windows away from the west/south; light-coloured exterior finishes to reflect sunlight.</p>" },
+    ],
+    zh: [
+      { q: "定義牆身的<b>熱傳透率</b>（\\(U\\) 值）並寫出其單位。一幅實心混凝土牆厚 \\(0.25\\,\\text{m}\\)，混凝土熱導率為 \\(1.5\\,\\text{W m}^{-1}\\text{K}^{-1}\\)，求其 \\(U\\) 值。",
+        sol: "<p>\\(U\\) 值是牆身兩側每單位溫差下，每單位面積的熱傳遞率。單位：\\(\\text{W m}^{-2}\\text{K}^{-1}\\)。</p><p>單一層：\\(U = \\dfrac{k}{d} = \\dfrac{1.5}{0.25} = 6.0\\,\\text{W m}^{-2}\\text{K}^{-1}\\)。</p>" },
+      { q: "一幅面積 \\(20\\,\\text{m}^2\\) 的外牆 \\(U = 2.5\\,\\text{W m}^{-2}\\text{K}^{-1}\\)。室外溫度 \\(33\\,°\\text{C}\\)，室內維持 \\(24\\,°\\text{C}\\)。計算經牆身的熱增益率，以及 8 小時內傳入的能量。",
+        sol: "<p>\\[ \\frac{Q}{t} = U A\\,\\Delta T = 2.5 \\times 20 \\times (33 - 24) = 450\\,\\text{W}. \\]</p><p>8 小時內：\\(E = 450 \\times 8 \\times 3600 = 1.3\\times10^{7}\\,\\text{J} = 13\\,\\text{MJ}\\)（\\(= 3.6\\,\\text{kWh}\\)）。</p>" },
+      { q: "一幅 \\(0.20\\,\\text{m}\\) 厚的混凝土牆（\\(k = 1.7\\,\\text{W m}^{-1}\\text{K}^{-1}\\)）內側加上 \\(40\\,\\text{mm}\\) 發泡膠隔熱層（\\(k = 0.035\\,\\text{W m}^{-1}\\text{K}^{-1}\\)）。求複合牆的 \\(U\\) 值，以及與無隔熱層相比熱增益減少的百分比。",
+        sol: "<p>熱阻串聯相加：</p><p>\\[ \\frac{1}{U} = \\frac{d_1}{k_1} + \\frac{d_2}{k_2} = \\frac{0.20}{1.7} + \\frac{0.040}{0.035} = 0.118 + 1.143 = 1.26\\,\\text{m}^2\\text{K W}^{-1} \\]</p><p>\\(U = 0.79\\,\\text{W m}^{-2}\\text{K}^{-1}\\)。</p><p>無隔熱層：\\(U_0 = 1.7/0.20 = 8.5\\,\\text{W m}^{-2}\\text{K}^{-1}\\)。減少 \\(= (8.5 - 0.79)/8.5 \\approx 91\\%\\)。因隔熱物料的 \\(k\\) 極小，幾厘米已起主導作用。</p>" },
+      { q: "一部空調機以 \\(3.6\\,\\text{kW}\\) 的速率從房間移除熱，同時消耗 \\(1.2\\,\\text{kW}\\) 電功率。(a) 求其性能系數。(b) 排出室外的熱率為多少？(c) 解釋為何 COP 大於 1 並不違反能量守恆。",
+        sol: "<p>(a) \\(\\text{COP} = \\dfrac{Q_{\\text{移除}}}{W} = \\dfrac{3.6}{1.2} = 3.0\\)。</p><p>(b) 由能量守恆，\\(Q_{\\text{排出}} = Q_{\\text{移除}} + W = 3.6 + 1.2 = 4.8\\,\\text{kW}\\)。</p><p>(c) 空調機並非<i>製造</i>那 3.6 kW，而是把原本已存在的熱由較冷的房間<i>搬移</i>到較熱的室外。電功只用作驅動這個轉移，故搬移的熱可大於所做的功。總能量守恆：輸出（4.8 kW）等於輸入（3.6 + 1.2 kW）。</p>" },
+      { q: "何謂建築外殼的<b>總熱傳透值</b>（OTTV）？它包括哪三項熱增益？建議三項可降低香港辦公大樓 OTTV 的設計特點。",
+        sol: "<p>OTTV 是經建築外殼傳入室內的平均熱增益率，以每單位外殼面積計（\\(\\text{W m}^{-2}\\)）。包括：(1) 經不透明牆身的傳導；(2) 經窗戶的傳導；(3) 經窗戶透入的太陽輻射。</p><p>設計特點（任選三項）：牆身加隔熱層以降低 \\(U\\)；採用雙層或低輻射玻璃；減少窗牆比；加設外遮陽板、翼牆或露台以降低遮陽係數；使用有色或反光玻璃；大窗避免朝西／南；外牆採用淺色以反射陽光。</p>" },
+    ],
+  };
+
 })();
