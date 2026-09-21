@@ -591,10 +591,12 @@
             sweptDisc.position.set(-0.86, H, 0);
             sweptDisc.scale.set(R, R, 1);
 
+            // wind velocity arrow placed beside the rotor (towards the camera) so it stays legible
             const arrowLen = 0.8 + state.v * 0.28;
-            windArrow.position.set(-9 - arrowLen, H, 0);
+            const arrowZ = R + 1.6, arrowY = H * 0.6;
+            windArrow.position.set(-4 - arrowLen, arrowY, arrowZ);
             windArrow.setLength(arrowLen, Math.min(0.9, 0.3 + arrowLen * 0.12), Math.min(0.5, 0.18 + arrowLen * 0.06));
-            windArrowLabel.position.set(-9 - arrowLen / 2, H + 0.9, 0);
+            windArrowLabel.position.set(-4 - arrowLen / 2, arrowY + 0.9, arrowZ);
 
             substation.material.emissiveIntensity = 0.1 + Math.min(1, d.pOut / 8e6) * 1.2;
             glowLight.intensity = 0.2 + Math.min(1, d.pOut / 8e6) * 2.5;
@@ -665,16 +667,18 @@
             ctx.setLineDash([]);
             ctx.fillStyle = '#2563eb';
             ctx.beginPath(); ctx.arc(X(state.v), Y(d.pOut), 5.5, 0, Math.PI * 2); ctx.fill();
+            // keep labels clear of the x-axis when the point sits near P = 0
+            const labelY = (P) => Math.min(Y(P) - 6, pad.t + gh - 14);
             ctx.fillStyle = '#1e293b'; ctx.font = 'bold 11px Inter, sans-serif';
             ctx.textAlign = state.v > 18 ? 'right' : 'left'; ctx.textBaseline = 'bottom';
-            ctx.fillText(`${state.v.toFixed(1)} m/s → ${fmtPower(d.pOut)}`, X(state.v) + (state.v > 18 ? -9 : 9), Y(d.pOut) - 6);
+            ctx.fillText(`${state.v.toFixed(1)} m/s → ${fmtPower(d.pOut)}`, X(state.v) + (state.v > 18 ? -9 : 9), labelY(d.pOut));
 
             if (state.v * 2 <= vMax && state.v > 0) {
                 const P2 = d.pOut * 8;
                 ctx.fillStyle = '#dc2626';
                 ctx.beginPath(); ctx.arc(X(state.v * 2), Y(P2), 5, 0, Math.PI * 2); ctx.fill();
                 ctx.textAlign = state.v * 2 > 18 ? 'right' : 'left'; ctx.textBaseline = 'bottom';
-                ctx.fillText(`2v → 8P = ${fmtPower(P2)}`, X(state.v * 2) + (state.v * 2 > 18 ? -9 : 9), Y(P2) - 6);
+                ctx.fillText(`2v → 8P = ${fmtPower(P2)}`, X(state.v * 2) + (state.v * 2 > 18 ? -9 : 9), labelY(P2) - (labelY(P2) === labelY(d.pOut) ? 14 : 0));
             }
 
             // legend
