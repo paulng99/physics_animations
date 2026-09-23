@@ -1,0 +1,179 @@
+/**
+ * Physics Animations — shared sim shell
+ * C: Mobile canvas-first order
+ * A: Loading / CDN / WebGL error overlay styles
+ */
+
+/* —— C: canvas before controls on narrow viewports —— */
+@media (max-width: 1023px) {
+  .sim-shell {
+    display: grid;
+  }
+
+  .sim-shell > .sim-controls {
+    order: 2;
+  }
+
+  .sim-shell > .sim-viewport {
+    order: 1;
+  }
+
+  /*
+   * Fallback for pages not yet tagged with sim-*: when the first grid child
+   * is the controls column (lg:col-span-4 / aside) and a later sibling is the
+   * viewport (lg:col-span-8 / #three-container ancestor), swap visual order.
+   */
+  .grid.lg\:grid-cols-12 > .sim-controls,
+  .grid.lg\:grid-cols-3 > .sim-controls {
+    order: 2;
+  }
+
+  .grid.lg\:grid-cols-12 > .sim-viewport,
+  .grid.lg\:grid-cols-3 > .sim-viewport,
+  .grid.lg\:grid-cols-2 > .sim-viewport {
+    order: 1;
+  }
+}
+
+/* —— A: GL overlay —— */
+.physics-gl-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border-radius: inherit;
+  text-align: center;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+.physics-gl-overlay[hidden],
+.physics-gl-overlay.is-hidden {
+  display: none !important;
+}
+
+.physics-gl-overlay .pgl-dots {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.physics-gl-overlay .pgl-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  background: #60a5fa;
+  animation: pgl-bounce 0.9s infinite ease-in-out;
+}
+
+.physics-gl-overlay .pgl-dot:nth-child(2) {
+  background: #3b82f6;
+  animation-delay: 0.15s;
+}
+
+.physics-gl-overlay .pgl-dot:nth-child(3) {
+  background: #2563eb;
+  animation-delay: 0.3s;
+}
+
+@keyframes pgl-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.55; }
+  40% { transform: translateY(-6px); opacity: 1; }
+}
+
+.physics-gl-overlay .pgl-loading-text,
+.physics-gl-overlay .pgl-error-msg {
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  line-height: 1.4;
+}
+
+.physics-gl-overlay .pgl-error-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  line-height: 1;
+}
+
+.physics-gl-overlay .pgl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+
+.physics-gl-overlay .pgl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.physics-gl-overlay .pgl-btn:hover {
+  transform: translateY(-1px);
+}
+
+.physics-gl-overlay .pgl-btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.physics-gl-overlay .pgl-btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.physics-gl-overlay .pgl-btn-link {
+  background: transparent;
+  color: #2563eb;
+  text-decoration: underline;
+  min-height: auto;
+  padding: 0.25rem 0.5rem;
+}
+
+.physics-gl-overlay .pgl-error {
+  display: none;
+}
+
+.physics-gl-overlay.is-error .pgl-loading,
+.physics-gl-overlay.is-error #loadingState {
+  display: none;
+}
+
+.physics-gl-overlay.is-error .pgl-error,
+.physics-gl-overlay.is-error #errorState {
+  display: block;
+}
+
+.physics-gl-overlay #errorState.hidden {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .physics-gl-overlay .pgl-dot {
+    animation: none;
+    opacity: 0.85;
+  }
+}
+
+/* Ensure overlay hosts are positioning contexts */
+#three-container,
+#canvas-container,
+[data-gl-host],
+.sim-viewport {
+  position: relative;
+}

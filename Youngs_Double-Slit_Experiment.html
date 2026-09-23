@@ -7,7 +7,11 @@
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="window.__THREE_CDN_FAILED=true"></script>
+  <link rel="stylesheet" href="shared/sim-shell.css">
+  <script src="shared/i18n.js"></script>
+  <script src="shared/gl-overlay.js"></script>
+
     <!-- Add MathJax configuration and script -->
     <script>
         MathJax = {
@@ -105,10 +109,10 @@
         </h1>
 
         <!-- Main Visualization Area -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 sim-shell">
             
             <!-- Left Column: Schematic & Controls -->
-            <div class="space-y-6">
+            <div class="sim-controls space-y-6">
                 
                 <!-- Schematic -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative h-64 flex flex-col items-center justify-center overflow-hidden">
@@ -227,11 +231,11 @@
             </div>
 
             <!-- Right Column: Screen & Graph -->
-            <div class="space-y-6">
+            <div class="sim-viewport space-y-6">
                 
                 <!-- 3D Visualization -->
                 <div class="relative rounded-xl border-2 border-slate-200 overflow-hidden bg-slate-950 h-72 shadow-lg">
-                    <div id="three-container" class="absolute inset-0"></div>
+                    <div id="three-container" data-gl-host class="absolute inset-0"></div>
                     <div class="absolute top-3 left-3 bg-slate-900/75 text-white text-xs font-semibold px-3 py-1 rounded-full" data-i18n="three.title">
                         3D Optical Bench
                     </div>
@@ -425,7 +429,8 @@
         let lastPointer = { x: 0, y: 0 };
         let pinchDistance = null;
 
-        let currentLang = localStorage.getItem('preferred_language') || 'en';
+        let currentLang = (window.PhysicsI18n ? PhysicsI18n.get() : (localStorage.getItem('preferred_language') || 'en'));
+    if (window.PhysicsI18n) currentLang = PhysicsI18n.normalize(currentLang);
         if (currentLang === 'zh' || currentLang === 'cn') currentLang = 'zh-hk';
 
         // Helpers
@@ -1205,8 +1210,8 @@
         };
 
         function setLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('preferred_language', lang);
+            currentLang = window.PhysicsI18n ? PhysicsI18n.set(lang) : lang;
+      if (!window.PhysicsI18n) localStorage.setItem('preferred_language', lang);
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (translations[lang] && translations[lang][key]) {
@@ -1214,12 +1219,12 @@
                 }
             });
             document.querySelectorAll('.lang-btn').forEach((btn) => {
-                const active = btn.dataset.lang === lang;
+                const active = window.PhysicsI18n ? PhysicsI18n.matchButton(btn.dataset.lang, lang) : (btn.dataset.lang === lang);
                 btn.classList.toggle('bg-blue-600', active);
                 btn.classList.toggle('text-white', active);
                 btn.classList.toggle('text-slate-600', !active);
             });
-            document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+            document.documentElement.lang = window.PhysicsI18n ? PhysicsI18n.htmlLang(lang) : (lang === 'zh-hk' ? 'zh-HK' : lang === 'zh-cn' ? 'zh-CN' : 'en');
             updateProbeReadouts();
             updateChallengeUI();
             if (window.MathJax) MathJax.typesetPromise();

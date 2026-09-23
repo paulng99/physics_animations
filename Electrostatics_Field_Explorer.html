@@ -8,7 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="window.__THREE_CDN_FAILED=true"></script>
+  <link rel="stylesheet" href="shared/sim-shell.css">
+  <script src="shared/i18n.js"></script>
+  <script src="shared/gl-overlay.js"></script>
+
     <script>
         MathJax = {
             tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
@@ -43,8 +47,8 @@
                 <span class="text-xl font-bold hidden sm:inline">PhysLab<span class="text-blue-600">3D</span></span>
             </div>
             <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
-                <button onclick="setLanguage('zh')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white" data-lang="zh">繁</button>
-                <button onclick="setLanguage('cn')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white" data-lang="cn">简</button>
+                <button onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white" data-lang="zh-hk">繁</button>
+                <button onclick="setLanguage('zh-cn')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white" data-lang="zh-cn">简</button>
                 <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white bg-white shadow-sm text-blue-600" data-lang="en">EN</button>
             </div>
         </div>
@@ -56,8 +60,8 @@
             <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="page.description">Place point charges and drag the green test charge. Watch the purple electric field $\vec{E}$ and the red force $\vec{F}=q\vec{E}$ update in 3D.</p>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-4 space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sim-shell">
+            <div class="sim-controls lg:col-span-4 space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
                     <div class="flex justify-between items-center pb-3 border-b border-slate-100">
                         <h2 class="font-bold text-slate-800" data-i18n="controls.title">Controls</h2>
@@ -161,9 +165,9 @@
                 </div>
             </div>
 
-            <div class="lg:col-span-8 space-y-4">
+            <div class="sim-viewport lg:col-span-8 space-y-4">
                 <div class="relative rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm bg-slate-100">
-                    <div id="three-container" class="w-full h-[380px] sm:h-[460px] lg:h-[520px] cursor-grab"></div>
+                    <div id="three-container" data-gl-host class="w-full h-[380px] sm:h-[460px] lg:h-[520px] cursor-grab"></div>
                     <div class="absolute top-3 left-3 z-10 flex flex-wrap gap-2 pointer-events-none max-w-[75%]">
                         <span class="bg-white/80 backdrop-blur-md border border-white/20 rounded-full px-3 py-1 text-xs font-semibold text-red-700 flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-red-600"></span>+ / F
@@ -274,7 +278,7 @@ let lastTouchDist = null, lastTouchX = null, lastTouchY = null;
 let flowT = 0;
 
 function t(key) {
-    return translations[currentLang]?.[key] ?? translations.en[key] ?? key;
+    return (window.PhysicsI18n ? PhysicsI18n.resolve(translations, currentLang)[key] : translations[currentLang]?.[key]) ?? translations.en?.[key] ?? key;
 }
 
 function fmtQ(qC) {
@@ -1009,12 +1013,15 @@ function normalizeLang(raw) {
     return 'en';
 }
 
-let currentLang = normalizeLang(localStorage.getItem('preferred_language'));
+if (window.PhysicsI18n) PhysicsI18n.aliasKeys(translations);
+    let currentLang = normalizeLang(window.PhysicsI18n ? PhysicsI18n.get() : localStorage.getItem('preferred_language'));
 
 function setLanguage(lang) {
+    const _storageLang = window.PhysicsI18n ? PhysicsI18n.normalize(lang) : lang;
     currentLang = normalizeLang(lang);
-    localStorage.setItem('preferred_language', currentLang);
-    document.documentElement.lang = currentLang === 'cn' ? 'zh-CN' : currentLang === 'zh' ? 'zh-HK' : 'en';
+    if (window.PhysicsI18n) PhysicsI18n.set(_storageLang);
+    else localStorage.setItem('preferred_language', _storageLang);
+    document.documentElement.lang = window.PhysicsI18n ? PhysicsI18n.htmlLang(currentLang) : (currentLang === 'zh-cn' || currentLang === 'cn' ? 'zh-CN' : currentLang === 'zh-hk' || currentLang === 'zh' ? 'zh-HK' : 'en');
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         const val = translations[currentLang]?.[key];
@@ -1024,7 +1031,7 @@ function setLanguage(lang) {
         else el.textContent = val;
     });
     document.querySelectorAll('.lang-btn').forEach(btn => {
-        const active = btn.dataset.lang === currentLang;
+        const active = window.PhysicsI18n ? PhysicsI18n.matchButton(btn.dataset.lang, currentLang) : (btn.dataset.lang === currentLang);
         btn.classList.toggle('bg-white', active);
         btn.classList.toggle('shadow-sm', active);
         btn.classList.toggle('text-blue-600', active);
@@ -1033,8 +1040,8 @@ function setLanguage(lang) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    initThree();
     setLanguage(currentLang);
+    initThree();
 });
 </script>
 
