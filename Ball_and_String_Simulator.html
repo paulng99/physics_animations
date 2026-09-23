@@ -508,8 +508,18 @@
     });
 
     bindSliders();
-    initThree();
     setLanguage(currentLang);
+    try {
+      if (window.PhysicsGlOverlay && !PhysicsGlOverlay.checkThree()) {
+        /* overlay already showing */
+      } else {
+        initThree();
+        if (window.PhysicsGlOverlay) PhysicsGlOverlay.ready();
+      }
+    } catch (err) {
+      console.error('Ball & String WebGL init failed:', err);
+      if (window.PhysicsGlOverlay) PhysicsGlOverlay.showError(err);
+    }
   </script>
 
   <script src="practice_questions.js"></script>
