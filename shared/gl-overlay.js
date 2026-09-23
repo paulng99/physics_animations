@@ -13,33 +13,34 @@
 
   var MESSAGES = {
     en: {
-      loading: 'Loading…',
-      error: 'Simulation failed to load. Check your network or try another browser.',
-      retry: 'Retry',
-      back: '← Back to topics'
+      loading: 'Loading simulation…',
+      error: 'Couldn\u2019t load the simulation. Check network or WebGL.',
+      retry: 'Try again',
+      back: 'Back to topics'
     },
     'zh-hk': {
-      loading: '載入中…',
-      error: '模擬無法載入，請檢查網絡或換瀏覽器',
-      retry: '重試',
-      back: '← 返回主題'
+      loading: '載入模擬中…',
+      error: '模擬無法載入。可能是網絡或 WebGL 問題。',
+      retry: '再試一次',
+      back: '返回課題'
     },
     'zh-cn': {
-      loading: '载入中…',
-      error: '模拟无法载入，请检查网络或换浏览器',
-      retry: '重试',
-      back: '← 返回专题'
+      loading: '载入模拟中…',
+      error: '模拟无法载入。可能是网络或 WebGL 问题。',
+      retry: '再试一次',
+      back: '返回课题'
     }
   };
 
-  var TOPIC_BACK = {
-    thermal: { href: 'index.html#thermal', en: '← Back to Thermal Topics', 'zh-hk': '← 返回熱學專題', 'zh-cn': '← 返回热学专题' },
-    optics: { href: 'index.html#optics', en: '← Back to Optics', 'zh-hk': '← 返回光學', 'zh-cn': '← 返回光学' },
-    waves: { href: 'index.html#waves', en: '← Back to Wave Motion', 'zh-hk': '← 返回波動', 'zh-cn': '← 返回波动' },
-    mechanics: { href: 'index.html#mechanics', en: '← Back to Mechanics', 'zh-hk': '← 返回力學', 'zh-cn': '← 返回力学' },
-    electricity: { href: 'index.html#electricity', en: '← Back to Electromagnetism', 'zh-hk': '← 返回電磁學', 'zh-cn': '← 返回电磁学' },
-    atomic: { href: 'index.html#atomic', en: '← Back to Atomic Physics', 'zh-hk': '← 返回原子物理', 'zh-cn': '← 返回原子物理' },
-    energy: { href: 'index.html#energy', en: '← Back to Energy Topics', 'zh-hk': '← 返回能量專題', 'zh-cn': '← 返回能量专题' }
+  // Section href only — label always uses MESSAGES.back (Product Designer secondary CTA).
+  var TOPIC_HREF = {
+    thermal: 'index.html#thermal',
+    optics: 'index.html#optics',
+    waves: 'index.html#waves',
+    mechanics: 'index.html#mechanics',
+    electricity: 'index.html#electricity',
+    atomic: 'index.html#atomic',
+    energy: 'index.html#energy'
   };
 
   var FILE_TOPIC = {
@@ -122,13 +123,10 @@
     var host = state.host;
     var href = (host && host.getAttribute('data-gl-back')) || 'index.html';
     var topic = (host && host.getAttribute('data-gl-topic')) || FILE_TOPIC[pageName()] || null;
-    var lang = currentLang();
-    var label = msg('back');
-    if (topic && TOPIC_BACK[topic]) {
-      href = TOPIC_BACK[topic].href;
-      label = TOPIC_BACK[topic][lang] || TOPIC_BACK[topic].en || label;
+    if (topic && TOPIC_HREF[topic]) {
+      href = TOPIC_HREF[topic];
     }
-    return { href: href, label: label };
+    return { href: href, label: msg('back') };
   }
 
   function findHost() {
@@ -161,7 +159,7 @@
     el.className = 'physics-gl-overlay';
     el.setAttribute('role', 'status');
     el.setAttribute('aria-live', 'polite');
-    // Structure mirrors Gas_Laws / PR#33 Heat: #glOverlay > #loadingState | #errorState
+    // Structure: #glOverlay > #loadingState | #errorState (Heat ids; Product Designer copy)
     el.innerHTML =
       '<div id="loadingState" class="pgl-loading text-center">' +
       '<div class="pgl-dots" aria-hidden="true">' +
@@ -170,20 +168,24 @@
       '<p class="pgl-loading-text" data-pgl="loading" data-i18n="loading"></p>' +
       '</div>' +
       '<div id="errorState" class="pgl-error hidden text-center px-6">' +
-      '<div class="pgl-error-icon" aria-hidden="true">⚠️</div>' +
-      '<p class="pgl-error-msg text-slate-700 font-semibold mb-2 text-sm" data-pgl="error" data-i18n="error.msg"></p>' +
-      '<a class="pgl-btn pgl-btn-link text-blue-600 hover:underline text-sm" data-pgl-action="back" data-i18n="error.link" href="index.html"></a>' +
+      '<p class="pgl-error-msg text-slate-700 font-semibold mb-3 text-sm" data-pgl="error" data-i18n="error.msg"></p>' +
+      '<div class="pgl-actions">' +
+      '<button type="button" class="pgl-btn pgl-btn-primary" data-pgl-action="retry" data-i18n="error.retry"></button>' +
+      '<a class="pgl-btn pgl-btn-link" data-pgl-action="back" data-i18n="error.link" href="index.html"></a>' +
+      '</div>' +
       '</div>';
     return el;
   }
 
   function refreshCopy() {
     if (!state.overlay) return;
-    var loading = state.overlay.querySelector('[data-pgl="loading"], #loadingState [data-i18n="loading"]');
-    var error = state.overlay.querySelector('[data-pgl="error"], #errorState [data-i18n="error.msg"]');
-    var back = state.overlay.querySelector('[data-pgl-action="back"], #errorState a');
+    var loading = state.overlay.querySelector('[data-pgl="loading"]');
+    var error = state.overlay.querySelector('[data-pgl="error"]');
+    var retry = state.overlay.querySelector('[data-pgl-action="retry"]');
+    var back = state.overlay.querySelector('[data-pgl-action="back"]');
     if (loading) loading.textContent = msg('loading');
     if (error) error.textContent = msg('error');
+    if (retry) retry.textContent = msg('retry');
     if (back) {
       var b = resolveBack();
       back.href = b.href;
@@ -193,7 +195,7 @@
 
   function mount(host) {
     if (!host) return null;
-    // Prefer existing Gas_Laws-style markup if present
+    // Prefer existing Gas_Laws-style markup if present; refresh with shared copy + CTAs
     var existing = host.querySelector('#glOverlay, .physics-gl-overlay');
     if (existing) {
       state.host = host;
@@ -202,17 +204,50 @@
         existing.classList.add('physics-gl-overlay');
       }
       ensurePositioned(host);
+      // Ensure primary/secondary CTAs exist on legacy markup (Heat only had a back link)
+      var errorState = existing.querySelector('#errorState');
+      if (errorState && !errorState.querySelector('[data-pgl-action="retry"]')) {
+        var actions = document.createElement('div');
+        actions.className = 'pgl-actions';
+        actions.innerHTML =
+          '<button type="button" class="pgl-btn pgl-btn-primary" data-pgl-action="retry"></button>' +
+          '<a class="pgl-btn pgl-btn-link" data-pgl-action="back" href="index.html"></a>';
+        // Hide legacy back-only link / emoji if present
+        var legacyIcon = errorState.querySelector('.pgl-error-icon, .text-4xl');
+        if (legacyIcon) legacyIcon.style.display = 'none';
+        var legacyLink = errorState.querySelector('a[data-i18n="error.link"], a[href*="index.html"]');
+        if (legacyLink && !legacyLink.getAttribute('data-pgl-action')) {
+          legacyLink.style.display = 'none';
+        }
+        var legacyMsg = errorState.querySelector('[data-i18n="error.msg"], p');
+        if (legacyMsg && !legacyMsg.getAttribute('data-pgl')) {
+          legacyMsg.setAttribute('data-pgl', 'error');
+        }
+        errorState.appendChild(actions);
+      }
+      var retryBtn = existing.querySelector('[data-pgl-action="retry"]');
+      if (retryBtn && !retryBtn._pglBound) {
+        retryBtn._pglBound = true;
+        retryBtn.addEventListener('click', function () {
+          global.location.reload();
+        });
+      }
       refreshCopy();
       return existing;
     }
     ensurePositioned(host);
     var overlay = buildOverlay();
-    // Insert before canvas/WebGL canvas if present so legend stays above later
     var firstCanvas = host.querySelector('canvas');
     if (firstCanvas && firstCanvas.parentNode === host) {
       host.insertBefore(overlay, firstCanvas);
     } else {
       host.appendChild(overlay);
+    }
+    var retryNew = overlay.querySelector('[data-pgl-action="retry"]');
+    if (retryNew) {
+      retryNew.addEventListener('click', function () {
+        global.location.reload();
+      });
     }
     state.host = host;
     state.overlay = overlay;
@@ -408,4 +443,9 @@
   global.addEventListener('storage', function (e) {
     if (e.key === 'preferred_language') refreshCopy();
   });
+  if (typeof document !== 'undefined') {
+    document.addEventListener('physics:langchange', function () {
+      refreshCopy();
+    });
+  }
 })(typeof window !== 'undefined' ? window : this);

@@ -37,6 +37,11 @@
     try {
       localStorage.setItem(STORAGE_KEY, canon);
     } catch (e) { /* ignore */ }
+    try {
+      if (typeof document !== 'undefined') {
+        document.dispatchEvent(new CustomEvent('physics:langchange', { detail: { lang: canon } }));
+      }
+    } catch (e2) { /* ignore */ }
     return canon;
   }
 
