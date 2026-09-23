@@ -724,7 +724,7 @@
                 if (window.PhysicsSimShell) {
                     PhysicsSimShell.lockControl(lambdaBlock || lambdaSlider, {
                         locked: true,
-                        reason: t('lock.lambda')
+                        reason: t('lock.fixed')
                     });
                 } else {
                     lambdaSlider.disabled = true;
@@ -1096,7 +1096,7 @@
                 'tip.telescope': 'Optical telescope — adjust λ and aperture d.',
                 'tip.microscope': 'Optical microscope — smaller aperture scale.',
                 'tip.tem': 'TEM mode — λ is set by accelerating voltage (de Broglie).',
-                'lock.lambda': 'Locked: wavelength follows accelerating voltage.',
+                'lock.fixed': '(fixed in this mode)',
                 'data.title': 'Results',
                 'data.theta_min': '$\\theta_{\\min} = 1.22\\,\\lambda/d$',
                 'data.theta': 'Actual $\\theta$',
@@ -1152,7 +1152,7 @@
                 'tip.telescope': '光學望遠鏡 — 可調 λ 與光闌 d。',
                 'tip.microscope': '光學顯微鏡 — 較小光闌尺度。',
                 'tip.tem': 'TEM 模式 — λ 由加速電壓（德布罗意波長）決定。',
-                'lock.lambda': '已鎖定：波長隨加速電壓而定。',
+                'lock.fixed': '（本模式固定）',
                 'data.title': '結果',
                 'data.theta_min': '$\\theta_{\\min} = 1.22\\,\\lambda/d$',
                 'data.theta': '實際 $\\theta$',
@@ -1189,7 +1189,7 @@
             'tip.telescope': '光学望远镜 — 可调 λ 与光阑 d。',
             'tip.microscope': '光学显微镜 — 较小光阑尺度。',
             'tip.tem': 'TEM 模式 — λ 由加速电压（德布罗意波长）决定。',
-            'lock.lambda': '已锁定：波长随加速电压而定。'
+            'lock.fixed': '（本模式固定）'
         });
 
         let currentLang = (window.PhysicsI18n ? PhysicsI18n.get() : (localStorage.getItem('preferred_language') || 'en'));

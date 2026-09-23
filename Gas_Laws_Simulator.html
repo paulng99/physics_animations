@@ -149,9 +149,7 @@
         'tip.boyle': 'Boyle\'s Law: Temperature (T) is constant — P and V vary inversely.',
         'tip.charles': 'Charles\'s Law: Pressure (P) is constant — V is proportional to T.',
         'tip.gaylussac': 'Gay-Lussac\'s Law: Volume (V) is constant — P is proportional to T.',
-        'lock.T': 'Locked: this law keeps T constant.',
-        'lock.P': 'Locked: this law keeps P constant.',
-        'lock.V': 'Locked: this law keeps V constant.'
+        'lock.fixed': '(fixed in this mode)'
       },
       'zh-hk': {
         back: '返回主題頁', title: '3D 氣體定律模擬器',
@@ -168,9 +166,7 @@
         'tip.boyle': '波義耳定律：溫度 (T) 維持不變 — P 與 V 成反比。',
         'tip.charles': '查理定律：壓強 (P) 維持不變 — V 與 T 成正比。',
         'tip.gaylussac': '給呂薩克定律：體積 (V) 維持不變 — P 與 T 成正比。',
-        'lock.T': '已鎖定：此定律保持 T 不變。',
-        'lock.P': '已鎖定：此定律保持 P 不變。',
-        'lock.V': '已鎖定：此定律保持 V 不變。'
+        'lock.fixed': '（本模式固定）'
       },
       'zh-cn': {
         back: '返回专题页', title: '3D 气体定律模拟器',
@@ -187,9 +183,7 @@
         'tip.boyle': '玻意耳定律：温度 (T) 保持不变 — P 与 V 成反比。',
         'tip.charles': '查理定律：压强 (P) 保持不变 — V 与 T 成正比。',
         'tip.gaylussac': '盖-吕萨克定律：体积 (V) 保持不变 — P 与 T 成正比。',
-        'lock.T': '已锁定：此定律保持 T 不变。',
-        'lock.P': '已锁定：此定律保持 P 不变。',
-        'lock.V': '已锁定：此定律保持 V 不变。'
+        'lock.fixed': '（本模式固定）'
       }
     };
     let currentLang = (window.PhysicsI18n ? PhysicsI18n.get() : 'en');
@@ -220,14 +214,15 @@
       const lockT = mode === 'boyle';
       const lockP = mode === 'charles';
       const lockV = mode === 'gaylussac';
+      const fixed = t('lock.fixed');
       shell.lockControl(document.querySelector('[data-control="temperature"]'), {
-        locked: lockT, reason: lockT ? t('lock.T') : ''
+        locked: lockT, reason: lockT ? fixed : ''
       });
       shell.lockControl(document.querySelector('[data-control="pressure"]'), {
-        locked: lockP, reason: lockP ? t('lock.P') : ''
+        locked: lockP, reason: lockP ? fixed : ''
       });
       shell.lockControl(document.querySelector('[data-control="volume"]'), {
-        locked: lockV, reason: lockV ? t('lock.V') : ''
+        locked: lockV, reason: lockV ? fixed : ''
       });
     }
 
