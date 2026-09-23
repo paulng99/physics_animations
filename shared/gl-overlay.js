@@ -13,34 +13,31 @@
 
   var MESSAGES = {
     en: {
-      loading: 'Loading simulation…',
-      error: 'Couldn\u2019t load the simulation. Check network or WebGL.',
-      retry: 'Try again',
-      back: 'Back to topics'
+      loading: 'Loading…',
+      error: 'Simulation failed to load. Check your network or try another browser.',
+      back: '← Back to Topics'
     },
     'zh-hk': {
-      loading: '載入模擬中…',
-      error: '模擬無法載入。可能是網絡或 WebGL 問題。',
-      retry: '再試一次',
-      back: '返回課題'
+      loading: '載入中…',
+      error: '模擬無法載入，請檢查網絡或換瀏覽器',
+      back: '← 返回課題'
     },
     'zh-cn': {
-      loading: '载入模拟中…',
-      error: '模拟无法载入。可能是网络或 WebGL 问题。',
-      retry: '再试一次',
-      back: '返回课题'
+      loading: '载入中…',
+      error: '模拟无法载入，请检查网络或换浏览器',
+      back: '← 返回专题'
     }
   };
 
-  // Section href only — label always uses MESSAGES.back (Product Designer secondary CTA).
-  var TOPIC_HREF = {
-    thermal: 'index.html#thermal',
-    optics: 'index.html#optics',
-    waves: 'index.html#waves',
-    mechanics: 'index.html#mechanics',
-    electricity: 'index.html#electricity',
-    atomic: 'index.html#atomic',
-    energy: 'index.html#energy'
+  // Section-specific back link (Heat pattern: label names the topic; href is the index section id)
+  var TOPIC_BACK = {
+    thermal: { href: 'index.html#thermal', en: '← Back to Thermal Topics', 'zh-hk': '← 返回熱學專題', 'zh-cn': '← 返回热学专题' },
+    optics: { href: 'index.html#optics', en: '← Back to Optics', 'zh-hk': '← 返回光學', 'zh-cn': '← 返回光学' },
+    waves: { href: 'index.html#waves', en: '← Back to Wave Motion', 'zh-hk': '← 返回波動', 'zh-cn': '← 返回波动' },
+    mechanics: { href: 'index.html#mechanics', en: '← Back to Mechanics', 'zh-hk': '← 返回力學', 'zh-cn': '← 返回力学' },
+    electricity: { href: 'index.html#electricity', en: '← Back to Electromagnetism', 'zh-hk': '← 返回電磁學', 'zh-cn': '← 返回电磁学' },
+    atomic: { href: 'index.html#atomic', en: '← Back to Atomic Physics', 'zh-hk': '← 返回原子物理', 'zh-cn': '← 返回原子物理' },
+    energy: { href: 'index.html#energy', en: '← Back to Energy Topics', 'zh-hk': '← 返回能量專題', 'zh-cn': '← 返回能量专题' }
   };
 
   var FILE_TOPIC = {
@@ -123,10 +120,13 @@
     var host = state.host;
     var href = (host && host.getAttribute('data-gl-back')) || 'index.html';
     var topic = (host && host.getAttribute('data-gl-topic')) || FILE_TOPIC[pageName()] || null;
-    if (topic && TOPIC_HREF[topic]) {
-      href = TOPIC_HREF[topic];
+    var lang = currentLang();
+    var label = msg('back');
+    if (topic && TOPIC_BACK[topic]) {
+      href = TOPIC_BACK[topic].href;
+      label = TOPIC_BACK[topic][lang] || TOPIC_BACK[topic].en || label;
     }
-    return { href: href, label: msg('back') };
+    return { href: href, label: label };
   }
 
   function findHost() {
@@ -159,7 +159,8 @@
     el.className = 'physics-gl-overlay';
     el.setAttribute('role', 'status');
     el.setAttribute('aria-live', 'polite');
-    // Structure: #glOverlay > #loadingState | #errorState (Heat ids; Product Designer copy)
+    // Heat / PR#33 structure: #glOverlay > #loadingState | #errorState
+    // Retry is optional — not required for acceptance
     el.innerHTML =
       '<div id="loadingState" class="pgl-loading text-center">' +
       '<div class="pgl-dots" aria-hidden="true">' +
@@ -168,24 +169,20 @@
       '<p class="pgl-loading-text" data-pgl="loading" data-i18n="loading"></p>' +
       '</div>' +
       '<div id="errorState" class="pgl-error hidden text-center px-6">' +
-      '<p class="pgl-error-msg text-slate-700 font-semibold mb-3 text-sm" data-pgl="error" data-i18n="error.msg"></p>' +
-      '<div class="pgl-actions">' +
-      '<button type="button" class="pgl-btn pgl-btn-primary" data-pgl-action="retry" data-i18n="error.retry"></button>' +
-      '<a class="pgl-btn pgl-btn-link" data-pgl-action="back" data-i18n="error.link" href="index.html"></a>' +
-      '</div>' +
+      '<div class="pgl-error-icon text-4xl mb-3" aria-hidden="true">⚠️</div>' +
+      '<p class="pgl-error-msg text-slate-700 font-semibold mb-2 text-sm" data-pgl="error" data-i18n="error.msg"></p>' +
+      '<a class="text-blue-600 hover:underline text-sm" data-pgl-action="back" data-i18n="error.link" href="index.html"></a>' +
       '</div>';
     return el;
   }
 
   function refreshCopy() {
     if (!state.overlay) return;
-    var loading = state.overlay.querySelector('[data-pgl="loading"]');
-    var error = state.overlay.querySelector('[data-pgl="error"]');
-    var retry = state.overlay.querySelector('[data-pgl-action="retry"]');
-    var back = state.overlay.querySelector('[data-pgl-action="back"]');
+    var loading = state.overlay.querySelector('[data-pgl="loading"], #loadingState [data-i18n="loading"]');
+    var error = state.overlay.querySelector('[data-pgl="error"], #errorState [data-i18n="error.msg"]');
+    var back = state.overlay.querySelector('[data-pgl-action="back"], #errorState a[data-i18n="error.link"], #errorState a');
     if (loading) loading.textContent = msg('loading');
     if (error) error.textContent = msg('error');
-    if (retry) retry.textContent = msg('retry');
     if (back) {
       var b = resolveBack();
       back.href = b.href;
@@ -195,7 +192,6 @@
 
   function mount(host) {
     if (!host) return null;
-    // Prefer existing Gas_Laws-style markup if present; refresh with shared copy + CTAs
     var existing = host.querySelector('#glOverlay, .physics-gl-overlay');
     if (existing) {
       state.host = host;
@@ -204,33 +200,18 @@
         existing.classList.add('physics-gl-overlay');
       }
       ensurePositioned(host);
-      // Ensure primary/secondary CTAs exist on legacy markup (Heat only had a back link)
-      var errorState = existing.querySelector('#errorState');
-      if (errorState && !errorState.querySelector('[data-pgl-action="retry"]')) {
-        var actions = document.createElement('div');
-        actions.className = 'pgl-actions';
-        actions.innerHTML =
-          '<button type="button" class="pgl-btn pgl-btn-primary" data-pgl-action="retry"></button>' +
-          '<a class="pgl-btn pgl-btn-link" data-pgl-action="back" href="index.html"></a>';
-        // Hide legacy back-only link / emoji if present
-        var legacyIcon = errorState.querySelector('.pgl-error-icon, .text-4xl');
-        if (legacyIcon) legacyIcon.style.display = 'none';
-        var legacyLink = errorState.querySelector('a[data-i18n="error.link"], a[href*="index.html"]');
-        if (legacyLink && !legacyLink.getAttribute('data-pgl-action')) {
-          legacyLink.style.display = 'none';
-        }
-        var legacyMsg = errorState.querySelector('[data-i18n="error.msg"], p');
-        if (legacyMsg && !legacyMsg.getAttribute('data-pgl')) {
-          legacyMsg.setAttribute('data-pgl', 'error');
-        }
-        errorState.appendChild(actions);
+      // Tag legacy Heat markup for refreshCopy
+      var legacyMsg = existing.querySelector('#errorState [data-i18n="error.msg"], #errorState p');
+      if (legacyMsg && !legacyMsg.getAttribute('data-pgl')) {
+        legacyMsg.setAttribute('data-pgl', 'error');
       }
-      var retryBtn = existing.querySelector('[data-pgl-action="retry"]');
-      if (retryBtn && !retryBtn._pglBound) {
-        retryBtn._pglBound = true;
-        retryBtn.addEventListener('click', function () {
-          global.location.reload();
-        });
+      var legacyLoad = existing.querySelector('#loadingState [data-i18n="loading"], #loadingState p');
+      if (legacyLoad && !legacyLoad.getAttribute('data-pgl')) {
+        legacyLoad.setAttribute('data-pgl', 'loading');
+      }
+      var legacyBack = existing.querySelector('#errorState a');
+      if (legacyBack && !legacyBack.getAttribute('data-pgl-action')) {
+        legacyBack.setAttribute('data-pgl-action', 'back');
       }
       refreshCopy();
       return existing;
@@ -242,12 +223,6 @@
       host.insertBefore(overlay, firstCanvas);
     } else {
       host.appendChild(overlay);
-    }
-    var retryNew = overlay.querySelector('[data-pgl-action="retry"]');
-    if (retryNew) {
-      retryNew.addEventListener('click', function () {
-        global.location.reload();
-      });
     }
     state.host = host;
     state.overlay = overlay;

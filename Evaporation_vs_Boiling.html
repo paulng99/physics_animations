@@ -76,14 +76,12 @@
               <div class="pgl-dots flex gap-1 justify-center mb-4" aria-hidden="true">
                 <span class="pgl-dot"></span><span class="pgl-dot"></span><span class="pgl-dot"></span>
               </div>
-              <p class="pgl-loading-text text-slate-600 font-medium text-sm" data-pgl="loading" data-i18n="loading">載入模擬中…</p>
+              <p class="pgl-loading-text text-slate-600 font-medium text-sm" data-pgl="loading" data-i18n="loading">載入中…</p>
             </div>
             <div id="errorState" class="hidden text-center px-6">
-              <p class="pgl-error-msg text-slate-700 font-semibold mb-3 text-sm" data-pgl="error" data-i18n="error.msg">模擬無法載入。可能是網絡或 WebGL 問題。</p>
-              <div class="pgl-actions">
-                <button type="button" class="pgl-btn pgl-btn-primary" data-pgl-action="retry" data-i18n="error.retry" onclick="location.reload()">再試一次</button>
-                <a href="index.html#thermal" class="pgl-btn pgl-btn-link" data-pgl-action="back" data-i18n="error.link">返回課題</a>
-              </div>
+              <div class="text-4xl mb-3" aria-hidden="true">⚠️</div>
+              <p class="text-slate-700 font-semibold mb-2 text-sm" data-pgl="error" data-i18n="error.msg">模擬無法載入，請檢查網絡或換瀏覽器</p>
+              <a href="index.html#thermal" class="text-blue-600 hover:underline text-sm" data-pgl-action="back" data-i18n="error.link">← 返回熱學專題</a>
             </div>
           </div>
           <div class="absolute top-4 left-4 flex flex-wrap gap-2 pointer-events-none z-10">
@@ -125,10 +123,9 @@
         'info.boil': 'Boiling: vapour bubbles form throughout the bulk liquid at 100 °C (1 atm). Surface and bulk both convert.',
         'legend.liquid': 'Liquid', 'legend.surface': 'Surface', 'legend.boiling': 'Boiling', 'legend.vapour': 'Vapour',
         hint: 'Drag • Wheel • Pinch', processEvap: 'Evaporation', processBoil: 'Boiling',
-        loading: 'Loading simulation…',
-        'error.msg': 'Couldn\u2019t load the simulation. Check network or WebGL.',
-        'error.retry': 'Try again',
-        'error.link': 'Back to topics',
+        loading: 'Loading…',
+        'error.msg': 'Simulation failed to load. Check your network or try another browser.',
+        'error.link': '← Back to Thermal Topics',
         'dialog.title': 'Boiling Point Reached',
         'dialog.msg': 'Temperature has reached 100 °C. Switch to Boiling mode?',
         'dialog.confirm': 'Switch to Boiling',
@@ -146,10 +143,9 @@
         'info.boil': '沸騰：在 100 °C（1 atm）時液體內部形成氣泡，表面與整體同時轉化。',
         'legend.liquid': '液體', 'legend.surface': '表面', 'legend.boiling': '沸騰', 'legend.vapour': '蒸氣',
         hint: '拖曳 • 滾輪 • 雙指縮放', processEvap: '蒸發', processBoil: '沸騰',
-        loading: '載入模擬中…',
-        'error.msg': '模擬無法載入。可能是網絡或 WebGL 問題。',
-        'error.retry': '再試一次',
-        'error.link': '返回課題',
+        loading: '載入中…',
+        'error.msg': '模擬無法載入，請檢查網絡或換瀏覽器',
+        'error.link': '← 返回熱學專題',
         'dialog.title': '已達沸點',
         'dialog.msg': '已達沸點，切換至沸騰模式？',
         'dialog.confirm': '確認切換',
@@ -167,10 +163,9 @@
         'info.boil': '沸腾：在 100 °C（1 atm）时液体内部形成气泡，表面与整体同时转化。',
         'legend.liquid': '液体', 'legend.surface': '表面', 'legend.boiling': '沸腾', 'legend.vapour': '蒸汽',
         hint: '拖曳 • 滚轮 • 双指缩放', processEvap: '蒸发', processBoil: '沸腾',
-        loading: '载入模拟中…',
-        'error.msg': '模拟无法载入。可能是网络或 WebGL 问题。',
-        'error.retry': '再试一次',
-        'error.link': '返回课题',
+        loading: '载入中…',
+        'error.msg': '模拟无法载入，请检查网络或换浏览器',
+        'error.link': '← 返回热学专题',
         'dialog.title': '已达沸点',
         'dialog.msg': '已达沸点，切换至沸腾模式？',
         'dialog.confirm': '确认切换',
