@@ -36,6 +36,7 @@
   function applyFilter() {
     var q = normalize(state.query);
     var totalVisible = 0;
+    var experiments = document.getElementById('experiments');
 
     SECTIONS.forEach(function (sec) {
       var section = document.getElementById(sec.id);
@@ -53,11 +54,6 @@
       });
 
       var showSection = catMatch && visibleInSection > 0;
-      if (!q && catMatch) {
-        // Empty filter: show section even if somehow card-less (still honour category)
-        showSection = catMatch && (visibleInSection > 0 || cards.length === 0);
-        if (cards.length > 0) showSection = catMatch && visibleInSection > 0;
-      }
       if (!catMatch) showSection = false;
       if (q && visibleInSection === 0) showSection = false;
 
@@ -65,6 +61,35 @@
       section.hidden = !showSection;
       totalVisible += visibleInSection;
     });
+
+    // Extra blocks inside #experiments (Classroom Tools / AI Studio): not chip sections.
+    // Hide when a category chip is active, or when title filter excludes their cards.
+    if (experiments) {
+      Array.prototype.forEach.call(experiments.children, function (block) {
+        if (!block || block.nodeType !== 1) return;
+        if (block.classList.contains('catalog-sticky')) return;
+        if (block.id === 'catalogEmpty') return;
+        if (block.matches && block.matches('[data-i18n],.flex.items-end')) return;
+        if (SECTIONS.some(function (s) { return s.id === block.id; })) return;
+        // Only treat topic-like card hosts
+        var cards = block.querySelectorAll('a.group');
+        if (!cards.length) return;
+
+        var visibleExtra = 0;
+        var allowExtra = state.category === 'all';
+        cards.forEach(function (card) {
+          var textMatch = !q || cardTitle(card).indexOf(q) !== -1;
+          var show = allowExtra && textMatch;
+          card.classList.toggle('is-filtered-out', !show);
+          card.hidden = !show;
+          if (show) visibleExtra += 1;
+        });
+        var showBlock = allowExtra && visibleExtra > 0;
+        block.classList.toggle('is-filtered-out', !showBlock);
+        block.hidden = !showBlock;
+        totalVisible += visibleExtra;
+      });
+    }
 
     var emptyEl = document.getElementById('catalogEmpty');
     if (emptyEl) {
