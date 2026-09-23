@@ -8,8 +8,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root { color-scheme: light; }
-    .glass {
+    .glass { background: rgba(255,255,255,0.72); backdrop-filter: blur(12px); }
     .hero-glow { box-shadow: 0 30px 80px rgba(59, 130, 246, 0.15); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   </style>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RJQ61GJDVS"></script>
@@ -20,6 +21,8 @@
     gtag('config', 'G-RJQ61GJDVS');
   </script>
   <script src="shared/i18n.js"></script>
+  <link rel="stylesheet" href="shared/sim-shell.css">
+  <script src="shared/index-catalog.js" defer></script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
   <header class="max-w-6xl mx-auto px-6 pt-10 pb-6">
@@ -80,10 +83,30 @@
     <section id="experiments" class="mt-12">
       <div class="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h2 class="text-2xl font-bold">Physics Topics</h2>
-          <p class="text-slate-600">Explore simulations organized by topic.</p>
+          <h2 class="text-2xl font-bold" data-i18n="topics.title">Physics Topics</h2>
+          <p class="text-slate-600" data-i18n="topics.subtitle">Explore simulations organized by topic.</p>
         </div>
       </div>
+
+      <!-- D: sticky category chips + title filter -->
+      <div class="catalog-sticky" role="region" aria-label="Topic filters" data-i18n-aria="catalog.region">
+        <div class="catalog-sticky-inner">
+          <div class="catalog-chips" role="toolbar" aria-label="Categories">
+            <button type="button" class="catalog-chip is-active" data-catalog-chip="all" aria-pressed="true" data-i18n="chip.all">All</button>
+            <button type="button" class="catalog-chip" data-catalog-chip="optics" aria-pressed="false" data-i18n="chip.optics">Optics</button>
+            <button type="button" class="catalog-chip" data-catalog-chip="mechanics" aria-pressed="false" data-i18n="chip.mechanics">Mechanics</button>
+            <button type="button" class="catalog-chip" data-catalog-chip="waves" aria-pressed="false" data-i18n="chip.waves">Waves</button>
+            <button type="button" class="catalog-chip" data-catalog-chip="electricity" aria-pressed="false" data-i18n="chip.electricity">Electricity</button>
+            <button type="button" class="catalog-chip" data-catalog-chip="thermal" aria-pressed="false" data-i18n="chip.thermal">Thermal</button>
+            <button type="button" class="catalog-chip" data-catalog-chip="energy" aria-pressed="false" data-i18n="chip.energy">Energy</button>
+            <button type="button" class="catalog-chip" data-catalog-chip="atomic" aria-pressed="false" data-i18n="chip.atomic">Atomic</button>
+          </div>
+          <label class="sr-only" for="catalogFilter" data-i18n="filter.label">Filter by title</label>
+          <input id="catalogFilter" class="catalog-filter" type="search" autocomplete="off" spellcheck="false"
+            data-i18n-placeholder="filter.placeholder" placeholder="Filter by title…" />
+        </div>
+      </div>
+      <p id="catalogEmpty" class="catalog-empty" hidden data-i18n="filter.empty" aria-live="polite">No matching topics</p>
 
       <!-- Optics Section -->
       <div id="optics" class="mt-8">
@@ -618,7 +641,20 @@
         'hero.title': 'Beautiful, interactive simulations for the classroom and beyond.',
         'hero.description': 'Explore core ideas through hands-on sliders, animations, and instant visual feedback. Built for students, teachers, and curious minds.',
         'hero.browse': 'Browse Topics',
-        'hero.demo': 'Open Double-Slit'
+        'hero.demo': 'Open Double-Slit',
+        'topics.title': 'Physics Topics',
+        'topics.subtitle': 'Explore simulations organized by topic.',
+        'chip.all': 'All',
+        'chip.optics': 'Optics',
+        'chip.mechanics': 'Mechanics',
+        'chip.waves': 'Waves',
+        'chip.electricity': 'Electricity',
+        'chip.thermal': 'Thermal',
+        'chip.energy': 'Energy',
+        'chip.atomic': 'Atomic',
+        'filter.label': 'Filter by title',
+        'filter.placeholder': 'Filter by title…',
+        'filter.empty': 'No matching topics'
       },
       'zh-hk': {
         'site.title': '物理動畫',
@@ -627,7 +663,20 @@
         'hero.title': '美觀、互動的模擬，適用於課堂及更多場景。',
         'hero.description': '通過實踐滑桿、動畫和即時視覺反饋探索核心概念。專為學生、教師和好奇的心靈打造。',
         'hero.browse': '瀏覽主題',
-        'hero.demo': '打開雙縫實驗'
+        'hero.demo': '打開雙縫實驗',
+        'topics.title': '物理課題',
+        'topics.subtitle': '按課題瀏覽模擬動畫。',
+        'chip.all': '全部',
+        'chip.optics': '光學',
+        'chip.mechanics': '力學',
+        'chip.waves': '波動',
+        'chip.electricity': '電與磁',
+        'chip.thermal': '熱學',
+        'chip.energy': '能源',
+        'chip.atomic': '原子',
+        'filter.label': '以標題篩選',
+        'filter.placeholder': '輸入標題篩選…',
+        'filter.empty': '找不到課題'
       },
       'zh-cn': {
         'site.title': '物理动画',
@@ -636,7 +685,20 @@
         'hero.title': '美观、互动的模拟，适用于课堂及更多场景。',
         'hero.description': '通过实践滑杆、动画和即时视觉反馈探索核心概念。专为学生、教师和好奇的心灵打造。',
         'hero.browse': '浏览主题',
-        'hero.demo': '打开双缝实验'
+        'hero.demo': '打开双缝实验',
+        'topics.title': '物理专题',
+        'topics.subtitle': '按专题浏览模拟动画。',
+        'chip.all': '全部',
+        'chip.optics': '光学',
+        'chip.mechanics': '力学',
+        'chip.waves': '波动',
+        'chip.electricity': '电与磁',
+        'chip.thermal': '热学',
+        'chip.energy': '能源',
+        'chip.atomic': '原子',
+        'filter.label': '按标题筛选',
+        'filter.placeholder': '输入标题筛选…',
+        'filter.empty': '找不到课题'
       }
     };
 
@@ -653,11 +715,19 @@
         localStorage.setItem('preferred_language', lang);
       }
 
+      const bundle = translations[currentLang] || translations['zh-hk'] || translations.en;
+
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        const bundle = translations[currentLang] || translations['zh-hk'] || translations.en;
         if (bundle && bundle[key]) {
           el.textContent = bundle[key];
+        }
+      });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (bundle && bundle[key]) {
+          el.setAttribute('placeholder', bundle[key]);
         }
       });
 

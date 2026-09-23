@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="shared/sim-shell.css">
   <script src="shared/i18n.js"></script>
   <script src="shared/gl-overlay.js"></script>
+  <script src="shared/sim-mode-shell.js"></script>
 
     <script>
         MathJax = {
@@ -108,9 +109,10 @@
                             <button data-mode="microscope" class="mode-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border transition" data-i18n="controls.microscope">Microscope</button>
                             <button data-mode="tem" class="mode-btn min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border transition" data-i18n="controls.tem">TEM</button>
                         </div>
+                        <p id="modeTip" class="sim-mode-tip mt-2" role="status"></p>
                     </div>
 
-                    <div>
+                    <div class="sim-control-block" data-control="wavelength">
                         <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
                             <span data-i18n="controls.wavelength">Wavelength ($\lambda$)</span>
                             <span id="lambda-val" class="text-blue-600 font-bold font-mono">550 nm</span>
@@ -705,21 +707,41 @@
             }
         }
 
+        function updateModeTip() {
+            const tipKey = state.mode === 'telescope' ? 'tip.telescope'
+                : state.mode === 'microscope' ? 'tip.microscope' : 'tip.tem';
+            const tipEl = document.getElementById('modeTip');
+            if (window.PhysicsSimShell) PhysicsSimShell.setModeTip(tipEl, t(tipKey));
+            else if (tipEl) tipEl.textContent = t(tipKey);
+        }
+
         function configureModeControls() {
             const p = MODE_PRESETS[state.mode];
             const voltageWrap = document.getElementById('voltage-wrap');
+            const lambdaBlock = document.querySelector('[data-control="wavelength"]');
             if (state.mode === 'tem') {
                 voltageWrap.classList.remove('hidden');
-                lambdaSlider.disabled = true;
-                lambdaSlider.classList.add('opacity-40');
+                if (window.PhysicsSimShell) {
+                    PhysicsSimShell.lockControl(lambdaBlock || lambdaSlider, {
+                        locked: true,
+                        reason: t('lock.fixed')
+                    });
+                } else {
+                    lambdaSlider.disabled = true;
+                    lambdaSlider.classList.add('opacity-40');
+                }
                 dSlider.min = String(p.dMin);
                 dSlider.max = String(p.dMax);
                 dSlider.step = String(p.dStep);
                 dSlider.value = String(p.dMM);
             } else {
                 voltageWrap.classList.add('hidden');
-                lambdaSlider.disabled = false;
-                lambdaSlider.classList.remove('opacity-40');
+                if (window.PhysicsSimShell) {
+                    PhysicsSimShell.lockControl(lambdaBlock || lambdaSlider, { locked: false, reason: '' });
+                } else {
+                    lambdaSlider.disabled = false;
+                    lambdaSlider.classList.remove('opacity-40');
+                }
                 lambdaSlider.min = '400';
                 lambdaSlider.max = '700';
                 lambdaSlider.step = '1';
@@ -738,6 +760,7 @@
                 btn.classList.toggle('text-slate-700', !on);
                 btn.classList.toggle('border-slate-200', !on);
             });
+            updateModeTip();
         }
 
         function drawAiryImage(ctx, w, h, colorObj, thMin, theta) {
@@ -1070,6 +1093,10 @@
                 'controls.presetUnresolved': 'Unresolved',
                 'controls.presetResolved': 'Well resolved',
                 'controls.presetBlue': 'Blue light',
+                'tip.telescope': 'Telescope — adjust λ and aperture d.',
+                'tip.microscope': 'Microscope — smaller aperture scale.',
+                'tip.tem': 'TEM — λ set by accelerating voltage.',
+                'lock.fixed': '(fixed in this mode)',
                 'data.title': 'Results',
                 'data.theta_min': '$\\theta_{\\min} = 1.22\\,\\lambda/d$',
                 'data.theta': 'Actual $\\theta$',
@@ -1122,6 +1149,10 @@
                 'controls.presetUnresolved': '未能分辨',
                 'controls.presetResolved': '清晰可分辨',
                 'controls.presetBlue': '藍光',
+                'tip.telescope': '望遠鏡 — 調 λ 與光闌 d。',
+                'tip.microscope': '顯微鏡 — 較小光闌尺度。',
+                'tip.tem': 'TEM — λ 由加速電壓決定。',
+                'lock.fixed': '（本模式固定）',
                 'data.title': '結果',
                 'data.theta_min': '$\\theta_{\\min} = 1.22\\,\\lambda/d$',
                 'data.theta': '實際 $\\theta$',
@@ -1153,6 +1184,13 @@
                 'modal.body': '<p>當一個衍射圖樣的<b>中心</b>剛好落在另一個的<b>第一極小</b>上，兩像便<b>剛可分辨</b>。</p><p>對於<b>圓形</b>光闌、透鏡或反射鏡，第一暗環位於 $\\theta \\approx 1.22\\,\\lambda/d$（HKDSE 數據冊：原子世界及醫學物理）。</p><p>單狹縫則用 $\\lambda/a$ 而非 $1.22\\,\\lambda/d$。$1.22$ 來自圓孔衍射貝塞爾函數 $J_1$ 的第一零點。</p><p><b>原子世界：</b>TEM 電子的德布罗意波長遠短於可見光，故 $\\theta_{\\min}$ 小得多，分辨本領高得多。</p><p><b>醫學物理：</b>透鏡的分辨本領就是此衍射極限 $\\theta$（或對應物距間隔 $s \\approx \\theta L$）。</p>'
             }
         };
+        // zh-cn: reuse zh-hk copy for existing UI; override new shell tip/lock strings
+        translations['zh-cn'] = Object.assign({}, translations['zh-hk'], {
+            'tip.telescope': '望远镜 — 调 λ 与光阑 d。',
+            'tip.microscope': '显微镜 — 较小光阑尺度。',
+            'tip.tem': 'TEM — λ 由加速电压决定。',
+            'lock.fixed': '（本模式固定）'
+        });
 
         let currentLang = (window.PhysicsI18n ? PhysicsI18n.get() : (localStorage.getItem('preferred_language') || 'en'));
     if (window.PhysicsI18n) currentLang = PhysicsI18n.normalize(currentLang);
@@ -1183,6 +1221,7 @@
             });
             updateSepLabel();
             updateSimulation();
+            updateModeTip();
             if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
         }
         window.setLanguage = setLanguage;

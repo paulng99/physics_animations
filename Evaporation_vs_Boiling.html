@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="shared/sim-shell.css">
   <script src="shared/i18n.js"></script>
   <script src="shared/gl-overlay.js"></script>
+  <script src="shared/sim-mode-shell.js"></script>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -49,6 +50,7 @@
             <button id="evapModeBtn" class="mode-btn active px-3 py-2.5 rounded-xl border-2 border-slate-200 text-sm font-semibold" data-i18n="mode.evaporation">Evaporation</button>
             <button id="boilModeBtn" class="mode-btn px-3 py-2.5 rounded-xl border-2 border-slate-200 text-sm font-semibold" data-i18n="mode.boiling">Boiling</button>
           </div>
+          <p id="modeTip" class="sim-mode-tip" role="status"></p>
           <div>
             <div class="flex justify-between text-sm mb-1">
               <span data-i18n="controls.temperature">Temperature</span>
@@ -129,7 +131,9 @@
         'dialog.title': 'Boiling Point Reached',
         'dialog.msg': 'Temperature has reached 100 °C. Switch to Boiling mode?',
         'dialog.confirm': 'Switch to Boiling',
-        'dialog.cancel': 'Stay in Evaporation'
+        'dialog.cancel': 'Stay in Evaporation',
+        'tip.evaporation': 'Surface escape — any temperature.',
+        'tip.boiling': 'Bulk vapour at boiling point.'
       },
       zh: {
         'nav.back': '返回主頁', title: '3D 蒸發與沸騰',
@@ -149,7 +153,9 @@
         'dialog.title': '已達沸點',
         'dialog.msg': '已達沸點，切換至沸騰模式？',
         'dialog.confirm': '確認切換',
-        'dialog.cancel': '保持蒸發'
+        'dialog.cancel': '保持蒸發',
+        'tip.evaporation': '僅表面逃逸 — 任何溫度。',
+        'tip.boiling': '沸點時液體內部成氣泡。'
       },
       cn: {
         'nav.back': '返回主页', title: '3D 蒸发与沸腾',
@@ -169,7 +175,9 @@
         'dialog.title': '已达沸点',
         'dialog.msg': '已达沸点，切换至沸腾模式？',
         'dialog.confirm': '确认切换',
-        'dialog.cancel': '保持蒸发'
+        'dialog.cancel': '保持蒸发',
+        'tip.evaporation': '仅表面逃逸 — 任何温度。',
+        'tip.boiling': '沸点时液体内部成气泡。'
       }
     };
     if (window.PhysicsI18n) PhysicsI18n.aliasKeys(translations);
@@ -203,6 +211,14 @@ const state = { mode: 'evaporation', temp: 30, escaped: 0, escapeAcc: 0, rateTim
     function updateInfo() {
       document.getElementById('infoText').textContent = state.mode === 'boiling' ? t('info.boil') : t('info.evap');
       document.getElementById('modeOut').textContent = state.mode === 'boiling' ? t('processBoil') : t('processEvap');
+      updateModeTip();
+    }
+
+    function updateModeTip() {
+      const tipKey = state.mode === 'boiling' ? 'tip.boiling' : 'tip.evaporation';
+      const tipEl = document.getElementById('modeTip');
+      if (window.PhysicsSimShell) PhysicsSimShell.setModeTip(tipEl, t(tipKey));
+      else if (tipEl) tipEl.textContent = t(tipKey);
     }
 
     function setMode(mode) {
