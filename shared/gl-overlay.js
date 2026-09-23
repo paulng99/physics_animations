@@ -34,11 +34,12 @@
 
   var TOPIC_BACK = {
     thermal: { href: 'index.html#thermal', en: '← Back to Thermal Topics', 'zh-hk': '← 返回熱學專題', 'zh-cn': '← 返回热学专题' },
-    waves: { href: 'index.html#experiments', en: '← Back to Wave / Optics', 'zh-hk': '← 返回波動／光學', 'zh-cn': '← 返回波动／光学' },
-    mechanics: { href: 'index.html#experiments', en: '← Back to Mechanics', 'zh-hk': '← 返回力學', 'zh-cn': '← 返回力学' },
-    electricity: { href: 'index.html#experiments', en: '← Back to Electricity & Magnetism', 'zh-hk': '← 返回電磁學', 'zh-cn': '← 返回电磁学' },
-    atomic: { href: 'index.html#experiments', en: '← Back to Atomic Physics', 'zh-hk': '← 返回原子物理', 'zh-cn': '← 返回原子物理' },
-    energy: { href: 'index.html#experiments', en: '← Back to Energy', 'zh-hk': '← 返回能量專題', 'zh-cn': '← 返回能量专题' }
+    optics: { href: 'index.html#optics', en: '← Back to Optics', 'zh-hk': '← 返回光學', 'zh-cn': '← 返回光学' },
+    waves: { href: 'index.html#waves', en: '← Back to Wave Motion', 'zh-hk': '← 返回波動', 'zh-cn': '← 返回波动' },
+    mechanics: { href: 'index.html#mechanics', en: '← Back to Mechanics', 'zh-hk': '← 返回力學', 'zh-cn': '← 返回力学' },
+    electricity: { href: 'index.html#electricity', en: '← Back to Electromagnetism', 'zh-hk': '← 返回電磁學', 'zh-cn': '← 返回电磁学' },
+    atomic: { href: 'index.html#atomic', en: '← Back to Atomic Physics', 'zh-hk': '← 返回原子物理', 'zh-cn': '← 返回原子物理' },
+    energy: { href: 'index.html#energy', en: '← Back to Energy Topics', 'zh-hk': '← 返回能量專題', 'zh-cn': '← 返回能量专题' }
   };
 
   var FILE_TOPIC = {
@@ -55,12 +56,12 @@
     'Inclined_Plane_Newtons_Laws.html': 'mechanics',
     'Work_Energy_Power_Analyzer.html': 'mechanics',
     'Impulse_Force_Time_Graph.html': 'mechanics',
-    'Youngs_Double-Slit_Experiment.html': 'waves',
-    'Diffraction_Grating.html': 'waves',
-    'Rayleigh_Criterion_3D.html': 'waves',
-    'Convex_Lens_3D.html': 'waves',
-    'Concave_Lens_3D.html': 'waves',
-    'Primary_Colour_3D.html': 'waves',
+    'Youngs_Double-Slit_Experiment.html': 'optics',
+    'Diffraction_Grating.html': 'optics',
+    'Rayleigh_Criterion_3D.html': 'optics',
+    'Convex_Lens_3D.html': 'optics',
+    'Concave_Lens_3D.html': 'optics',
+    'Primary_Colour_3D.html': 'optics',
     'Standing_Waves_Resonance.html': 'waves',
     'Refraction_Critical_Angle_TIR.html': 'electricity',
     'Magnetic_Field_Visualizer.html': 'electricity',
@@ -156,36 +157,33 @@
 
   function buildOverlay() {
     var el = document.createElement('div');
+    el.id = 'glOverlay';
     el.className = 'physics-gl-overlay';
     el.setAttribute('role', 'status');
     el.setAttribute('aria-live', 'polite');
+    // Structure mirrors Gas_Laws / PR#33 Heat: #glOverlay > #loadingState | #errorState
     el.innerHTML =
-      '<div class="pgl-loading">' +
+      '<div id="loadingState" class="pgl-loading text-center">' +
       '<div class="pgl-dots" aria-hidden="true">' +
       '<span class="pgl-dot"></span><span class="pgl-dot"></span><span class="pgl-dot"></span>' +
       '</div>' +
-      '<p class="pgl-loading-text" data-pgl="loading"></p>' +
+      '<p class="pgl-loading-text" data-pgl="loading" data-i18n="loading"></p>' +
       '</div>' +
-      '<div class="pgl-error">' +
+      '<div id="errorState" class="pgl-error hidden text-center px-6">' +
       '<div class="pgl-error-icon" aria-hidden="true">⚠️</div>' +
-      '<p class="pgl-error-msg" data-pgl="error"></p>' +
-      '<div class="pgl-actions">' +
-      '<button type="button" class="pgl-btn pgl-btn-primary" data-pgl-action="retry"></button>' +
-      '<a class="pgl-btn pgl-btn-link" data-pgl-action="back" href="index.html"></a>' +
-      '</div>' +
+      '<p class="pgl-error-msg text-slate-700 font-semibold mb-2 text-sm" data-pgl="error" data-i18n="error.msg"></p>' +
+      '<a class="pgl-btn pgl-btn-link text-blue-600 hover:underline text-sm" data-pgl-action="back" data-i18n="error.link" href="index.html"></a>' +
       '</div>';
     return el;
   }
 
   function refreshCopy() {
     if (!state.overlay) return;
-    var loading = state.overlay.querySelector('[data-pgl="loading"]');
-    var error = state.overlay.querySelector('[data-pgl="error"]');
-    var retry = state.overlay.querySelector('[data-pgl-action="retry"]');
-    var back = state.overlay.querySelector('[data-pgl-action="back"]');
+    var loading = state.overlay.querySelector('[data-pgl="loading"], #loadingState [data-i18n="loading"]');
+    var error = state.overlay.querySelector('[data-pgl="error"], #errorState [data-i18n="error.msg"]');
+    var back = state.overlay.querySelector('[data-pgl-action="back"], #errorState a');
     if (loading) loading.textContent = msg('loading');
     if (error) error.textContent = msg('error');
-    if (retry) retry.textContent = msg('retry');
     if (back) {
       var b = resolveBack();
       back.href = b.href;
@@ -216,12 +214,6 @@
     } else {
       host.appendChild(overlay);
     }
-    var retryBtn = overlay.querySelector('[data-pgl-action="retry"]');
-    if (retryBtn) {
-      retryBtn.addEventListener('click', function () {
-        global.location.reload();
-      });
-    }
     state.host = host;
     state.overlay = overlay;
     refreshCopy();
@@ -232,6 +224,10 @@
     if (state.ready) return; // renderer already succeeded before overlay mounted
     if (!state.overlay) mount(findHost());
     if (!state.overlay) return;
+    var loadingState = state.overlay.querySelector('#loadingState');
+    var errorState = state.overlay.querySelector('#errorState');
+    if (loadingState) loadingState.classList.remove('hidden');
+    if (errorState) errorState.classList.add('hidden');
     state.overlay.classList.remove('is-hidden', 'is-error');
     state.overlay.hidden = false;
     state.overlay.style.display = '';
@@ -242,20 +238,14 @@
     state.failed = true;
     if (!state.overlay) mount(findHost());
     if (!state.overlay) return;
-    // Legacy Gas_Laws markup
     var loadingState = state.host && state.host.querySelector('#loadingState');
     var errorState = state.host && state.host.querySelector('#errorState');
-    if (loadingState && errorState) {
-      loadingState.classList.add('hidden');
-      errorState.classList.remove('hidden');
-      state.overlay.style.display = '';
-      state.overlay.classList.remove('is-hidden');
-    } else {
-      state.overlay.classList.add('is-error');
-      state.overlay.classList.remove('is-hidden');
-      state.overlay.hidden = false;
-      state.overlay.style.display = '';
-    }
+    if (loadingState) loadingState.classList.add('hidden');
+    if (errorState) errorState.classList.remove('hidden');
+    state.overlay.classList.add('is-error');
+    state.overlay.classList.remove('is-hidden');
+    state.overlay.hidden = false;
+    state.overlay.style.display = '';
     refreshCopy();
     if (err && global.console) console.error('[PhysicsGlOverlay]', err);
   }

@@ -149,12 +149,25 @@
   display: none;
 }
 
-.physics-gl-overlay.is-error .pgl-loading {
+.physics-gl-overlay.is-error .pgl-loading,
+.physics-gl-overlay.is-error #loadingState {
   display: none;
 }
 
-.physics-gl-overlay.is-error .pgl-error {
+.physics-gl-overlay.is-error .pgl-error,
+.physics-gl-overlay.is-error #errorState {
   display: block;
+}
+
+.physics-gl-overlay #errorState.hidden {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .physics-gl-overlay .pgl-dot {
+    animation: none;
+    opacity: 0.85;
+  }
 }
 
 /* Ensure overlay hosts are positioning contexts */
