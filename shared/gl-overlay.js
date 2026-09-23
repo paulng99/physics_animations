@@ -229,6 +229,7 @@
   }
 
   function showLoading() {
+    if (state.ready) return; // renderer already succeeded before overlay mounted
     if (!state.overlay) mount(findHost());
     if (!state.overlay) return;
     state.overlay.classList.remove('is-hidden', 'is-error');
@@ -260,6 +261,8 @@
   }
 
   function hide() {
+    // Mark ready even if overlay not mounted yet (body scripts often run
+    // before DOMContentLoaded, which is when boot() mounts the overlay).
     state.ready = true;
     if (!state.overlay) return;
     state.overlay.classList.add('is-hidden');
@@ -321,8 +324,19 @@
     var host = findHost();
     if (!host) return;
     mount(host);
+
+    // Body init scripts often construct WebGLRenderer before DOMContentLoaded.
+    // If that already succeeded (or failed), respect that instead of flashing loading.
+    if (state.failed) {
+      showError();
+      return;
+    }
+    if (state.ready) {
+      hide();
+      return;
+    }
+
     showLoading();
-    patchWebGLRenderer();
 
     if (typeof global.THREE === 'undefined' || global.__THREE_CDN_FAILED) {
       showError(new Error('Three.js CDN not loaded'));
@@ -345,6 +359,9 @@
             showError(new Error('WebGL canvas was not created'));
           }
         }, 2500);
+      } else {
+        // Canvas exists but ready flag missed — treat as success
+        hide();
       }
     }, 4000);
   }
