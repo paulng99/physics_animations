@@ -6,7 +6,11 @@
     <title>Rayleigh Criterion 3D Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="window.__THREE_CDN_FAILED=true"></script>
+  <link rel="stylesheet" href="shared/sim-shell.css">
+  <script src="shared/i18n.js"></script>
+  <script src="shared/gl-overlay.js"></script>
+
     <script>
         MathJax = {
             tex: {
@@ -89,8 +93,8 @@
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-4 space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sim-shell">
+            <div class="sim-controls lg:col-span-4 space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
                     <div class="flex justify-between items-center pb-4 border-b border-slate-100">
                         <h3 class="font-bold text-slate-800" data-i18n="controls.title">Parameters</h3>
@@ -184,9 +188,9 @@
                 </div>
             </div>
 
-            <div class="lg:col-span-8 space-y-6">
+            <div class="sim-viewport lg:col-span-8 space-y-6">
                 <div class="relative">
-                    <div id="three-container"></div>
+                    <div id="three-container" data-gl-host></div>
                     <div class="absolute top-3 left-3 bg-slate-900/75 text-white text-xs font-semibold px-3 py-1 rounded-full pointer-events-none" data-i18n="three.title">3D optical bench</div>
                     <div class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur text-white px-5 py-3 rounded-full text-sm pointer-events-none" data-i18n="three.hint">Drag source • rotate • pinch zoom</div>
                     <div class="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
@@ -304,7 +308,7 @@
         const dragPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 7.2);
 
         function t(key) {
-            return translations[currentLang]?.[key] ?? translations.en[key] ?? key;
+            return (window.PhysicsI18n ? PhysicsI18n.resolve(translations, currentLang)[key] : translations[currentLang]?.[key]) ?? translations.en?.[key] ?? key;
         }
 
         function deBroglieNm(kV) {
@@ -1150,16 +1154,17 @@
             }
         };
 
-        let currentLang = localStorage.getItem('preferred_language') || 'en';
+        let currentLang = (window.PhysicsI18n ? PhysicsI18n.get() : (localStorage.getItem('preferred_language') || 'en'));
+    if (window.PhysicsI18n) currentLang = PhysicsI18n.normalize(currentLang);
         if (currentLang === 'zh' || currentLang === 'cn' || currentLang === 'zh-TW' || currentLang === 'zh-CN') {
             currentLang = 'zh-hk';
         }
 
         function setLanguage(lang) {
-            if (lang === 'zh' || lang === 'cn') lang = 'zh-hk';
-            currentLang = lang;
-            localStorage.setItem('preferred_language', lang);
-            document.documentElement.lang = lang === 'zh-hk' ? 'zh-HK' : 'en';
+            if (window.PhysicsI18n) lang = PhysicsI18n.normalize(lang);
+            currentLang = window.PhysicsI18n ? PhysicsI18n.set(lang) : lang;
+      if (!window.PhysicsI18n) localStorage.setItem('preferred_language', lang);
+            document.documentElement.lang = window.PhysicsI18n ? PhysicsI18n.htmlLang(lang) : (lang === 'zh-hk' ? 'zh-HK' : lang === 'zh-cn' ? 'zh-CN' : 'en');
             document.querySelectorAll('[data-i18n]').forEach((el) => {
                 const key = el.getAttribute('data-i18n');
                 const val = translations[lang]?.[key];
@@ -1171,7 +1176,7 @@
                 }
             });
             document.querySelectorAll('.lang-btn').forEach((btn) => {
-                const active = btn.dataset.lang === lang;
+                const active = window.PhysicsI18n ? PhysicsI18n.matchButton(btn.dataset.lang, lang) : (btn.dataset.lang === lang);
                 btn.classList.toggle('bg-white', active);
                 btn.classList.toggle('shadow-sm', active);
                 btn.classList.toggle('text-blue-600', active);
