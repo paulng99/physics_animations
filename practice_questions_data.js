@@ -1103,6 +1103,33 @@
     ],
   };
 
+  B.newtons_cannon = {
+    en: [
+      { q: "State Newton's law of universal gravitation and write the expression for the gravitational force on a satellite of mass \\(m\\) at distance \\(r\\) from Earth's centre (mass \\(M\\)).",
+        sol: "<p>Every particle attracts every other with a force proportional to the product of their masses and inversely proportional to the square of their separation, directed along the line joining them:</p><p>\\[ F = \\dfrac{GMm}{r^2}. \\]</p><p>For a satellite this force is toward Earth's centre and provides the centripetal force for the orbit.</p>" },
+      { q: "Show that the speed of a satellite in a circular orbit of radius \\(r\\) is \\(v_c = \\sqrt{GM/r}\\), and hence find the orbital period \\(T\\).",
+        sol: "<p>Gravity supplies the centripetal force:</p><p>\\[ \\dfrac{GMm}{r^2} = \\dfrac{mv_c^2}{r} \\Rightarrow v_c = \\sqrt{\\dfrac{GM}{r}}. \\]</p><p>Period: circumference divided by speed,</p><p>\\[ T = \\dfrac{2\\pi r}{v_c} = 2\\pi\\sqrt{\\dfrac{r^3}{GM}}. \\]</p><p>This is Kepler's third law for circular orbits.</p>" },
+      { q: "A cannon on a mountain fires horizontally at height \\(h\\) above Earth's surface. Explain, with reference to \\(v_c\\) and \\(v_{esc}=\\sqrt{2GM/r}\\), what happens if the launch speed is (a) much less than \\(v_c\\), (b) equal to \\(v_c\\), (c) between \\(v_c\\) and \\(v_{esc}\\), (d) greater than \\(v_{esc}\\).",
+        sol: "<p>Let \\(r = R_E + h\\).</p><ul class='list-disc pl-5'><li>(a) \\(v \\ll v_c\\): the trajectory curves into the ground — the projectile falls nearby (Newton's classic \"short range\" case).</li><li>(b) \\(v = v_c\\): gravity bends the path exactly with Earth's curvature → closed <b>circular</b> orbit.</li><li>(c) \\(v_c &lt; v &lt; v_{esc}\\): bound orbit with \\(e&gt;0\\) → <b>ellipse</b> (Earth at one focus).</li><li>(d) \\(v \\ge v_{esc}\\): total energy \\(\\ge 0\\) → escapes on a parabola or hyperbola.</li></ul>" },
+      { q: "Calculate the orbital radius and speed of a geostationary satellite. Take \\(GM = 3.99\\times10^{14}\\,\\text{m}^3\\text{s}^{-2}\\) and one sidereal day \\(T = 8.62\\times10^{4}\\,\\text{s}\\). Also find the altitude above Earth's surface if \\(R_E = 6.37\\times10^{6}\\,\\text{m}\\).",
+        sol: "<p>Geostationary means \\(T\\) equals one sidereal day and the orbit is equatorial and circular. From \\(T = 2\\pi\\sqrt{r^3/GM}\\):</p><p>\\[ r^3 = GM\\,T^2/(4\\pi^2) = (3.99\\times10^{14})(8.62\\times10^{4})^2/(4\\pi^2) \\]</p><p>\\(r \\approx 4.22\\times10^{7}\\,\\text{m}\\).</p><p>\\(v = 2\\pi r/T \\approx 3.07\\,\\text{km s}^{-1}\\).</p><p>Altitude \\(h = r - R_E \\approx 3.58\\times10^{7}\\,\\text{m} \\approx 35\\,800\\,\\text{km}\\).</p>" },
+      { q: "In Newton's mountain thought experiment, why must the mountain (or launch altitude) be above the atmosphere for a lasting orbit? What other idealisations does the simulation make?",
+        sol: "<p>In the lower atmosphere, air resistance would continuously remove mechanical energy, so the orbit would decay and the projectile would eventually fall. A lasting Keplerian orbit needs negligible drag — hence a high mountain / space altitude.</p><p>Idealisations in the model (any reasonable selection): point-mass Earth (or spherical mass distribution); no atmosphere; no thrust after launch; Earth non-oblate; only Earth gravity (no Sun/Moon); horizontal launch in an inertial frame; projectile mass cancels in the equations of motion.</p>" },
+    ],
+    zh: [
+      { q: "寫出牛頓萬有引力定律，並寫出質量 \\(m\\) 的衛星在距地心 \\(r\\)（地球質量 \\(M\\)）處所受引力的表達式。",
+        sol: "<p>任何質點與其他質點互相吸引，引力大小與兩質量乘積成正比、與距離平方成反比，方向沿兩質點連心線：</p><p>\\[ F = \\dfrac{GMm}{r^2}. \\]</p><p>對衛星而言，此力指向地心，並提供軌道所需的向心力。</p>" },
+      { q: "證明半徑 \\(r\\) 的圓軌道衛星速率為 \\(v_c = \\sqrt{GM/r}\\)，並由此求出軌道週期 \\(T\\)。",
+        sol: "<p>萬有引力提供向心力：</p><p>\\[ \\dfrac{GMm}{r^2} = \\dfrac{mv_c^2}{r} \\Rightarrow v_c = \\sqrt{\\dfrac{GM}{r}}. \\]</p><p>週期為周界除以速率：</p><p>\\[ T = \\dfrac{2\\pi r}{v_c} = 2\\pi\\sqrt{\\dfrac{r^3}{GM}}. \\]</p><p>此即圓軌道情況下的開普勒第三定律。</p>" },
+      { q: "高山上的大砲水平發射，高度為地面以上 \\(h\\)。參考 \\(v_c\\) 與 \\(v_{esc}=\\sqrt{2GM/r}\\)，說明發射速率為 (a) 遠小於 \\(v_c\\)、(b) 等於 \\(v_c\\)、(c) 介乎 \\(v_c\\) 與 \\(v_{esc}\\) 之間、(d) 大於 \\(v_{esc}\\) 時會發生甚麼。",
+        sol: "<p>設 \\(r = R_E + h\\)。</p><ul class='list-disc pl-5'><li>(a) \\(v \\ll v_c\\)：軌跡彎入地面——砲彈落在附近（牛頓思想實驗中的「短程」情況）。</li><li>(b) \\(v = v_c\\)：引力使路徑彎曲程度恰與地球表面匹配 → 封閉<b>圓</b>軌道。</li><li>(c) \\(v_c &lt; v &lt; v_{esc}\\)：束縛軌道且 \\(e&gt;0\\) → <b>橢圓</b>（地球位於一焦點）。</li><li>(d) \\(v \\ge v_{esc}\\)：總能量 \\(\\ge 0\\) → 沿拋物線或雙曲線逃逸。</li></ul>" },
+      { q: "計算地球同步衛星的軌道半徑及速率。取 \\(GM = 3.99\\times10^{14}\\,\\text{m}^3\\text{s}^{-2}\\)，一個恆星日 \\(T = 8.62\\times10^{4}\\,\\text{s}\\)。若 \\(R_E = 6.37\\times10^{6}\\,\\text{m}\\)，求離地面高度。",
+        sol: "<p>地球同步指週期等於一個恆星日，且為赤道圓軌道。由 \\(T = 2\\pi\\sqrt{r^3/GM}\\)：</p><p>\\[ r^3 = GM\\,T^2/(4\\pi^2) = (3.99\\times10^{14})(8.62\\times10^{4})^2/(4\\pi^2) \\]</p><p>\\(r \\approx 4.22\\times10^{7}\\,\\text{m}\\)。</p><p>\\(v = 2\\pi r/T \\approx 3.07\\,\\text{km s}^{-1}\\)。</p><p>高度 \\(h = r - R_E \\approx 3.58\\times10^{7}\\,\\text{m} \\approx 35\\,800\\,\\text{km}\\)。</p>" },
+      { q: "在牛頓高山思想實驗中，為甚麼山峰（或發射高度）須在大氣層之上，軌道才能持久？模擬還作了哪些理想化假設？",
+        sol: "<p>在低層大氣中，空氣阻力會持續帶走機械能，軌道會衰減，砲彈終會墜落。持久的克卜勒軌道需要阻力可忽略——故須有足夠高度。</p><p>模型中的理想化（合理列舉即可）：地球視為質點（或球對稱質量分佈）；無大氣；發射後無推力；地球不扁；只計地球引力（不計日、月）；在慣性系中水平發射；砲彈質量在運動方程中相消。</p>" },
+    ],
+  };
+
   B.building_heat_cop = {
     en: [
       { q: "Define the <b>thermal transmittance</b> (\\(U\\)-value) of a wall and state its unit. A solid concrete wall is \\(0.25\\,\\text{m}\\) thick and the thermal conductivity of concrete is \\(1.5\\,\\text{W m}^{-1}\\text{K}^{-1}\\). Find its \\(U\\)-value.",
