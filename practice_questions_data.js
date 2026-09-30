@@ -391,6 +391,33 @@
     ],
   };
 
+  B.skydiving_terminal = {
+    en: [
+      { q: "A skydiver of mass \\(m\\) falls through air. Write expressions for the weight and the quadratic air resistance, and state the condition for terminal velocity \\(v_t\\).",
+        sol: "<p>Weight: \\(W = mg\\) (downward).</p><p>Air resistance (quadratic model): \\(R = \\tfrac12\\rho C_d A v^2\\) (upward, opposite to velocity).</p><p>At terminal velocity the resultant force is zero: \\(R = mg\\), so</p><p>\\[ v_t = \\sqrt{\\dfrac{2mg}{\\rho C_d A}}. \\]</p>" },
+      { q: "Explain, using Newton's laws, why a skydiver's acceleration decreases during freefall even though gravity is constant.",
+        sol: "<p>Gravity (weight) is approximately constant near Earth. As speed increases, air resistance \\(R\\propto v^2\\) grows. The downward resultant \\(\\Sigma F = mg - R\\) therefore shrinks, so acceleration \\(a = \\Sigma F/m\\) falls from nearly \\(g\\) toward zero as \\(R\\to mg\\).</p>" },
+      { q: "Two skydivers have the same body shape (same \\(C_d\\) and \\(A\\)) but different masses. Who has the larger terminal speed, and why?",
+        sol: "<p>The <b>heavier</b> skydiver has the larger \\(v_t\\).</p><p>From \\(v_t = \\sqrt{2mg/(\\rho C_d A)}\\), \\(v_t\\propto\\sqrt{m}\\). A larger weight must be balanced by a larger drag, which requires a higher speed. Shape factors cancel when they are identical.</p>" },
+      { q: "A 75 kg skydiver in a belly-to-earth posture has \\(C_d = 1.0\\), \\(A = 0.70\\,\\text{m}^2\\) and \\(\\rho = 1.2\\,\\text{kg m}^{-3}\\). Estimate \\(v_t\\). Take \\(g = 9.81\\,\\text{m s}^{-2}\\).",
+        sol: "<p>\\[ v_t = \\sqrt{\\frac{2(75)(9.81)}{1.2\\times 1.0\\times 0.70}} = \\sqrt{\\frac{1471.5}{0.84}} = \\sqrt{1751.8} \\approx 42\\,\\text{m s}^{-1}. \\]</p>" },
+      { q: "When a parachute opens, speed falls quickly toward a much smaller terminal velocity. Explain in terms of resultant force and acceleration.",
+        sol: "<p>Opening the canopy greatly increases \\(A\\) (and usually \\(C_d\\)), so drag suddenly exceeds weight: \\(R > mg\\). The resultant is upward (against the velocity), producing an upward acceleration that reduces the downward speed until a new, much smaller \\(v_t\\) is reached where \\(R = mg\\) again.</p>" },
+    ],
+    zh: [
+      { q: "質量 \\(m\\) 的跳傘者在空氣中下落。寫出重量與二次方空氣阻力的表達式，並說明終端速度 \\(v_t\\) 的條件。",
+        sol: "<p>重量：\\(W = mg\\)（向下）。</p><p>空氣阻力：\\(R = \\tfrac12\\rho C_d A v^2\\)（與速度相反）。</p><p>終端速度時合力為零：\\(R = mg\\)，故</p><p>\\[ v_t = \\sqrt{\\dfrac{2mg}{\\rho C_d A}}. \\]</p>" },
+      { q: "利用牛頓定律解釋：重力近似恆定時，為何跳傘者在自由落體階段的加速度會逐漸減小？",
+        sol: "<p>近地重力（重量）近似不變。速率增大時，空氣阻力 \\(R\\propto v^2\\) 增大，向下合力 \\(\\Sigma F = mg - R\\) 因而減小，故加速度 \\(a = \\Sigma F/m\\) 由接近 \\(g\\) 逐漸降至零（當 \\(R\\to mg\\)）。</p>" },
+      { q: "兩名跳傘者體形相同（相同 \\(C_d\\)、\\(A\\)）但質量不同。誰的終端速率較大？為甚麼？",
+        sol: "<p><b>較重者</b>的 \\(v_t\\) 較大。</p><p>由 \\(v_t = \\sqrt{2mg/(\\rho C_d A)}\\) 可知 \\(v_t\\propto\\sqrt{m}\\)。較大的重量須由較大的空氣阻力平衡，因而需要較高的速率。</p>" },
+      { q: "75 kg 跳傘者以大字形下降，\\(C_d = 1.0\\)、\\(A = 0.70\\,\\text{m}^2\\)、\\(\\rho = 1.2\\,\\text{kg m}^{-3}\\)。估算 \\(v_t\\)（取 \\(g = 9.81\\)）。",
+        sol: "<p>\\[ v_t = \\sqrt{\\frac{2(75)(9.81)}{1.2\\times 1.0\\times 0.70}} \\approx 42\\,\\text{m s}^{-1}. \\]</p>" },
+      { q: "打開降落傘後，速率迅速降至較低的終端速度。試以合力與加速度解釋。",
+        sol: "<p>開傘使 \\(A\\)（及通常的 \\(C_d\\)）大幅增加，空氣阻力瞬間大於重量（\\(R > mg\\)），合力與速度相反，產生使向下速率減小的加速度，直至到達新的、較小的 \\(v_t\\)（再次滿足 \\(R = mg\\)）。</p>" },
+    ],
+  };
+
   /* ===== WAVES ============================================================= */
 
   B.ripple_tank = {
@@ -1100,6 +1127,33 @@
         sol: "<p>(a) 正午高度角 \\(= 90° - \\phi + \\delta = 90° - 22.3° + 0° = 67.7°\\)。</p><p>(b) 板面法線須指向太陽，故傾角 \\(\\beta = 90° - 67.7° = 22.3°\\)（等於緯度）。</p><p>(c) 冬至正午高度角 \\(= 90° - 22.3° - 23.4° = 44.3°\\)，故 \\(\\beta = 45.7°\\)。傾角較大適合冬季；固定板面的全年最佳傾角接近當地緯度。</p>" },
       { q: "天台太陽能板陣列面積 \\(10\\,\\text{m}^2\\)、效率 20%，在 6 小時內平均有效強度 \\(I\\cos\\theta = 500\\,\\text{W m}^{-2}\\)。計算所產生的能量（以 kWh 及 MJ 表示），並各舉一項太陽能光伏發電的優點及缺點。",
         sol: "<p>\\(P = 0.20 \\times 500 \\times 10 = 1000\\,\\text{W} = 1.0\\,\\text{kW}\\)。</p><p>\\(E = Pt = 1.0\\,\\text{kW} \\times 6\\,\\text{h} = 6.0\\,\\text{kWh} = 6.0 \\times 3.6\\,\\text{MJ} = 21.6\\,\\text{MJ}\\)。</p><p>優點：可再生、運作時無燃料成本及溫室氣體排放、無噪音、可安裝於現有屋頂。缺點：夜間無輸出、陰天輸出下降，需儲能或後備電源；效率低，需大面積；製造電池對環境有一定影響。</p>" },
+    ],
+  };
+
+  B.newtons_cannon = {
+    en: [
+      { q: "State Newton's law of universal gravitation and write the expression for the gravitational force on a satellite of mass \\(m\\) at distance \\(r\\) from Earth's centre (mass \\(M\\)).",
+        sol: "<p>Every particle attracts every other with a force proportional to the product of their masses and inversely proportional to the square of their separation, directed along the line joining them:</p><p>\\[ F = \\dfrac{GMm}{r^2}. \\]</p><p>For a satellite this force is toward Earth's centre and provides the centripetal force for the orbit.</p>" },
+      { q: "Show that the speed of a satellite in a circular orbit of radius \\(r\\) is \\(v_c = \\sqrt{GM/r}\\), and hence find the orbital period \\(T\\).",
+        sol: "<p>Gravity supplies the centripetal force:</p><p>\\[ \\dfrac{GMm}{r^2} = \\dfrac{mv_c^2}{r} \\Rightarrow v_c = \\sqrt{\\dfrac{GM}{r}}. \\]</p><p>Period: circumference divided by speed,</p><p>\\[ T = \\dfrac{2\\pi r}{v_c} = 2\\pi\\sqrt{\\dfrac{r^3}{GM}}. \\]</p><p>This is Kepler's third law for circular orbits.</p>" },
+      { q: "A cannon on a mountain fires horizontally at height \\(h\\) above Earth's surface. Explain, with reference to \\(v_c\\) and \\(v_{esc}=\\sqrt{2GM/r}\\), what happens if the launch speed is (a) much less than \\(v_c\\), (b) equal to \\(v_c\\), (c) between \\(v_c\\) and \\(v_{esc}\\), (d) greater than \\(v_{esc}\\).",
+        sol: "<p>Let \\(r = R_E + h\\).</p><ul class='list-disc pl-5'><li>(a) \\(v \\ll v_c\\): the trajectory curves into the ground — the projectile falls nearby (Newton's classic \"short range\" case).</li><li>(b) \\(v = v_c\\): gravity bends the path exactly with Earth's curvature → closed <b>circular</b> orbit.</li><li>(c) \\(v_c &lt; v &lt; v_{esc}\\): bound orbit with \\(e&gt;0\\) → <b>ellipse</b> (Earth at one focus).</li><li>(d) \\(v \\ge v_{esc}\\): total energy \\(\\ge 0\\) → escapes on a parabola or hyperbola.</li></ul>" },
+      { q: "Calculate the orbital radius and speed of a geostationary satellite. Take \\(GM = 3.99\\times10^{14}\\,\\text{m}^3\\text{s}^{-2}\\) and one sidereal day \\(T = 8.62\\times10^{4}\\,\\text{s}\\). Also find the altitude above Earth's surface if \\(R_E = 6.37\\times10^{6}\\,\\text{m}\\).",
+        sol: "<p>Geostationary means \\(T\\) equals one sidereal day and the orbit is equatorial and circular. From \\(T = 2\\pi\\sqrt{r^3/GM}\\):</p><p>\\[ r^3 = GM\\,T^2/(4\\pi^2) = (3.99\\times10^{14})(8.62\\times10^{4})^2/(4\\pi^2) \\]</p><p>\\(r \\approx 4.22\\times10^{7}\\,\\text{m}\\).</p><p>\\(v = 2\\pi r/T \\approx 3.07\\,\\text{km s}^{-1}\\).</p><p>Altitude \\(h = r - R_E \\approx 3.58\\times10^{7}\\,\\text{m} \\approx 35\\,800\\,\\text{km}\\).</p>" },
+      { q: "In Newton's mountain thought experiment, why must the mountain (or launch altitude) be above the atmosphere for a lasting orbit? What other idealisations does the simulation make?",
+        sol: "<p>In the lower atmosphere, air resistance would continuously remove mechanical energy, so the orbit would decay and the projectile would eventually fall. A lasting Keplerian orbit needs negligible drag — hence a high mountain / space altitude.</p><p>Idealisations in the model (any reasonable selection): point-mass Earth (or spherical mass distribution); no atmosphere; no thrust after launch; Earth non-oblate; only Earth gravity (no Sun/Moon); horizontal launch in an inertial frame; projectile mass cancels in the equations of motion.</p>" },
+    ],
+    zh: [
+      { q: "寫出牛頓萬有引力定律，並寫出質量 \\(m\\) 的衛星在距地心 \\(r\\)（地球質量 \\(M\\)）處所受引力的表達式。",
+        sol: "<p>任何質點與其他質點互相吸引，引力大小與兩質量乘積成正比、與距離平方成反比，方向沿兩質點連心線：</p><p>\\[ F = \\dfrac{GMm}{r^2}. \\]</p><p>對衛星而言，此力指向地心，並提供軌道所需的向心力。</p>" },
+      { q: "證明半徑 \\(r\\) 的圓軌道衛星速率為 \\(v_c = \\sqrt{GM/r}\\)，並由此求出軌道週期 \\(T\\)。",
+        sol: "<p>萬有引力提供向心力：</p><p>\\[ \\dfrac{GMm}{r^2} = \\dfrac{mv_c^2}{r} \\Rightarrow v_c = \\sqrt{\\dfrac{GM}{r}}. \\]</p><p>週期為周界除以速率：</p><p>\\[ T = \\dfrac{2\\pi r}{v_c} = 2\\pi\\sqrt{\\dfrac{r^3}{GM}}. \\]</p><p>此即圓軌道情況下的開普勒第三定律。</p>" },
+      { q: "高山上的大砲水平發射，高度為地面以上 \\(h\\)。參考 \\(v_c\\) 與 \\(v_{esc}=\\sqrt{2GM/r}\\)，說明發射速率為 (a) 遠小於 \\(v_c\\)、(b) 等於 \\(v_c\\)、(c) 介乎 \\(v_c\\) 與 \\(v_{esc}\\) 之間、(d) 大於 \\(v_{esc}\\) 時會發生甚麼。",
+        sol: "<p>設 \\(r = R_E + h\\)。</p><ul class='list-disc pl-5'><li>(a) \\(v \\ll v_c\\)：軌跡彎入地面——砲彈落在附近（牛頓思想實驗中的「短程」情況）。</li><li>(b) \\(v = v_c\\)：引力使路徑彎曲程度恰與地球表面匹配 → 封閉<b>圓</b>軌道。</li><li>(c) \\(v_c &lt; v &lt; v_{esc}\\)：束縛軌道且 \\(e&gt;0\\) → <b>橢圓</b>（地球位於一焦點）。</li><li>(d) \\(v \\ge v_{esc}\\)：總能量 \\(\\ge 0\\) → 沿拋物線或雙曲線逃逸。</li></ul>" },
+      { q: "計算地球同步衛星的軌道半徑及速率。取 \\(GM = 3.99\\times10^{14}\\,\\text{m}^3\\text{s}^{-2}\\)，一個恆星日 \\(T = 8.62\\times10^{4}\\,\\text{s}\\)。若 \\(R_E = 6.37\\times10^{6}\\,\\text{m}\\)，求離地面高度。",
+        sol: "<p>地球同步指週期等於一個恆星日，且為赤道圓軌道。由 \\(T = 2\\pi\\sqrt{r^3/GM}\\)：</p><p>\\[ r^3 = GM\\,T^2/(4\\pi^2) = (3.99\\times10^{14})(8.62\\times10^{4})^2/(4\\pi^2) \\]</p><p>\\(r \\approx 4.22\\times10^{7}\\,\\text{m}\\)。</p><p>\\(v = 2\\pi r/T \\approx 3.07\\,\\text{km s}^{-1}\\)。</p><p>高度 \\(h = r - R_E \\approx 3.58\\times10^{7}\\,\\text{m} \\approx 35\\,800\\,\\text{km}\\)。</p>" },
+      { q: "在牛頓高山思想實驗中，為甚麼山峰（或發射高度）須在大氣層之上，軌道才能持久？模擬還作了哪些理想化假設？",
+        sol: "<p>在低層大氣中，空氣阻力會持續帶走機械能，軌道會衰減，砲彈終會墜落。持久的克卜勒軌道需要阻力可忽略——故須有足夠高度。</p><p>模型中的理想化（合理列舉即可）：地球視為質點（或球對稱質量分佈）；無大氣；發射後無推力；地球不扁；只計地球引力（不計日、月）；在慣性系中水平發射；砲彈質量在運動方程中相消。</p>" },
     ],
   };
 
