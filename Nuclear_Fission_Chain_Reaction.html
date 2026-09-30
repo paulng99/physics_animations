@@ -1013,6 +1013,16 @@
     syncSliderLabels();
     initThree();
     updateStatsUI();
+
+    // Optional deep-link for demos / teacher links: #preset=runaway|reactor|single|bomb
+    (function applyHashPreset() {
+      const m = (location.hash || '').match(/preset=([a-z]+)/i);
+      if (!m) return;
+      const name = m[1].toLowerCase();
+      if (['single', 'reactor', 'runaway', 'bomb'].includes(name)) {
+        setTimeout(() => applyPreset(name), 400);
+      }
+    })();
   </script>
 
   <script src="practice_questions.js"></script>
