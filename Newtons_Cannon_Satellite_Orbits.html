@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newton's Cannon &amp; Satellite Orbits — HKDSE Mechanics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="window.__THREE_CDN_FAILED=true"></script>
+    <link rel="stylesheet" href="shared/sim-shell.css">
+    <script src="shared/i18n.js"></script>
+    <script src="shared/gl-overlay.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script"></script>
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: 'Inter', sans-serif; }
+        #three-container {
+            width: 100%;
+            height: 460px;
+            background: #020617;
+            cursor: grab;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            touch-action: none;
+            border: 2px solid #e2e8f0;
+        }
+        #three-container:active { cursor: grabbing; }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #d1d5db;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        input[type="range"].accent-green-600::-webkit-slider-thumb { background: #16a34a; }
+        input[type="range"].accent-red-600::-webkit-slider-thumb { background: #dc2626; }
+        input[type="range"].accent-amber-600::-webkit-slider-thumb { background: #d97706; }
+        input[type="range"].accent-purple-600::-webkit-slider-thumb { background: #9333ea; }
+        mjx-container { display: inline-block !important; }
+        @media (prefers-reduced-motion: reduce) {
+            .motion-safe-pulse { animation: none !important; }
+        }
+        .challenge-ok {
+            background: linear-gradient(90deg, #ecfdf5, #eff6ff);
+            border-color: #86efac;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+
+    <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <a href="index.html#mechanics" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+            </a>
+            <div class="flex items-center gap-2">
+                <button id="explain-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="modal.open">Explain</button>
+                <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                    <button onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-2 rounded-md text-xs font-medium transition hover:bg-white" data-lang="zh-hk">繁</button>
+                    <button onclick="setLanguage('en')" class="lang-btn px-3 py-2 rounded-md text-xs font-medium transition hover:bg-white bg-white shadow-sm text-blue-600" data-lang="en">EN</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-6 w-full">
+        <header class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <p class="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-1" data-i18n="page.tag">HKDSE • Compulsory Part: Force and Motion • Circular motion &amp; gravitation</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2" data-i18n="page.title">Newton's Cannon &amp; Satellite Orbits</h1>
+            <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="page.description">
+                Drag the launch-speed slider to fire a cannonball from a high mountain. Watch it fall to Earth, skim into an elliptical orbit, settle into a circular orbit, or escape — the same gravity that makes apples fall also keeps satellites aloft.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sim-shell">
+            <div class="sim-controls lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800" data-i18n="controls.title">Parameters</h3>
+                        <button id="reset-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-red-50 hover:text-red-600 transition-all" data-i18n="controls.reset">Reset</button>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.launchSpeed">Launch speed ($v$)</span>
+                            <span id="v-val" class="text-green-600 font-bold font-mono">7.00 km/s</span>
+                        </label>
+                        <input type="range" id="v-slider" min="1" max="16" step="0.05" value="7" class="w-full accent-green-600">
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.altitude">Launch altitude ($h$)</span>
+                            <span id="h-val" class="text-blue-600 font-bold font-mono">800 km</span>
+                        </label>
+                        <input type="range" id="h-slider" min="200" max="36000" step="50" value="800" class="w-full accent-blue-600">
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="controls.altitude_hint">Exaggerated mountain for Newton's thought experiment; GEO ≈ 35 786 km.</p>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.timeScale">Time scale</span>
+                            <span id="ts-val" class="text-amber-600 font-bold font-mono">×400</span>
+                        </label>
+                        <input type="range" id="ts-slider" min="50" max="2000" step="50" value="400" class="w-full accent-amber-600">
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="controls.timeScale_hint">Simulation runs faster than real time so orbits fit on screen.</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="fire-btn" class="px-4 py-2.5 min-h-[44px] rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="controls.fire">Fire / Relaunch</button>
+                        <button id="pause-btn" class="px-4 py-2.5 min-h-[44px] rounded-xl bg-slate-700 text-white font-semibold hover:bg-slate-800 transition-all" data-i18n="controls.pause">Pause</button>
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 mb-2" data-i18n="controls.presets">Presets</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="preset-crash" class="px-3 py-2 min-h-[44px] rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition" data-i18n="controls.presetCrash">Fall to ground</button>
+                            <button id="preset-ellipse" class="px-3 py-2 min-h-[44px] rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold transition" data-i18n="controls.presetEllipse">Elliptical orbit</button>
+                            <button id="preset-circular" class="px-3 py-2 min-h-[44px] rounded-xl bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold transition" data-i18n="controls.presetCircular">Circular orbit</button>
+                            <button id="preset-escape" class="px-3 py-2 min-h-[44px] rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold transition" data-i18n="controls.presetEscape">Escape</button>
+                            <button id="preset-geo" class="px-3 py-2 min-h-[44px] rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="controls.presetGeo">Geostationary</button>
+                        </div>
+                    </div>
+
+                    <div id="challenge-box" class="rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-2">
+                        <h4 class="text-sm font-bold text-blue-800" data-i18n="challenge.title">Challenge</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed" data-i18n="challenge.desc">Tune $v$ (near circular) until the cannonball completes one full revolution without hitting Earth.</p>
+                        <p id="challenge-status" class="text-xs font-semibold text-blue-700" data-i18n="challenge.wait">Waiting for a closed orbit…</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide" data-i18n="data.title">Live readings</h3>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.speed">Speed $v$</span>
+                        <span id="out-v" class="text-lg font-bold text-green-600 font-mono">7.00 km/s</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.radius">Radial distance $r$</span>
+                        <span id="out-r" class="text-lg font-bold text-slate-700 font-mono">7171 km</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.force">Gravity $F=GMm/r^2$</span>
+                        <span id="out-f" class="text-lg font-bold text-red-600 font-mono">7.6 kN</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.accel">Accel. $a=GM/r^2$</span>
+                        <span id="out-a" class="text-lg font-bold text-purple-600 font-mono">7.6 m/s²</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.period">Orbital period $T$</span>
+                        <span id="out-t" class="text-lg font-bold text-blue-600 font-mono">—</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.ecc">Eccentricity $e$</span>
+                        <span id="out-e" class="text-lg font-bold text-amber-600 font-mono">0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.orbitType">Orbit type</span>
+                        <span id="out-type" class="text-sm font-bold text-slate-800">Falling</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.vcirc">Circular $v_c=\sqrt{GM/r}$</span>
+                        <span id="out-vc" class="text-sm font-bold text-green-700 font-mono">7.45 km/s</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.vesc">Escape $v_{esc}=\sqrt{2GM/r}$</span>
+                        <span id="out-ve" class="text-sm font-bold text-amber-700 font-mono">10.54 km/s</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3" data-i18n="formula.title">HKDSE formulae</h3>
+                    <div class="text-center text-lg font-serif mb-3">$$ F = \dfrac{GMm}{r^2} $$</div>
+                    <div class="text-center text-lg font-serif mb-4">$$ v_c = \sqrt{\dfrac{GM}{r}} $$</div>
+                    <p class="text-xs text-slate-300 leading-relaxed" data-i18n="formula.why">
+                        Why? Gravity always pulls toward Earth's centre. If the sideways speed is just right, the curved path of the fall matches Earth's curvature — so the projectile keeps missing the ground and becomes a satellite.
+                    </p>
+                    <p class="text-xs text-slate-500 mt-3" data-i18n="formula.scale">Time is sped up on screen — see the time-scale control.</p>
+                </div>
+            </div>
+
+            <div class="sim-viewport lg:col-span-8 space-y-6">
+                <div class="relative">
+                    <div id="three-container" data-gl-host data-gl-topic="mechanics"></div>
+                    <div class="absolute top-3 left-3 bg-slate-900/75 text-white text-xs font-semibold px-3 py-1 rounded-full pointer-events-none" data-i18n="three.title">Newton's mountain</div>
+                    <div class="absolute top-3 right-3 bg-amber-500/90 text-white text-xs font-semibold px-3 py-1 rounded-full pointer-events-none" id="time-badge">×400</div>
+                    <div class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur text-white px-5 py-3 rounded-full text-sm pointer-events-none" data-i18n="three.hint">Drag to rotate • pinch / scroll to zoom</div>
+                    <div class="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
+                        <span class="bg-white/90 text-red-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.force">Gravity $F$</span>
+                        <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.vel">Velocity $v$</span>
+                        <span class="bg-white/90 text-purple-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.acc">Acceleration $a$</span>
+                        <span class="bg-white/90 text-slate-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.trail">Orbit trail</span>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                    <div class="flex items-start gap-4">
+                        <div class="p-3 bg-blue-600 rounded-xl text-white shrink-0">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-slate-800 mb-2" data-i18n="ai.title">Physics note</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed" data-i18n="ai.desc">
+                                Newton imagined a cannon on a tall mountain. At low $v$ the ball hits the ground nearby; raise $v$ and the landing point moves farther around the globe. When $v = \sqrt{GM/r}$, the path is a closed circle — a satellite. Between circular and escape speeds the orbit is an ellipse; above $v_{esc}=\sqrt{2GM/r}$ the ball never returns. Geostationary satellites sit much higher ($h\approx 36\,000\,\mathrm{km}$) so their period matches one sidereal day.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="explain-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[88vh] overflow-y-auto p-6 md:p-8">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <h2 class="text-xl font-bold text-slate-800" data-i18n="modal.title">Circular motion &amp; gravitation — HKDSE</h2>
+                <button id="explain-close" class="min-h-[44px] min-w-[44px] rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200">×</button>
+            </div>
+            <div class="space-y-4 text-sm text-slate-600 leading-relaxed" data-i18n="modal.body" id="modal-body">
+                <p>Newton's law of universal gravitation: every mass attracts every other with $F = GMm/r^2$, directed along the line joining their centres.</p>
+                <p>For a circular orbit, gravity supplies the centripetal force: $GMm/r^2 = mv^2/r$, so $v_c=\sqrt{GM/r}$ and $T=2\pi\sqrt{r^3/GM}$.</p>
+                <p>Energy decides the orbit shape. With specific energy $\varepsilon=v^2/2-GM/r$: bound orbits ($\varepsilon&lt;0$) are ellipses (circle when $e=0$); $\varepsilon=0$ is parabolic escape; $\varepsilon&gt;0$ is hyperbolic.</p>
+                <p><b>Colour code:</b> <span class="text-red-600 font-semibold">red</span> = gravitational force, <span class="text-green-600 font-semibold">green</span> = velocity, <span class="text-purple-600 font-semibold">purple</span> = acceleration (same direction as $F$).</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PHYSICS_COLORS = {
+            force: 0xdc2626,
+            velocity: 0x16a34a,
+            accel: 0x9333ea,
+            bField: 0xd97706,
+            displacement: 0x475569
+        };
+
+        // Physical constants (SI)
+        const G = 6.6743e-11;
+        const M_EARTH = 5.972e24;
+        const GM = G * M_EARTH;           // ≈ 3.986e14 m³/s²
+        const R_EARTH = 6.371e6;          // m
+        const PROJECTILE_MASS = 1000;     // kg (for F readout only)
+        const SIDEREAL_DAY = 86164;       // s
+        const R_GEO = Math.pow(GM * SIDEREAL_DAY * SIDEREAL_DAY / (4 * Math.PI * Math.PI), 1 / 3);
+        const H_GEO = Math.round((R_GEO - R_EARTH) / 1000); // km ≈ 35786
+
+        // Scene: Earth radius = R_SCENE units
+        const R_SCENE = 5;
+        const M_PER_UNIT = R_EARTH / R_SCENE;
+
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const defaults = {
+            vKms: 7.0,
+            hKm: 800,
+            timeScale: 400,
+            paused: false,
+            flying: true
+        };
+        const state = { ...defaults };
+
+        const sliders = {
+            v: document.getElementById('v-slider'),
+            h: document.getElementById('h-slider'),
+            ts: document.getElementById('ts-slider')
+        };
+        const threeContainer = document.getElementById('three-container');
+
+        let scene, camera, renderer, clock;
+        let earth, atmosphere, mountain, cannon, projectile, glowSprite;
+        let forceArrow, velArrow, accArrow;
+        let trailLine, trailPositions, trailCount = 0;
+        const TRAIL_MAX = reducedMotion ? 180 : 600;
+        let starField;
+        let earthSpin = 0;
+
+        let isCameraDrag = false, pinchDistance = null;
+        const lastPointer = { x: 0, y: 0 };
+        const defaultCamera = { radius: 22, theta: 0.55, phi: 1.15 };
+        const cameraState = { ...defaultCamera };
+
+        // Projectile state in metres / m/s (inertial frame, Earth centre at origin)
+        const body = {
+            x: R_EARTH + 800e3,
+            y: 0,
+            z: 0,
+            vx: 0,
+            vy: 7000,
+            vz: 0,
+            alive: true,
+            crashed: false,
+            escaped: false,
+            angleAccum: 0,
+            lastAngle: 0,
+            challengeDone: false,
+            rMin: Infinity,
+            rMax: 0
+        };
+
+        function launchRadiusM() {
+            return R_EARTH + state.hKm * 1000;
+        }
+
+        function vCircular(r) {
+            return Math.sqrt(GM / r);
+        }
+
+        function vEscape(r) {
+            return Math.sqrt(2 * GM / r);
+        }
+
+        function orbitElements(r, v) {
+            // Horizontal launch: r ⟂ v, specific angular momentum h = r v
+            const hAng = r * v;
+            const eps = 0.5 * v * v - GM / r;
+            const e = Math.sqrt(Math.max(0, 1 + (2 * eps * hAng * hAng) / (GM * GM)));
+            let typeKey = 'falling';
+            if (r <= R_EARTH * 1.001 && v < vCircular(r) * 0.98) typeKey = 'falling';
+            if (eps >= 0) {
+                typeKey = Math.abs(eps) < 1e4 ? 'parabolic' : 'hyperbolic';
+            } else if (e < 0.02) {
+                typeKey = 'circular';
+            } else if (e < 1) {
+                typeKey = 'elliptical';
+            }
+            // Period for bound orbits (Kepler): a = -GM/(2ε)
+            let T = null;
+            if (eps < 0) {
+                const a = -GM / (2 * eps);
+                T = 2 * Math.PI * Math.sqrt(Math.pow(a, 3) / GM);
+            }
+            return { e, eps, T, typeKey, hAng };
+        }
+
+        function predictTypeAtLaunch() {
+            const r = launchRadiusM();
+            const v = state.vKms * 1000;
+            const el = orbitElements(r, v);
+            // Will it hit Earth? Periapsis of ellipse from horizontal launch at r:
+            // For launch at r with speed v perpendicular: periapsis rp = a(1-e) if currently at apo/peri
+            // At horizontal launch, r is neither unless circular. Approximate: if e ellipse and
+            // periapsis = hAng²/GM / (1+e) — radial distance of periapsis
+            if (el.eps < 0) {
+                const p = (el.hAng * el.hAng) / GM; // semi-latus rectum
+                const rp = p / (1 + el.e);
+                if (rp < R_EARTH * 0.999) el.typeKey = 'falling';
+            }
+            return el;
+        }
+
+        function fmtSpeed(ms) {
+            return (ms / 1000).toFixed(2) + ' km/s';
+        }
+        function fmtDist(m) {
+            if (m > 1e7) return (m / 1000).toFixed(0) + ' km';
+            return (m / 1000).toFixed(1) + ' km';
+        }
+        function fmtForce(N) {
+            if (N >= 1e6) return (N / 1e6).toFixed(2) + ' MN';
+            if (N >= 1e3) return (N / 1e3).toFixed(1) + ' kN';
+            return N.toFixed(0) + ' N';
+        }
+        function fmtPeriod(s) {
+            if (s == null || !isFinite(s)) return '—';
+            if (s < 3600) return (s / 60).toFixed(1) + ' min';
+            if (s < 86400 * 1.5) return (s / 3600).toFixed(2) + ' h';
+            return (s / 86400).toFixed(2) + ' d';
+        }
+
+        function toScene(x, y, z) {
+            return new THREE.Vector3(x / M_PER_UNIT, y / M_PER_UNIT, z / M_PER_UNIT);
+        }
+
+        function makeEarthTexture() {
+            const c = document.createElement('canvas');
+            c.width = 512; c.height = 256;
+            const ctx = c.getContext('2d');
+            const g = ctx.createLinearGradient(0, 0, 0, 256);
+            g.addColorStop(0, '#93c5fd');
+            g.addColorStop(0.35, '#1d4ed8');
+            g.addColorStop(0.55, '#15803d');
+            g.addColorStop(0.75, '#166534');
+            g.addColorStop(1, '#93c5fd');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, 512, 256);
+            // continents (simple blobs)
+            ctx.fillStyle = '#16a34a';
+            for (let i = 0; i < 28; i++) {
+                const x = (i * 97) % 512;
+                const y = 40 + (i * 53) % 176;
+                ctx.beginPath();
+                ctx.ellipse(x, y, 18 + (i % 5) * 6, 10 + (i % 4) * 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            ctx.fillRect(0, 0, 512, 18);
+            ctx.fillRect(0, 238, 512, 18);
+            const tex = new THREE.CanvasTexture(c);
+            tex.needsUpdate = true;
+            return tex;
+        }
+
+        function initTrail() {
+            trailPositions = new Float32Array(TRAIL_MAX * 3);
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+            geo.setDrawRange(0, 0);
+            const mat = new THREE.LineBasicMaterial({
+                color: 0x93c5fd,
+                transparent: true,
+                opacity: 0.85
+            });
+            trailLine = new THREE.Line(geo, mat);
+            scene.add(trailLine);
+            trailCount = 0;
+        }
+
+        function pushTrail(pos) {
+            if (trailCount < TRAIL_MAX) {
+                const i = trailCount * 3;
+                trailPositions[i] = pos.x;
+                trailPositions[i + 1] = pos.y;
+                trailPositions[i + 2] = pos.z;
+                trailCount++;
+            } else {
+                trailPositions.copyWithin(0, 3);
+                const i = (TRAIL_MAX - 1) * 3;
+                trailPositions[i] = pos.x;
+                trailPositions[i + 1] = pos.y;
+                trailPositions[i + 2] = pos.z;
+            }
+            trailLine.geometry.attributes.position.needsUpdate = true;
+            trailLine.geometry.setDrawRange(0, trailCount);
+        }
+
+        function clearTrail() {
+            trailCount = 0;
+            if (trailLine) trailLine.geometry.setDrawRange(0, 0);
+        }
+
+        function updateCameraFromSpherical() {
+            const { radius, theta, phi } = cameraState;
+            camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
+            camera.position.y = radius * Math.cos(phi);
+            camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function resetCameraView() {
+            Object.assign(cameraState, defaultCamera);
+            updateCameraFromSpherical();
+        }
+
+        function setupCameraControls() {
+            threeContainer.addEventListener('mousedown', (e) => {
+                if (e.target.closest('input, button')) return;
+                isCameraDrag = true;
+                lastPointer.x = e.clientX;
+                lastPointer.y = e.clientY;
+            });
+            window.addEventListener('mouseup', () => { isCameraDrag = false; });
+            window.addEventListener('mousemove', (e) => {
+                if (!isCameraDrag) return;
+                cameraState.theta -= (e.clientX - lastPointer.x) * 0.005;
+                cameraState.phi -= (e.clientY - lastPointer.y) * 0.005;
+                cameraState.phi = Math.max(0.15, Math.min(Math.PI - 0.15, cameraState.phi));
+                lastPointer.x = e.clientX;
+                lastPointer.y = e.clientY;
+                updateCameraFromSpherical();
+            });
+            threeContainer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                cameraState.radius = Math.max(8, Math.min(80, cameraState.radius + e.deltaY * 0.04));
+                updateCameraFromSpherical();
+            }, { passive: false });
+
+            let lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+            threeContainer.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 1) {
+                    lastTouchX = e.touches[0].clientX;
+                    lastTouchY = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    lastTouchDist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                }
+            }, { passive: false });
+            threeContainer.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 1 && lastTouchX !== null) {
+                    const dx = (e.touches[0].clientX - lastTouchX) * 0.008;
+                    const dy = (e.touches[0].clientY - lastTouchY) * 0.008;
+                    lastTouchX = e.touches[0].clientX;
+                    lastTouchY = e.touches[0].clientY;
+                    cameraState.theta -= dx;
+                    cameraState.phi -= dy;
+                    cameraState.phi = Math.max(0.15, Math.min(Math.PI - 0.15, cameraState.phi));
+                    updateCameraFromSpherical();
+                } else if (e.touches.length === 2 && lastTouchDist !== null) {
+                    const dist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    cameraState.radius += (lastTouchDist - dist) * 0.08;
+                    cameraState.radius = Math.max(8, Math.min(80, cameraState.radius));
+                    lastTouchDist = dist;
+                    updateCameraFromSpherical();
+                }
+            }, { passive: false });
+            threeContainer.addEventListener('touchend', () => {
+                lastTouchX = lastTouchY = lastTouchDist = null;
+            });
+        }
+
+        function buildMountain() {
+            mountain = new THREE.Group();
+            const cone = new THREE.Mesh(
+                new THREE.ConeGeometry(1.1, 1.8, 7),
+                new THREE.MeshStandardMaterial({ color: 0x78716c, roughness: 0.9, flatShading: true })
+            );
+            cone.position.y = 0.9;
+            cone.castShadow = true;
+            mountain.add(cone);
+            const snow = new THREE.Mesh(
+                new THREE.ConeGeometry(0.45, 0.55, 7),
+                new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.7 })
+            );
+            snow.position.y = 1.55;
+            mountain.add(snow);
+            scene.add(mountain);
+        }
+
+        function buildCannon() {
+            cannon = new THREE.Group();
+            const base = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.12, 0.16, 0.12, 12),
+                new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.4, roughness: 0.5 })
+            );
+            cannon.add(base);
+            const barrel = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.05, 0.07, 0.45, 12),
+                new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.6, roughness: 0.4 })
+            );
+            barrel.rotation.z = Math.PI / 2;
+            barrel.position.set(0.2, 0.08, 0);
+            cannon.add(barrel);
+            scene.add(cannon);
+        }
+
+        function initThree() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020617);
+            clock = new THREE.Clock();
+
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 500);
+            renderer = new THREE.WebGLRenderer({ antialias: !reducedMotion });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, reducedMotion ? 1.5 : 2));
+            renderer.setSize(w, h);
+            renderer.shadowMap.enabled = !reducedMotion;
+            threeContainer.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0x6688aa, 0.45));
+            const sun = new THREE.DirectionalLight(0xfff1c1, 1.1);
+            sun.position.set(30, 18, 12);
+            sun.castShadow = !reducedMotion;
+            scene.add(sun);
+            const rim = new THREE.DirectionalLight(0x60a5fa, 0.35);
+            rim.position.set(-20, -5, -15);
+            scene.add(rim);
+
+            // Stars
+            const starN = reducedMotion ? 400 : 1200;
+            const starPos = new Float32Array(starN * 3);
+            for (let i = 0; i < starN; i++) {
+                const r = 80 + Math.random() * 120;
+                const th = Math.random() * Math.PI * 2;
+                const ph = Math.acos(2 * Math.random() - 1);
+                starPos[i * 3] = r * Math.sin(ph) * Math.cos(th);
+                starPos[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th);
+                starPos[i * 3 + 2] = r * Math.cos(ph);
+            }
+            const starGeo = new THREE.BufferGeometry();
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            starField = new THREE.Points(
+                starGeo,
+                new THREE.PointsMaterial({ color: 0xe2e8f0, size: 0.35, sizeAttenuation: true, transparent: true, opacity: 0.9 })
+            );
+            scene.add(starField);
+
+            earth = new THREE.Mesh(
+                new THREE.SphereGeometry(R_SCENE, 64, 48),
+                new THREE.MeshStandardMaterial({
+                    map: makeEarthTexture(),
+                    roughness: 0.85,
+                    metalness: 0.05
+                })
+            );
+            earth.receiveShadow = true;
+            earth.castShadow = true;
+            scene.add(earth);
+
+            atmosphere = new THREE.Mesh(
+                new THREE.SphereGeometry(R_SCENE * 1.045, 48, 32),
+                new THREE.MeshBasicMaterial({
+                    color: 0x38bdf8,
+                    transparent: true,
+                    opacity: 0.12,
+                    side: THREE.BackSide,
+                    depthWrite: false
+                })
+            );
+            scene.add(atmosphere);
+
+            // Soft glow halo
+            const halo = new THREE.Mesh(
+                new THREE.SphereGeometry(R_SCENE * 1.12, 32, 24),
+                new THREE.MeshBasicMaterial({
+                    color: 0x2563eb,
+                    transparent: true,
+                    opacity: 0.06,
+                    side: THREE.BackSide,
+                    depthWrite: false
+                })
+            );
+            scene.add(halo);
+
+            buildMountain();
+            buildCannon();
+
+            projectile = new THREE.Mesh(
+                new THREE.SphereGeometry(0.14, 16, 16),
+                new THREE.MeshStandardMaterial({
+                    color: 0xfbbf24,
+                    emissive: 0xf59e0b,
+                    emissiveIntensity: 0.45,
+                    metalness: 0.3,
+                    roughness: 0.35
+                })
+            );
+            projectile.castShadow = true;
+            scene.add(projectile);
+
+            forceArrow = new THREE.ArrowHelper(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(), 1.2, PHYSICS_COLORS.force, 0.28, 0.16);
+            velArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 1.4, PHYSICS_COLORS.velocity, 0.28, 0.16);
+            accArrow = new THREE.ArrowHelper(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(), 0.9, PHYSICS_COLORS.accel, 0.22, 0.12);
+            scene.add(forceArrow);
+            scene.add(velArrow);
+            scene.add(accArrow);
+
+            initTrail();
+            setupCameraControls();
+            resetCameraView();
+            placeMountainAndCannon();
+            relaunch();
+
+            if (window.PhysicsGlOverlay) PhysicsGlOverlay.ready();
+        }
+
+        function placeMountainAndCannon() {
+            const r0 = launchRadiusM() / M_PER_UNIT;
+            // Mountain sits on surface along +X; peak near launch height (visual exaggeration)
+            const surface = R_SCENE;
+            mountain.position.set(surface * 0.92, 0, 0);
+            mountain.rotation.z = -Math.PI / 2;
+            mountain.scale.setScalar(Math.max(0.55, Math.min(2.2, (r0 - R_SCENE) * 0.55)));
+
+            cannon.position.set(r0, 0, 0);
+            cannon.rotation.set(0, 0, 0);
+            // Barrel points in +Y (launch direction)
+            cannon.rotation.z = 0;
+            const barrel = cannon.children[1];
+            if (barrel) {
+                barrel.rotation.z = Math.PI / 2;
+                barrel.rotation.y = 0;
+                barrel.position.set(0, 0.22, 0);
+            }
+        }
+
+        function relaunch() {
+            const r = launchRadiusM();
+            const v = state.vKms * 1000;
+            body.x = r;
+            body.y = 0;
+            body.z = 0;
+            body.vx = 0;
+            body.vy = v;
+            body.vz = 0;
+            body.alive = true;
+            body.crashed = false;
+            body.escaped = false;
+            body.angleAccum = 0;
+            body.lastAngle = Math.atan2(body.y, body.x);
+            body.challengeDone = false;
+            body.rMin = r;
+            body.rMax = r;
+            state.flying = true;
+            state.paused = false;
+            document.getElementById('pause-btn').textContent = t('controls.pause');
+            clearTrail();
+            placeMountainAndCannon();
+            updateChallenge('wait');
+            updateReadouts();
+            syncVectors();
+        }
+
+        function accelAt(x, y, z) {
+            const r2 = x * x + y * y + z * z;
+            const r = Math.sqrt(r2);
+            const factor = -GM / (r2 * r);
+            return { ax: factor * x, ay: factor * y, az: factor * z, r };
+        }
+
+        // Velocity-Verlet integration (stable for gravity)
+        function stepPhysics(dt) {
+            if (!body.alive || state.paused || !state.flying) return;
+
+            const steps = Math.min(12, Math.max(1, Math.ceil(dt / 2))); // substeps for large dt
+            const h = dt / steps;
+            for (let s = 0; s < steps; s++) {
+                const a0 = accelAt(body.x, body.y, body.z);
+                body.x += body.vx * h + 0.5 * a0.ax * h * h;
+                body.y += body.vy * h + 0.5 * a0.ay * h * h;
+                body.z += body.vz * h + 0.5 * a0.az * h * h;
+                const a1 = accelAt(body.x, body.y, body.z);
+                body.vx += 0.5 * (a0.ax + a1.ax) * h;
+                body.vy += 0.5 * (a0.ay + a1.ay) * h;
+                body.vz += 0.5 * (a0.az + a1.az) * h;
+
+                const r = Math.sqrt(body.x * body.x + body.y * body.y + body.z * body.z);
+                body.rMin = Math.min(body.rMin, r);
+                body.rMax = Math.max(body.rMax, r);
+
+                const ang = Math.atan2(body.y, body.x);
+                let dAng = ang - body.lastAngle;
+                if (dAng > Math.PI) dAng -= 2 * Math.PI;
+                if (dAng < -Math.PI) dAng += 2 * Math.PI;
+                body.angleAccum += dAng;
+                body.lastAngle = ang;
+
+                if (r <= R_EARTH) {
+                    body.alive = false;
+                    body.crashed = true;
+                    state.flying = false;
+                    // Snap to surface
+                    const s = R_EARTH / r;
+                    body.x *= s; body.y *= s; body.z *= s;
+                    body.vx = body.vy = body.vz = 0;
+                    updateChallenge('crash');
+                    break;
+                }
+                if (r > R_EARTH * 25) {
+                    body.escaped = true;
+                    // Keep integrating but mark escaped for UI
+                }
+            }
+
+            if (body.alive && !body.challengeDone && body.angleAccum >= 2 * Math.PI && body.rMin > R_EARTH * 1.002) {
+                body.challengeDone = true;
+                updateChallenge('success');
+            }
+        }
+
+        function syncVectors() {
+            const pos = toScene(body.x, body.y, body.z);
+            projectile.position.copy(pos);
+            projectile.visible = true;
+
+            const r = Math.sqrt(body.x * body.x + body.y * body.y + body.z * body.z) || 1;
+            const speed = Math.hypot(body.vx, body.vy, body.vz);
+
+            // Force / accel toward centre
+            const toward = new THREE.Vector3(-body.x, -body.y, -body.z).normalize();
+            forceArrow.position.copy(pos);
+            forceArrow.setDirection(toward);
+            forceArrow.setLength(1.1, 0.28, 0.16);
+            forceArrow.visible = body.alive;
+
+            accArrow.position.copy(pos);
+            accArrow.setDirection(toward);
+            accArrow.setLength(0.75, 0.2, 0.12);
+            accArrow.visible = body.alive;
+
+            if (speed > 1) {
+                const vDir = new THREE.Vector3(body.vx, body.vy, body.vz).normalize();
+                velArrow.position.copy(pos);
+                velArrow.setDirection(vDir);
+                const len = 0.7 + Math.min(2.2, speed / 5000);
+                velArrow.setLength(len, 0.28, 0.16);
+                velArrow.visible = true;
+            } else {
+                velArrow.visible = false;
+            }
+
+            if (body.alive && state.flying) pushTrail(pos);
+        }
+
+        function updateChallenge(mode) {
+            const box = document.getElementById('challenge-box');
+            const el = document.getElementById('challenge-status');
+            box.classList.remove('challenge-ok');
+            if (mode === 'success') {
+                box.classList.add('challenge-ok');
+                el.textContent = t('challenge.success');
+                el.setAttribute('data-i18n', 'challenge.success');
+            } else if (mode === 'crash') {
+                el.textContent = t('challenge.crash');
+                el.setAttribute('data-i18n', 'challenge.crash');
+            } else {
+                el.textContent = t('challenge.wait');
+                el.setAttribute('data-i18n', 'challenge.wait');
+            }
+        }
+
+        function updateReadouts() {
+            const r = Math.sqrt(body.x * body.x + body.y * body.y + body.z * body.z);
+            const v = Math.hypot(body.vx, body.vy, body.vz);
+            const a = GM / (r * r);
+            const F = PROJECTILE_MASS * a;
+            const launchEl = predictTypeAtLaunch();
+            // Live eccentricity from current state
+            const hAng = Math.hypot(
+                body.y * body.vz - body.z * body.vy,
+                body.z * body.vx - body.x * body.vz,
+                body.x * body.vy - body.y * body.vx
+            );
+            const eps = 0.5 * v * v - GM / r;
+            const eLive = Math.sqrt(Math.max(0, 1 + (2 * eps * hAng * hAng) / (GM * GM)));
+            let T = null;
+            if (eps < 0) {
+                const semi = -GM / (2 * eps);
+                T = 2 * Math.PI * Math.sqrt(Math.pow(semi, 3) / GM);
+            }
+
+            let typeKey = launchEl.typeKey;
+            if (body.crashed) typeKey = 'crashed';
+            else if (body.escaped || eps >= 0) typeKey = eps > 1e5 ? 'hyperbolic' : (eps >= 0 ? 'parabolic' : typeKey);
+            else if (eLive < 0.03) typeKey = 'circular';
+            else typeKey = 'elliptical';
+
+            document.getElementById('out-v').textContent = fmtSpeed(v);
+            document.getElementById('out-r').textContent = fmtDist(r);
+            document.getElementById('out-f').textContent = fmtForce(F);
+            document.getElementById('out-a').textContent = a.toFixed(2) + ' m/s²';
+            document.getElementById('out-t').textContent = fmtPeriod(T);
+            document.getElementById('out-e').textContent = eLive.toFixed(3);
+            document.getElementById('out-type').textContent = t('orbit.' + typeKey);
+            document.getElementById('out-vc').textContent = fmtSpeed(vCircular(launchRadiusM()));
+            document.getElementById('out-ve').textContent = fmtSpeed(vEscape(launchRadiusM()));
+
+            document.getElementById('v-val').textContent = state.vKms.toFixed(2) + ' km/s';
+            document.getElementById('h-val').textContent = state.hKm.toLocaleString('en-HK') + ' km';
+            document.getElementById('ts-val').textContent = '×' + state.timeScale;
+            document.getElementById('time-badge').textContent = '×' + state.timeScale;
+        }
+
+        function syncSliders() {
+            sliders.v.value = state.vKms;
+            sliders.h.value = state.hKm;
+            sliders.ts.value = state.timeScale;
+        }
+
+        function readSliders() {
+            state.vKms = parseFloat(sliders.v.value);
+            state.hKm = parseFloat(sliders.h.value);
+            state.timeScale = parseFloat(sliders.ts.value);
+        }
+
+        function updateSimulation() {
+            readSliders();
+            relaunch();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dtFrame = Math.min(clock.getDelta(), 0.05);
+            const dtPhys = dtFrame * state.timeScale;
+
+            if (!reducedMotion) {
+                earthSpin += dtFrame * 0.05;
+                earth.rotation.y = earthSpin;
+            }
+
+            stepPhysics(dtPhys);
+            syncVectors();
+            updateReadouts();
+            renderer.render(scene, camera);
+        }
+
+        function resizeThree() {
+            if (!renderer || !camera) return;
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+        }
+
+        // ---------- i18n ----------
+        const translations = {
+            en: {
+                'nav.back': 'Back to Home',
+                'page.tag': 'HKDSE • Compulsory Part: Force and Motion • Circular motion & gravitation',
+                'page.title': "Newton's Cannon & Satellite Orbits",
+                'page.description': "Drag the launch-speed slider to fire a cannonball from a high mountain. Watch it fall to Earth, skim into an elliptical orbit, settle into a circular orbit, or escape — the same gravity that makes apples fall also keeps satellites aloft.",
+                'controls.title': 'Parameters',
+                'controls.reset': 'Reset',
+                'controls.launchSpeed': 'Launch speed ($v$)',
+                'controls.altitude': 'Launch altitude ($h$)',
+                'controls.altitude_hint': "Exaggerated mountain for Newton's thought experiment; GEO ≈ 35 786 km.",
+                'controls.timeScale': 'Time scale',
+                'controls.timeScale_hint': 'Simulation runs faster than real time so orbits fit on screen.',
+                'controls.fire': 'Fire / Relaunch',
+                'controls.pause': 'Pause',
+                'controls.resume': 'Resume',
+                'controls.presets': 'Presets',
+                'controls.presetCrash': 'Fall to ground',
+                'controls.presetEllipse': 'Elliptical orbit',
+                'controls.presetCircular': 'Circular orbit',
+                'controls.presetEscape': 'Escape',
+                'controls.presetGeo': 'Geostationary',
+                'challenge.title': 'Challenge',
+                'challenge.desc': 'Tune $v$ (near circular) until the cannonball completes one full revolution without hitting Earth.',
+                'challenge.wait': 'Waiting for a closed orbit…',
+                'challenge.success': 'Success! One full orbit completed without impact.',
+                'challenge.crash': 'Impacted Earth — raise $v$ or $h$ and try again.',
+                'data.title': 'Live readings',
+                'data.speed': 'Speed $v$',
+                'data.radius': 'Radial distance $r$',
+                'data.force': 'Gravity $F=GMm/r^2$',
+                'data.accel': 'Accel. $a=GM/r^2$',
+                'data.period': 'Orbital period $T$',
+                'data.ecc': 'Eccentricity $e$',
+                'data.orbitType': 'Orbit type',
+                'data.vcirc': 'Circular $v_c=\\sqrt{GM/r}$',
+                'data.vesc': 'Escape $v_{esc}=\\sqrt{2GM/r}$',
+                'formula.title': 'HKDSE formulae',
+                'formula.why': "Why? Gravity always pulls toward Earth's centre. If the sideways speed is just right, the curved path of the fall matches Earth's curvature — so the projectile keeps missing the ground and becomes a satellite.",
+                'formula.scale': 'Time is sped up on screen — see the time-scale control.',
+                'three.title': "Newton's mountain",
+                'three.hint': 'Drag to rotate • pinch / scroll to zoom',
+                'legend.force': 'Gravity $F$',
+                'legend.vel': 'Velocity $v$',
+                'legend.acc': 'Acceleration $a$',
+                'legend.trail': 'Orbit trail',
+                'ai.title': 'Physics note',
+                'ai.desc': "Newton imagined a cannon on a tall mountain. At low $v$ the ball hits the ground nearby; raise $v$ and the landing point moves farther around the globe. When $v = \\sqrt{GM/r}$, the path is a closed circle — a satellite. Between circular and escape speeds the orbit is an ellipse; above $v_{esc}=\\sqrt{2GM/r}$ the ball never returns. Geostationary satellites sit much higher ($h\\approx 36\\,000\\,\\mathrm{km}$) so their period matches one sidereal day.",
+                'modal.open': 'Explain',
+                'modal.title': 'Circular motion & gravitation — HKDSE',
+                'modal.body': "<p>Newton's law of universal gravitation: every mass attracts every other with $F = GMm/r^2$, directed along the line joining their centres.</p><p>For a circular orbit, gravity supplies the centripetal force: $GMm/r^2 = mv^2/r$, so $v_c=\\sqrt{GM/r}$ and $T=2\\pi\\sqrt{r^3/GM}$.</p><p>Energy decides the orbit shape. With specific energy $\\varepsilon=v^2/2-GM/r$: bound orbits ($\\varepsilon&lt;0$) are ellipses (circle when $e=0$); $\\varepsilon=0$ is parabolic escape; $\\varepsilon&gt;0$ is hyperbolic.</p><p><b>Colour code:</b> <span class=\"text-red-600 font-semibold\">red</span> = gravitational force, <span class=\"text-green-600 font-semibold\">green</span> = velocity, <span class=\"text-purple-600 font-semibold\">purple</span> = acceleration (same direction as $F$).</p>",
+                'orbit.falling': 'Falls to Earth',
+                'orbit.crashed': 'Impact',
+                'orbit.elliptical': 'Elliptical',
+                'orbit.circular': 'Circular',
+                'orbit.parabolic': 'Escape (parabolic)',
+                'orbit.hyperbolic': 'Escape (hyperbolic)'
+            },
+            'zh-hk': {
+                'nav.back': '返回首頁',
+                'page.tag': 'HKDSE • 必修部分：力和運動 • 圓周運動與萬有引力',
+                'page.title': '牛頓砲彈與衛星軌道',
+                'page.description': '拖動發射速率滑桿，從高山上發射砲彈。觀察它落地、進入橢圓軌道、恰好成為圓形軌道，或逃逸的差別——令蘋果落地的引力，同樣使衛星環繞地球。',
+                'controls.title': '參數',
+                'controls.reset': '重設',
+                'controls.launchSpeed': '發射速率 ($v$)',
+                'controls.altitude': '發射高度 ($h$)',
+                'controls.altitude_hint': '為牛頓思想實驗而誇大的山峰；地球同步衛星高度約 35 786 km。',
+                'controls.timeScale': '時間縮放',
+                'controls.timeScale_hint': '模擬較真實時間加快，以便在畫面中看清軌道。',
+                'controls.fire': '發射／再發射',
+                'controls.pause': '暫停',
+                'controls.resume': '繼續',
+                'controls.presets': '預設情境',
+                'controls.presetCrash': '落地',
+                'controls.presetEllipse': '橢圓軌道',
+                'controls.presetCircular': '圓形軌道',
+                'controls.presetEscape': '逃逸',
+                'controls.presetGeo': '地球同步衛星',
+                'challenge.title': '挑戰',
+                'challenge.desc': '調節 $v$（接近圓軌道速率），使砲彈在不撞擊地球的情況下完成一整圈。',
+                'challenge.wait': '等待封閉軌道……',
+                'challenge.success': '成功！已完成一整圈且未撞擊地球。',
+                'challenge.crash': '已撞擊地球——請提高 $v$ 或 $h$ 後再試。',
+                'data.title': '即時讀數',
+                'data.speed': '速率 $v$',
+                'data.radius': '徑向距離 $r$',
+                'data.force': '萬有引力 $F=GMm/r^2$',
+                'data.accel': '加速度 $a=GM/r^2$',
+                'data.period': '軌道週期 $T$',
+                'data.ecc': '離心率 $e$',
+                'data.orbitType': '軌道類型',
+                'data.vcirc': '圓軌道 $v_c=\\sqrt{GM/r}$',
+                'data.vesc': '逃逸速率 $v_{esc}=\\sqrt{2GM/r}$',
+                'formula.title': 'HKDSE 公式',
+                'formula.why': '為甚麼？萬有引力時刻指向地心。若橫向速率恰到好處，下落路徑的彎曲程度便與地球表面的彎曲匹配——砲彈便會不斷「錯過」地面，成為衛星。',
+                'formula.scale': '畫面時間已加快——請參閱時間縮放控制。',
+                'three.title': '牛頓高山',
+                'three.hint': '拖曳旋轉 • 雙指／滾輪縮放',
+                'legend.force': '萬有引力 $F$',
+                'legend.vel': '速度 $v$',
+                'legend.acc': '加速度 $a$',
+                'legend.trail': '軌道軌跡',
+                'ai.title': '物理說明',
+                'ai.desc': '牛頓設想在高山上架設大砲。$v$ 較小時砲彈落在附近；提高 $v$，落點便沿地球表面走得更遠。當 $v = \\sqrt{GM/r}$ 時，路徑成為封閉圓——即衛星。介乎圓軌道與逃逸速率之間為橢圓；高於 $v_{esc}=\\sqrt{2GM/r}$ 則一去不返。地球同步衛星位於更高處（$h\\approx 36\\,000\\,\\mathrm{km}$），使其週期等於一個恆星日。',
+                'modal.open': '解釋',
+                'modal.title': '圓周運動與萬有引力 — HKDSE',
+                'modal.body': '<p>牛頓萬有引力定律：任何兩物體互相吸引，引力大小 $F = GMm/r^2$，方向沿兩物體連心線。</p><p>圓軌道中，萬有引力提供向心力：$GMm/r^2 = mv^2/r$，故 $v_c=\\sqrt{GM/r}$，週期 $T=2\\pi\\sqrt{r^3/GM}$。</p><p>能量決定軌道形狀。比能量 $\\varepsilon=v^2/2-GM/r$：束縛軌道（$\\varepsilon&lt;0$）為橢圓（$e=0$ 時為圓）；$\\varepsilon=0$ 為拋物線逃逸；$\\varepsilon&gt;0$ 為雙曲線。</p><p><b>顏色編碼：</b><span class="text-red-600 font-semibold">紅色</span>＝萬有引力，<span class="text-green-600 font-semibold">綠色</span>＝速度，<span class="text-purple-600 font-semibold">紫色</span>＝加速度（與 $F$ 同向）。</p>',
+                'orbit.falling': '將會落地',
+                'orbit.crashed': '撞擊',
+                'orbit.elliptical': '橢圓軌道',
+                'orbit.circular': '圓形軌道',
+                'orbit.parabolic': '逃逸（拋物線）',
+                'orbit.hyperbolic': '逃逸（雙曲線）'
+            }
+        };
+
+        let currentLang = (window.PhysicsI18n ? PhysicsI18n.get() : (localStorage.getItem('preferred_language') || 'en'));
+        if (window.PhysicsI18n) currentLang = PhysicsI18n.normalize(currentLang);
+        if (currentLang === 'zh' || currentLang === 'cn' || currentLang === 'zh-TW' || currentLang === 'zh-CN') {
+            currentLang = 'zh-hk';
+        }
+        if (currentLang === 'zh-cn') currentLang = 'zh-hk';
+
+        function t(key) {
+            return (window.PhysicsI18n ? PhysicsI18n.resolve(translations, currentLang)[key] : translations[currentLang]?.[key]) ?? translations.en?.[key] ?? key;
+        }
+
+        function setLanguage(lang) {
+            if (window.PhysicsI18n) lang = PhysicsI18n.normalize(lang);
+            if (lang === 'zh-cn' || lang === 'cn') lang = 'zh-hk';
+            currentLang = window.PhysicsI18n ? PhysicsI18n.set(lang) : lang;
+            if (!window.PhysicsI18n) localStorage.setItem('preferred_language', lang);
+            document.documentElement.lang = window.PhysicsI18n ? PhysicsI18n.htmlLang(lang) : (lang === 'zh-hk' ? 'zh-HK' : 'en');
+            document.querySelectorAll('[data-i18n]').forEach((el) => {
+                const key = el.getAttribute('data-i18n');
+                const val = translations[lang]?.[key] ?? translations.en?.[key];
+                if (!val) return;
+                if (key.includes('desc') || key.includes('body') || key.includes('note') || key.includes('hint') || key.includes('why')) {
+                    el.innerHTML = val;
+                } else {
+                    el.textContent = val;
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach((btn) => {
+                const active = window.PhysicsI18n ? PhysicsI18n.matchButton(btn.dataset.lang, lang) : (btn.dataset.lang === lang);
+                btn.classList.toggle('bg-white', active);
+                btn.classList.toggle('shadow-sm', active);
+                btn.classList.toggle('text-blue-600', active);
+            });
+            document.getElementById('pause-btn').textContent = state.paused ? t('controls.resume') : t('controls.pause');
+            updateReadouts();
+            if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+        }
+        window.setLanguage = setLanguage;
+
+        // ---------- events ----------
+        Object.values(sliders).forEach((s) => s.addEventListener('input', () => {
+            readSliders();
+            if (s === sliders.ts) {
+                document.getElementById('ts-val').textContent = '×' + state.timeScale;
+                document.getElementById('time-badge').textContent = '×' + state.timeScale;
+                return;
+            }
+            relaunch();
+        }));
+
+        document.getElementById('fire-btn').addEventListener('click', () => relaunch());
+        document.getElementById('pause-btn').addEventListener('click', () => {
+            state.paused = !state.paused;
+            document.getElementById('pause-btn').textContent = state.paused ? t('controls.resume') : t('controls.pause');
+        });
+
+        function applyPreset(hKm, vFactor) {
+            state.hKm = hKm;
+            const r = launchRadiusM();
+            const vc = vCircular(r) / 1000;
+            state.vKms = Math.min(16, Math.max(1, +(vc * vFactor).toFixed(2)));
+            // Zoom camera for GEO
+            if (hKm > 20000) {
+                cameraState.radius = Math.min(80, 8 + (r / M_PER_UNIT) * 2.2);
+                updateCameraFromSpherical();
+            } else {
+                cameraState.radius = defaultCamera.radius;
+                updateCameraFromSpherical();
+            }
+            syncSliders();
+            relaunch();
+        }
+
+        // Horizontal launch: v < vc → periapsis closer (often hits Earth);
+        // v > vc → launch point is periapsis, apoapsis farther (closed ellipse if v < vesc).
+        document.getElementById('preset-crash').addEventListener('click', () => applyPreset(800, 0.55));
+        document.getElementById('preset-ellipse').addEventListener('click', () => applyPreset(800, 1.18));
+        document.getElementById('preset-circular').addEventListener('click', () => applyPreset(800, 1.0));
+        document.getElementById('preset-escape').addEventListener('click', () => applyPreset(800, 1.42));
+        document.getElementById('preset-geo').addEventListener('click', () => {
+            applyPreset(H_GEO, 1.0);
+            state.timeScale = 1200;
+            syncSliders();
+            document.getElementById('ts-val').textContent = '×' + state.timeScale;
+            document.getElementById('time-badge').textContent = '×' + state.timeScale;
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            Object.assign(state, defaults);
+            syncSliders();
+            resetCameraView();
+            relaunch();
+        });
+
+        const modal = document.getElementById('explain-modal');
+        document.getElementById('explain-btn').addEventListener('click', () => modal.classList.remove('hidden'));
+        document.getElementById('explain-close').addEventListener('click', () => modal.classList.add('hidden'));
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+        window.addEventListener('resize', resizeThree);
+
+        initThree();
+        syncSliders();
+        setLanguage(currentLang === 'zh-hk' ? 'zh-hk' : 'en');
+        animate();
+    </script>
+
+    <script src="practice_questions.js"></script>
+    <script src="practice_questions_data.js"></script>
+    <script>initPracticeQuestions('newtons_cannon');</script>
+</body>
+</html>
