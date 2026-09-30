@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellar Evolution &amp; H-R Diagram (HKDSE E1)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="window.__THREE_CDN_FAILED=true"></script>
+    <link rel="stylesheet" href="shared/sim-shell.css">
+    <script src="shared/i18n.js"></script>
+    <script src="shared/gl-overlay.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script"></script>
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: 'Inter', sans-serif; }
+        #three-container {
+            width: 100%;
+            height: 360px;
+            background: #020617;
+            cursor: grab;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            touch-action: none;
+            border: 2px solid #1e293b;
+        }
+        #three-container:active { cursor: grabbing; }
+        #hr-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: crosshair;
+            touch-action: manipulation;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #d1d5db;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        input[type="range"].accent-amber-600::-webkit-slider-thumb { background: #d97706; }
+        input[type="range"].accent-red-600::-webkit-slider-thumb { background: #dc2626; }
+        .preset-btn.active, .challenge-btn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+        mjx-container { display: inline-block !important; }
+        @media (prefers-reduced-motion: reduce) {
+            .motion-safe { animation: none !important; transition: none !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+
+    <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+            </a>
+            <div class="flex items-center gap-2">
+                <button id="explain-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="modal.open">Explain</button>
+                <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+                    <button onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-2 rounded-md text-xs font-medium transition hover:bg-white" data-lang="zh-hk">繁</button>
+                    <button onclick="setLanguage('en')" class="lang-btn px-3 py-2 rounded-md text-xs font-medium transition hover:bg-white bg-white shadow-sm text-blue-600" data-lang="en">EN</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-6 w-full">
+        <header class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <p class="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-1" data-i18n="page.tag">HKDSE • Elective 1: Astronomy and Space Science • Stars</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2" data-i18n="page.title">Stellar Evolution &amp; H-R Diagram</h1>
+            <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="page.description">
+                Set a star's initial mass, watch it glow in 3D, and track its path on the Hertzsprung–Russell diagram — from the main sequence through the red-giant phase to a white dwarf or a supernova remnant. Values are teaching approximations, not a precision stellar model.
+            </p>
+            <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3" data-i18n="page.disclaimer">
+                Teaching simplification: the time axis is schematically compressed; tracks use mass–luminosity and Stefan–Boltzmann relations suitable for HKDSE, not detailed stellar-structure codes.
+            </p>
+            <p class="text-sm text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 mt-3">
+                <span class="font-semibold" data-i18n="observe.label">Focus for observation:</span>
+                <span data-i18n="observe.tip"> Compare the evolutionary tracks and main-sequence lifetimes of stars with different masses on the H-R diagram — massive stars leave the main sequence sooner and pass through the supergiant region.</span>
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sim-shell">
+            <div class="sim-controls lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800" data-i18n="controls.title">Parameters</h3>
+                        <button id="reset-btn" class="px-3 py-2 min-h-[44px] rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-red-50 hover:text-red-600 transition-all" data-i18n="controls.reset">Reset</button>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.mass">Initial mass ($M / M_\odot$)</span>
+                            <span id="mass-val" class="text-blue-600 font-bold font-mono">1.0</span>
+                        </label>
+                        <input type="range" id="mass-slider" min="0.2" max="25" step="0.1" value="1" class="w-full accent-blue-600">
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="controls.mass_hint">Low mass → long life, red dwarf; high mass → short life, blue giant / supernova.</p>
+                    </div>
+
+                    <div>
+                        <label class="flex justify-between text-sm font-medium text-slate-700 mb-2">
+                            <span data-i18n="controls.evol">Evolution progress (schematic)</span>
+                            <span id="evol-val" class="text-amber-600 font-bold font-mono">0%</span>
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input type="range" id="evol-slider" min="0" max="100" step="0.5" value="0" class="w-full accent-amber-600">
+                            <button id="play-btn" class="shrink-0 min-h-[44px] min-w-[44px] px-3 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition" data-i18n="controls.play">▶ Play</button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1" data-i18n="controls.evol_hint">Time is heavily compressed for classroom use — not real years per second.</p>
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 mb-2" data-i18n="controls.presets">Presets</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="preset-sun" class="preset-btn active px-3 py-2 min-h-[44px] rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition" data-i18n="controls.presetSun">Sun</button>
+                            <button id="preset-rdwarf" class="preset-btn px-3 py-2 min-h-[44px] rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition" data-i18n="controls.presetRdwarf">Red dwarf</button>
+                            <button id="preset-blue" class="preset-btn px-3 py-2 min-h-[44px] rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition" data-i18n="controls.presetBlue">Massive blue giant</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 mb-2" data-i18n="controls.challenge">Mini-challenge</p>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <button id="chal-sirius" class="challenge-btn px-3 py-2 min-h-[44px] rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition" data-i18n="controls.chalSirius">Place Sirius</button>
+                            <button id="chal-betel" class="challenge-btn px-3 py-2 min-h-[44px] rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition" data-i18n="controls.chalBetel">Place Betelgeuse</button>
+                            <button id="chal-prox" class="challenge-btn px-3 py-2 min-h-[44px] rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition" data-i18n="controls.chalProx">Place Proxima</button>
+                        </div>
+                        <p id="challenge-msg" class="text-xs text-slate-500" data-i18n="controls.chalHint">Tap a challenge, then click the H-R diagram where you think that star belongs.</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide" data-i18n="data.title">Live readings</h3>
+                    <div id="stage-card" class="p-3 rounded-lg border text-center font-bold tracking-wide bg-blue-50 border-blue-200 text-blue-700">MAIN SEQUENCE</div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.mass">Mass</span>
+                        <span id="d-mass" class="text-base font-bold text-blue-600 font-mono">1.0 M☉</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.temp">Surface temperature</span>
+                        <span id="d-temp" class="text-base font-bold text-amber-600 font-mono">5772 K</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.lum">Luminosity</span>
+                        <span id="d-lum" class="text-base font-bold text-green-600 font-mono">1.0 L☉</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.radius">Radius</span>
+                        <span id="d-radius" class="text-base font-bold text-red-600 font-mono">1.0 R☉</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <span class="text-sm text-slate-600" data-i18n="data.life">Main-sequence lifetime</span>
+                        <span id="d-life" class="text-base font-bold text-purple-600 font-mono">10 Gyr</span>
+                    </div>
+                    <div id="star-info" class="hidden p-3 rounded-lg border border-indigo-200 bg-indigo-50 text-sm text-indigo-800"></div>
+                </div>
+
+                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3" data-i18n="formula.title">HKDSE relation</h3>
+                    <div class="text-center text-xl font-serif mb-4">$$ L = 4\pi R^{2}\sigma T^{4} $$</div>
+                    <div class="grid grid-cols-1 gap-2 text-sm text-slate-300">
+                        <div><span class="text-green-400 font-bold">$L$:</span> <span data-i18n="formula.L">luminosity (power radiated)</span></div>
+                        <div><span class="text-red-400 font-bold">$R$:</span> <span data-i18n="formula.R">stellar radius</span></div>
+                        <div><span class="text-amber-400 font-bold">$T$:</span> <span data-i18n="formula.T">surface (effective) temperature</span></div>
+                        <div><span class="text-blue-400 font-bold">$\sigma$:</span> <span data-i18n="formula.sigma">Stefan–Boltzmann constant</span></div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3 leading-relaxed" data-i18n="formula.note">
+                        A cooler but much larger red giant can outshine a hotter main-sequence star because luminosity grows with $R^{2}$ and $T^{4}$.
+                    </p>
+                </div>
+            </div>
+
+            <div class="sim-viewport lg:col-span-8 space-y-6">
+                <div class="relative">
+                    <div id="three-container" data-gl-host></div>
+                    <div class="absolute top-3 left-3 bg-slate-900/75 text-white text-xs font-semibold px-3 py-1 rounded-full pointer-events-none" data-i18n="three.title">3D star (colour ← T, size ← R)</div>
+                    <div class="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur text-white px-5 py-3 rounded-full text-sm pointer-events-none" data-i18n="three.hint">Drag to rotate • pinch / scroll to zoom</div>
+                    <div class="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
+                        <span class="bg-white/90 text-amber-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.temp">Temperature $T$</span>
+                        <span class="bg-white/90 text-red-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.radius">Radius $R$</span>
+                        <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.lum">Luminosity $L$</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 h-[380px] relative">
+                    <h3 class="text-sm font-bold text-slate-500 absolute top-3 left-4 z-10" data-i18n="hr.title">Hertzsprung–Russell diagram</h3>
+                    <p class="text-[11px] text-slate-400 absolute top-3 right-4 z-10" data-i18n="hr.axes">$T$ → cooler right · $\log L$ up</p>
+                    <canvas id="hr-canvas"></canvas>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                    <div class="flex items-start gap-4">
+                        <div class="p-3 bg-blue-600 rounded-xl text-white shrink-0">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-slate-800 mb-2" data-i18n="ai.title">Physics note</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed" data-i18n="ai.desc">
+                                Most stars lie on the <b>main sequence</b>, where hydrogen fuses to helium in the core. Higher-mass stars are hotter and more luminous, so they exhaust fuel sooner. After the main sequence a star expands into a <b>red giant</b>. Stars like the Sun end as <b>white dwarfs</b>; stars above about 8 solar masses explode as <b>supernovae</b>, leaving a neutron star or black hole.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="explain-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[88vh] overflow-y-auto p-6 md:p-8">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <h2 class="text-xl font-bold text-slate-800" data-i18n="modal.title">Stars &amp; the H-R diagram — HKDSE E1</h2>
+                <button id="explain-close" class="min-h-[44px] min-w-[44px] rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200">×</button>
+            </div>
+            <div class="space-y-4 text-sm text-slate-600 leading-relaxed" data-i18n="modal.body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        const PHYSICS_COLORS = {
+            force: 0xdc2626,
+            velocity: 0x16a34a,
+            accel: 0x9333ea,
+            bField: 0xd97706,
+            displacement: 0x475569
+        };
+        const TSUN = 5772;
+        const MASS_WD_LIMIT = 8; // schematic: M < 8 → WD; M ≥ 8 → SN
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const KNOWN_STARS = [
+            { id: 'sun', nameKey: 'star.sun', M: 1.0, T: 5772, L: 1.0, R: 1.0, stage: 'ms' },
+            { id: 'sirius', nameKey: 'star.sirius', M: 2.1, T: 9940, L: 25, R: 1.7, stage: 'ms' },
+            { id: 'vega', nameKey: 'star.vega', M: 2.1, T: 9600, L: 40, R: 2.4, stage: 'ms' },
+            { id: 'proxima', nameKey: 'star.proxima', M: 0.12, T: 3050, L: 0.0017, R: 0.15, stage: 'ms' },
+            { id: 'betelgeuse', nameKey: 'star.betelgeuse', M: 15, T: 3500, L: 1.2e5, R: 900, stage: 'sg' },
+            { id: 'rigel', nameKey: 'star.rigel', M: 18, T: 12100, L: 1.2e5, R: 79, stage: 'sg' }
+        ];
+
+        const defaults = { mass: 1.0, evol: 0 };
+        const state = {
+            mass: 1.0,
+            evol: 0,
+            playing: false,
+            challenge: null,
+            selectedKnown: null,
+            display: { T: TSUN, L: 1, R: 1, stage: 'ms', remnant: null }
+        };
+
+        const threeContainer = document.getElementById('three-container');
+        const hrCanvas = document.getElementById('hr-canvas');
+        const hrCtx = hrCanvas.getContext('2d');
+
+        let scene, camera, renderer, clock;
+        let starMesh, coronaMesh, shellMesh, remnantMesh, starLight, ambient;
+        let shellExpand = 0, pulsePhase = 0, snFlash = 0;
+        let isCameraDrag = false, pinchDistance = null;
+        const lastPointer = { x: 0, y: 0 };
+        const defaultCamera = { radius: 8, theta: 0.4, phi: 1.15 };
+        const cameraState = { ...defaultCamera };
+        let trackPoints = [];
+        let challengeTarget = null;
+
+        // ---------- physics (schematic teaching model) ----------
+        function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+        function zams(M) {
+            // Rough main-sequence mass–luminosity and mass–radius (HKDSE-level)
+            const L = Math.pow(M, 3.5);
+            const R = Math.pow(M, 0.8);
+            const T = TSUN * Math.pow(L / (R * R), 0.25);
+            const lifetimeYr = 1e10 * (M / L); // ~10 Gyr for the Sun
+            return { M, L, R, T, lifetimeYr };
+        }
+
+        function evolveStar(M, progress) {
+            // progress ∈ [0,1]: schematic compressed lifetime
+            const z = zams(M);
+            const p = clamp(progress, 0, 1);
+            let T = z.T, L = z.L, R = z.R, stage = 'ms', remnant = null;
+
+            if (p < 0.72) {
+                // Main sequence: slight brightening
+                const f = p / 0.72;
+                L = z.L * (1 + 0.35 * f);
+                R = z.R * (1 + 0.12 * f);
+                T = TSUN * Math.pow(L / (R * R), 0.25);
+                stage = 'ms';
+            } else if (p < 0.84) {
+                // Leaving MS → subgiant / early giant
+                const f = (p - 0.72) / 0.12;
+                const Lms = z.L * 1.35;
+                const Rms = z.R * 1.12;
+                const Lrg = z.L * (M < 2 ? 80 : 400) * Math.pow(M, 0.6);
+                const Rrg = z.R * (M < 2 ? 40 : 120) * Math.pow(M, 0.3);
+                L = Lms + (Lrg - Lms) * f;
+                R = Rms + (Rrg - Rms) * f;
+                T = TSUN * Math.pow(L / (R * R), 0.25);
+                T = clamp(T, 2800, z.T);
+                stage = 'leave';
+            } else if (p < 0.94) {
+                // Low/intermediate mass → red giant; massive (M ≥ 8 M☉) → red supergiant
+                const f = (p - 0.84) / 0.10;
+                const Lrg = z.L * (M < 2 ? 80 : 400) * Math.pow(M, 0.6);
+                const Rrg = z.R * (M < 2 ? 40 : 120) * Math.pow(M, 0.3);
+                L = Lrg * (1 + 0.15 * Math.sin(f * Math.PI));
+                R = Rrg * (1 + 0.08 * Math.sin(f * Math.PI * 2));
+                T = clamp(TSUN * Math.pow(L / (R * R), 0.25), 2800, 4200);
+                stage = (M >= MASS_WD_LIMIT) ? 'sg' : 'rg';
+            } else {
+                // End state
+                const f = (p - 0.94) / 0.06;
+                if (M < MASS_WD_LIMIT) {
+                    // Envelope ejection → white dwarf
+                    const Lwd = 0.01 * Math.pow(M, 1.2);
+                    const Rwd = 0.01 * Math.pow(M, -0.3);
+                    const Twd = TSUN * Math.pow(Math.max(Lwd, 1e-6) / (Rwd * Rwd), 0.25);
+                    if (f < 0.45) {
+                        // planetary nebula / shell phase
+                        const Lrg = z.L * (M < 2 ? 80 : 400) * Math.pow(M, 0.6);
+                        const Rrg = z.R * (M < 2 ? 40 : 120) * Math.pow(M, 0.3);
+                        L = Lrg * (1 - f / 0.45) + Lwd * (f / 0.45) * 8;
+                        R = Rrg * (1 - f / 0.45) + Rwd;
+                        T = clamp(TSUN * Math.pow(L / (R * R), 0.25), 4000, 40000);
+                        stage = 'pn';
+                        remnant = 'shell';
+                    } else {
+                        L = Lwd;
+                        R = Rwd;
+                        T = Twd;
+                        stage = 'wd';
+                        remnant = 'wd';
+                    }
+                } else {
+                    // Core collapse → supernova → NS / BH
+                    if (f < 0.35) {
+                        L = 1e6 * (0.3 + f * 8);
+                        R = z.R * 30;
+                        T = 20000;
+                        stage = 'sn';
+                        remnant = 'sn';
+                    } else {
+                        const isBH = M >= 20;
+                        L = isBH ? 1e-6 : 0.05;
+                        R = isBH ? 1e-5 : 1e-5;
+                        T = isBH ? 0 : 1e6;
+                        stage = isBH ? 'bh' : 'ns';
+                        remnant = isBH ? 'bh' : 'ns';
+                    }
+                }
+            }
+
+            return {
+                M, T, L, R,
+                lifetimeYr: z.lifetimeYr,
+                stage,
+                remnant,
+                zams: z
+            };
+        }
+
+        function tempToColor(T) {
+            // Approximate blackbody → RGB for display (not CIE)
+            const t = clamp(T, 1000, 40000) / 100;
+            let r, g, b;
+            if (t <= 66) {
+                r = 255;
+                g = clamp(99.4708 * Math.log(t) - 161.1196, 0, 255);
+            } else {
+                r = clamp(329.6987 * Math.pow(t - 60, -0.1332), 0, 255);
+                g = clamp(288.1221 * Math.pow(t - 60, -0.0755), 0, 255);
+            }
+            if (t >= 66) b = 255;
+            else if (t <= 19) b = 0;
+            else b = clamp(138.5177 * Math.log(t - 10) - 305.0448, 0, 255);
+            return new THREE.Color(r / 255, g / 255, b / 255);
+        }
+
+        function fmtLum(L) {
+            if (L >= 1000) return L.toExponential(2) + ' L☉';
+            if (L >= 10) return L.toFixed(1) + ' L☉';
+            if (L >= 0.01) return L.toFixed(2) + ' L☉';
+            return L.toExponential(2) + ' L☉';
+        }
+        function fmtRadius(R) {
+            if (R >= 100) return R.toFixed(0) + ' R☉';
+            if (R >= 1) return R.toFixed(2) + ' R☉';
+            if (R >= 0.01) return R.toFixed(3) + ' R☉';
+            return R.toExponential(2) + ' R☉';
+        }
+        function fmtLife(yr) {
+            if (yr >= 1e9) return (yr / 1e9).toFixed(1) + ' Gyr';
+            if (yr >= 1e6) return (yr / 1e6).toFixed(1) + ' Myr';
+            return yr.toExponential(2) + ' yr';
+        }
+
+        function stageLabel(stage) {
+            const map = {
+                ms: 'stage.ms', leave: 'stage.leave', rg: 'stage.rg', sg: 'stage.sg',
+                pn: 'stage.pn', wd: 'stage.wd', sn: 'stage.sn',
+                ns: 'stage.ns', bh: 'stage.bh'
+            };
+            return t(map[stage] || 'stage.ms');
+        }
+
+        function stageCardStyle(stage) {
+            const el = document.getElementById('stage-card');
+            const styles = {
+                ms: 'bg-blue-50 border-blue-200 text-blue-700',
+                leave: 'bg-amber-50 border-amber-200 text-amber-700',
+                rg: 'bg-red-50 border-red-200 text-red-700',
+                sg: 'bg-rose-50 border-rose-300 text-rose-700',
+                pn: 'bg-violet-50 border-violet-200 text-violet-700',
+                wd: 'bg-slate-100 border-slate-300 text-slate-700',
+                sn: 'bg-orange-50 border-orange-300 text-orange-700',
+                ns: 'bg-indigo-50 border-indigo-200 text-indigo-700',
+                bh: 'bg-slate-900 border-slate-700 text-slate-100'
+            };
+            el.className = 'p-3 rounded-lg border text-center font-bold tracking-wide ' + (styles[stage] || styles.ms);
+            el.textContent = stageLabel(stage);
+        }
+
+        function isGiantLike(stage) {
+            return stage === 'rg' || stage === 'sg';
+        }
+
+        // ---------- Three.js ----------
+        function updateCameraFromSpherical() {
+            const { radius, theta, phi } = cameraState;
+            camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
+            camera.position.y = radius * Math.cos(phi);
+            camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function resetCameraView() {
+            Object.assign(cameraState, defaultCamera);
+            updateCameraFromSpherical();
+        }
+
+        function setupCameraControls() {
+            threeContainer.addEventListener('mousedown', (e) => {
+                if (e.target.closest('input, button')) return;
+                isCameraDrag = true;
+                lastPointer.x = e.clientX;
+                lastPointer.y = e.clientY;
+            });
+            window.addEventListener('mouseup', () => { isCameraDrag = false; });
+            window.addEventListener('mousemove', (e) => {
+                if (!isCameraDrag) return;
+                cameraState.theta -= (e.clientX - lastPointer.x) * 0.005;
+                cameraState.phi -= (e.clientY - lastPointer.y) * 0.005;
+                cameraState.phi = clamp(cameraState.phi, 0.15, Math.PI - 0.15);
+                lastPointer.x = e.clientX;
+                lastPointer.y = e.clientY;
+                updateCameraFromSpherical();
+            });
+            threeContainer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                cameraState.radius = clamp(cameraState.radius + e.deltaY * 0.01, 3, 30);
+                updateCameraFromSpherical();
+            }, { passive: false });
+
+            let lastTouchX = null, lastTouchY = null, lastTouchDist = null;
+            threeContainer.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 1) {
+                    lastTouchX = e.touches[0].clientX;
+                    lastTouchY = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    lastTouchDist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                }
+            }, { passive: false });
+            threeContainer.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 1 && lastTouchX !== null) {
+                    const dx = (e.touches[0].clientX - lastTouchX) * 0.008;
+                    const dy = (e.touches[0].clientY - lastTouchY) * 0.008;
+                    lastTouchX = e.touches[0].clientX;
+                    lastTouchY = e.touches[0].clientY;
+                    cameraState.theta -= dx;
+                    cameraState.phi -= dy;
+                    cameraState.phi = clamp(cameraState.phi, 0.15, Math.PI - 0.15);
+                    updateCameraFromSpherical();
+                } else if (e.touches.length === 2 && lastTouchDist !== null) {
+                    const dist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    cameraState.radius = clamp(cameraState.radius + (lastTouchDist - dist) * 0.05, 3, 30);
+                    lastTouchDist = dist;
+                    updateCameraFromSpherical();
+                }
+            }, { passive: false });
+            threeContainer.addEventListener('touchend', () => {
+                lastTouchX = lastTouchY = lastTouchDist = null;
+            });
+        }
+
+        function initThree() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020617);
+            clock = new THREE.Clock();
+
+            const w = Math.max(threeContainer.clientWidth, 320);
+            const h = Math.max(threeContainer.clientHeight, 240);
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 200);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            renderer.setSize(w, h);
+            threeContainer.appendChild(renderer.domElement);
+
+            ambient = new THREE.AmbientLight(0x334155, 0.35);
+            scene.add(ambient);
+            starLight = new THREE.PointLight(0xfff7ed, 2.2, 40, 2);
+            scene.add(starLight);
+
+            // faint starfield
+            const starGeo = new THREE.BufferGeometry();
+            const n = 400;
+            const pos = new Float32Array(n * 3);
+            for (let i = 0; i < n; i++) {
+                const r = 25 + Math.random() * 40;
+                const th = Math.random() * Math.PI * 2;
+                const ph = Math.acos(2 * Math.random() - 1);
+                pos[i * 3] = r * Math.sin(ph) * Math.cos(th);
+                pos[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th);
+                pos[i * 3 + 2] = r * Math.cos(ph);
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xcbd5e1, size: 0.08, sizeAttenuation: true })));
+
+            const starMat = new THREE.MeshStandardMaterial({
+                color: 0xffe08a,
+                emissive: 0xffc14d,
+                emissiveIntensity: 1.4,
+                roughness: 0.35,
+                metalness: 0.05
+            });
+            starMesh = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 48), starMat);
+            scene.add(starMesh);
+
+            const coronaMat = new THREE.MeshBasicMaterial({
+                color: 0xffe08a,
+                transparent: true,
+                opacity: 0.22,
+                side: THREE.BackSide,
+                depthWrite: false
+            });
+            coronaMesh = new THREE.Mesh(new THREE.SphereGeometry(1.35, 32, 32), coronaMat);
+            scene.add(coronaMesh);
+
+            const shellMat = new THREE.MeshBasicMaterial({
+                color: 0x93c5fd,
+                transparent: true,
+                opacity: 0,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+                wireframe: false
+            });
+            shellMesh = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), shellMat);
+            shellMesh.visible = false;
+            scene.add(shellMesh);
+
+            remnantMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.15, 24, 24),
+                new THREE.MeshStandardMaterial({ color: 0xe2e8f0, emissive: 0x94a3b8, emissiveIntensity: 1.2 })
+            );
+            remnantMesh.visible = false;
+            scene.add(remnantMesh);
+
+            setupCameraControls();
+            resetCameraView();
+        }
+
+        function visualRadius(R) {
+            // Log-ish mapping so giants and dwarfs both fit in view
+            return clamp(0.55 + Math.log10(R + 0.01) * 0.85, 0.2, 3.8);
+        }
+
+        function updateStarVisual(d) {
+            const col = d.stage === 'bh' ? new THREE.Color(0x0f172a) : tempToColor(d.T || TSUN);
+            const vr = visualRadius(d.R);
+            starMesh.visible = d.stage !== 'bh' && d.stage !== 'ns' && !(d.stage === 'sn' && snFlash > 0.8);
+            remnantMesh.visible = d.stage === 'ns' || d.stage === 'bh' || (d.stage === 'wd' && d.R < 0.05);
+
+            if (starMesh.visible) {
+                starMesh.scale.setScalar(vr);
+                starMesh.material.color.copy(col);
+                starMesh.material.emissive.copy(col);
+                starMesh.material.emissiveIntensity = d.stage === 'sn' ? 3.5 : (isGiantLike(d.stage) ? 1.1 : 1.5);
+                coronaMesh.visible = true;
+                coronaMesh.scale.setScalar(vr * (isGiantLike(d.stage) ? 1.55 : 1.35));
+                coronaMesh.material.color.copy(col);
+                coronaMesh.material.opacity = d.stage === 'sn' ? 0.45 : 0.22;
+            } else {
+                coronaMesh.visible = false;
+            }
+
+            if (remnantMesh.visible) {
+                if (d.stage === 'bh') {
+                    remnantMesh.scale.setScalar(0.45);
+                    remnantMesh.material.color.set(0x020617);
+                    remnantMesh.material.emissive.set(0x1e293b);
+                    remnantMesh.material.emissiveIntensity = 0.3;
+                } else if (d.stage === 'ns') {
+                    remnantMesh.scale.setScalar(0.25);
+                    remnantMesh.material.color.set(0xe0f2fe);
+                    remnantMesh.material.emissive.set(0x38bdf8);
+                    remnantMesh.material.emissiveIntensity = 2.0;
+                } else {
+                    remnantMesh.scale.setScalar(0.35);
+                    remnantMesh.material.color.copy(col);
+                    remnantMesh.material.emissive.copy(col);
+                    remnantMesh.material.emissiveIntensity = 1.6;
+                    starMesh.visible = false;
+                    coronaMesh.visible = true;
+                    coronaMesh.scale.setScalar(0.55);
+                }
+            }
+
+            // Shell ejection (PN / SN)
+            if (d.remnant === 'shell' || d.stage === 'pn' || d.stage === 'sn') {
+                shellMesh.visible = true;
+                const expand = d.stage === 'sn' ? 1 + shellExpand * 4 : 1 + shellExpand * 2.5;
+                shellMesh.scale.setScalar(vr * expand);
+                shellMesh.material.opacity = clamp(0.35 - shellExpand * 0.25, 0.02, 0.4);
+                shellMesh.material.color.copy(d.stage === 'sn' ? new THREE.Color(0xfdbA74) : new THREE.Color(0x93c5fd));
+            } else {
+                shellMesh.visible = false;
+                shellExpand = 0;
+            }
+
+            const intensity = clamp(0.6 + Math.log10(d.L + 1e-6) * 0.35, 0.3, 5);
+            starLight.color.copy(col);
+            starLight.intensity = d.stage === 'bh' ? 0.15 : intensity;
+            scene.background = new THREE.Color(d.stage === 'sn' && snFlash > 0.2 ? 0x1c1917 : 0x020617);
+        }
+
+        // ---------- HR diagram ----------
+        const HR = {
+            Tmin: 2500, Tmax: 40000,
+            Lmin: 1e-4, Lmax: 1e6,
+            pad: { l: 52, r: 16, t: 36, b: 42 }
+        };
+
+        function hrX(T, w) {
+            const { pad, Tmin, Tmax } = HR;
+            const logT = Math.log10(clamp(T, Tmin, Tmax));
+            const a = Math.log10(Tmax), b = Math.log10(Tmin);
+            // hotter (larger T) on the LEFT
+            return pad.l + ((a - logT) / (a - b)) * (w - pad.l - pad.r);
+        }
+        function hrY(L, h) {
+            const { pad, Lmin, Lmax } = HR;
+            const logL = Math.log10(clamp(L, Lmin, Lmax));
+            const a = Math.log10(Lmin), b = Math.log10(Lmax);
+            return pad.t + ((b - logL) / (b - a)) * (h - pad.t - pad.b);
+        }
+        function hrXYToTL(x, y, w, h) {
+            const { pad, Tmin, Tmax, Lmin, Lmax } = HR;
+            const fx = clamp((x - pad.l) / (w - pad.l - pad.r), 0, 1);
+            const fy = clamp((y - pad.t) / (h - pad.t - pad.b), 0, 1);
+            const a = Math.log10(Tmax), b = Math.log10(Tmin);
+            const T = Math.pow(10, a - fx * (a - b));
+            const la = Math.log10(Lmin), lb = Math.log10(Lmax);
+            const L = Math.pow(10, lb - fy * (lb - la));
+            return { T, L };
+        }
+
+        function buildTrack(M) {
+            const pts = [];
+            for (let i = 0; i <= 80; i++) {
+                const d = evolveStar(M, i / 80);
+                pts.push({ T: d.T, L: d.L, stage: d.stage });
+            }
+            return pts;
+        }
+
+        function drawHR() {
+            const parent = hrCanvas.parentElement;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const w = Math.max(parent.clientWidth - 8, 280);
+            const h = Math.max(parent.clientHeight - 8, 280);
+            hrCanvas.width = w * dpr;
+            hrCanvas.height = h * dpr;
+            hrCanvas.style.width = w + 'px';
+            hrCanvas.style.height = h + 'px';
+            hrCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            hrCtx.fillStyle = '#ffffff';
+            hrCtx.fillRect(0, 0, w, h);
+
+            // region bands (giants vs supergiants separated for HKDSE labelling)
+            const bands = [
+                { L0: 1e-3, L1: 30, T0: 2800, T1: 7500, c: 'rgba(59,130,246,0.06)', label: t('hr.bandMS'), lx: 0.55, ly: 0.55 },
+                { L0: 30, L1: 8e3, T0: 2800, T1: 5500, c: 'rgba(220,38,38,0.06)', label: t('hr.bandRG'), lx: 0.72, ly: 0.42 },
+                { L0: 8e3, L1: 1e6, T0: 2800, T1: 12000, c: 'rgba(225,29,72,0.08)', label: t('hr.bandSG'), lx: 0.62, ly: 0.18 },
+                { L0: 1e-4, L1: 0.5, T0: 6000, T1: 40000, c: 'rgba(100,116,139,0.08)', label: t('hr.bandWD'), lx: 0.22, ly: 0.82 }
+            ];
+            bands.forEach((b) => {
+                const x0 = hrX(b.T1, w), x1 = hrX(b.T0, w);
+                const y0 = hrY(b.L1, h), y1 = hrY(b.L0, h);
+                hrCtx.fillStyle = b.c;
+                hrCtx.fillRect(x0, y0, x1 - x0, y1 - y0);
+                // Region label on the H-R diagram
+                const lx = x0 + (x1 - x0) * (b.lx ?? 0.5);
+                const ly = y0 + (y1 - y0) * (b.ly ?? 0.5);
+                hrCtx.fillStyle = 'rgba(51,65,85,0.75)';
+                hrCtx.font = 'bold 11px Inter, sans-serif';
+                hrCtx.textAlign = 'center';
+                hrCtx.fillText(b.label, lx, ly);
+            });
+
+            // grid
+            hrCtx.strokeStyle = '#e2e8f0';
+            hrCtx.lineWidth = 1;
+            const Tticks = [40000, 20000, 10000, 5000, 3000];
+            const Lticks = [1e-4, 1e-2, 1, 100, 1e4, 1e6];
+            Tticks.forEach((T) => {
+                const x = hrX(T, w);
+                hrCtx.beginPath(); hrCtx.moveTo(x, HR.pad.t); hrCtx.lineTo(x, h - HR.pad.b); hrCtx.stroke();
+                hrCtx.fillStyle = '#64748b';
+                hrCtx.font = '11px Inter, sans-serif';
+                hrCtx.textAlign = 'center';
+                hrCtx.fillText(T >= 1000 ? (T / 1000) + 'k' : String(T), x, h - 18);
+            });
+            Lticks.forEach((L) => {
+                const y = hrY(L, h);
+                hrCtx.beginPath(); hrCtx.moveTo(HR.pad.l, y); hrCtx.lineTo(w - HR.pad.r, y); hrCtx.stroke();
+                hrCtx.fillStyle = '#64748b';
+                hrCtx.font = '11px Inter, sans-serif';
+                hrCtx.textAlign = 'right';
+                hrCtx.fillText(L.toExponential(0), HR.pad.l - 6, y + 3);
+            });
+
+            hrCtx.fillStyle = '#334155';
+            hrCtx.font = '12px Inter, sans-serif';
+            hrCtx.textAlign = 'center';
+            hrCtx.fillText(t('hr.xlabel'), w / 2, h - 4);
+            hrCtx.save();
+            hrCtx.translate(14, h / 2);
+            hrCtx.rotate(-Math.PI / 2);
+            hrCtx.fillText(t('hr.ylabel'), 0, 0);
+            hrCtx.restore();
+
+            // Main-sequence strip guide
+            hrCtx.strokeStyle = 'rgba(37,99,235,0.35)';
+            hrCtx.lineWidth = 3;
+            hrCtx.beginPath();
+            for (let m = 0.2; m <= 25; m *= 1.15) {
+                const z = zams(m);
+                const x = hrX(z.T, w), y = hrY(z.L, h);
+                if (m < 0.25) hrCtx.moveTo(x, y); else hrCtx.lineTo(x, y);
+            }
+            hrCtx.stroke();
+
+            // Evolution track
+            if (trackPoints.length) {
+                hrCtx.strokeStyle = 'rgba(15,23,42,0.45)';
+                hrCtx.lineWidth = 2;
+                hrCtx.setLineDash([4, 3]);
+                hrCtx.beginPath();
+                trackPoints.forEach((p, i) => {
+                    const x = hrX(p.T, w), y = hrY(p.L, h);
+                    if (i === 0) hrCtx.moveTo(x, y); else hrCtx.lineTo(x, y);
+                });
+                hrCtx.stroke();
+                hrCtx.setLineDash([]);
+            }
+
+            // Known stars
+            KNOWN_STARS.forEach((s) => {
+                const x = hrX(s.T, w), y = hrY(s.L, h);
+                const selected = state.selectedKnown === s.id;
+                hrCtx.beginPath();
+                hrCtx.arc(x, y, selected ? 7 : 5, 0, Math.PI * 2);
+                hrCtx.fillStyle = selected ? '#2563eb' : '#0f172a';
+                hrCtx.fill();
+                hrCtx.strokeStyle = '#fff';
+                hrCtx.lineWidth = 1.5;
+                hrCtx.stroke();
+                hrCtx.fillStyle = '#334155';
+                hrCtx.font = '10px Inter, sans-serif';
+                hrCtx.textAlign = 'left';
+                hrCtx.fillText(t(s.nameKey), x + 8, y - 6);
+            });
+
+            // Current star
+            const d = state.display;
+            const cx = hrX(d.T, w), cy = hrY(Math.max(d.L, 1e-6), h);
+            const col = tempToColor(d.T);
+            hrCtx.beginPath();
+            hrCtx.arc(cx, cy, 9, 0, Math.PI * 2);
+            hrCtx.fillStyle = '#' + col.getHexString();
+            hrCtx.fill();
+            hrCtx.strokeStyle = '#0f172a';
+            hrCtx.lineWidth = 2;
+            hrCtx.stroke();
+            hrCtx.beginPath();
+            hrCtx.moveTo(cx - 12, cy); hrCtx.lineTo(cx + 12, cy);
+            hrCtx.moveTo(cx, cy - 12); hrCtx.lineTo(cx, cy + 12);
+            hrCtx.strokeStyle = 'rgba(15,23,42,0.35)';
+            hrCtx.lineWidth = 1;
+            hrCtx.stroke();
+
+            // Challenge target ghost
+            if (challengeTarget) {
+                const tx = hrX(challengeTarget.T, w), ty = hrY(challengeTarget.L, h);
+                hrCtx.setLineDash([3, 3]);
+                hrCtx.strokeStyle = '#7c3aed';
+                hrCtx.lineWidth = 2;
+                hrCtx.beginPath();
+                hrCtx.arc(tx, ty, 14, 0, Math.PI * 2);
+                hrCtx.stroke();
+                hrCtx.setLineDash([]);
+                hrCtx.fillStyle = '#7c3aed';
+                hrCtx.font = '11px Inter, sans-serif';
+                hrCtx.textAlign = 'center';
+                hrCtx.fillText('?', tx, ty + 4);
+            }
+        }
+
+        function hitKnownStar(mx, my) {
+            const w = hrCanvas.clientWidth, h = hrCanvas.clientHeight;
+            for (const s of KNOWN_STARS) {
+                const x = hrX(s.T, w), y = hrY(s.L, h);
+                if (Math.hypot(mx - x, my - y) < 14) return s;
+            }
+            return null;
+        }
+
+        // ---------- UI sync ----------
+        function syncSliders() {
+            document.getElementById('mass-slider').value = state.mass;
+            document.getElementById('evol-slider').value = state.evol;
+            document.getElementById('mass-val').textContent = state.mass.toFixed(1);
+            document.getElementById('evol-val').textContent = Math.round(state.evol) + '%';
+        }
+
+        function updateSimulation() {
+            state.mass = parseFloat(document.getElementById('mass-slider').value);
+            state.evol = parseFloat(document.getElementById('evol-slider').value);
+            document.getElementById('mass-val').textContent = state.mass.toFixed(1);
+            document.getElementById('evol-val').textContent = Math.round(state.evol) + '%';
+
+            const d = evolveStar(state.mass, state.evol / 100);
+            state.display = d;
+            trackPoints = buildTrack(state.mass);
+
+            document.getElementById('d-mass').textContent = d.M.toFixed(2) + ' M☉';
+            document.getElementById('d-temp').textContent = (d.T >= 1000 ? Math.round(d.T) : d.T.toFixed(0)) + ' K';
+            document.getElementById('d-lum').textContent = fmtLum(d.L);
+            document.getElementById('d-radius').textContent = fmtRadius(d.R);
+            document.getElementById('d-life').textContent = fmtLife(d.lifetimeYr);
+            stageCardStyle(d.stage);
+
+            updateStarVisual(d);
+            drawHR();
+        }
+
+        function setPlaying(on) {
+            state.playing = on;
+            document.getElementById('play-btn').textContent = t(on ? 'controls.pause' : 'controls.play');
+        }
+
+        function setActivePreset(id) {
+            document.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
+            const btn = document.getElementById(id);
+            if (btn) btn.classList.add('active');
+        }
+
+        function applyPreset(mass, evol, presetId) {
+            setPlaying(false);
+            state.mass = mass;
+            state.evol = evol == null ? 0 : evol;
+            shellExpand = 0;
+            if (presetId) setActivePreset(presetId);
+            syncSliders();
+            updateSimulation();
+        }
+
+        function startChallenge(starId) {
+            const s = KNOWN_STARS.find((x) => x.id === starId);
+            if (!s) return;
+            state.challenge = starId;
+            challengeTarget = null; // hide answer until attempt
+            document.querySelectorAll('.challenge-btn').forEach((b) => b.classList.remove('active'));
+            const btn = document.getElementById({ sirius: 'chal-sirius', betelgeuse: 'chal-betel', proxima: 'chal-prox' }[starId]);
+            if (btn) btn.classList.add('active');
+            document.getElementById('challenge-msg').textContent = t('controls.chalActive').replace('{star}', t(s.nameKey));
+            drawHR();
+        }
+
+        function onHRClick(e) {
+            const rect = hrCanvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+            const hit = hitKnownStar(mx, my);
+
+            if (state.challenge) {
+                const target = KNOWN_STARS.find((x) => x.id === state.challenge);
+                const guess = hrXYToTL(mx, my, hrCanvas.clientWidth, hrCanvas.clientHeight);
+                const dLogT = Math.abs(Math.log10(guess.T) - Math.log10(target.T));
+                const dLogL = Math.abs(Math.log10(guess.L) - Math.log10(target.L));
+                const ok = dLogT < 0.18 && dLogL < 0.55;
+                challengeTarget = target;
+                const msgEl = document.getElementById('challenge-msg');
+                if (ok) {
+                    msgEl.textContent = t('controls.chalOk').replace('{star}', t(target.nameKey));
+                    msgEl.className = 'text-xs text-green-700 font-semibold';
+                } else {
+                    msgEl.textContent = t('controls.chalFail').replace('{star}', t(target.nameKey));
+                    msgEl.className = 'text-xs text-amber-700';
+                }
+                state.selectedKnown = target.id;
+                showStarInfo(target);
+                drawHR();
+                return;
+            }
+
+            if (hit) {
+                state.selectedKnown = hit.id;
+                showStarInfo(hit);
+                drawHR();
+            } else {
+                state.selectedKnown = null;
+                document.getElementById('star-info').classList.add('hidden');
+                drawHR();
+            }
+        }
+
+        function showStarInfo(s) {
+            const el = document.getElementById('star-info');
+            el.classList.remove('hidden');
+            el.innerHTML = '<b>' + t(s.nameKey) + '</b><br>' +
+                t('data.mass') + ': ' + s.M + ' M☉ · ' +
+                t('data.temp') + ': ' + s.T + ' K<br>' +
+                t('data.lum') + ': ' + fmtLum(s.L) + ' · ' +
+                t('data.radius') + ': ' + fmtRadius(s.R);
+        }
+
+        // ---------- animate ----------
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            if (state.playing) {
+                state.evol = Math.min(100, state.evol + dt * 8); // ~12.5 s full track
+                document.getElementById('evol-slider').value = state.evol;
+                if (state.evol >= 100) setPlaying(false);
+                updateSimulation();
+            }
+
+            if (!reduceMotion) {
+                pulsePhase += dt;
+                const d = state.display;
+                const baseR = visualRadius(d.R);
+                if (isGiantLike(d.stage) && starMesh.visible) {
+                    const puls = 1 + 0.03 * Math.sin(pulsePhase * 2.2);
+                    starMesh.scale.setScalar(baseR * puls);
+                    coronaMesh.scale.setScalar(baseR * 1.55 * puls);
+                }
+                if (d.stage === 'pn' || d.stage === 'sn') {
+                    shellExpand = Math.min(1.2, shellExpand + dt * 0.35);
+                    if (shellMesh.visible) {
+                        shellMesh.scale.setScalar(baseR * (d.stage === 'sn' ? 1 + shellExpand * 4 : 1 + shellExpand * 2.5));
+                        shellMesh.material.opacity = clamp(0.35 - shellExpand * 0.25, 0.02, 0.4);
+                    }
+                }
+                if (d.stage === 'sn') {
+                    snFlash = 0.5 + 0.5 * Math.sin(pulsePhase * 12);
+                    scene.background = new THREE.Color(snFlash > 0.65 ? 0x1c1917 : 0x020617);
+                } else if (snFlash !== 0) {
+                    snFlash = 0;
+                }
+                if (coronaMesh.visible && !isGiantLike(d.stage)) {
+                    coronaMesh.material.opacity = 0.18 + 0.06 * Math.sin(pulsePhase * 1.8);
+                }
+            }
+
+            if (renderer && scene && camera) renderer.render(scene, camera);
+        }
+
+        function resizeAll() {
+            if (renderer && camera) {
+                const w = Math.max(threeContainer.clientWidth, 320);
+                const h = Math.max(threeContainer.clientHeight, 240);
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            }
+            drawHR();
+        }
+
+        // ---------- i18n ----------
+        const translations = {
+            en: {
+                'nav.back': 'Back to Home',
+                'page.tag': 'HKDSE • Elective 1: Astronomy and Space Science • Stars',
+                'page.title': 'Stellar Evolution & H-R Diagram',
+                'page.description': 'Set a star\'s initial mass, watch it glow in 3D, and track its path on the Hertzsprung–Russell diagram — from the main sequence through the red-giant phase to a white dwarf or a supernova remnant. Values are teaching approximations, not a precision stellar model.',
+                'page.disclaimer': 'Teaching simplification: the time axis is schematically compressed; tracks use mass–luminosity and Stefan–Boltzmann relations suitable for HKDSE, not detailed stellar-structure codes.',
+                'controls.title': 'Parameters',
+                'controls.reset': 'Reset',
+                'controls.mass': 'Initial mass ($M / M_\\odot$)',
+                'controls.mass_hint': 'Low mass → long life, red dwarf; high mass → short life, blue giant / supernova.',
+                'controls.evol': 'Evolution progress (schematic)',
+                'controls.evol_hint': 'Time is heavily compressed for classroom use — not real years per second.',
+                'controls.play': '▶ Play',
+                'controls.pause': '❚❚ Pause',
+                'controls.presets': 'Presets',
+                'controls.presetSun': 'Sun',
+                'controls.presetRdwarf': 'Red dwarf',
+                'controls.presetBlue': 'Massive blue giant',
+                'controls.challenge': 'Mini-challenge',
+                'controls.chalSirius': 'Place Sirius',
+                'controls.chalBetel': 'Place Betelgeuse',
+                'controls.chalProx': 'Place Proxima',
+                'controls.chalHint': 'Tap a challenge, then click the H-R diagram where you think that star belongs.',
+                'controls.chalActive': 'Click the H-R diagram to place {star}.',
+                'controls.chalOk': 'Well done — {star} is near that region of the diagram.',
+                'controls.chalFail': 'Not quite. The violet ring shows where {star} sits (teaching values).',
+                'data.title': 'Live readings',
+                'data.mass': 'Mass',
+                'data.temp': 'Surface temperature',
+                'data.lum': 'Luminosity',
+                'data.radius': 'Radius',
+                'data.life': 'Main-sequence lifetime',
+                'stage.ms': 'MAIN SEQUENCE',
+                'stage.leave': 'LEAVING MAIN SEQUENCE',
+                'stage.rg': 'RED GIANT',
+                'stage.sg': 'SUPERGIANT',
+                'stage.pn': 'PLANETARY NEBULA',
+                'stage.wd': 'WHITE DWARF',
+                'stage.sn': 'SUPERNOVA',
+                'stage.ns': 'NEUTRON STAR',
+                'stage.bh': 'BLACK HOLE',
+                'observe.label': 'Focus for observation:',
+                'observe.tip': ' Compare the evolutionary tracks and main-sequence lifetimes of stars with different masses on the H-R diagram — massive stars leave the main sequence sooner and pass through the supergiant region.',
+                'formula.title': 'HKDSE relation',
+                'formula.L': 'luminosity (power radiated)',
+                'formula.R': 'stellar radius',
+                'formula.T': 'surface (effective) temperature',
+                'formula.sigma': 'Stefan–Boltzmann constant',
+                'formula.note': 'A cooler but much larger red giant can outshine a hotter main-sequence star because luminosity grows with $R^{2}$ and $T^{4}$.',
+                'three.title': '3D star (colour ← T, size ← R)',
+                'three.hint': 'Drag to rotate • pinch / scroll to zoom',
+                'legend.temp': 'Temperature $T$',
+                'legend.radius': 'Radius $R$',
+                'legend.lum': 'Luminosity $L$',
+                'hr.title': 'Hertzsprung–Russell diagram',
+                'hr.axes': '$T$ → cooler right · $\\log L$ up',
+                'hr.xlabel': 'Surface temperature T (K) → cooler',
+                'hr.ylabel': 'Luminosity L / L☉ (log)',
+                'hr.bandMS': 'Main sequence',
+                'hr.bandRG': 'Red giants',
+                'hr.bandSG': 'Supergiants',
+                'hr.bandWD': 'White dwarfs',
+                'star.sun': 'Sun',
+                'star.sirius': 'Sirius',
+                'star.vega': 'Vega',
+                'star.proxima': 'Proxima Centauri',
+                'star.betelgeuse': 'Betelgeuse',
+                'star.rigel': 'Rigel',
+                'ai.title': 'Physics note',
+                'ai.desc': 'Most stars lie on the <b>main sequence</b>, where hydrogen fuses to helium in the core. Higher-mass stars are hotter and more luminous, so they exhaust fuel sooner. After the main sequence a lower-mass star expands into a <b>red giant</b>, while a massive star becomes a <b>supergiant</b>. Stars like the Sun end as <b>white dwarfs</b>; stars above about 8 solar masses explode as <b>supernovae</b>, leaving a neutron star or black hole.',
+                'modal.open': 'Explain',
+                'modal.title': 'Stars & the H-R diagram — HKDSE E1',
+                'modal.body': '<p><b>Hertzsprung–Russell diagram:</b> plots luminosity against surface temperature (hotter stars to the left). The <b>main sequence</b> is a diagonal band of hydrogen-burning stars.</p><p><b>Stefan–Boltzmann law:</b> $L = 4\\pi R^{2}\\sigma T^{4}$. Luminosity depends strongly on temperature ($T^{4}$) and on surface area ($R^{2}$).</p><p><b>Mass decides destiny:</b> more massive main-sequence stars are brighter and shorter-lived ($\\tau \\propto M/L$). Lower-mass stars become red giants and leave white dwarfs; stars of about 8 $M_\\odot$ or more pass through the <b>supergiant</b> stage and end in a supernova (neutron star or black hole).</p><p><b>Assumptions in this page:</b> schematic time compression; $L\\propto M^{3.5}$ and $R\\propto M^{0.8}$ on the ZAMS; simplified giant / supergiant and remnant tracks; known-star values are rounded teaching figures. Colour coding: <span class="text-amber-600 font-semibold">amber</span> = $T$, <span class="text-red-600 font-semibold">red</span> = $R$, <span class="text-green-600 font-semibold">green</span> = $L$.</p>'
+            },
+            'zh-hk': {
+                'nav.back': '返回首頁',
+                'page.tag': 'HKDSE • 選修部分 1：天文學與太空科學 • 恆星',
+                'page.title': '恆星的赫羅圖與演化',
+                'page.description': '設定恆星的初始質量，觀看其在三維空間發光，並在赫羅圖上追蹤演化軌跡——由主序帶經紅巨星階段，最終成為白矮星或超新星遺骸。數值屬教學示意，並非精密恆星結構模型。',
+                'page.disclaimer': '教學簡化說明：時間軸為示意性壓縮；演化軌跡採用適合 HKDSE 的質量－光度關係及斯特藩－玻爾茲曼定律，而非詳細恆星結構計算程式。',
+                'controls.title': '參數',
+                'controls.reset': '重設',
+                'controls.mass': '初始質量 ($M / M_\\odot$)',
+                'controls.mass_hint': '質量較小 → 壽命長、紅矮星；質量較大 → 壽命短、藍巨星／超新星。',
+                'controls.evol': '演化進度（示意）',
+                'controls.evol_hint': '時間經大幅壓縮以供課堂使用——並非真實的每年對應一秒。',
+                'controls.play': '▶ 播放',
+                'controls.pause': '❚❚ 暫停',
+                'controls.presets': '預設情境',
+                'controls.presetSun': '太陽',
+                'controls.presetRdwarf': '紅矮星',
+                'controls.presetBlue': '大質量藍巨星',
+                'controls.challenge': '小挑戰',
+                'controls.chalSirius': '標示天狼星',
+                'controls.chalBetel': '標示參宿四',
+                'controls.chalProx': '標示比鄰星',
+                'controls.chalHint': '先選一項挑戰，然後在赫羅圖上點選你認為該恆星應在的位置。',
+                'controls.chalActive': '請在赫羅圖上標示{star}的位置。',
+                'controls.chalOk': '做得好——{star}大致位於該區域。',
+                'controls.chalFail': '尚未準確。紫色圓環顯示{star}的教學示意位置。',
+                'data.title': '即時讀數',
+                'data.mass': '質量',
+                'data.temp': '表面溫度',
+                'data.lum': '光度',
+                'data.radius': '半徑',
+                'data.life': '主序壽命',
+                'stage.ms': '主序帶',
+                'stage.leave': '離開主序帶',
+                'stage.rg': '紅巨星',
+                'stage.sg': '超巨星',
+                'stage.pn': '行星狀星雲',
+                'stage.wd': '白矮星',
+                'stage.sn': '超新星',
+                'stage.ns': '中子星',
+                'stage.bh': '黑洞',
+                'observe.label': '觀察重點：',
+                'observe.tip': ' 請比較不同質量恆星在赫羅圖上的演化路徑與主序壽命長短——質量較大的恆星較早離開主序帶，並經過超巨星階段。',
+                'formula.title': 'HKDSE 關係式',
+                'formula.L': '光度（輻射功率）',
+                'formula.R': '恆星半徑',
+                'formula.T': '表面（有效）溫度',
+                'formula.sigma': '斯特藩－玻爾茲曼常數',
+                'formula.note': '較冷但體積大得多的紅巨星，光度可高於較熱的主序星，因為光度隨 $R^{2}$ 及 $T^{4}$ 增加。',
+                'three.title': '三維恆星（顏色←溫度，大小←半徑）',
+                'three.hint': '拖曳旋轉 • 雙指／滾輪縮放',
+                'legend.temp': '溫度 $T$',
+                'legend.radius': '半徑 $R$',
+                'legend.lum': '光度 $L$',
+                'hr.title': '赫羅圖（Hertzsprung–Russell diagram）',
+                'hr.axes': '溫度向右遞減 · $\\log L$ 向上',
+                'hr.xlabel': '表面溫度 T (K) → 較冷',
+                'hr.ylabel': '光度 L / L☉（對數）',
+                'hr.bandMS': '主序帶',
+                'hr.bandRG': '紅巨星',
+                'hr.bandSG': '超巨星',
+                'hr.bandWD': '白矮星',
+                'star.sun': '太陽',
+                'star.sirius': '天狼星',
+                'star.vega': '織女星',
+                'star.proxima': '比鄰星',
+                'star.betelgeuse': '參宿四',
+                'star.rigel': '參宿七',
+                'ai.title': '物理說明',
+                'ai.desc': '大多數恆星位於<b>主序帶</b>，核心進行氫融合為氦。質量較大的主序星溫度較高、光度較大，燃料消耗亦較快。離開主序帶後，質量較低的恆星膨脹成為<b>紅巨星</b>，而大質量恆星則成為<b>超巨星</b>。類似太陽的恆星最終成為<b>白矮星</b>；質量約超過 8 個太陽質量的恆星則以<b>超新星</b>爆發告終，留下中子星或黑洞。',
+                'modal.open': '解釋',
+                'modal.title': '恆星與赫羅圖 — HKDSE 選修 1',
+                'modal.body': '<p><b>赫羅圖：</b>以光度對表面溫度作圖（較熱的恆星在左）。<b>主序帶</b>是進行氫燃燒的恆星所形成的對角線帶。</p><p><b>斯特藩－玻爾茲曼定律：</b>$L = 4\\pi R^{2}\\sigma T^{4}$。光度強烈依賴溫度（$T^{4}$）及表面面積（$R^{2}$）。</p><p><b>質量決定歸宿：</b>質量較大的主序星較光亮、壽命較短（$\\tau \\propto M/L$）。質量較低者經紅巨星階段後留下白矮星；約 8 $M_\\odot$ 或以上則經過<b>超巨星</b>階段，並以超新星告終（中子星或黑洞）。</p><p><b>本頁假設：</b>時間軸為示意壓縮；零齡主序採用 $L\\propto M^{3.5}$、$R\\propto M^{0.8}$；巨星／超巨星及遺骸軌跡已簡化；已知恆星數值為經四捨五入的教學數據。顏色編碼：<span class="text-amber-600 font-semibold">琥珀色</span>＝$T$，<span class="text-red-600 font-semibold">紅色</span>＝$R$，<span class="text-green-600 font-semibold">綠色</span>＝$L$。</p>'
+            }
+        };
+
+        let currentLang = (window.PhysicsI18n ? PhysicsI18n.get() : (localStorage.getItem('preferred_language') || 'en'));
+        if (window.PhysicsI18n) currentLang = PhysicsI18n.normalize(currentLang);
+        if (currentLang === 'zh' || currentLang === 'cn' || currentLang === 'zh-TW' || currentLang === 'zh-CN') {
+            currentLang = 'zh-hk';
+        }
+
+        function t(key) {
+            return (window.PhysicsI18n ? PhysicsI18n.resolve(translations, currentLang)[key] : translations[currentLang]?.[key]) ?? translations.en?.[key] ?? key;
+        }
+
+        function setLanguage(lang) {
+            if (window.PhysicsI18n) lang = PhysicsI18n.normalize(lang);
+            // Prefer zh-hk for Traditional Chinese on this page
+            if (lang === 'zh-cn') lang = 'zh-hk';
+            currentLang = window.PhysicsI18n ? PhysicsI18n.set(lang) : lang;
+            if (!window.PhysicsI18n) localStorage.setItem('preferred_language', lang);
+            document.documentElement.lang = window.PhysicsI18n ? PhysicsI18n.htmlLang(lang) : (lang === 'zh-hk' ? 'zh-HK' : 'en');
+            document.querySelectorAll('[data-i18n]').forEach((el) => {
+                const key = el.getAttribute('data-i18n');
+                const val = translations[lang]?.[key] ?? translations.en?.[key];
+                if (!val) return;
+                if (key.includes('desc') || key.includes('body') || key.includes('note') || key.includes('hint') || key.includes('disclaimer') || key.includes('chal')) {
+                    el.innerHTML = val;
+                } else {
+                    el.textContent = val;
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach((btn) => {
+                const active = window.PhysicsI18n ? PhysicsI18n.matchButton(btn.dataset.lang, lang) : (btn.dataset.lang === lang);
+                btn.classList.toggle('bg-white', active);
+                btn.classList.toggle('shadow-sm', active);
+                btn.classList.toggle('text-blue-600', active);
+            });
+            document.getElementById('play-btn').textContent = t(state.playing ? 'controls.pause' : 'controls.play');
+            stageCardStyle(state.display.stage);
+            if (state.selectedKnown) {
+                const s = KNOWN_STARS.find((x) => x.id === state.selectedKnown);
+                if (s) showStarInfo(s);
+            }
+            drawHR();
+            if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+        }
+        window.setLanguage = setLanguage;
+
+        // ---------- events ----------
+        document.getElementById('mass-slider').addEventListener('input', () => {
+            setPlaying(false);
+            shellExpand = 0;
+            document.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
+            updateSimulation();
+        });
+        document.getElementById('evol-slider').addEventListener('input', () => {
+            setPlaying(false);
+            updateSimulation();
+        });
+        document.getElementById('play-btn').addEventListener('click', () => {
+            if (state.evol >= 100) {
+                state.evol = 0;
+                syncSliders();
+            }
+            setPlaying(!state.playing);
+        });
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            setPlaying(false);
+            Object.assign(state, { mass: defaults.mass, evol: defaults.evol, challenge: null, selectedKnown: null });
+            challengeTarget = null;
+            shellExpand = 0;
+            document.getElementById('star-info').classList.add('hidden');
+            document.getElementById('challenge-msg').textContent = t('controls.chalHint');
+            document.getElementById('challenge-msg').className = 'text-xs text-slate-500';
+            document.querySelectorAll('.challenge-btn').forEach((b) => b.classList.remove('active'));
+            setActivePreset('preset-sun');
+            syncSliders();
+            resetCameraView();
+            updateSimulation();
+        });
+
+        document.getElementById('preset-sun').addEventListener('click', () => applyPreset(1.0, 0, 'preset-sun'));
+        document.getElementById('preset-rdwarf').addEventListener('click', () => applyPreset(0.3, 0, 'preset-rdwarf'));
+        document.getElementById('preset-blue').addEventListener('click', () => applyPreset(18, 0, 'preset-blue'));
+        document.getElementById('chal-sirius').addEventListener('click', () => startChallenge('sirius'));
+        document.getElementById('chal-betel').addEventListener('click', () => startChallenge('betelgeuse'));
+        document.getElementById('chal-prox').addEventListener('click', () => startChallenge('proxima'));
+
+        hrCanvas.addEventListener('click', onHRClick);
+
+        const modal = document.getElementById('explain-modal');
+        document.getElementById('explain-btn').addEventListener('click', () => {
+            document.getElementById('modal-body').innerHTML = t('modal.body');
+            modal.classList.remove('hidden');
+            if (window.MathJax?.typesetPromise) MathJax.typesetPromise([document.getElementById('modal-body')]);
+        });
+        document.getElementById('explain-close').addEventListener('click', () => modal.classList.add('hidden'));
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+        window.addEventListener('resize', resizeAll);
+
+        initThree();
+        syncSliders();
+        updateSimulation();
+        setLanguage(currentLang === 'zh-hk' ? 'zh-hk' : 'en');
+        animate();
+    </script>
+
+    <script src="practice_questions.js"></script>
+    <script src="practice_questions_data.js"></script>
+    <script>initPracticeQuestions('stellar_evolution_hr');</script>
+</body>
+</html>
