@@ -22,10 +22,21 @@
     .status-sub { color: #16a34a; }
     .status-crit { color: #2563eb; }
     .status-super { color: #dc2626; }
+    .crit-pill {
+      opacity: 0.45;
+      border: 1px solid transparent;
+      transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .crit-pill.is-active { opacity: 1; border-color: currentColor; box-shadow: 0 0 0 1px currentColor inset; }
+    .crit-pill.is-active[data-state="sub"] { background: rgba(22, 163, 74, 0.25); }
+    .crit-pill.is-active[data-state="crit"] { background: rgba(37, 99, 235, 0.28); }
+    .crit-pill.is-active[data-state="super"] { background: rgba(220, 38, 38, 0.28); }
+    .crit-pill.is-active[data-state="idle"] { background: rgba(148, 163, 184, 0.28); color: #e2e8f0; }
     #overheatBanner { display: none; }
     #overheatBanner.show { display: flex; }
     @media (prefers-reduced-motion: reduce) {
       #overheatBanner { animation: none !important; }
+      .crit-pill { transition: none; }
     }
   </style>
 </head>
@@ -84,22 +95,37 @@
               <button type="button" id="presetSingle" class="py-2.5 min-h-[44px] rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700" data-i18n="preset.single">Single fission</button>
               <button type="button" id="presetReactor" class="py-2.5 min-h-[44px] rounded-xl bg-blue-50 hover:bg-blue-100 text-xs font-bold text-blue-800" data-i18n="preset.reactor">Controlled reactor</button>
               <button type="button" id="presetRunaway" class="py-2.5 min-h-[44px] rounded-xl bg-amber-50 hover:bg-amber-100 text-xs font-bold text-amber-800" data-i18n="preset.runaway">Runaway</button>
-              <button type="button" id="presetBomb" class="py-2.5 min-h-[44px] rounded-xl bg-red-50 hover:bg-red-100 text-xs font-bold text-red-800" data-i18n="preset.bomb">Bomb schematic</button>
+              <button type="button" id="presetBomb" class="py-2.5 min-h-[44px] rounded-xl bg-red-50 hover:bg-red-100 text-xs font-bold text-red-800" data-i18n="preset.bomb">Uncontrolled chain reaction (schematic)</button>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm text-sm space-y-2">
-          <h2 class="font-semibold mb-2" data-i18n="stats.title">Live data</h2>
+        <div class="rounded-2xl border border-blue-200 bg-blue-50/90 p-4 text-sm text-blue-950 shadow-sm">
+          <p class="text-xs font-bold uppercase tracking-wide text-blue-700 mb-1" data-i18n="observe.label">Focus</p>
+          <p class="leading-relaxed" data-i18n="observe.tip">Watch how inserting control rods or increasing the moderator changes the multiplication factor k and the number of neutrons in each generation.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm text-sm space-y-3">
+          <h2 class="font-semibold" data-i18n="stats.title">Live data</h2>
+          <div id="statePanel" class="rounded-xl border-2 border-slate-200 bg-slate-50 p-3 space-y-2" aria-live="polite">
+            <div class="flex justify-between items-baseline gap-2">
+              <span class="text-xs font-semibold uppercase tracking-wide text-slate-500" data-i18n="stats.state">Reactor state</span>
+              <span id="statState" class="text-sm font-bold status-sub" data-i18n="state.idle">Idle</span>
+            </div>
+            <div class="grid grid-cols-1 gap-1.5">
+              <div class="crit-pill rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-green-700 bg-green-50" data-state="sub" data-crit-pill="sub" data-i18n="state.sub">Subcritical (k &lt; 1)</div>
+              <div class="crit-pill rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-blue-700 bg-blue-50" data-state="crit" data-crit-pill="crit" data-i18n="state.crit">Critical (k ≈ 1)</div>
+              <div class="crit-pill rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-red-700 bg-red-50" data-state="super" data-crit-pill="super" data-i18n="state.super">Supercritical (k &gt; 1)</div>
+            </div>
+            <div class="flex justify-between text-xs pt-1 border-t border-slate-200">
+              <span class="text-slate-500" data-i18n="stats.k">Est. multiplication k</span>
+              <span id="statK" class="font-bold text-purple-600">—</span>
+            </div>
+          </div>
           <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.neutrons">Free neutrons</span><span id="statN" class="font-bold text-green-600">0</span></div>
           <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.fuel">Intact U-235</span><span id="statFuel" class="font-bold text-blue-600">80</span></div>
           <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.fissions">Fissions</span><span id="statFiss" class="font-bold text-red-600">0</span></div>
           <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.energy">Energy released</span><span id="statE" class="font-bold text-amber-600">0 MeV</span></div>
-          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.k">Est. multiplication k</span><span id="statK" class="font-bold text-purple-600">—</span></div>
-          <div class="flex justify-between items-center gap-2">
-            <span class="text-slate-500" data-i18n="stats.state">Reactor state</span>
-            <span id="statState" class="font-bold status-sub" data-i18n="state.idle">Idle</span>
-          </div>
           <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.generation">Generation</span><span id="statGen" class="font-bold text-slate-700">0</span></div>
         </div>
 
@@ -115,12 +141,26 @@
 
       <section class="sim-viewport lg:col-span-8 space-y-3">
         <div id="three-container" data-gl-host class="relative border-2 border-slate-700 shadow-lg">
-          <div class="absolute top-4 left-4 flex flex-wrap gap-2 pointer-events-none z-10">
+          <div class="absolute top-4 left-4 flex flex-wrap gap-2 pointer-events-none z-10 max-w-[70%]">
             <span class="bg-black/50 backdrop-blur text-blue-300 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.u235">U-235 nucleus</span>
             <span class="bg-black/50 backdrop-blur text-green-400 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.neutron">Neutron (v)</span>
             <span class="bg-black/50 backdrop-blur text-red-400 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.fragment">Fission fragment</span>
             <span class="bg-black/50 backdrop-blur text-amber-300 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.energy">Energy flash</span>
             <span class="bg-black/50 backdrop-blur text-slate-200 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.rod">Control rod</span>
+          </div>
+          <div id="critBanner" class="absolute bottom-14 left-4 right-4 md:right-auto md:min-w-[280px] z-20 pointer-events-none">
+            <div class="bg-black/70 backdrop-blur-md rounded-2xl border border-white/15 px-3 py-2.5 shadow-lg space-y-2">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-[10px] font-bold uppercase tracking-wide text-slate-300" data-i18n="crit.title">Criticality</span>
+                <span id="critBannerK" class="text-xs font-bold text-purple-300">k = —</span>
+              </div>
+              <div id="critBannerState" class="text-sm font-extrabold status-sub" data-i18n="state.idle">Idle</div>
+              <div class="grid grid-cols-3 gap-1.5">
+                <div class="crit-pill rounded-md px-1.5 py-1 text-center text-[9px] sm:text-[10px] font-bold text-green-300" data-state="sub" data-crit-pill="sub" data-i18n="state.subShort">k &lt; 1</div>
+                <div class="crit-pill rounded-md px-1.5 py-1 text-center text-[9px] sm:text-[10px] font-bold text-blue-300" data-state="crit" data-crit-pill="crit" data-i18n="state.critShort">k ≈ 1</div>
+                <div class="crit-pill rounded-md px-1.5 py-1 text-center text-[9px] sm:text-[10px] font-bold text-red-300" data-state="super" data-crit-pill="super" data-i18n="state.superShort">k &gt; 1</div>
+              </div>
+            </div>
           </div>
           <div id="overheatBanner" class="absolute top-4 right-4 left-4 md:left-auto md:max-w-xs z-20 items-center gap-2 bg-amber-500/95 text-amber-950 px-4 py-3 rounded-xl text-xs font-bold shadow-lg pointer-events-none">
             <span aria-hidden="true">⚠</span>
@@ -142,7 +182,7 @@
       <h3 class="font-semibold text-slate-900" data-i18n="info.title">Physics notes (for teachers &amp; students)</h3>
       <p data-i18n="info.p1">A thermal neutron can be captured by \(^{235}\mathrm{U}\), splitting it into two fission fragments and releasing typically 2–3 neutrons plus about 200 MeV, mainly as kinetic energy of the fragments (mass defect → \(E=mc^{2}\)).</p>
       <p data-i18n="info.p2">A moderator (e.g. water or graphite) slows fast fission neutrons so they are more likely to cause further fissions. Control rods absorb neutrons and keep the multiplication factor \(k\) near 1 in a power plant.</p>
-      <p data-i18n="info.p3">This model is highly simplified: nuclei and neutrons are not to scale; escape, absorption and fission probabilities are tuned for classroom visibility; “bomb schematic” only shows abstract supercritical growth — no blast or casualty imagery.</p>
+      <p data-i18n="info.p3">This model is highly simplified: nuclei and neutrons are not to scale; escape, absorption and fission probabilities are tuned for classroom visibility; the uncontrolled-chain preset only shows abstract supercritical growth — no blast or casualty imagery.</p>
     </section>
   </main>
 
@@ -182,7 +222,9 @@
         'preset.single': 'Single fission',
         'preset.reactor': 'Controlled reactor',
         'preset.runaway': 'Runaway',
-        'preset.bomb': 'Bomb schematic',
+        'preset.bomb': 'Uncontrolled chain reaction (schematic)',
+        'observe.label': 'Focus',
+        'observe.tip': 'Watch how inserting control rods or increasing the moderator changes the multiplication factor k and the number of neutrons in each generation.',
         'stats.title': 'Live data',
         'stats.neutrons': 'Free neutrons',
         'stats.fuel': 'Intact U-235',
@@ -191,10 +233,14 @@
         'stats.k': 'Est. multiplication k',
         'stats.state': 'Reactor state',
         'stats.generation': 'Generation',
+        'crit.title': 'Criticality',
         'state.idle': 'Idle',
         'state.sub': 'Subcritical (k < 1)',
         'state.crit': 'Critical (k ≈ 1)',
         'state.super': 'Supercritical (k > 1)',
+        'state.subShort': 'k < 1',
+        'state.critShort': 'k ≈ 1',
+        'state.superShort': 'k > 1',
         'formula.title': 'Key ideas',
         'formula.fission': '²³⁵U + n → fragments + 2–3 n + ~200 MeV',
         'formula.emc': 'Mass defect: E = mc²',
@@ -212,7 +258,7 @@
         'info.title': 'Physics notes (for teachers & students)',
         'info.p1': 'A thermal neutron can be captured by ²³⁵U, splitting it into two fission fragments and releasing typically 2–3 neutrons plus about 200 MeV, mainly as kinetic energy of the fragments (mass defect → E = mc²).',
         'info.p2': 'A moderator (e.g. water or graphite) slows fast fission neutrons so they are more likely to cause further fissions. Control rods absorb neutrons and keep the multiplication factor k near 1 in a power plant.',
-        'info.p3': 'This model is highly simplified: nuclei and neutrons are not to scale; escape, absorption and fission probabilities are tuned for classroom visibility; “bomb schematic” only shows abstract supercritical growth — no blast or casualty imagery.'
+        'info.p3': 'This model is highly simplified: nuclei and neutrons are not to scale; escape, absorption and fission probabilities are tuned for classroom visibility; the uncontrolled-chain preset only shows abstract supercritical growth — no blast or casualty imagery.'
       },
       'zh-hk': {
         'nav.back': '返回',
@@ -233,7 +279,9 @@
         'preset.single': '單次裂變',
         'preset.reactor': '可控反應堆',
         'preset.runaway': '失控',
-        'preset.bomb': '原子彈示意',
+        'preset.bomb': '失控連鎖反應（示意）',
+        'observe.label': '觀察重點',
+        'observe.tip': '請觀察插入控制棒或增加慢化劑時，倍增因數 k 與每代中子數如何改變。',
         'stats.title': '即時數據',
         'stats.neutrons': '自由中子數',
         'stats.fuel': '完整鈾-235',
@@ -242,10 +290,14 @@
         'stats.k': '估計倍增因數 k',
         'stats.state': '反應堆狀態',
         'stats.generation': '中子代數',
+        'crit.title': '臨界狀態',
         'state.idle': '待命',
         'state.sub': '次臨界（k < 1）',
         'state.crit': '臨界（k ≈ 1）',
         'state.super': '超臨界（k > 1）',
+        'state.subShort': 'k < 1',
+        'state.critShort': 'k ≈ 1',
+        'state.superShort': 'k > 1',
         'formula.title': '重點概念',
         'formula.fission': '²³⁵U + n → 裂變碎片 + 2–3 顆中子 + 約 200 MeV',
         'formula.emc': '質量虧損：E = mc²',
@@ -263,7 +315,7 @@
         'info.title': '物理說明（供教師與學生參考）',
         'info.p1': '熱中子可被鈾-235 俘獲，使之分裂為兩顆裂變碎片，並釋出通常 2 至 3 顆中子及約 200 MeV 能量，主要以碎片動能形式出現（質量虧損 → E = mc²）。',
         'info.p2': '慢化劑（例如水或石墨）使快中子減速，提高引發進一步裂變的機會。控制棒吸收中子，使核電廠中的倍增因數 k 維持接近 1。',
-        'info.p3': '本模型高度簡化：原子核與中子並非按比例；逃逸、吸收與裂變機率為課堂可視性而調校；「原子彈示意」僅顯示抽象超臨界增長——不含爆炸或傷亡畫面。'
+        'info.p3': '本模型高度簡化：原子核與中子並非按比例；逃逸、吸收與裂變機率為課堂可視性而調校；「失控連鎖反應（示意）」僅顯示抽象超臨界增長——不含爆炸或傷亡畫面。'
       }
     };
     if (window.PhysicsI18n) PhysicsI18n.aliasKeys(translations);
@@ -296,6 +348,13 @@
       updatePauseLabel();
       updateStatsUI();
       if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+    }
+
+    function setCritPills(activeKey) {
+      document.querySelectorAll('[data-crit-pill]').forEach(el => {
+        const on = el.getAttribute('data-crit-pill') === activeKey;
+        el.classList.toggle('is-active', on);
+      });
     }
 
     const container = document.getElementById('three-container');
@@ -351,10 +410,11 @@
     }
 
     function reactorStateKey() {
+      // Classroom bands aligned with k < 1 / k ≈ 1 / k > 1
       if (neutrons.length === 0 && state.fissions === 0) return 'idle';
       if (state.kEst == null) return neutrons.length > 0 ? 'sub' : 'idle';
       if (state.kEst < 0.9) return 'sub';
-      if (state.kEst <= 1.15) return 'crit';
+      if (state.kEst <= 1.1) return 'crit';
       return 'super';
     }
 
@@ -363,12 +423,30 @@
       document.getElementById('statFuel').textContent = fuelAlive.filter(Boolean).length;
       document.getElementById('statFiss').textContent = state.fissions;
       document.getElementById('statE').textContent = Math.round(state.energyMeV) + ' MeV';
-      document.getElementById('statK').textContent = state.kEst == null ? '—' : state.kEst.toFixed(2);
+      const kText = state.kEst == null ? '—' : state.kEst.toFixed(2);
+      document.getElementById('statK').textContent = kText;
       document.getElementById('statGen').textContent = state.generation;
       const key = reactorStateKey();
+      const statusClass = key === 'super' ? 'status-super' : key === 'crit' ? 'status-crit' : 'status-sub';
       const el = document.getElementById('statState');
       el.textContent = t('state.' + key);
-      el.className = 'font-bold ' + (key === 'super' ? 'status-super' : key === 'crit' ? 'status-crit' : 'status-sub');
+      el.className = 'text-sm font-bold ' + statusClass;
+      const bannerState = document.getElementById('critBannerState');
+      if (bannerState) {
+        bannerState.textContent = t('state.' + key);
+        bannerState.className = 'text-sm font-extrabold ' + statusClass;
+      }
+      const bannerK = document.getElementById('critBannerK');
+      if (bannerK) bannerK.textContent = 'k = ' + kText;
+      // Highlight sub / crit / super pills (idle highlights none of the three bands)
+      setCritPills(key === 'idle' ? '' : key);
+      const panel = document.getElementById('statePanel');
+      if (panel) {
+        panel.classList.toggle('border-green-400', key === 'sub');
+        panel.classList.toggle('border-blue-400', key === 'crit');
+        panel.classList.toggle('border-red-400', key === 'super');
+        panel.classList.toggle('border-slate-200', key === 'idle');
+      }
       document.getElementById('overheatBanner').classList.toggle('show', state.overheat);
     }
 
@@ -628,7 +706,7 @@
       const dens = state.density / 140;
       const mod = state.moderator / 100;
       if (thermal) return Math.min(0.92, 0.55 + 0.25 * dens + 0.15 * mod);
-      // Fast fission: low unless high density (bomb schematic) or weak moderation
+      // Fast fission: low unless high density (uncontrolled-chain preset) or weak moderation
       return Math.min(0.85, 0.06 + 0.55 * dens * dens + (1 - mod) * 0.18 * dens);
     }
 
@@ -1015,10 +1093,12 @@
     updateStatsUI();
 
     // Optional deep-link for demos / teacher links: #preset=runaway|reactor|single|bomb
+    // Aliases: uncontrolled → bomb (neutral “uncontrolled chain reaction” preset)
     (function applyHashPreset() {
       const m = (location.hash || '').match(/preset=([a-z]+)/i);
       if (!m) return;
-      const name = m[1].toLowerCase();
+      let name = m[1].toLowerCase();
+      if (name === 'uncontrolled') name = 'bomb';
       if (['single', 'reactor', 'runaway', 'bomb'].includes(name)) {
         setTimeout(() => applyPreset(name), 400);
       }
