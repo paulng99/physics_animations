@@ -96,6 +96,14 @@
             <p class="text-slate-600 max-w-3xl leading-relaxed" data-i18n="page.description">
                 Drag the launch-speed slider to fire a cannonball from a high mountain. Watch it fall to Earth, skim into an elliptical orbit, settle into a circular orbit, or escape — the same gravity that makes apples fall also keeps satellites aloft.
             </p>
+            <div class="mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <span class="shrink-0 mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-white text-xs font-bold" aria-hidden="true">!</span>
+                <p class="text-sm text-amber-950 leading-relaxed">
+                    <span class="font-bold" data-i18n="observe.label">Observation focus</span>
+                    <span class="mx-1 text-amber-400">·</span>
+                    <span data-i18n="observe.tip">As you raise the launch speed, watch the path change from hitting the ground, to an ellipse, to a circle, then to escape.</span>
+                </p>
+            </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sim-shell">
@@ -143,9 +151,42 @@
                             <button id="preset-crash" class="px-3 py-2 min-h-[44px] rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition" data-i18n="controls.presetCrash">Fall to ground</button>
                             <button id="preset-ellipse" class="px-3 py-2 min-h-[44px] rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold transition" data-i18n="controls.presetEllipse">Elliptical orbit</button>
                             <button id="preset-circular" class="px-3 py-2 min-h-[44px] rounded-xl bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold transition" data-i18n="controls.presetCircular">Circular orbit</button>
+                            <button id="preset-compare" class="px-3 py-2 min-h-[44px] rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="controls.presetCompare">Circular-motion compare</button>
                             <button id="preset-escape" class="px-3 py-2 min-h-[44px] rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold transition" data-i18n="controls.presetEscape">Escape</button>
                             <button id="preset-geo" class="px-3 py-2 min-h-[44px] rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="controls.presetGeo">Geostationary</button>
                         </div>
+                    </div>
+
+                    <div id="compare-panel" class="hidden rounded-xl border border-violet-200 bg-violet-50 p-4 space-y-3" aria-live="polite">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <h4 class="text-sm font-bold text-violet-900" data-i18n="compare.title">Circular-motion compare</h4>
+                                <p class="text-xs text-violet-800/80 mt-1 leading-relaxed" data-i18n="compare.desc">HKDSE circular motion: on a circular orbit, gravity is the centripetal force.</p>
+                            </div>
+                            <button id="compare-close" type="button" class="min-h-[44px] min-w-[44px] rounded-xl bg-white text-violet-700 font-bold border border-violet-200 hover:bg-violet-100" aria-label="Close">×</button>
+                        </div>
+                        <div class="text-center text-sm font-serif text-violet-950 bg-white/80 rounded-lg py-2 px-3 border border-violet-100">
+                            $$ F_c = \dfrac{mv^2}{r} = \dfrac{GMm}{r^2} = F_g $$
+                        </div>
+                        <div class="grid grid-cols-1 gap-2 text-sm">
+                            <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-violet-100">
+                                <span class="text-slate-600" data-i18n="compare.fc">Centripetal $F_c=mv^2/r$</span>
+                                <span id="out-fc" class="font-bold text-red-600 font-mono">—</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-violet-100">
+                                <span class="text-slate-600" data-i18n="compare.fg">Gravity $F_g=GMm/r^2$</span>
+                                <span id="out-fg" class="font-bold text-red-600 font-mono">—</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-violet-100">
+                                <span class="text-slate-600" data-i18n="compare.match">Match $F_c / F_g$</span>
+                                <span id="out-match" class="font-bold text-violet-700 font-mono">—</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-violet-100">
+                                <span class="text-purple-700 font-medium" data-i18n="compare.ac">Centripetal $a_c=v^2/r$</span>
+                                <span id="out-ac" class="font-bold text-purple-600 font-mono">—</span>
+                            </div>
+                        </div>
+                        <p id="compare-status" class="text-xs font-semibold text-violet-800" data-i18n="compare.ready">Circular orbit locked — gravity supplies $F_c$.</p>
                     </div>
 
                     <div id="challenge-box" class="rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-2">
@@ -215,7 +256,8 @@
                     <div class="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[11px] pointer-events-none">
                         <span class="bg-white/90 text-red-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.force">Gravity $F$</span>
                         <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.vel">Velocity $v$</span>
-                        <span class="bg-white/90 text-purple-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.acc">Acceleration $a$</span>
+                        <span id="legend-acc" class="bg-white/90 text-purple-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.acc">Acceleration $a$</span>
+                        <span id="legend-ac" class="hidden bg-white/90 text-purple-700 px-2 py-1 rounded-full font-semibold ring-1 ring-purple-300" data-i18n="legend.ac">Centripetal $a_c$</span>
                         <span class="bg-white/90 text-slate-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.trail">Orbit trail</span>
                     </div>
                 </div>
@@ -282,7 +324,8 @@
             hKm: 800,
             timeScale: 400,
             paused: false,
-            flying: true
+            flying: true,
+            compareMode: false
         };
         const state = { ...defaults };
 
@@ -878,10 +921,56 @@
             document.getElementById('out-vc').textContent = fmtSpeed(vCircular(launchRadiusM()));
             document.getElementById('out-ve').textContent = fmtSpeed(vEscape(launchRadiusM()));
 
+            // Circular-motion compare: Fc = m v²/r vs Fg = GMm/r² ; ac = v²/r
+            const Fc = PROJECTILE_MASS * v * v / r;
+            const Fg = F;
+            const ac = v * v / r;
+            const ratio = Fg > 0 ? Fc / Fg : 0;
+            const outFc = document.getElementById('out-fc');
+            if (outFc) {
+                outFc.textContent = fmtForce(Fc);
+                document.getElementById('out-fg').textContent = fmtForce(Fg);
+                document.getElementById('out-match').textContent = ratio.toFixed(3);
+                document.getElementById('out-ac').textContent = ac.toFixed(2) + ' m/s²';
+                const statusEl = document.getElementById('compare-status');
+                if (state.compareMode) {
+                    if (body.crashed) {
+                        statusEl.textContent = t('compare.crashed');
+                        statusEl.setAttribute('data-i18n', 'compare.crashed');
+                    } else if (eLive < 0.04 && eps < 0 && !body.escaped) {
+                        statusEl.textContent = t('compare.ready');
+                        statusEl.setAttribute('data-i18n', 'compare.ready');
+                    } else {
+                        statusEl.textContent = t('compare.notCircular');
+                        statusEl.setAttribute('data-i18n', 'compare.notCircular');
+                    }
+                }
+            }
+
+            // Live data accel label: emphasise centripetal when compare mode is on
+            const accelLabel = document.querySelector('[data-i18n="data.accel"]');
+            if (accelLabel) {
+                accelLabel.innerHTML = state.compareMode ? t('data.accelCompare') : t('data.accel');
+            }
+
             document.getElementById('v-val').textContent = state.vKms.toFixed(2) + ' km/s';
             document.getElementById('h-val').textContent = state.hKm.toLocaleString('en-HK') + ' km';
             document.getElementById('ts-val').textContent = '×' + state.timeScale;
             document.getElementById('time-badge').textContent = '×' + state.timeScale;
+        }
+
+        function setCompareMode(on) {
+            state.compareMode = !!on;
+            const panel = document.getElementById('compare-panel');
+            const legendAcc = document.getElementById('legend-acc');
+            const legendAc = document.getElementById('legend-ac');
+            if (panel) panel.classList.toggle('hidden', !state.compareMode);
+            if (legendAcc) legendAcc.classList.toggle('hidden', state.compareMode);
+            if (legendAc) legendAc.classList.toggle('hidden', !state.compareMode);
+            if (state.compareMode && window.MathJax?.typesetPromise) {
+                MathJax.typesetPromise([panel].filter(Boolean));
+            }
+            updateReadouts();
         }
 
         function syncSliders() {
@@ -947,8 +1036,20 @@
                 'controls.presetCrash': 'Fall to ground',
                 'controls.presetEllipse': 'Elliptical orbit',
                 'controls.presetCircular': 'Circular orbit',
+                'controls.presetCompare': 'Circular-motion compare',
                 'controls.presetEscape': 'Escape',
                 'controls.presetGeo': 'Geostationary',
+                'observe.label': 'Observation focus',
+                'observe.tip': 'As you raise the launch speed, watch the path change from hitting the ground, to an ellipse, to a circle, then to escape.',
+                'compare.title': 'Circular-motion compare',
+                'compare.desc': 'HKDSE circular motion: on a circular orbit, gravity is the centripetal force.',
+                'compare.fc': 'Centripetal $F_c=mv^2/r$',
+                'compare.fg': 'Gravity $F_g=GMm/r^2$',
+                'compare.match': 'Match $F_c / F_g$',
+                'compare.ac': 'Centripetal $a_c=v^2/r$',
+                'compare.ready': 'Circular orbit locked — gravity supplies $F_c$.',
+                'compare.notCircular': 'Not circular yet — set $v = v_c$ so $F_c = F_g$.',
+                'compare.crashed': 'Impacted Earth — relaunch on a circular orbit.',
                 'challenge.title': 'Challenge',
                 'challenge.desc': 'Tune $v$ (near circular) until the cannonball completes one full revolution without hitting Earth.',
                 'challenge.wait': 'Waiting for a closed orbit…',
@@ -959,6 +1060,7 @@
                 'data.radius': 'Radial distance $r$',
                 'data.force': 'Gravity $F=GMm/r^2$',
                 'data.accel': 'Accel. $a=GM/r^2$',
+                'data.accelCompare': 'Centripetal $a_c=v^2/r$',
                 'data.period': 'Orbital period $T$',
                 'data.ecc': 'Eccentricity $e$',
                 'data.orbitType': 'Orbit type',
@@ -972,6 +1074,7 @@
                 'legend.force': 'Gravity $F$',
                 'legend.vel': 'Velocity $v$',
                 'legend.acc': 'Acceleration $a$',
+                'legend.ac': 'Centripetal $a_c$',
                 'legend.trail': 'Orbit trail',
                 'ai.title': 'Physics note',
                 'ai.desc': "Newton imagined a cannon on a tall mountain. At low $v$ the ball hits the ground nearby; raise $v$ and the landing point moves farther around the globe. When $v = \\sqrt{GM/r}$, the path is a closed circle — a satellite. Between circular and escape speeds the orbit is an ellipse; above $v_{esc}=\\sqrt{2GM/r}$ the ball never returns. Geostationary satellites sit much higher ($h\\approx 36\\,000\\,\\mathrm{km}$) so their period matches one sidereal day.",
@@ -1004,8 +1107,20 @@
                 'controls.presetCrash': '落地',
                 'controls.presetEllipse': '橢圓軌道',
                 'controls.presetCircular': '圓形軌道',
+                'controls.presetCompare': '圓周運動對照',
                 'controls.presetEscape': '逃逸',
                 'controls.presetGeo': '地球同步衛星',
+                'observe.label': '觀察重點',
+                'observe.tip': '提高發射速率時，請留意軌道如何由落地變為橢圓、圓形，再變為逃逸。',
+                'compare.title': '圓周運動對照',
+                'compare.desc': 'HKDSE 圓周運動：在圓軌道上，萬有引力即為向心力。',
+                'compare.fc': '向心力 $F_c=mv^2/r$',
+                'compare.fg': '萬有引力 $F_g=GMm/r^2$',
+                'compare.match': '對照 $F_c / F_g$',
+                'compare.ac': '向心加速度 $a_c=v^2/r$',
+                'compare.ready': '已鎖定圓軌道——萬有引力提供向心力 $F_c$。',
+                'compare.notCircular': '尚未成圓——請調至 $v = v_c$，使 $F_c = F_g$。',
+                'compare.crashed': '已撞擊地球——請以圓軌道再發射。',
                 'challenge.title': '挑戰',
                 'challenge.desc': '調節 $v$（接近圓軌道速率），使砲彈在不撞擊地球的情況下完成一整圈。',
                 'challenge.wait': '等待封閉軌道……',
@@ -1016,6 +1131,7 @@
                 'data.radius': '徑向距離 $r$',
                 'data.force': '萬有引力 $F=GMm/r^2$',
                 'data.accel': '加速度 $a=GM/r^2$',
+                'data.accelCompare': '向心加速度 $a_c=v^2/r$',
                 'data.period': '軌道週期 $T$',
                 'data.ecc': '離心率 $e$',
                 'data.orbitType': '軌道類型',
@@ -1029,6 +1145,7 @@
                 'legend.force': '萬有引力 $F$',
                 'legend.vel': '速度 $v$',
                 'legend.acc': '加速度 $a$',
+                'legend.ac': '向心加速度 $a_c$',
                 'legend.trail': '軌道軌跡',
                 'ai.title': '物理說明',
                 'ai.desc': '牛頓設想在高山上架設大砲。$v$ 較小時砲彈落在附近；提高 $v$，落點便沿地球表面走得更遠。當 $v = \\sqrt{GM/r}$ 時，路徑成為封閉圓——即衛星。介乎圓軌道與逃逸速率之間為橢圓；高於 $v_{esc}=\\sqrt{2GM/r}$ 則一去不返。地球同步衛星位於更高處（$h\\approx 36\\,000\\,\\mathrm{km}$），使其週期等於一個恆星日。',
@@ -1065,7 +1182,7 @@
                 const key = el.getAttribute('data-i18n');
                 const val = translations[lang]?.[key] ?? translations.en?.[key];
                 if (!val) return;
-                if (key.includes('desc') || key.includes('body') || key.includes('note') || key.includes('hint') || key.includes('why')) {
+                if (key.includes('desc') || key.includes('body') || key.includes('note') || key.includes('hint') || key.includes('why') || key.includes('tip') || key.includes('ready') || key.includes('notCircular') || key.includes('crashed') || key.includes('accel')) {
                     el.innerHTML = val;
                 } else {
                     el.textContent = val;
@@ -1100,7 +1217,7 @@
             document.getElementById('pause-btn').textContent = state.paused ? t('controls.resume') : t('controls.pause');
         });
 
-        function applyPreset(hKm, vFactor) {
+        function applyPreset(hKm, vFactor, opts = {}) {
             state.hKm = hKm;
             const r = launchRadiusM();
             const vc = vCircular(r) / 1000;
@@ -1115,26 +1232,29 @@
             }
             syncSliders();
             relaunch();
+            if (opts.compare) setCompareMode(true);
+            else if (opts.compare === false) setCompareMode(false);
         }
 
-        // Horizontal launch: v < vc → periapsis closer (often hits Earth);
-        // v > vc → launch point is periapsis, apoapsis farther (closed ellipse if v < vesc).
-        document.getElementById('preset-crash').addEventListener('click', () => applyPreset(800, 0.55));
-        document.getElementById('preset-ellipse').addEventListener('click', () => applyPreset(800, 1.18));
-        document.getElementById('preset-circular').addEventListener('click', () => applyPreset(800, 1.0));
-        document.getElementById('preset-escape').addEventListener('click', () => applyPreset(800, 1.42));
+        document.getElementById('preset-crash').addEventListener('click', () => applyPreset(800, 0.55, { compare: false }));
+        document.getElementById('preset-ellipse').addEventListener('click', () => applyPreset(800, 1.18, { compare: false }));
+        document.getElementById('preset-circular').addEventListener('click', () => applyPreset(800, 1.0, { compare: false }));
+        document.getElementById('preset-compare').addEventListener('click', () => applyPreset(800, 1.0, { compare: true }));
+        document.getElementById('preset-escape').addEventListener('click', () => applyPreset(800, 1.42, { compare: false }));
         document.getElementById('preset-geo').addEventListener('click', () => {
-            applyPreset(H_GEO, 1.0);
+            applyPreset(H_GEO, 1.0, { compare: false });
             state.timeScale = 1200;
             syncSliders();
             document.getElementById('ts-val').textContent = '×' + state.timeScale;
             document.getElementById('time-badge').textContent = '×' + state.timeScale;
         });
+        document.getElementById('compare-close').addEventListener('click', () => setCompareMode(false));
 
         document.getElementById('reset-btn').addEventListener('click', () => {
             Object.assign(state, defaults);
             syncSliders();
             resetCameraView();
+            setCompareMode(false);
             relaunch();
         });
 
