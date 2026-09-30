@@ -641,28 +641,26 @@
       camera.lookAt(0, 0.2, 0);
     }
 
+    let barrierMat = null;
     function buildBarrierMeshes() {
       while (barrierGroup.children.length) {
         const c = barrierGroup.children.pop();
         if (c.geometry) c.geometry.dispose();
-        if (c.material) c.material.dispose();
+        // share one material — do not dispose per rebuild
       }
       if (state.barrierMode === 'none') return;
 
-      const mat = new THREE.MeshStandardMaterial({
-        color: 0x1e293b,
-        roughness: 0.55,
-        metalness: 0.15
-      });
+      if (!barrierMat) {
+        barrierMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+      }
       const h = 0.55;
       const thick = 0.22;
 
       function addBlock(z0, z1) {
         const len = Math.max(0.05, z1 - z0);
         const geo = new THREE.BoxGeometry(thick, h, len);
-        const mesh = new THREE.Mesh(geo, mat);
+        const mesh = new THREE.Mesh(geo, barrierMat);
         mesh.position.set(TANK.barrierX, h / 2, (z0 + z1) / 2);
-        mesh.castShadow = true;
         barrierGroup.add(mesh);
       }
 
@@ -693,11 +691,20 @@
       shallowMesh.material.opacity = alpha;
     }
 
-    function updateRayHelpers() {
+    function clearRayGroup() {
       while (rayGroup.children.length) {
         const c = rayGroup.children.pop();
         if (c.geometry) c.geometry.dispose();
+        // ArrowHelper owns nested meshes; dispose child geos if present
+        if (c.children && c.children.length) {
+          c.traverse((obj) => {
+            if (obj.geometry) obj.geometry.dispose();
+          });
+        }
       }
+    }
+    function updateRayHelpers() {
+      clearRayGroup();
       rayGroup.visible = state.showRays;
       if (!state.showRays) return;
 
@@ -912,28 +919,30 @@
       return null;
     }
 
+    let normalFrame = 0;
     function updateWaterGeometry(t) {
       const pos = waterGeo.attributes.position;
       const colors = waterGeo.attributes.color;
-      for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i);
-        const z = pos.getZ(i);
-        const y = sampleHeight(x, z, t);
+      const amp = Math.max(0.08, state.amplitude);
+      const count = pos.count;
+      for (let i = 0; i < count; i++) {
+        const y = sampleHeight(pos.getX(i), pos.getZ(i), t);
         pos.setY(i, y);
-        // Crest bright / trough deep blue
-        const n = (y / Math.max(0.08, state.amplitude) + 1) * 0.5;
-        const r = 0.08 + n * 0.55;
-        const g = 0.35 + n * 0.45;
-        const b = 0.65 + n * 0.35;
-        colors.setXYZ(i, r, g, b);
+        const n = (y / amp + 1) * 0.5;
+        colors.setXYZ(i, 0.08 + n * 0.55, 0.35 + n * 0.45, 0.65 + n * 0.35);
       }
       pos.needsUpdate = true;
       colors.needsUpdate = true;
-      waterGeo.computeVertexNormals();
+      // Normals are the costly part on SwiftShader — refresh sparsely
+      normalFrame++;
+      if (normalFrame % 4 === 0) {
+        waterGeo.computeVertexNormals();
+      }
     }
 
     function initThree() {
-      gridN = isMobile() ? 40 : 56;
+      // Keep mesh modest for SwiftShader / mobile; visual quality comes from lighting + colour
+      gridN = isMobile() ? 32 : 44;
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x0f172a);
       scene.fog = new THREE.Fog(0x0f172a, 22, 40);
@@ -941,10 +950,10 @@
       camera = new THREE.PerspectiveCamera(45, container.offsetWidth / Math.max(1, container.offsetHeight), 0.1, 100);
       updateCameraFromSpherical();
 
-      renderer = new THREE.WebGLRenderer({ antialias: !isMobile(), alpha: false });
+      renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' });
       renderer.setSize(container.offsetWidth, container.offsetHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile() ? 1.5 : 2));
-      renderer.shadowMap.enabled = !isMobile();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      renderer.shadowMap.enabled = false;
       container.appendChild(renderer.domElement);
 
       scene.add(new THREE.AmbientLight(0xbfd9ff, 0.55));
@@ -994,11 +1003,11 @@
       waterGeo.setAttribute('color', colorAttr);
       const waterMat = new THREE.MeshPhongMaterial({
         vertexColors: true,
-        specular: 0xffffff,
-        shininess: reducedMotion ? 40 : 110,
+        specular: 0xdbeafe,
+        shininess: reducedMotion ? 30 : 70,
         transparent: true,
-        opacity: 0.92,
-        side: THREE.DoubleSide
+        opacity: 0.94,
+        side: THREE.FrontSide
       });
       waterMesh = new THREE.Mesh(waterGeo, waterMat);
       waterMesh.receiveShadow = true;
