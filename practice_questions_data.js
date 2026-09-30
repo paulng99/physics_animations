@@ -420,6 +420,33 @@
 
   /* ===== WAVES ============================================================= */
 
+  B.ripple_tank = {
+    en: [
+      { q: "In a ripple tank, the frequency of the vibrator is kept constant while a glass plate makes part of the water shallower. What happens to the wave speed and wavelength in the shallow region, and why?",
+        sol: "<p>For water waves in the shallow-water regime, $v \\propto \\sqrt{h}$. Reducing the depth therefore <b>decreases</b> the wave speed. Frequency is set by the source and is unchanged across the boundary, so from $v=f\\lambda$ the wavelength <b>shortens</b> in the shallow region.</p>" },
+      { q: "State Snell's law for water waves at a deep–shallow boundary and explain the direction of bending of the wavefronts.",
+        sol: "<p>\\[ \\dfrac{\\sin\\theta_1}{\\sin\\theta_2} = \\dfrac{v_1}{v_2} = \\dfrac{\\lambda_1}{\\lambda_2} \\]</p><p>Entering a slower (shallower) region, $v_2&lt;v_1$, so $\\theta_2&lt;\\theta_1$: wavefronts and rays bend <b>towards the normal</b>.</p>" },
+      { q: "A plane wave of wavelength $\\lambda$ meets a single slit of width $a$. Under what condition is diffraction most obvious, and what happens if $a\\gg\\lambda$?",
+        sol: "<p>Diffraction is most obvious when the slit width is comparable to the wavelength ($a\\sim\\lambda$). If $a\\gg\\lambda$, the wave largely continues in a straight beam with little spreading — geometric shadowing dominates.</p>" },
+      { q: "Explain how a double slit in a ripple tank produces an interference pattern, and state the condition for a constructive maximum.",
+        sol: "<p>Each slit acts as a coherent Huygens source. The waves overlap beyond the barrier. Constructive interference (bright antinode ridges) occurs where the path difference from the two slits is an integer number of wavelengths: $\\Delta = n\\lambda$ ($n=0,\\pm1,\\pm2,\\ldots$).</p>" },
+      { q: "Why does a stroboscope (flashing at the wave frequency) appear to freeze the wavefronts in a ripple tank?",
+        sol: "<p>If the lamp flashes once per period, each flash illuminates the surface at the <b>same phase</b> of the oscillation. The eye (or camera) therefore sees a nearly stationary crest–trough pattern even though the waves are still travelling between flashes.</p>" },
+    ],
+    zh: [
+      { q: "水波槽中振動器頻率保持不變，以玻璃板使部分水域變淺。淺水區的波速與波長會如何改變？原因為何？",
+        sol: "<p>在淺水近似下，$v \\propto \\sqrt{h}$，水深減少則波速<b>下降</b>。頻率由波源決定，越過邊界時不變，故由 $v=f\\lambda$ 可知淺水區波長<b>變短</b>。</p>" },
+      { q: "寫出水波在深水—淺水界面的斯涅爾定律，並說明波前彎折方向。",
+        sol: "<p>\\[ \\dfrac{\\sin\\theta_1}{\\sin\\theta_2} = \\dfrac{v_1}{v_2} = \\dfrac{\\lambda_1}{\\lambda_2} \\]</p><p>進入較慢（較淺）區域時 $v_2&lt;v_1$，故 $\\theta_2&lt;\\theta_1$：波前與射線<b>偏向法線</b>。</p>" },
+      { q: "波長為 $\\lambda$ 的平面波遇上縫寬為 $a$ 的單狹縫。在甚麼條件下衍射最明顯？若 $a\\gg\\lambda$ 又會如何？",
+        sol: "<p>當縫寬與波長相若（$a\\sim\\lambda$）時衍射最明顯。若 $a\\gg\\lambda$，波大致沿直線前進，擴散很少，幾何陰影為主。</p>" },
+      { q: "解釋水波槽雙狹縫如何產生干涉圖樣，並寫出相長干涉（極大）的條件。",
+        sol: "<p>每條狹縫可視為相干的惠更斯次波源，波在障礙物後方疊加。當兩縫到某點的路徑差為波長整數倍時出現相長干涉：$\\Delta = n\\lambda$（$n=0,\\pm1,\\pm2,\\ldots$）。</p>" },
+      { q: "為何以與波同頻的頻閃燈照射時，水波槽的波前看起來會「凍結」？",
+        sol: "<p>若燈光每個週期閃一次，每次照明都落在振盪的<b>相同相位</b>。眼睛（或相機）因此看見近乎靜止的峰谷圖樣，儘管波在兩次閃光之間仍在傳播。</p>" },
+    ],
+  };
+
   B.standing_waves = {
     en: [
       { q: "Explain how a standing wave is formed on a string fixed at both ends.",

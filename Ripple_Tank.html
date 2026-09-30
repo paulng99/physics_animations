@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ripple Tank | 水波槽</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="window.__THREE_CDN_FAILED=true"></script>
+  <link rel="stylesheet" href="shared/sim-shell.css">
+  <script src="shared/i18n.js"></script>
+  <script src="shared/gl-overlay.js"></script>
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script"></script>
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: 'Inter', "Microsoft JhengHei", sans-serif; }
+    mjx-container { display: inline-block !important; }
+    #three-container {
+      width: 100%;
+      height: min(62vh, 520px);
+      min-height: 320px;
+      background: #0f172a;
+      cursor: grab;
+      border-radius: 12px;
+      overflow: hidden;
+      touch-action: none;
+    }
+    #three-container.is-dragging { cursor: grabbing; }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: #d1d5db;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #2563eb;
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .preset-btn.active {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+    .challenge-ok {
+      border-color: #16a34a !important;
+      background: #f0fdf4;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .spinner, .pgl-dot { animation: none !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+
+  <header class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-4">
+    <nav class="flex items-center justify-between gap-3">
+      <a href="index.html#waves" class="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 transition min-h-[44px]">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        <span class="font-medium" data-i18n="nav.back">Back to Home</span>
+      </a>
+      <div class="flex gap-2">
+        <button type="button" onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-blue-100 text-slate-600 min-h-[44px]" data-lang="zh-hk">繁</button>
+        <button type="button" onclick="setLanguage('en')" class="lang-btn px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-blue-100 bg-blue-600 text-white min-h-[44px]" data-lang="en">EN</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 pb-16 space-y-6">
+    <section class="bg-white/80 backdrop-blur-md border border-white/20 rounded-3xl shadow-xl p-6 md:p-8">
+      <p class="text-xs uppercase tracking-wide text-cyan-700 font-semibold mb-2" data-i18n="page.badge">HKDSE Waves · Ripple Tank</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-slate-800" data-i18n="page.title">Ripple Tank</h1>
+      <p class="mt-3 text-base text-slate-600 leading-relaxed max-w-3xl" data-i18n="page.description">
+        Explore water-wave reflection, refraction, diffraction and interference in a 3D ripple tank. Tap the surface to make ripples, place barriers or slits, and use a glass plate (shallow region) to see wavelength change.
+      </p>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sim-shell">
+      <!-- Controls -->
+      <aside class="sim-controls lg:col-span-4 space-y-4">
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-5">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-lg font-semibold text-slate-800" data-i18n="controls.title">Controls</h2>
+            <button type="button" id="btn-reset" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all text-sm font-semibold min-h-[44px]" data-i18n="controls.reset">Reset</button>
+          </div>
+
+          <div class="rounded-xl bg-blue-50 border border-blue-100 p-3 space-y-2">
+            <label class="flex justify-between text-sm font-medium text-slate-700 mb-1">
+              <span data-i18n="controls.frequency">Frequency $f$ (vibrator)</span>
+              <span id="val-freq" class="text-blue-600 font-bold font-mono">2.0 Hz</span>
+            </label>
+            <input type="range" id="slider-freq" min="0.5" max="4.0" step="0.1" value="2.0" class="w-full accent-blue-600 min-h-[44px]">
+            <p class="text-xs text-slate-500" data-i18n="controls.frequencyHint">Drag to change $f$. Deep-water speed stays fixed, so $\lambda = v/f$ updates live.</p>
+          </div>
+
+          <div>
+            <label class="flex justify-between text-sm font-medium text-slate-500 mb-2">
+              <span data-i18n="controls.wavelength">Wavelength $\lambda$ (deep)</span>
+              <span id="val-lambda" class="text-blue-600 font-bold font-mono">1.20 u</span>
+            </label>
+            <input type="range" id="slider-lambda" min="0.6" max="2.5" step="0.05" value="1.2" class="w-full accent-blue-600 min-h-[44px]">
+          </div>
+
+          <div>
+            <label class="flex justify-between text-sm font-medium text-slate-500 mb-2">
+              <span data-i18n="controls.amplitude">Amplitude</span>
+              <span id="val-amp" class="text-blue-600 font-bold font-mono">0.14</span>
+            </label>
+            <input type="range" id="slider-amp" min="0.04" max="0.22" step="0.01" value="0.14" class="w-full accent-blue-600">
+          </div>
+
+          <div>
+            <p class="text-sm font-medium text-slate-500 mb-2" data-i18n="controls.source">Wave source</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="src-plane" class="preset-btn active px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold min-h-[44px]" data-i18n="source.plane">Plane wave</button>
+              <button type="button" id="src-point" class="preset-btn px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold min-h-[44px]" data-i18n="source.point">Point source</button>
+            </div>
+            <p class="text-xs text-slate-500 mt-2" data-i18n="source.hint">Tip: tap / click the water surface to drop a ripple.</p>
+          </div>
+
+          <div>
+            <p class="text-sm font-medium text-slate-500 mb-2" data-i18n="controls.barrier">Barrier / slits</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" data-barrier="none" class="barrier-btn preset-btn active px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold min-h-[44px]" data-i18n="barrier.none">None</button>
+              <button type="button" data-barrier="reflect" class="barrier-btn preset-btn px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold min-h-[44px]" data-i18n="barrier.reflect">Reflector</button>
+              <button type="button" data-barrier="single" class="barrier-btn preset-btn px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold min-h-[44px]" data-i18n="barrier.single">Single slit</button>
+              <button type="button" data-barrier="double" class="barrier-btn preset-btn px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold min-h-[44px]" data-i18n="barrier.double">Double slit</button>
+            </div>
+          </div>
+
+          <div id="slit-controls" class="space-y-4 opacity-50 pointer-events-none">
+            <div>
+              <label class="flex justify-between text-sm font-medium text-slate-500 mb-2">
+                <span data-i18n="controls.slitWidth">Slit width $a$</span>
+                <span id="val-slit" class="text-blue-600 font-bold font-mono">0.80 u</span>
+              </label>
+              <input type="range" id="slider-slit" min="0.3" max="2.2" step="0.05" value="0.8" class="w-full accent-blue-600">
+            </div>
+            <div>
+              <label class="flex justify-between text-sm font-medium text-slate-500 mb-2">
+                <span data-i18n="controls.slitSep">Slit separation $d$</span>
+                <span id="val-sep" class="text-blue-600 font-bold font-mono">1.60 u</span>
+              </label>
+              <input type="range" id="slider-sep" min="0.8" max="3.0" step="0.05" value="1.6" class="w-full accent-blue-600">
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-100 space-y-3">
+            <label class="flex items-center justify-between gap-3 min-h-[44px] cursor-pointer">
+              <span class="text-sm font-medium text-slate-700" data-i18n="controls.shallow">Shallow region (glass plate)</span>
+              <input type="checkbox" id="chk-shallow" class="w-5 h-5 accent-amber-600">
+            </label>
+            <div id="shallow-controls" class="opacity-50 pointer-events-none">
+              <label class="flex justify-between text-sm font-medium text-slate-500 mb-2">
+                <span data-i18n="controls.depthRatio">Depth ratio $h_2/h_1$</span>
+                <span id="val-depth" class="text-amber-600 font-bold font-mono">0.25</span>
+              </label>
+              <input type="range" id="slider-depth" min="0.15" max="0.80" step="0.05" value="0.25" class="w-full accent-amber-600">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <label class="flex items-center gap-2 min-h-[44px] px-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+              <input type="checkbox" id="chk-strobe" class="w-4 h-4 accent-blue-600">
+              <span class="text-sm font-medium" data-i18n="controls.strobe">Strobe</span>
+            </label>
+            <label class="flex items-center gap-2 min-h-[44px] px-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+              <input type="checkbox" id="chk-slow" class="w-4 h-4 accent-blue-600">
+              <span class="text-sm font-medium" data-i18n="controls.slow">Slow motion</span>
+            </label>
+            <label class="flex items-center gap-2 min-h-[44px] px-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer col-span-2">
+              <input type="checkbox" id="chk-rays" class="w-4 h-4 accent-blue-600" checked>
+              <span class="text-sm font-medium" data-i18n="controls.rays">Show wavefront / rays</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Observation focus -->
+        <div class="bg-cyan-50 border border-cyan-200 rounded-2xl p-5 space-y-2">
+          <h3 class="font-semibold text-cyan-800" data-i18n="observe.title">Observation focus</h3>
+          <p class="text-sm text-slate-700 leading-relaxed" data-i18n="observe.tip">
+            Watch carefully: when frequency increases at fixed deep-water speed, the wavelength shortens ($\lambda = v/f$). In the shallow region (glass plate), the wavelength shortens while the frequency stays the same.
+          </p>
+        </div>
+
+        <!-- Live data -->
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
+          <h3 class="font-semibold text-slate-800 border-b border-slate-200 pb-2" data-i18n="data.title">Live readings</h3>
+          <div class="flex justify-between text-sm"><span class="text-slate-600" data-i18n="data.freq">Frequency $f$</span><span id="data-f" class="font-mono font-bold text-blue-600">2.00 Hz</span></div>
+          <div class="flex justify-between text-sm"><span class="text-slate-600" data-i18n="data.lambda">Wavelength $\lambda$</span><span id="data-lambda" class="font-mono font-bold text-blue-600">1.20 u</span></div>
+          <div class="flex justify-between text-sm"><span class="text-slate-600" data-i18n="data.speed">Wave speed $v$</span><span id="data-v" class="font-mono font-bold text-green-600">2.40 u/s</span></div>
+          <div class="flex justify-between text-sm"><span class="text-slate-600" data-i18n="data.relation">$v = f\lambda$</span><span id="data-check" class="font-mono font-bold text-slate-700">2.00×1.20</span></div>
+          <div class="flex justify-between text-sm"><span class="text-slate-600" data-i18n="data.lambdaShallow">$\lambda$ (shallow)</span><span id="data-lambda2" class="font-mono font-bold text-amber-600">—</span></div>
+          <div class="flex justify-between text-sm"><span class="text-slate-600" data-i18n="data.vShallow">$v$ (shallow)</span><span id="data-v2" class="font-mono font-bold text-amber-600">—</span></div>
+          <p class="text-xs text-slate-500 pt-1" data-i18n="data.note">Units are simulation units (u). Frequency is held constant across the shallow region.</p>
+        </div>
+
+        <!-- Presets -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
+          <h3 class="font-semibold text-slate-800" data-i18n="presets.title">Teaching presets</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="preset-reflect" class="px-3 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition min-h-[44px]" data-i18n="presets.reflect">Reflection</button>
+            <button type="button" id="preset-refract" class="px-3 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition min-h-[44px]" data-i18n="presets.refract">Refraction</button>
+            <button type="button" id="preset-single" class="px-3 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition min-h-[44px]" data-i18n="presets.single">Single-slit</button>
+            <button type="button" id="preset-double" class="px-3 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition min-h-[44px]" data-i18n="presets.double">Double-slit</button>
+          </div>
+        </div>
+
+        <!-- Challenge -->
+        <div id="challenge-card" class="bg-white border border-slate-200 rounded-2xl p-5 space-y-2 transition-colors">
+          <h3 class="font-semibold text-violet-700" data-i18n="challenge.title">Challenge</h3>
+          <p class="text-sm text-slate-600 leading-relaxed" data-i18n="challenge.desc">Use the single-slit preset. Adjust the slit width until diffraction is most obvious (when $a \approx \lambda$).</p>
+          <p id="challenge-status" class="text-sm font-semibold text-slate-500" data-i18n="challenge.wait">Status: not yet</p>
+        </div>
+      </aside>
+
+      <!-- Viewport -->
+      <section class="sim-viewport lg:col-span-8 space-y-3">
+        <div class="relative rounded-xl border-2 border-slate-200 overflow-hidden bg-slate-900">
+          <div id="three-container" data-gl-host data-gl-topic="waves" data-gl-back="index.html#waves"></div>
+
+          <!-- Canvas legend -->
+          <div class="absolute top-3 left-3 flex flex-wrap gap-2 pointer-events-none max-w-[90%]">
+            <span class="bg-white/80 backdrop-blur-md border border-white/20 text-xs font-semibold px-3 py-1.5 rounded-full text-green-700" data-i18n="legend.velocity">$v$ wave speed</span>
+            <span class="bg-white/80 backdrop-blur-md border border-white/20 text-xs font-semibold px-3 py-1.5 rounded-full text-slate-700" data-i18n="legend.front">Wavefront</span>
+            <span class="bg-white/80 backdrop-blur-md border border-white/20 text-xs font-semibold px-3 py-1.5 rounded-full text-amber-700" data-i18n="legend.shallow">Shallow / glass</span>
+            <span class="bg-white/80 backdrop-blur-md border border-white/20 text-xs font-semibold px-3 py-1.5 rounded-full text-red-700" data-i18n="legend.ray">Ray / normal</span>
+          </div>
+
+          <div class="absolute bottom-4 right-4 bg-gray-900/80 backdrop-blur text-white px-4 py-2.5 rounded-full text-xs sm:text-sm pointer-events-none" data-i18n="canvas.hint">
+            Drag to rotate · Pinch/scroll to zoom · Tap water for ripples
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="bg-white border border-slate-200 rounded-2xl p-5">
+            <h3 class="font-semibold text-slate-800 mb-2" data-i18n="info.physics.title">Physics model</h3>
+            <p class="text-sm text-slate-600 leading-relaxed" data-i18n="info.physics.desc">
+              Deep-water speed follows $v=f\lambda$. In the shallow region, $v_2 = v_1\sqrt{h_2/h_1}$ so $\lambda_2$ shortens at the same $f$. Diffraction beyond a slit is modelled with Huygens secondary sources; double-slit interference arises from coherent superposition.
+            </p>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl p-5">
+            <h3 class="font-semibold text-slate-800 mb-2" data-i18n="info.diff.title">Unlike Young's light demo</h3>
+            <p class="text-sm text-slate-600 leading-relaxed" data-i18n="info.diff.desc">
+              This page is a textbook ripple-tank experiment in 3D: visible wavefronts, movable barriers, a glass plate for refraction, interactive surface taps, and a stroboscope — not an optical fringe calculator.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+  (function () {
+    'use strict';
+
+    const PHYSICS_COLORS = {
+      force: 0xdc2626,
+      velocity: 0x16a34a,
+      accel: 0x9333ea,
+      bField: 0xd97706,
+      displacement: 0x475569
+    };
+
+    const TANK = { half: 5.0, barrierX: 0.0, shallowX0: 0.4, shallowX1: 4.6, shallowZ0: -2.8, shallowZ1: 2.8 };
+
+    const LAMBDA_MIN = 0.6;
+    const LAMBDA_MAX = 2.5;
+    const FREQ_MIN = 0.5;
+    const FREQ_MAX = 4.0;
+
+    const defaults = {
+      frequency: 2.0,
+      wavelength: 1.2,
+      deepSpeed: 2.4, // held when adjusting f so λ = v/f shortens as f rises
+      amplitude: 0.14,
+      sourceMode: 'plane',
+      barrierMode: 'none',
+      slitWidth: 0.8,
+      slitSep: 1.6,
+      shallow: false,
+      depthRatio: 0.25,
+      strobe: false,
+      slowMo: false,
+      showRays: true
+    };
+
+    const state = { ...defaults };
+    const ripples = []; // {x,z,t0,amp}
+    const MAX_RIPPLES = 8;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let currentLang = window.PhysicsI18n
+      ? PhysicsI18n.get()
+      : (localStorage.getItem('preferred_language') || 'en');
+    if (window.PhysicsI18n) currentLang = PhysicsI18n.normalize(currentLang);
+
+    const translations = {
+      en: {
+        'nav.back': 'Back to Home',
+        'page.badge': 'HKDSE Waves · Ripple Tank',
+        'page.title': 'Ripple Tank',
+        'page.description': 'Explore water-wave reflection, refraction, diffraction and interference in a 3D ripple tank. Tap the surface to make ripples, place barriers or slits, and use a glass plate (shallow region) to see wavelength change.',
+        'controls.title': 'Controls',
+        'controls.reset': 'Reset',
+        'controls.frequency': 'Frequency $f$ (vibrator)',
+        'controls.frequencyHint': 'Drag to change $f$. Deep-water speed stays fixed, so $\\lambda = v/f$ updates live.',
+        'controls.wavelength': 'Wavelength $\\lambda$ (deep)',
+        'controls.amplitude': 'Amplitude',
+        'controls.source': 'Wave source',
+        'observe.title': 'Observation focus',
+        'observe.tip': 'Watch carefully: when frequency increases at fixed deep-water speed, the wavelength shortens ($\\lambda = v/f$). In the shallow region (glass plate), the wavelength shortens while the frequency stays the same.',
+        'source.plane': 'Plane wave',
+        'source.point': 'Point source',
+        'source.hint': 'Tip: tap / click the water surface to drop a ripple.',
+        'controls.barrier': 'Barrier / slits',
+        'barrier.none': 'None',
+        'barrier.reflect': 'Reflector',
+        'barrier.single': 'Single slit',
+        'barrier.double': 'Double slit',
+        'controls.slitWidth': 'Slit width $a$',
+        'controls.slitSep': 'Slit separation $d$',
+        'controls.shallow': 'Shallow region (glass plate)',
+        'controls.depthRatio': 'Depth ratio $h_2/h_1$',
+        'controls.strobe': 'Strobe',
+        'controls.slow': 'Slow motion',
+        'controls.rays': 'Show wavefront / rays',
+        'data.title': 'Live readings',
+        'data.freq': 'Frequency $f$',
+        'data.lambda': 'Wavelength $\\lambda$',
+        'data.speed': 'Wave speed $v$',
+        'data.relation': '$v = f\\lambda$',
+        'data.lambdaShallow': '$\\lambda$ (shallow)',
+        'data.vShallow': '$v$ (shallow)',
+        'data.note': 'Units are simulation units (u). Frequency is held constant across the shallow region.',
+        'presets.title': 'Teaching presets',
+        'presets.reflect': 'Reflection',
+        'presets.refract': 'Refraction',
+        'presets.single': 'Single-slit',
+        'presets.double': 'Double-slit',
+        'challenge.title': 'Challenge',
+        'challenge.desc': 'Use the single-slit preset. Adjust the slit width until diffraction is most obvious (when $a \\approx \\lambda$).',
+        'challenge.wait': 'Status: not yet',
+        'challenge.ok': 'Status: great — diffraction is clear!',
+        'legend.velocity': '$v$ wave speed',
+        'legend.front': 'Wavefront',
+        'legend.shallow': 'Shallow / glass',
+        'legend.ray': 'Ray / normal',
+        'canvas.hint': 'Drag to rotate · Pinch/scroll to zoom · Tap water for ripples',
+        'info.physics.title': 'Physics model',
+        'info.physics.desc': 'Deep-water speed follows $v=f\\lambda$. In the shallow region, $v_2 = v_1\\sqrt{h_2/h_1}$ so $\\lambda_2$ shortens at the same $f$. Diffraction beyond a slit is modelled with Huygens secondary sources; double-slit interference arises from coherent superposition.',
+        'info.diff.title': "Unlike Young's light demo",
+        'info.diff.desc': 'This page is a textbook ripple-tank experiment in 3D: visible wavefronts, movable barriers, a glass plate for refraction, interactive surface taps, and a stroboscope — not an optical fringe calculator.'
+      },
+      'zh-hk': {
+        'nav.back': '返回主頁',
+        'page.badge': 'HKDSE 波動 · 水波槽',
+        'page.title': '水波槽',
+        'page.description': '以三維水波槽探究水波的反射、折射、衍射與干涉。可點擊或觸碰水面製造波紋，放置障礙物或狹縫，並以玻璃板造成淺水區以觀察波長改變。',
+        'controls.title': '控制項',
+        'controls.reset': '重設',
+        'controls.frequency': '頻率 $f$（振動器）',
+        'controls.frequencyHint': '拖動以改變 $f$。深水波速保持不變，故 $\\lambda = v/f$ 會即時更新。',
+        'controls.wavelength': '波長 $\\lambda$（深水）',
+        'controls.amplitude': '振幅',
+        'controls.source': '波源',
+        'observe.title': '觀察重點',
+        'observe.tip': '請留意：在深水波速固定時，頻率升高則波長變短（$\\lambda = v/f$）。進入淺水區（玻璃板）時，波長變短，但頻率保持不變。',
+        'source.plane': '平面波',
+        'source.point': '點波源',
+        'source.hint': '提示：點擊或輕觸水面可投下波紋。',
+        'controls.barrier': '障礙物／狹縫',
+        'barrier.none': '無',
+        'barrier.reflect': '反射板',
+        'barrier.single': '單狹縫',
+        'barrier.double': '雙狹縫',
+        'controls.slitWidth': '縫寬 $a$',
+        'controls.slitSep': '縫距 $d$',
+        'controls.shallow': '淺水區（玻璃板）',
+        'controls.depthRatio': '水深比 $h_2/h_1$',
+        'controls.strobe': '頻閃燈',
+        'controls.slow': '慢動作',
+        'controls.rays': '顯示波前／射線',
+        'data.title': '即時讀數',
+        'data.freq': '頻率 $f$',
+        'data.lambda': '波長 $\\lambda$',
+        'data.speed': '波速 $v$',
+        'data.relation': '$v = f\\lambda$',
+        'data.lambdaShallow': '$\\lambda$（淺水）',
+        'data.vShallow': '$v$（淺水）',
+        'data.note': '單位為模擬單位（u）。通過淺水區時頻率保持不變。',
+        'presets.title': '教學預設',
+        'presets.reflect': '反射',
+        'presets.refract': '折射',
+        'presets.single': '單縫衍射',
+        'presets.double': '雙縫干涉',
+        'challenge.title': '小挑戰',
+        'challenge.desc': '選用單縫預設，調節縫寬，使衍射最為明顯（當 $a \\approx \\lambda$ 時）。',
+        'challenge.wait': '狀態：尚未完成',
+        'challenge.ok': '狀態：很好——衍射已十分明顯！',
+        'legend.velocity': '$v$ 波速',
+        'legend.front': '波前',
+        'legend.shallow': '淺水／玻璃板',
+        'legend.ray': '射線／法線',
+        'canvas.hint': '拖曳旋轉 · 雙指／滾輪縮放 · 輕觸水面製造波紋',
+        'info.physics.title': '物理模型',
+        'info.physics.desc': '深水波速遵從 $v = f\\lambda$。淺水區中 $v_2 = v_1\\sqrt{h_2/h_1}$，故在相同 $f$ 下 $\\lambda_2$ 變短。狹縫後方的衍射以惠更斯次波源模擬；雙縫干涉來自相干疊加。',
+        'info.diff.title': '與楊氏雙縫頁面的分別',
+        'info.diff.desc': '本頁為課本水波槽實驗的三維版本，強調波前、障礙物、淺水折射與互動波紋，並提供頻閃燈，而非光學條紋計算器。'
+      }
+    };
+    if (window.PhysicsI18n) PhysicsI18n.aliasKeys(translations);
+
+    function t(key) {
+      const pack = translations[currentLang] || translations.en;
+      return pack[key] ?? translations.en[key] ?? key;
+    }
+
+    function setLanguage(lang) {
+      currentLang = window.PhysicsI18n ? PhysicsI18n.set(lang) : lang;
+      if (!window.PhysicsI18n) localStorage.setItem('preferred_language', lang);
+      document.documentElement.lang = window.PhysicsI18n
+        ? PhysicsI18n.htmlLang(currentLang)
+        : (currentLang === 'zh-hk' || currentLang === 'zh' ? 'zh-HK' : 'en');
+
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        const val = (translations[currentLang] || translations.en)[key];
+        if (!val) return;
+        if (
+          key.includes('desc') || key.includes('physics') || key.includes('note') ||
+          key.includes('hint') || key.includes('challenge') || key.includes('controls.') ||
+          key.includes('data.') || key.includes('legend.') || key.includes('observe.') ||
+          val.includes('$')
+        ) {
+          el.innerHTML = val;
+        } else {
+          el.textContent = val;
+        }
+      });
+
+      document.querySelectorAll('.lang-btn').forEach((btn) => {
+        const active = window.PhysicsI18n
+          ? PhysicsI18n.matchButton(btn.dataset.lang, currentLang)
+          : (btn.dataset.lang === currentLang);
+        btn.classList.toggle('bg-blue-600', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('text-slate-600', !active);
+      });
+
+      updateChallengeStatus();
+      if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+    }
+    window.setLanguage = setLanguage;
+
+    // ——— Three.js scene ———
+    const container = document.getElementById('three-container');
+    let scene, camera, renderer, waterMesh, waterGeo;
+    let barrierGroup, shallowMesh, rayGroup, sourceMarker;
+    let simTime = 0;
+    let lastTs = performance.now();
+    let gridN = 48;
+
+    let theta = 0.55, phi = 0.72, radius = 14;
+    let isCameraDrag = false, startCamX = 0, startCamY = 0;
+    let pointerDownX = 0, pointerDownY = 0, pointerMoved = false;
+    let lastTouchDist = null, lastTouchX = null, lastTouchY = null;
+    const raycaster = new THREE.Raycaster();
+    const pointerNDC = new THREE.Vector2();
+    const waterPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+    function isMobile() {
+      return Math.min(window.innerWidth, window.innerHeight) < 700 || /Mobi|Android/i.test(navigator.userAgent);
+    }
+
+    function waveSpeedDeep() {
+      return state.deepSpeed;
+    }
+
+    function clamp(v, lo, hi) {
+      return Math.max(lo, Math.min(hi, v));
+    }
+
+    /** Keep deep-water speed fixed when f changes → λ = v/f shortens as f rises. */
+    function applyFrequency(f) {
+      state.frequency = clamp(f, FREQ_MIN, FREQ_MAX);
+      let lam = state.deepSpeed / Math.max(0.01, state.frequency);
+      if (lam < LAMBDA_MIN || lam > LAMBDA_MAX) {
+        lam = clamp(lam, LAMBDA_MIN, LAMBDA_MAX);
+        // Only adjust v when λ would leave the slider range
+        state.deepSpeed = state.frequency * lam;
+      }
+      state.wavelength = lam;
+      document.getElementById('slider-freq').value = state.frequency;
+      document.getElementById('slider-lambda').value = state.wavelength;
+    }
+
+    /** Wavelength drag updates deep speed at fixed f (still satisfies v = fλ). */
+    function applyWavelength(lam) {
+      state.wavelength = clamp(lam, LAMBDA_MIN, LAMBDA_MAX);
+      state.deepSpeed = state.frequency * state.wavelength;
+      document.getElementById('slider-lambda').value = state.wavelength;
+    }
+
+    function syncDeepSpeedFromState() {
+      state.deepSpeed = state.frequency * state.wavelength;
+    }
+
+    function speedRatio() {
+      // v ∝ √h for shallow water waves
+      return Math.sqrt(Math.max(0.05, state.depthRatio));
+    }
+
+    function inShallow(x, z) {
+      if (!state.shallow) return false;
+      return x >= TANK.shallowX0 && x <= TANK.shallowX1 && z >= TANK.shallowZ0 && z <= TANK.shallowZ1;
+    }
+
+    function localK(x, z) {
+      const lam = inShallow(x, z) ? state.wavelength * speedRatio() : state.wavelength;
+      return (2 * Math.PI) / Math.max(0.2, lam);
+    }
+
+    function opticalPathFromLeft(x, z) {
+      // Approximate cumulative phase path for a plane wave travelling +x,
+      // with different k in shallow region.
+      if (!state.shallow || z < TANK.shallowZ0 || z > TANK.shallowZ1) {
+        return x;
+      }
+      const kDeep = (2 * Math.PI) / state.wavelength;
+      const kSh = (2 * Math.PI) / (state.wavelength * speedRatio());
+      if (x <= TANK.shallowX0) return x;
+      if (x >= TANK.shallowX1) {
+        const deepPath = TANK.shallowX0 + (x - TANK.shallowX1);
+        const shallowPath = (TANK.shallowX1 - TANK.shallowX0) * (kSh / kDeep);
+        return deepPath + shallowPath;
+      }
+      return TANK.shallowX0 + (x - TANK.shallowX0) * (kSh / kDeep);
+    }
+
+    function slitCenters() {
+      if (state.barrierMode === 'single') return [0];
+      if (state.barrierMode === 'double') {
+        const half = state.slitSep / 2;
+        return [-half, half];
+      }
+      return [];
+    }
+
+    function isInSlit(z) {
+      const halfW = state.slitWidth / 2;
+      return slitCenters().some((c) => Math.abs(z - c) <= halfW);
+    }
+
+    function barrierBlocks(x, z) {
+      if (state.barrierMode === 'none') return false;
+      if (Math.abs(x - TANK.barrierX) > 0.18) return false;
+      if (state.barrierMode === 'reflect') return true;
+      return !isInSlit(z);
+    }
+
+    function cylindricalWave(x, z, sx, sz, t, amp, phase0) {
+      const dx = x - sx;
+      const dz = z - sz;
+      const r = Math.sqrt(dx * dx + dz * dz) + 1e-4;
+      // Use average k along path (cheap): evaluate at midpoint depth
+      const mx = (x + sx) * 0.5;
+      const mz = (z + sz) * 0.5;
+      const k = localK(mx, mz);
+      const omega = 2 * Math.PI * state.frequency;
+      const atten = 1 / Math.sqrt(1 + r * 0.55);
+      return amp * atten * Math.sin(k * r - omega * t + phase0);
+    }
+
+    function sampleHeight(x, z, t) {
+      if (Math.abs(x) > TANK.half || Math.abs(z) > TANK.half) return 0;
+      if (barrierBlocks(x, z)) return 0;
+
+      const A = state.amplitude;
+      const omega = 2 * Math.PI * state.frequency;
+      const kDeep = (2 * Math.PI) / state.wavelength;
+      let h = 0;
+
+      const behind = x > TANK.barrierX + 0.18;
+      const ahead = x < TANK.barrierX - 0.18;
+      const hasSlits = state.barrierMode === 'single' || state.barrierMode === 'double';
+      const hasReflect = state.barrierMode === 'reflect';
+
+      if (state.sourceMode === 'plane') {
+        if (!hasSlits && !hasReflect) {
+          const path = opticalPathFromLeft(x, z);
+          h += A * Math.sin(kDeep * path - omega * t);
+        } else if (hasReflect) {
+          if (ahead || Math.abs(x) < 0.2) {
+            const incident = A * Math.sin(kDeep * x - omega * t);
+            // Hard-wall reflection: phase inversion (image source)
+            const xr = 2 * TANK.barrierX - x;
+            const reflected = -A * 0.85 * Math.sin(kDeep * xr - omega * t);
+            h += incident + reflected;
+          }
+          // negligible transmission through solid reflector
+        } else if (hasSlits) {
+          if (ahead) {
+            const path = opticalPathFromLeft(x, z);
+            h += A * Math.sin(kDeep * path - omega * t);
+          } else if (behind) {
+            // Huygens secondary sources at slit centres
+            const centres = slitCenters();
+            const ampEach = A * 0.9 * Math.min(1.2, state.slitWidth / state.wavelength);
+            centres.forEach((cz) => {
+              // Phase of incident wave at barrier
+              const phase0 = kDeep * TANK.barrierX;
+              h += cylindricalWave(x, z, TANK.barrierX, cz, t, ampEach / centres.length, phase0);
+            });
+          }
+        }
+      } else {
+        // Continuous point source near left side
+        const sx = -3.6, sz = 0;
+        if (hasSlits) {
+          if (ahead || (!behind && !barrierBlocks(x, z))) {
+            h += cylindricalWave(x, z, sx, sz, t, A, 0);
+          }
+          if (behind) {
+            const centres = slitCenters();
+            const ampEach = A * 0.85 * Math.min(1.2, state.slitWidth / state.wavelength);
+            centres.forEach((cz) => {
+              const phaseAtSlit = localK(TANK.barrierX, cz) * Math.hypot(TANK.barrierX - sx, cz - sz);
+              h += cylindricalWave(x, z, TANK.barrierX, cz, t, ampEach / centres.length, phaseAtSlit);
+            });
+          }
+        } else if (hasReflect) {
+          if (ahead || Math.abs(x) < 0.2) {
+            h += cylindricalWave(x, z, sx, sz, t, A, 0);
+            h += cylindricalWave(x, z, 2 * TANK.barrierX - sx, sz, t, -A * 0.8, 0);
+          }
+        } else {
+          h += cylindricalWave(x, z, sx, sz, t, A, 0);
+        }
+      }
+
+      // Transient ripples from taps
+      for (let i = 0; i < ripples.length; i++) {
+        const r = ripples[i];
+        const age = t - r.t0;
+        if (age < 0 || age > 4.5) continue;
+        const dx = x - r.x;
+        const dz = z - r.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        const front = waveSpeedDeep() * age;
+        if (dist > front + 0.4) continue;
+        if (hasReflect && x > TANK.barrierX + 0.1 && r.x < TANK.barrierX) continue;
+        if (hasSlits && behind && r.x < TANK.barrierX && !isInSlit(z) && dist > 0.01) {
+          // Approximate transmission only via slits (Huygens)
+          let via = 0;
+          slitCenters().forEach((cz) => {
+            via += cylindricalWave(x, z, TANK.barrierX, cz, age, r.amp * Math.exp(-age * 0.55) * 0.5, 0);
+          });
+          h += via;
+          continue;
+        }
+        const envelope = Math.exp(-age * 0.7) * Math.exp(-Math.abs(dist - front) * 1.2);
+        const k = localK(x, z);
+        h += r.amp * envelope * Math.sin(k * dist - omega * age);
+      }
+
+      // Soft clamp
+      return Math.max(-0.35, Math.min(0.35, h));
+    }
+
+    function updateCameraFromSpherical() {
+      camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
+      camera.position.y = radius * Math.cos(phi);
+      camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
+      camera.lookAt(0, 0.2, 0);
+    }
+
+    let barrierMat = null;
+    function buildBarrierMeshes() {
+      while (barrierGroup.children.length) {
+        const c = barrierGroup.children.pop();
+        if (c.geometry) c.geometry.dispose();
+        // share one material — do not dispose per rebuild
+      }
+      if (state.barrierMode === 'none') return;
+
+      if (!barrierMat) {
+        barrierMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+      }
+      const h = 0.55;
+      const thick = 0.22;
+
+      function addBlock(z0, z1) {
+        const len = Math.max(0.05, z1 - z0);
+        const geo = new THREE.BoxGeometry(thick, h, len);
+        const mesh = new THREE.Mesh(geo, barrierMat);
+        mesh.position.set(TANK.barrierX, h / 2, (z0 + z1) / 2);
+        barrierGroup.add(mesh);
+      }
+
+      if (state.barrierMode === 'reflect') {
+        addBlock(-TANK.half, TANK.half);
+      } else {
+        const centres = slitCenters();
+        const halfW = state.slitWidth / 2;
+        const edges = [-TANK.half];
+        centres.forEach((c) => {
+          edges.push(c - halfW, c + halfW);
+        });
+        edges.push(TANK.half);
+        for (let i = 0; i < edges.length; i += 2) {
+          if (edges[i + 1] - edges[i] > 0.05) addBlock(edges[i], edges[i + 1]);
+        }
+      }
+    }
+
+    function updateShallowVisual() {
+      shallowMesh.visible = state.shallow;
+      if (!state.shallow) return;
+      const w = TANK.shallowX1 - TANK.shallowX0;
+      const d = TANK.shallowZ1 - TANK.shallowZ0;
+      shallowMesh.scale.set(w, 1, d);
+      shallowMesh.position.set((TANK.shallowX0 + TANK.shallowX1) / 2, 0.02, (TANK.shallowZ0 + TANK.shallowZ1) / 2);
+      const alpha = 0.22 + (1 - state.depthRatio) * 0.25;
+      shallowMesh.material.opacity = alpha;
+    }
+
+    function clearRayGroup() {
+      while (rayGroup.children.length) {
+        const c = rayGroup.children.pop();
+        if (c.geometry) c.geometry.dispose();
+        // ArrowHelper owns nested meshes; dispose child geos if present
+        if (c.children && c.children.length) {
+          c.traverse((obj) => {
+            if (obj.geometry) obj.geometry.dispose();
+          });
+        }
+      }
+    }
+    function updateRayHelpers() {
+      clearRayGroup();
+      rayGroup.visible = state.showRays;
+      if (!state.showRays) return;
+
+      function addArrow(from, dir, len, color) {
+        const arrow = new THREE.ArrowHelper(dir.clone().normalize(), from, len, color, 0.28, 0.16);
+        rayGroup.add(arrow);
+      }
+
+      // Velocity indicator near source
+      addArrow(new THREE.Vector3(-4.2, 0.35, 3.6), new THREE.Vector3(1, 0, 0), 1.2, PHYSICS_COLORS.velocity);
+
+      if (state.shallow) {
+        // Normal at shallow boundary (along +x)
+        const ny = 0.45;
+        const nz = 0;
+        const nx = TANK.shallowX0;
+        addArrow(new THREE.Vector3(nx, ny, nz), new THREE.Vector3(1, 0, 0), 1.0, PHYSICS_COLORS.force);
+        // Incident ray (plane wave along +x)
+        addArrow(new THREE.Vector3(nx - 2.2, ny, nz), new THREE.Vector3(1, 0, 0), 1.8, 0x2563eb);
+        // Refracted ray: bend toward normal when entering slower medium (always along normal for normal incidence)
+        // For teaching, show a slightly oblique ray pair
+        const thetaI = 0.45;
+        const nRatio = 1 / Math.max(0.2, speedRatio()); // v1/v2
+        const sinT = Math.min(0.95, Math.sin(thetaI) / nRatio);
+        const thetaT = Math.asin(sinT);
+        addArrow(
+          new THREE.Vector3(nx - 2.0, ny, -1.4),
+          new THREE.Vector3(Math.cos(thetaI), 0, Math.sin(thetaI)),
+          1.7,
+          0x2563eb
+        );
+        addArrow(
+          new THREE.Vector3(nx, ny, -1.4 + Math.sin(thetaI) * 1.7),
+          new THREE.Vector3(Math.cos(thetaT), 0, Math.sin(thetaT)),
+          1.8,
+          PHYSICS_COLORS.bField
+        );
+      }
+
+      if (state.barrierMode === 'reflect') {
+        // Incident + reflected schematic
+        addArrow(new THREE.Vector3(-2.5, 0.4, -2.2), new THREE.Vector3(1, 0, 0.35).normalize(), 2.2, 0x2563eb);
+        addArrow(new THREE.Vector3(0, 0.4, -2.2 + 0.35 * 2.2), new THREE.Vector3(-1, 0, 0.35).normalize(), 2.0, PHYSICS_COLORS.force);
+        addArrow(new THREE.Vector3(0, 0.4, -1.4), new THREE.Vector3(-1, 0, 0), 1.0, PHYSICS_COLORS.displacement);
+      }
+
+      // Wavefront rings hint for point source
+      if (state.sourceMode === 'point' && state.barrierMode === 'none') {
+        const ringGeo = new THREE.RingGeometry(1.1, 1.18, 48);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.set(-3.6, 0.08, 0);
+        rayGroup.add(ring);
+      }
+    }
+
+    function updateSourceMarker() {
+      if (state.sourceMode === 'point') {
+        sourceMarker.visible = true;
+        sourceMarker.position.set(-3.6, 0.2, 0);
+      } else {
+        sourceMarker.visible = true;
+        sourceMarker.position.set(-4.6, 0.25, 0);
+      }
+    }
+
+    function syncSlitUI() {
+      const on = state.barrierMode === 'single' || state.barrierMode === 'double';
+      const box = document.getElementById('slit-controls');
+      box.classList.toggle('opacity-50', !on);
+      box.classList.toggle('pointer-events-none', !on);
+      document.getElementById('slider-sep').disabled = state.barrierMode !== 'double';
+    }
+
+    function syncShallowUI() {
+      const box = document.getElementById('shallow-controls');
+      box.classList.toggle('opacity-50', !state.shallow);
+      box.classList.toggle('pointer-events-none', !state.shallow);
+    }
+
+    function updateReadouts() {
+      const v = waveSpeedDeep();
+      document.getElementById('val-freq').textContent = state.frequency.toFixed(1) + ' Hz';
+      document.getElementById('val-lambda').textContent = state.wavelength.toFixed(2) + ' u';
+      document.getElementById('val-amp').textContent = state.amplitude.toFixed(2);
+      document.getElementById('val-slit').textContent = state.slitWidth.toFixed(2) + ' u';
+      document.getElementById('val-sep').textContent = state.slitSep.toFixed(2) + ' u';
+      document.getElementById('val-depth').textContent = state.depthRatio.toFixed(2);
+
+      document.getElementById('data-f').textContent = state.frequency.toFixed(2) + ' Hz';
+      document.getElementById('data-lambda').textContent = state.wavelength.toFixed(2) + ' u';
+      document.getElementById('data-v').textContent = v.toFixed(2) + ' u/s';
+      document.getElementById('data-check').textContent =
+        state.frequency.toFixed(2) + '×' + state.wavelength.toFixed(2) + ' = ' + v.toFixed(2);
+
+      if (state.shallow) {
+        const r = speedRatio();
+        document.getElementById('data-lambda2').textContent = (state.wavelength * r).toFixed(2) + ' u';
+        document.getElementById('data-v2').textContent = (v * r).toFixed(2) + ' u/s';
+      } else {
+        document.getElementById('data-lambda2').textContent = '—';
+        document.getElementById('data-v2').textContent = '—';
+      }
+      updateChallengeStatus();
+    }
+
+    function updateChallengeStatus() {
+      const card = document.getElementById('challenge-card');
+      const el = document.getElementById('challenge-status');
+      const ratio = state.slitWidth / state.wavelength;
+      const good = state.barrierMode === 'single' && ratio >= 0.7 && ratio <= 1.35;
+      el.textContent = good ? t('challenge.ok') : t('challenge.wait');
+      el.className = 'text-sm font-semibold ' + (good ? 'text-green-600' : 'text-slate-500');
+      card.classList.toggle('challenge-ok', good);
+    }
+
+    function setSourceMode(mode) {
+      state.sourceMode = mode;
+      document.getElementById('src-plane').classList.toggle('active', mode === 'plane');
+      document.getElementById('src-point').classList.toggle('active', mode === 'point');
+      updateSourceMarker();
+      updateRayHelpers();
+    }
+
+    function setBarrierMode(mode) {
+      state.barrierMode = mode;
+      document.querySelectorAll('.barrier-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.getAttribute('data-barrier') === mode);
+      });
+      syncSlitUI();
+      buildBarrierMeshes();
+      updateRayHelpers();
+      updateChallengeStatus();
+    }
+
+    function applyPreset(name) {
+      if (name === 'reflect') {
+        Object.assign(state, {
+          frequency: 2.0, wavelength: 1.1, amplitude: 0.14,
+          sourceMode: 'plane', barrierMode: 'reflect',
+          shallow: false, showRays: true, strobe: false, slowMo: false
+        });
+      } else if (name === 'refract') {
+        Object.assign(state, {
+          frequency: 2.0, wavelength: 1.4, amplitude: 0.13,
+          sourceMode: 'plane', barrierMode: 'none',
+          shallow: true, depthRatio: 0.25, showRays: true, strobe: false, slowMo: true
+        });
+      } else if (name === 'single') {
+        Object.assign(state, {
+          frequency: 2.2, wavelength: 1.0, amplitude: 0.15,
+          sourceMode: 'plane', barrierMode: 'single', slitWidth: 1.0,
+          shallow: false, showRays: true, strobe: true, slowMo: false
+        });
+      } else if (name === 'double') {
+        Object.assign(state, {
+          frequency: 2.0, wavelength: 1.0, amplitude: 0.14,
+          sourceMode: 'plane', barrierMode: 'double', slitWidth: 0.55, slitSep: 1.6,
+          shallow: false, showRays: true, strobe: true, slowMo: false
+        });
+      }
+      syncDeepSpeedFromState();
+      syncUIFromState();
+      updateSimulation();
+    }
+
+    function syncUIFromState() {
+      document.getElementById('slider-freq').value = state.frequency;
+      document.getElementById('slider-lambda').value = state.wavelength;
+      document.getElementById('slider-amp').value = state.amplitude;
+      document.getElementById('slider-slit').value = state.slitWidth;
+      document.getElementById('slider-sep').value = state.slitSep;
+      document.getElementById('slider-depth').value = state.depthRatio;
+      document.getElementById('chk-shallow').checked = state.shallow;
+      document.getElementById('chk-strobe').checked = state.strobe;
+      document.getElementById('chk-slow').checked = state.slowMo;
+      document.getElementById('chk-rays').checked = state.showRays;
+      setSourceMode(state.sourceMode);
+      setBarrierMode(state.barrierMode);
+      syncShallowUI();
+      updateShallowVisual();
+      updateReadouts();
+    }
+
+    function updateSimulation() {
+      updateReadouts();
+      buildBarrierMeshes();
+      updateShallowVisual();
+      updateRayHelpers();
+      updateSourceMarker();
+      syncSlitUI();
+      syncShallowUI();
+    }
+
+    function dropRipple(x, z) {
+      x = Math.max(-TANK.half + 0.2, Math.min(TANK.half - 0.2, x));
+      z = Math.max(-TANK.half + 0.2, Math.min(TANK.half - 0.2, z));
+      if (barrierBlocks(x, z)) return;
+      ripples.push({ x, z, t0: simTime, amp: state.amplitude * 1.35 });
+      while (ripples.length > MAX_RIPPLES) ripples.shift();
+    }
+
+    function pickWater(clientX, clientY) {
+      const rect = container.getBoundingClientRect();
+      pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointerNDC, camera);
+      const hit = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(waterPlane, hit)) {
+        return hit;
+      }
+      return null;
+    }
+
+    let normalFrame = 0;
+    function updateWaterGeometry(t) {
+      const pos = waterGeo.attributes.position;
+      const colors = waterGeo.attributes.color;
+      const amp = Math.max(0.08, state.amplitude);
+      const count = pos.count;
+      for (let i = 0; i < count; i++) {
+        const y = sampleHeight(pos.getX(i), pos.getZ(i), t);
+        pos.setY(i, y);
+        const n = (y / amp + 1) * 0.5;
+        colors.setXYZ(i, 0.08 + n * 0.55, 0.35 + n * 0.45, 0.65 + n * 0.35);
+      }
+      pos.needsUpdate = true;
+      colors.needsUpdate = true;
+      // Normals are the costly part on SwiftShader — refresh sparsely
+      normalFrame++;
+      if (normalFrame % 4 === 0) {
+        waterGeo.computeVertexNormals();
+      }
+    }
+
+    function initThree() {
+      // Keep mesh modest for SwiftShader / mobile; visual quality comes from lighting + colour
+      gridN = isMobile() ? 32 : 44;
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0f172a);
+      scene.fog = new THREE.Fog(0x0f172a, 22, 40);
+
+      camera = new THREE.PerspectiveCamera(45, container.offsetWidth / Math.max(1, container.offsetHeight), 0.1, 100);
+      updateCameraFromSpherical();
+
+      renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' });
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      renderer.shadowMap.enabled = false;
+      container.appendChild(renderer.domElement);
+
+      scene.add(new THREE.AmbientLight(0xbfd9ff, 0.55));
+      const sun = new THREE.DirectionalLight(0xffffff, 0.95);
+      sun.position.set(6, 14, 4);
+      sun.castShadow = !isMobile();
+      if (sun.castShadow) {
+        sun.shadow.mapSize.set(1024, 1024);
+        sun.shadow.camera.near = 1;
+        sun.shadow.camera.far = 40;
+      }
+      scene.add(sun);
+      const fill = new THREE.DirectionalLight(0x93c5fd, 0.35);
+      fill.position.set(-8, 6, -6);
+      scene.add(fill);
+
+      // Tank floor
+      const floor = new THREE.Mesh(
+        new THREE.BoxGeometry(TANK.half * 2 + 0.4, 0.12, TANK.half * 2 + 0.4),
+        new THREE.MeshStandardMaterial({ color: 0x0b1220, roughness: 0.9, metalness: 0.05 })
+      );
+      floor.position.y = -0.08;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      // Tank walls
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.65, metalness: 0.2 });
+      const wallH = 0.7;
+      const wallT = 0.18;
+      const wallLen = TANK.half * 2 + 0.4;
+      [
+        [0, wallH / 2, -TANK.half - 0.1, wallLen, wallH, wallT],
+        [0, wallH / 2, TANK.half + 0.1, wallLen, wallH, wallT],
+        [-TANK.half - 0.1, wallH / 2, 0, wallT, wallH, wallLen],
+        [TANK.half + 0.1, wallH / 2, 0, wallT, wallH, wallLen]
+      ].forEach(([x, y, z, w, h, d]) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+        m.position.set(x, y, z);
+        m.castShadow = true;
+        scene.add(m);
+      });
+
+      // Water surface
+      waterGeo = new THREE.PlaneGeometry(TANK.half * 2, TANK.half * 2, gridN, gridN);
+      waterGeo.rotateX(-Math.PI / 2);
+      const colorAttr = new THREE.BufferAttribute(new Float32Array(waterGeo.attributes.position.count * 3), 3);
+      waterGeo.setAttribute('color', colorAttr);
+      const waterMat = new THREE.MeshPhongMaterial({
+        vertexColors: true,
+        specular: 0xdbeafe,
+        shininess: reducedMotion ? 30 : 70,
+        transparent: true,
+        opacity: 0.94,
+        side: THREE.FrontSide
+      });
+      waterMesh = new THREE.Mesh(waterGeo, waterMat);
+      waterMesh.receiveShadow = true;
+      scene.add(waterMesh);
+
+      // Shallow glass plate
+      shallowMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 0.06, 1),
+        new THREE.MeshPhongMaterial({
+          color: 0xfbbf24,
+          transparent: true,
+          opacity: 0.35,
+          specular: 0xfff7d6,
+          shininess: 80
+        })
+      );
+      shallowMesh.visible = false;
+      scene.add(shallowMesh);
+
+      barrierGroup = new THREE.Group();
+      scene.add(barrierGroup);
+      rayGroup = new THREE.Group();
+      scene.add(rayGroup);
+
+      sourceMarker = new THREE.Mesh(
+        new THREE.SphereGeometry(0.16, 16, 16),
+        new THREE.MeshStandardMaterial({ color: 0x16a34a, emissive: 0x14532d, emissiveIntensity: 0.4 })
+      );
+      scene.add(sourceMarker);
+
+      // Soft ground grid under water for depth cue
+      const grid = new THREE.GridHelper(TANK.half * 2, 10, 0x1e3a5f, 0x1e293b);
+      grid.position.y = 0.001;
+      scene.add(grid);
+
+      setupCameraControls();
+      updateSimulation();
+      if (window.PhysicsGlOverlay) PhysicsGlOverlay.ready();
+      animate();
+    }
+
+    function setupCameraControls() {
+      container.addEventListener('mousedown', (e) => {
+        if (e.target.closest('input, button, label')) return;
+        isCameraDrag = true;
+        pointerMoved = false;
+        pointerDownX = startCamX = e.clientX;
+        pointerDownY = startCamY = e.clientY;
+        container.classList.add('is-dragging');
+      });
+      window.addEventListener('mouseup', (e) => {
+        if (isCameraDrag) {
+          const dist = Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY);
+          if (dist < 8) {
+            const hit = pickWater(e.clientX, e.clientY);
+            if (hit) dropRipple(hit.x, hit.z);
+          }
+        }
+        isCameraDrag = false;
+        container.classList.remove('is-dragging');
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!isCameraDrag) return;
+        const dx = e.clientX - startCamX;
+        const dy = e.clientY - startCamY;
+        if (Math.abs(dx) + Math.abs(dy) > 2) pointerMoved = true;
+        theta -= dx * 0.005;
+        phi -= dy * 0.005;
+        phi = Math.max(0.18, Math.min(Math.PI / 2 - 0.08, phi));
+        startCamX = e.clientX;
+        startCamY = e.clientY;
+        updateCameraFromSpherical();
+      });
+      container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        radius = Math.max(8, Math.min(28, radius + e.deltaY * 0.02));
+        updateCameraFromSpherical();
+      }, { passive: false });
+
+      container.addEventListener('touchstart', (e) => {
+        if (e.target.closest('input, button, label')) return;
+        e.preventDefault();
+        if (e.touches.length === 1) {
+          lastTouchX = e.touches[0].clientX;
+          lastTouchY = e.touches[0].clientY;
+          pointerDownX = lastTouchX;
+          pointerDownY = lastTouchY;
+          pointerMoved = false;
+        } else if (e.touches.length === 2) {
+          lastTouchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+        }
+      }, { passive: false });
+
+      container.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1 && lastTouchX !== null) {
+          const dx = (e.touches[0].clientX - lastTouchX) * 0.008;
+          const dy = (e.touches[0].clientY - lastTouchY) * 0.008;
+          if (Math.abs(dx) + Math.abs(dy) > 0.01) pointerMoved = true;
+          lastTouchX = e.touches[0].clientX;
+          lastTouchY = e.touches[0].clientY;
+          theta -= dx;
+          phi -= dy;
+          phi = Math.max(0.18, Math.min(Math.PI / 2 - 0.08, phi));
+          updateCameraFromSpherical();
+        } else if (e.touches.length === 2 && lastTouchDist !== null) {
+          const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          radius += (lastTouchDist - dist) * 0.08;
+          radius = Math.max(8, Math.min(28, radius));
+          lastTouchDist = dist;
+          updateCameraFromSpherical();
+        }
+      }, { passive: false });
+
+      container.addEventListener('touchend', (e) => {
+        if (!pointerMoved && e.changedTouches && e.changedTouches[0]) {
+          const touch = e.changedTouches[0];
+          const dist = Math.hypot(touch.clientX - pointerDownX, touch.clientY - pointerDownY);
+          if (dist < 12) {
+            const hit = pickWater(touch.clientX, touch.clientY);
+            if (hit) dropRipple(hit.x, hit.z);
+          }
+        }
+        lastTouchX = lastTouchY = lastTouchDist = null;
+      });
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const now = performance.now();
+      let dt = Math.min(0.05, (now - lastTs) / 1000);
+      lastTs = now;
+
+      if (reducedMotion) {
+        dt *= 0.25;
+      } else if (state.slowMo) {
+        dt *= 0.28;
+      }
+
+      if (!state.strobe) {
+        simTime += dt;
+      } else {
+        // Freeze wavefronts in phase with frequency (stroboscope)
+        const period = 1 / Math.max(0.2, state.frequency);
+        simTime += dt;
+        const phase = Math.floor(simTime / period) * period;
+        updateWaterGeometry(phase);
+        renderer.render(scene, camera);
+        return;
+      }
+
+      updateWaterGeometry(simTime);
+
+      // Gentle idle camera sway (disabled for reduced motion)
+      if (!reducedMotion && !isCameraDrag && ripples.length === 0) {
+        // no auto-orbit — keep stable for teaching
+      }
+
+      // Pulse source marker
+      if (sourceMarker.visible && !reducedMotion) {
+        const s = 1 + 0.12 * Math.sin(simTime * state.frequency * Math.PI * 2);
+        sourceMarker.scale.setScalar(s);
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      if (!camera || !renderer) return;
+      camera.aspect = container.offsetWidth / Math.max(1, container.offsetHeight);
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
+
+    // ——— UI bindings ———
+    function bindSlider(id, key, formatter) {
+      document.getElementById(id).addEventListener('input', (e) => {
+        state[key] = parseFloat(e.target.value);
+        if (formatter) formatter(state[key]);
+        updateReadouts();
+        if (key === 'slitWidth' || key === 'slitSep') buildBarrierMeshes();
+        if (key === 'depthRatio') {
+          updateShallowVisual();
+          updateRayHelpers();
+        }
+      });
+    }
+
+    document.getElementById('slider-freq').addEventListener('input', (e) => {
+      // Hold deep-water v fixed → higher f gives shorter λ; live f / λ / v panel updates
+      applyFrequency(parseFloat(e.target.value));
+      updateReadouts();
+    });
+    document.getElementById('slider-lambda').addEventListener('input', (e) => {
+      applyWavelength(parseFloat(e.target.value));
+      updateReadouts();
+    });
+    bindSlider('slider-amp', 'amplitude');
+    bindSlider('slider-slit', 'slitWidth');
+    bindSlider('slider-sep', 'slitSep');
+    bindSlider('slider-depth', 'depthRatio');
+
+    document.getElementById('src-plane').addEventListener('click', () => setSourceMode('plane'));
+    document.getElementById('src-point').addEventListener('click', () => setSourceMode('point'));
+    document.querySelectorAll('.barrier-btn').forEach((btn) => {
+      btn.addEventListener('click', () => setBarrierMode(btn.getAttribute('data-barrier')));
+    });
+    document.getElementById('chk-shallow').addEventListener('change', (e) => {
+      state.shallow = e.target.checked;
+      syncShallowUI();
+      updateShallowVisual();
+      updateRayHelpers();
+      updateReadouts();
+    });
+    document.getElementById('chk-strobe').addEventListener('change', (e) => { state.strobe = e.target.checked; });
+    document.getElementById('chk-slow').addEventListener('change', (e) => { state.slowMo = e.target.checked; });
+    document.getElementById('chk-rays').addEventListener('change', (e) => {
+      state.showRays = e.target.checked;
+      updateRayHelpers();
+    });
+
+    document.getElementById('preset-reflect').addEventListener('click', () => applyPreset('reflect'));
+    document.getElementById('preset-refract').addEventListener('click', () => applyPreset('refract'));
+    document.getElementById('preset-single').addEventListener('click', () => applyPreset('single'));
+    document.getElementById('preset-double').addEventListener('click', () => applyPreset('double'));
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      Object.assign(state, defaults);
+      syncDeepSpeedFromState();
+      ripples.length = 0;
+      simTime = 0;
+      theta = 0.55;
+      phi = 0.72;
+      radius = 14;
+      updateCameraFromSpherical();
+      syncUIFromState();
+      updateSimulation();
+    });
+
+    // Boot
+    setLanguage(currentLang);
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', initThree);
+    } else {
+      initThree();
+    }
+  })();
+  </script>
+
+  <script src="practice_questions.js"></script>
+  <script src="practice_questions_data.js"></script>
+  <script>initPracticeQuestions('ripple_tank');</script>
+</body>
+</html>

@@ -63,6 +63,7 @@
     'Concave_Lens_3D.html': 'optics',
     'Primary_Colour_3D.html': 'optics',
     'Standing_Waves_Resonance.html': 'waves',
+    'Ripple_Tank.html': 'waves',
     'Refraction_Critical_Angle_TIR.html': 'electricity',
     'Magnetic_Field_Visualizer.html': 'electricity',
     'Magnetic_Effect_Current.html': 'electricity',
