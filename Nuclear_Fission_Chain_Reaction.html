@@ -525,9 +525,11 @@
     }
 
     function fireNeutron() {
-      const start = new THREE.Vector3(-VESSEL_R - 0.8, (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 1.2);
-      const aim = new THREE.Vector3(0.2, (Math.random() - 0.5) * 0.8, (Math.random() - 0.5) * 0.8);
-      const vel = aim.clone().sub(start).normalize().multiplyScalar(1.1);
+      // Inject near the cutaway face, aimed into the fuel cloud
+      const start = new THREE.Vector3(-0.5, (Math.random() - 0.5) * 2.2, (Math.random() - 0.5) * 2.2);
+      const aim = new THREE.Vector3(1.8, (Math.random() - 0.5) * 1.5, (Math.random() - 0.5) * 1.5);
+      const speed = state.moderator > 40 ? 0.85 : 1.25;
+      const vel = aim.clone().sub(start).normalize().multiplyScalar(speed);
       spawnNeutron(start, vel, state.generation);
       updateStatsUI();
     }
@@ -609,7 +611,8 @@
     }
 
     function findFuelHit(pos) {
-      const hitR2 = 0.32 * 0.32;
+      // Classroom-tuned capture radius (not nuclear scale)
+      const hitR2 = 0.45 * 0.45;
       let best = -1, bestD = hitR2;
       for (let i = 0; i < fuelPositions.length; i++) {
         if (!fuelAlive[i]) continue;
@@ -619,6 +622,14 @@
         if (d < bestD) { bestD = d; best = i; }
       }
       return best;
+    }
+
+    function fissionProbability(thermal) {
+      const dens = state.density / 140;
+      const mod = state.moderator / 100;
+      if (thermal) return Math.min(0.92, 0.55 + 0.25 * dens + 0.15 * mod);
+      // Fast fission: low unless high density (bomb schematic) or weak moderation
+      return Math.min(0.85, 0.06 + 0.55 * dens * dens + (1 - mod) * 0.18 * dens);
     }
 
     function removeNeutron(idx) {
@@ -633,20 +644,53 @@
       const mod = state.moderator / 100;
       const showTrails = document.getElementById('showTrails').checked && !reduceMotion;
       const spd = state.speed;
+      const substeps = 3;
+      const h = dt / substeps;
 
       for (let i = neutrons.length - 1; i >= 0; i--) {
         const n = neutrons[i];
         n.age += dt;
+        let removed = false;
 
-        // Moderator slows neutrons (thermalisation)
-        if (mod > 0.01 && n.vel.length() > 0.35) {
-          const damp = 1 - (0.55 * mod * dt * spd);
-          n.vel.multiplyScalar(Math.max(0.92, damp));
-          if (n.vel.length() < 0.55) n.thermal = true;
+        for (let s = 0; s < substeps && !removed; s++) {
+          // Moderator slows neutrons (thermalisation)
+          if (mod > 0.01 && n.vel.length() > 0.32) {
+            const damp = 1 - (0.85 * mod * h * spd);
+            n.vel.multiplyScalar(Math.max(0.88, damp));
+            if (n.vel.length() < 0.5) n.thermal = true;
+          }
+
+          n.pos.addScaledVector(n.vel, h * spd * 2.0);
+          n.mesh.position.copy(n.pos);
+
+          if (rodAbsorbs(n.pos)) {
+            removeNeutron(i);
+            removed = true;
+            break;
+          }
+          if (outsideVessel(n.pos) || n.age > 14) {
+            removeNeutron(i);
+            removed = true;
+            break;
+          }
+
+          const fi = findFuelHit(n.pos);
+          if (fi >= 0) {
+            const pFiss = fissionProbability(n.thermal);
+            if (Math.random() < pFiss) {
+              removeNeutron(i);
+              doFission(fi, n);
+              removed = true;
+              break;
+            }
+            // Elastic-like scatter without fission
+            n.vel.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(Math.max(0.35, n.vel.length() * 0.85));
+            n.pos.addScaledVector(n.vel, 0.2);
+          }
         }
 
-        n.pos.addScaledVector(n.vel, dt * spd * 2.2);
-        n.mesh.position.copy(n.pos);
+        if (removed) continue;
+
         n.mesh.material.emissiveIntensity = n.thermal ? 0.95 : 0.45;
 
         if (showTrails && Math.random() < 0.35) {
@@ -658,31 +702,6 @@
           trailGroup.add(tMesh);
           n.trail.push(tMesh);
           if (n.trail.length > MAX_TRAIL_PER) trailGroup.remove(n.trail.shift());
-        }
-
-        if (rodAbsorbs(n.pos)) {
-          removeNeutron(i);
-          continue;
-        }
-        if (outsideVessel(n.pos) || n.age > 12) {
-          removeNeutron(i);
-          continue;
-        }
-
-        const fi = findFuelHit(n.pos);
-        if (fi >= 0) {
-          // Thermal neutrons: high fission chance; fast: low (unless high density / bomb mode)
-          const base = n.thermal ? 0.72 : (0.08 + (1 - mod) * 0.12);
-          // Density slightly boosts effective collision (already via spatial packing)
-          const pFiss = Math.min(0.95, base);
-          if (Math.random() < pFiss) {
-            removeNeutron(i);
-            doFission(fi, n);
-          } else {
-            // Scatter without fission
-            n.vel.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(n.vel.length());
-            n.pos.addScaledVector(n.vel, 0.15);
-          }
         }
       }
 
@@ -738,8 +757,10 @@
         state.recentBorn = 0;
         state.recentLost = 0;
 
-        // Overheat: abstract supercritical warning
-        state.overheat = (state.kEst != null && state.kEst > 1.35 && nNow >= 12) || state.energyMeV > 8000;
+        // Overheat: abstract supercritical warning (classroom-visible thresholds)
+        state.overheat = (state.kEst != null && state.kEst > 1.2 && nNow >= 8)
+          || state.energyMeV > 2500
+          || (nNow >= 20 && state.rods < 20);
       }
 
       updateStatsUI();
@@ -828,10 +849,10 @@
 
     function applyPreset(name) {
       const presets = {
-        single: { density: 35, moderator: 80, rods: 85, speed: 1.2, autoFire: true },
-        reactor: { density: 90, moderator: 75, rods: 48, speed: 1.4, autoFire: true },
-        runaway: { density: 120, moderator: 85, rods: 8, speed: 1.8, autoFire: true },
-        bomb: { density: 140, moderator: 5, rods: 0, speed: 2.2, autoFire: true, burst: 5 }
+        single: { density: 40, moderator: 85, rods: 90, speed: 1.2, autoFire: true },
+        reactor: { density: 95, moderator: 80, rods: 45, speed: 1.3, autoFire: true, burst: 2 },
+        runaway: { density: 125, moderator: 90, rods: 5, speed: 1.7, autoFire: true, burst: 3 },
+        bomb: { density: 140, moderator: 0, rods: 0, speed: 2.0, autoFire: true, burst: 6 }
       };
       const p = presets[name];
       document.getElementById('densitySlider').value = p.density;
