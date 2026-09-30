@@ -139,7 +139,7 @@
                     <div>
                         <p class="text-sm font-medium text-slate-700 mb-2" data-i18n="controls.presets">Presets</p>
                         <div class="flex flex-wrap gap-2">
-                            <button id="preset-sun" class="preset-btn px-3 py-2 min-h-[44px] rounded-xl bg-blue-600 text-white text-xs font-semibold hover:-translate-y-0.5 transition-all shadow-sm" data-i18n="controls.presetSun">Sun</button>
+                            <button id="preset-sun" class="preset-btn active px-3 py-2 min-h-[44px] rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition" data-i18n="controls.presetSun">Sun</button>
                             <button id="preset-rdwarf" class="preset-btn px-3 py-2 min-h-[44px] rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition" data-i18n="controls.presetRdwarf">Red dwarf</button>
                             <button id="preset-blue" class="preset-btn px-3 py-2 min-h-[44px] rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition" data-i18n="controls.presetBlue">Massive blue giant</button>
                         </div>
@@ -880,10 +880,18 @@
             document.getElementById('play-btn').textContent = t(on ? 'controls.pause' : 'controls.play');
         }
 
-        function applyPreset(mass, evol) {
+        function setActivePreset(id) {
+            document.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
+            const btn = document.getElementById(id);
+            if (btn) btn.classList.add('active');
+        }
+
+        function applyPreset(mass, evol, presetId) {
             setPlaying(false);
             state.mass = mass;
             state.evol = evol == null ? 0 : evol;
+            shellExpand = 0;
+            if (presetId) setActivePreset(presetId);
             syncSliders();
             updateSimulation();
         }
@@ -1192,6 +1200,7 @@
         document.getElementById('mass-slider').addEventListener('input', () => {
             setPlaying(false);
             shellExpand = 0;
+            document.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
             updateSimulation();
         });
         document.getElementById('evol-slider').addEventListener('input', () => {
@@ -1214,14 +1223,15 @@
             document.getElementById('challenge-msg').textContent = t('controls.chalHint');
             document.getElementById('challenge-msg').className = 'text-xs text-slate-500';
             document.querySelectorAll('.challenge-btn').forEach((b) => b.classList.remove('active'));
+            setActivePreset('preset-sun');
             syncSliders();
             resetCameraView();
             updateSimulation();
         });
 
-        document.getElementById('preset-sun').addEventListener('click', () => applyPreset(1.0, 0));
-        document.getElementById('preset-rdwarf').addEventListener('click', () => applyPreset(0.3, 0));
-        document.getElementById('preset-blue').addEventListener('click', () => applyPreset(18, 0));
+        document.getElementById('preset-sun').addEventListener('click', () => applyPreset(1.0, 0, 'preset-sun'));
+        document.getElementById('preset-rdwarf').addEventListener('click', () => applyPreset(0.3, 0, 'preset-rdwarf'));
+        document.getElementById('preset-blue').addEventListener('click', () => applyPreset(18, 0, 'preset-blue'));
         document.getElementById('chal-sirius').addEventListener('click', () => startChallenge('sirius'));
         document.getElementById('chal-betel').addEventListener('click', () => startChallenge('betelgeuse'));
         document.getElementById('chal-prox').addEventListener('click', () => startChallenge('proxima'));
