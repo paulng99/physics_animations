@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skydiving &amp; Terminal Velocity (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="window.__THREE_CDN_FAILED=true"></script>
+  <link rel="stylesheet" href="shared/sim-shell.css">
+  <script src="shared/i18n.js"></script>
+  <script src="shared/gl-overlay.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+    #three-container {
+      width: 100%;
+      height: 340px;
+      min-height: 280px;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      touch-action: none;
+      cursor: grab;
+      background: #0c4a6e;
+    }
+    #three-container:active { cursor: grabbing; }
+    @media (min-width: 768px) {
+      #three-container { height: 460px; }
+    }
+    canvas.graph-canvas { display: block; width: 100%; touch-action: none; }
+    @media (prefers-reduced-motion: reduce) {
+      .motion-ok { animation: none !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+  <header class="max-w-7xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between gap-3">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 min-h-[44px]">
+        <span>←</span>
+        <span data-i18n="back">Back to Topics</span>
+      </a>
+      <div class="flex gap-2">
+        <button class="lang-btn px-3 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white min-h-[44px]" onclick="updateLanguage('en')" data-lang="en">EN</button>
+        <button class="lang-btn px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100 min-h-[44px]" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 pb-10">
+    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-5 md:p-7 shadow-sm">
+      <p class="text-sm font-semibold text-blue-600 uppercase tracking-wide" data-i18n="tag">HKDSE Mechanics · Forces &amp; Motion</p>
+      <h1 class="mt-1 text-2xl md:text-3xl font-bold text-slate-900" data-i18n="title">Skydiving &amp; Terminal Velocity</h1>
+      <p class="mt-2 text-slate-600 leading-relaxed" data-i18n="subtitle">
+        Watch air resistance grow with speed until the resultant force becomes zero and velocity approaches terminal velocity.
+      </p>
+      <div class="mt-4 flex flex-wrap gap-2 text-xs">
+        <span class="px-3 py-1.5 rounded-full bg-red-100 text-red-700 font-semibold" data-i18n="pill.force">Force F</span>
+        <span class="px-3 py-1.5 rounded-full bg-green-100 text-green-700 font-semibold" data-i18n="pill.vel">Velocity v</span>
+        <span class="px-3 py-1.5 rounded-full bg-purple-100 text-purple-700 font-semibold" data-i18n="pill.acc">Acceleration a</span>
+        <span class="px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 font-semibold" data-i18n="pill.drag">Air resistance</span>
+      </div>
+    </section>
+
+    <section class="mt-5 grid lg:grid-cols-12 gap-4 sim-shell">
+      <article class="lg:col-span-8 space-y-4 sim-viewport">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+            <h2 class="font-semibold text-slate-900" data-i18n="threeTitle">3D Descent</h2>
+            <div class="flex flex-wrap gap-2 text-[11px] pointer-events-none">
+              <span class="bg-red-50 text-red-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.weight">W (weight)</span>
+              <span class="bg-orange-50 text-orange-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.drag">R (drag)</span>
+              <span class="bg-rose-50 text-rose-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.net">ΣF</span>
+              <span class="bg-green-50 text-green-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.v">v</span>
+              <span class="bg-purple-50 text-purple-700 px-2 py-1 rounded-full font-semibold" data-i18n="legend.a">a</span>
+            </div>
+          </div>
+          <div class="relative rounded-xl border-2 border-slate-200 overflow-hidden">
+            <div id="three-container" data-gl-host></div>
+            <div class="absolute top-3 left-3 flex flex-wrap gap-2 pointer-events-none">
+              <span class="bg-slate-900/75 text-white text-xs font-semibold px-3 py-1 rounded-full" data-i18n="three.badge">Skydiver</span>
+              <span id="challengeBadge" class="hidden bg-amber-500/95 text-white text-xs font-semibold px-3 py-1 rounded-full" data-i18n="challenge.badge">Challenge</span>
+            </div>
+            <div id="statusToast" class="absolute top-3 right-3 max-w-[70%] bg-white/90 backdrop-blur text-slate-800 text-xs font-semibold px-3 py-2 rounded-xl shadow hidden"></div>
+            <div class="absolute bottom-3 right-3 bg-slate-900/75 text-white text-xs px-3 py-1 rounded-full pointer-events-none" data-i18n="three.hint">Drag to rotate • Scroll / pinch to zoom</div>
+          </div>
+
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button id="playBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="play">Jump</button>
+            <button id="pauseBtn" class="px-5 py-2.5 rounded-xl bg-slate-700 text-white font-semibold hover:bg-slate-800 transition-all min-h-[44px]" data-i18n="pause">Pause</button>
+            <button id="resetBtn" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-red-50 hover:text-red-600 transition-all min-h-[44px]" data-i18n="reset">Reset</button>
+            <button id="resetCamBtn" class="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-all min-h-[44px]" data-i18n="resetCam">Reset Camera</button>
+            <button id="openChuteBtn" class="px-5 py-2.5 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="openChute">Open Parachute</button>
+          </div>
+
+          <div class="mt-3 grid sm:grid-cols-4 gap-3 text-sm">
+            <div class="rounded-xl border border-green-200 bg-green-50 px-3 py-2">
+              <div class="text-green-700 font-semibold" data-i18n="card.v">Speed v</div>
+              <div id="cardV" class="text-green-600 text-lg font-bold">0.00 m/s</div>
+            </div>
+            <div class="rounded-xl border border-purple-200 bg-purple-50 px-3 py-2">
+              <div class="text-purple-700 font-semibold" data-i18n="card.a">Acceleration a</div>
+              <div id="cardA" class="text-purple-600 text-lg font-bold">0.00 m/s²</div>
+            </div>
+            <div class="rounded-xl border border-red-200 bg-red-50 px-3 py-2">
+              <div class="text-red-700 font-semibold" data-i18n="card.net">Resultant ΣF</div>
+              <div id="cardNet" class="text-red-600 text-lg font-bold">0.00 N</div>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <div class="text-slate-700 font-semibold" data-i18n="card.h">Height h</div>
+              <div id="cardH" class="text-slate-700 text-lg font-bold">3000 m</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="bg-white rounded-2xl border border-slate-200 p-4">
+            <h2 class="font-semibold text-slate-900 mb-2">
+              <span class="text-green-600">v–t</span>
+              <span class="text-slate-500 text-sm font-medium" data-i18n="vtHint">speed vs time</span>
+            </h2>
+            <canvas id="vtCanvas" class="graph-canvas rounded-xl bg-slate-50 border border-slate-200 h-48"></canvas>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4">
+            <h2 class="font-semibold text-slate-900 mb-2">
+              <span class="text-purple-600">a–t</span>
+              <span class="text-slate-500 text-sm font-medium" data-i18n="atHint">acceleration vs time</span>
+            </h2>
+            <canvas id="atCanvas" class="graph-canvas rounded-xl bg-slate-50 border border-slate-200 h-48"></canvas>
+          </div>
+        </div>
+      </article>
+
+      <aside class="sim-controls lg:col-span-4 space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">Controls</h2>
+
+          <label class="block text-sm font-medium text-slate-700 mb-1" for="preset">
+            <span data-i18n="preset">Teaching preset</span>
+          </label>
+          <select id="preset" class="w-full rounded-lg border border-slate-300 px-3 py-2 mb-3 bg-white min-h-[44px]">
+            <option value="custom" data-i18n-option="preset.custom">Custom</option>
+            <option value="nodrag" data-i18n-option="preset.nodrag">Free fall (no drag)</option>
+            <option value="belly" data-i18n-option="preset.belly">Belly-to-earth freefall</option>
+            <option value="chute" data-i18n-option="preset.chute">Open parachute mid-air</option>
+            <option value="challenge" data-i18n-option="preset.challenge">Landing challenge</option>
+          </select>
+
+          <label class="block text-sm font-medium text-slate-700" for="mass">
+            <span data-i18n="mass">Mass m (kg)</span>: <span id="massValue" class="text-blue-600 font-semibold">75</span>
+          </label>
+          <input id="mass" type="range" min="40" max="140" step="1" value="75" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm font-medium text-slate-700" for="posture">
+            <span data-i18n="posture">Body posture</span>
+          </label>
+          <select id="posture" class="w-full rounded-lg border border-slate-300 px-3 py-2 mb-3 bg-white min-h-[44px]">
+            <option value="belly" data-i18n-option="posture.belly">Belly-to-earth (large area)</option>
+            <option value="head" data-i18n-option="posture.head">Head-down (small area)</option>
+            <option value="sit" data-i18n-option="posture.sit">Sitting / track</option>
+          </select>
+
+          <label class="block text-sm font-medium text-slate-700" for="area">
+            <span data-i18n="area">Effective area A (m²)</span>: <span id="areaValue" class="text-blue-600 font-semibold">0.70</span>
+          </label>
+          <input id="area" type="range" min="0.15" max="2.5" step="0.01" value="0.70" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm font-medium text-slate-700" for="cd">
+            <span data-i18n="cd">Drag coefficient C<sub>d</sub></span>: <span id="cdValue" class="text-blue-600 font-semibold">1.00</span>
+          </label>
+          <input id="cd" type="range" min="0" max="2.0" step="0.01" value="1.00" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm font-medium text-slate-700" for="h0">
+            <span data-i18n="h0">Exit height h₀ (m)</span>: <span id="h0Value" class="text-blue-600 font-semibold">3000</span>
+          </label>
+          <input id="h0" type="range" min="500" max="4000" step="50" value="3000" class="w-full accent-blue-600 mb-3" />
+
+          <label class="block text-sm font-medium text-slate-700" for="openAlt">
+            <span data-i18n="openAlt">Auto-open altitude (m)</span>: <span id="openAltValue" class="text-blue-600 font-semibold">800</span>
+          </label>
+          <input id="openAlt" type="range" min="100" max="2500" step="25" value="800" class="w-full accent-violet-600 mb-3" />
+
+          <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 mb-3 min-h-[44px] cursor-pointer">
+            <input id="autoOpen" type="checkbox" checked class="accent-violet-600 w-4 h-4" />
+            <span data-i18n="autoOpen">Auto-open parachute at altitude</span>
+          </label>
+
+          <label class="block text-sm font-medium text-slate-700" for="wind">
+            <span data-i18n="wind">Crosswind (m/s)</span>: <span id="windValue" class="text-amber-700 font-semibold">0.0</span>
+          </label>
+          <input id="wind" type="range" min="-15" max="15" step="0.5" value="0" class="w-full accent-amber-600 mb-3" />
+
+          <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 mb-2 min-h-[44px] cursor-pointer">
+            <input id="shakeToggle" type="checkbox" checked class="accent-blue-600 w-4 h-4" />
+            <span data-i18n="shake">Camera shake (speed feel)</span>
+          </label>
+          <p class="text-xs text-slate-500" data-i18n="shakeHint">Respects prefers-reduced-motion: shake stays off when the system requests reduced motion.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <h2 class="font-semibold text-slate-900 mb-3" data-i18n="readings">Live readings</h2>
+          <div class="grid gap-2 text-sm">
+            <div class="flex justify-between gap-2"><span class="text-slate-600" data-i18n="read.m">Mass m</span><span id="readM" class="font-semibold text-slate-800">75 kg</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-600" data-i18n="read.g">g</span><span id="readG" class="font-semibold text-slate-800">9.81 m/s²</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-600" data-i18n="read.w">Weight mg</span><span id="readW" class="font-semibold text-red-600">736 N</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-600" data-i18n="read.r">Air resistance R</span><span id="readR" class="font-semibold text-orange-600">0 N</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-600" data-i18n="read.net">Resultant ΣF</span><span id="readNet" class="font-semibold text-red-600">736 N</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-600" data-i18n="read.v">Speed v</span><span id="readV" class="font-semibold text-green-600">0 m/s</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-600" data-i18n="read.vt">Terminal v<sub>t</sub></span><span id="readVt" class="font-semibold text-green-700">—</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-600" data-i18n="read.a">Acceleration a</span><span id="readA" class="font-semibold text-purple-600">9.81 m/s²</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-600" data-i18n="read.t">Time t</span><span id="readT" class="font-semibold text-slate-700">0.00 s</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-600" data-i18n="read.state">State</span><span id="readState" class="font-semibold text-blue-700">Ready</span></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">
+          <h2 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE formula focus</h2>
+          <div class="space-y-1 font-mono text-[13px] leading-relaxed" id="formulaBank">
+            <p>\( R = \tfrac12\,\rho C_d A v^2 \)</p>
+            <p>\( \Sigma F = mg - R \quad(\text{down}+) \)</p>
+            <p>\( a = \Sigma F / m \)</p>
+            <p>\( v_t = \sqrt{\dfrac{2mg}{\rho C_d A}} \)</p>
+          </div>
+          <p class="mt-3 text-xs text-slate-500 leading-relaxed" data-i18n="formulaNote">
+            At terminal velocity, R = mg so ΣF = 0 and a = 0; speed stays nearly constant.
+          </p>
+        </div>
+      </aside>
+    </section>
+
+    <section class="mt-5 grid lg:grid-cols-3 gap-4">
+      <article class="bg-white rounded-2xl border border-slate-200 p-4">
+        <h3 class="font-bold text-slate-900" data-i18n="explainTitle">Why heavy ≠ light at v<sub>t</sub></h3>
+        <p class="mt-2 text-sm text-slate-700 leading-relaxed" data-i18n="explainBody">
+          Weight grows with mass (mg), but air resistance depends on shape and speed, not mass. A heavier jumper needs a larger R to balance weight, so equilibrium occurs at a higher terminal speed. Without drag, all masses fall with the same g.
+        </p>
+      </article>
+      <article class="bg-white rounded-2xl border border-slate-200 p-4">
+        <h3 class="font-bold text-slate-900" data-i18n="challengeTitle">Landing challenge</h3>
+        <p class="mt-2 text-sm text-slate-700 leading-relaxed" data-i18n="challengeBody">
+          Choose the challenge preset. Open the parachute in time, fight the crosswind, and land inside the target ring with speed below the safe limit (5 m/s).
+        </p>
+        <p class="mt-2 text-sm font-semibold text-amber-700" id="challengeResult"></p>
+      </article>
+      <article class="bg-white rounded-2xl border border-slate-200 p-4">
+        <h3 class="font-bold text-slate-900" data-i18n="assumptionsTitle">Model assumptions</h3>
+        <ul class="mt-2 text-sm text-slate-700 space-y-1 leading-relaxed list-disc ml-5">
+          <li data-i18n="assume1">Quadratic drag; constant air density ρ = 1.2 kg/m³</li>
+          <li data-i18n="assume2">Parachute instantly raises A and C<sub>d</sub> when opened</li>
+          <li data-i18n="assume3">Crosswind is a constant horizontal air-speed for the challenge</li>
+          <li data-i18n="assume4">No lift; point-mass vertical + horizontal drag model</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const PHYSICS_COLORS = {
+      force: 0xdc2626,
+      drag: 0xea580c,
+      net: 0xe11d48,
+      velocity: 0x16a34a,
+      accel: 0x9333ea,
+      weight: 0xdc2626
+    };
+
+    const G = 9.81;
+    const RHO = 1.2;
+    const CHUTE_AREA = 28;
+    const CHUTE_CD = 1.4;
+    const SAFE_LAND_V = 5.0;
+    const TARGET_R = 25; // metres
+    const SCALE = 0.02; // metres → scene units for height display (camera follow uses relative)
+
+    const POSTURE_PRESETS = {
+      belly: { area: 0.70, cd: 1.00 },
+      head: { area: 0.22, cd: 0.70 },
+      sit: { area: 0.45, cd: 0.90 }
+    };
+
+    const controls = {
+      preset: document.getElementById('preset'),
+      mass: document.getElementById('mass'),
+      posture: document.getElementById('posture'),
+      area: document.getElementById('area'),
+      cd: document.getElementById('cd'),
+      h0: document.getElementById('h0'),
+      openAlt: document.getElementById('openAlt'),
+      autoOpen: document.getElementById('autoOpen'),
+      wind: document.getElementById('wind'),
+      shakeToggle: document.getElementById('shakeToggle')
+    };
+
+    const outs = {
+      massValue: document.getElementById('massValue'),
+      areaValue: document.getElementById('areaValue'),
+      cdValue: document.getElementById('cdValue'),
+      h0Value: document.getElementById('h0Value'),
+      openAltValue: document.getElementById('openAltValue'),
+      windValue: document.getElementById('windValue'),
+      cardV: document.getElementById('cardV'),
+      cardA: document.getElementById('cardA'),
+      cardNet: document.getElementById('cardNet'),
+      cardH: document.getElementById('cardH'),
+      readM: document.getElementById('readM'),
+      readG: document.getElementById('readG'),
+      readW: document.getElementById('readW'),
+      readR: document.getElementById('readR'),
+      readNet: document.getElementById('readNet'),
+      readV: document.getElementById('readV'),
+      readVt: document.getElementById('readVt'),
+      readA: document.getElementById('readA'),
+      readT: document.getElementById('readT'),
+      readState: document.getElementById('readState'),
+      challengeResult: document.getElementById('challengeResult'),
+      statusToast: document.getElementById('statusToast'),
+      challengeBadge: document.getElementById('challengeBadge')
+    };
+
+    const container = document.getElementById('three-container');
+    const vtCanvas = document.getElementById('vtCanvas');
+    const atCanvas = document.getElementById('atCanvas');
+
+    let scene, camera, renderer;
+    let skydiverGroup, bodyMesh, chuteMesh, groundMesh, targetRing, cloudGroup;
+    let weightArrow, dragArrow, netArrow, velArrow, accArrow;
+    let windLines = [];
+    let lookTarget = new THREE.Vector3();
+
+    const defaultCamera = { radius: 28, theta: 0.55, phi: 1.15 };
+    const cameraState = { ...defaultCamera };
+    let isDragging = false;
+    let lastPointer = { x: 0, y: 0 };
+    let pinchDistance = null;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Simulation state (downward +ve for vertical speed in physics bookkeeping)
+    const state = {
+      running: false,
+      landed: false,
+      chuteOpen: false,
+      challenge: false,
+      t: 0,
+      h: 3000,
+      x: 0,
+      vy: 0, // downward +
+      vx: 0,
+      a: G,
+      R: 0,
+      net: 0,
+      history: [] // {t, v, a}
+    };
+
+    let currentLang = (window.PhysicsI18n ? PhysicsI18n.get() : (localStorage.getItem('preferred_language') || 'en'));
+    if (window.PhysicsI18n) currentLang = PhysicsI18n.normalize(currentLang);
+    if (currentLang === 'zh' || currentLang === 'cn') currentLang = 'zh-hk';
+
+    const translations = {
+      en: {
+        back: 'Back to Topics',
+        tag: 'HKDSE Mechanics · Forces & Motion',
+        title: 'Skydiving & Terminal Velocity',
+        subtitle: 'Watch air resistance grow with speed until the resultant force becomes zero and velocity approaches terminal velocity.',
+        'pill.force': 'Force F',
+        'pill.vel': 'Velocity v',
+        'pill.acc': 'Acceleration a',
+        'pill.drag': 'Air resistance',
+        threeTitle: '3D Descent',
+        'legend.weight': 'W (weight)',
+        'legend.drag': 'R (drag)',
+        'legend.net': 'ΣF',
+        'legend.v': 'v',
+        'legend.a': 'a',
+        'three.badge': 'Skydiver',
+        'challenge.badge': 'Challenge',
+        'three.hint': 'Drag to rotate • Scroll / pinch to zoom',
+        play: 'Jump',
+        pause: 'Pause',
+        resume: 'Resume',
+        reset: 'Reset',
+        resetCam: 'Reset Camera',
+        openChute: 'Open Parachute',
+        'card.v': 'Speed v',
+        'card.a': 'Acceleration a',
+        'card.net': 'Resultant ΣF',
+        'card.h': 'Height h',
+        vtHint: 'speed vs time',
+        atHint: 'acceleration vs time',
+        controls: 'Controls',
+        preset: 'Teaching preset',
+        'preset.custom': 'Custom',
+        'preset.nodrag': 'Free fall (no drag)',
+        'preset.belly': 'Belly-to-earth freefall',
+        'preset.chute': 'Open parachute mid-air',
+        'preset.challenge': 'Landing challenge',
+        mass: 'Mass m (kg)',
+        posture: 'Body posture',
+        'posture.belly': 'Belly-to-earth (large area)',
+        'posture.head': 'Head-down (small area)',
+        'posture.sit': 'Sitting / track',
+        area: 'Effective area A (m²)',
+        cd: 'Drag coefficient Cd',
+        h0: 'Exit height h₀ (m)',
+        openAlt: 'Auto-open altitude (m)',
+        autoOpen: 'Auto-open parachute at altitude',
+        wind: 'Crosswind (m/s)',
+        shake: 'Camera shake (speed feel)',
+        shakeHint: 'Respects prefers-reduced-motion: shake stays off when the system requests reduced motion.',
+        readings: 'Live readings',
+        'read.m': 'Mass m',
+        'read.g': 'g',
+        'read.w': 'Weight mg',
+        'read.r': 'Air resistance R',
+        'read.net': 'Resultant ΣF',
+        'read.v': 'Speed v',
+        'read.vt': 'Terminal vt',
+        'read.a': 'Acceleration a',
+        'read.t': 'Time t',
+        'read.state': 'State',
+        formulaTitle: 'HKDSE formula focus',
+        formulaNote: 'At terminal velocity, R = mg so ΣF = 0 and a = 0; speed stays nearly constant.',
+        explainTitle: 'Why heavy ≠ light at vt',
+        explainBody: 'Weight grows with mass (mg), but air resistance depends on shape and speed, not mass. A heavier jumper needs a larger R to balance weight, so equilibrium occurs at a higher terminal speed. Without drag, all masses fall with the same g.',
+        challengeTitle: 'Landing challenge',
+        challengeBody: 'Choose the challenge preset. Open the parachute in time, fight the crosswind, and land inside the target ring with speed below the safe limit (5 m/s).',
+        assumptionsTitle: 'Model assumptions',
+        assume1: 'Quadratic drag; constant air density ρ = 1.2 kg/m³',
+        assume2: 'Parachute instantly raises A and Cd when opened',
+        assume3: 'Crosswind is a constant horizontal air-speed for the challenge',
+        assume4: 'No lift; point-mass vertical + horizontal drag model',
+        stateReady: 'Ready',
+        stateFalling: 'Accelerating (ΣF > 0)',
+        stateNearVt: 'Near terminal velocity',
+        stateChute: 'Under canopy',
+        stateLanded: 'Landed',
+        toastChute: 'Parachute open — drag rises sharply',
+        toastLandOk: 'Safe landing inside the target!',
+        toastLandFast: 'Too fast on landing — open earlier or use a larger canopy area.',
+        toastLandMiss: 'Missed the target ring — adjust for crosswind.',
+        toastLandBoth: 'Unsafe speed and missed the target.',
+        challengeWin: 'Challenge cleared: safe speed and on target.',
+        challengeFail: 'Challenge failed. Reset and try again.'
+      },
+      'zh-hk': {
+        back: '返回主題頁',
+        tag: 'HKDSE 力學 · 力和運動',
+        title: '跳傘與終端速度',
+        subtitle: '觀察空氣阻力隨速度增大，直至合力趨近於零，速度趨近終端速度。',
+        'pill.force': '力 F',
+        'pill.vel': '速度 v',
+        'pill.acc': '加速度 a',
+        'pill.drag': '空氣阻力',
+        threeTitle: '3D 下降場景',
+        'legend.weight': 'W（重量）',
+        'legend.drag': 'R（空氣阻力）',
+        'legend.net': 'ΣF',
+        'legend.v': 'v',
+        'legend.a': 'a',
+        'three.badge': '跳傘者',
+        'challenge.badge': '挑戰',
+        'three.hint': '拖曳旋轉 • 滾輪／雙指縮放',
+        play: '起跳',
+        pause: '暫停',
+        resume: '繼續',
+        reset: '重設',
+        resetCam: '重置視角',
+        openChute: '打開降落傘',
+        'card.v': '速率 v',
+        'card.a': '加速度 a',
+        'card.net': '合力 ΣF',
+        'card.h': '高度 h',
+        vtHint: '速率對時間',
+        atHint: '加速度對時間',
+        controls: '控制面板',
+        preset: '教學預設',
+        'preset.custom': '自訂',
+        'preset.nodrag': '自由落體（無阻力）',
+        'preset.belly': '大字形下降',
+        'preset.chute': '半空開傘',
+        'preset.challenge': '著陸挑戰',
+        mass: '質量 m（kg）',
+        posture: '身體姿勢',
+        'posture.belly': '大字形（較大面積）',
+        'posture.head': '頭向下（較小面積）',
+        'posture.sit': '坐姿／追蹤姿勢',
+        area: '有效截面積 A（m²）',
+        cd: '阻力係數 Cd',
+        h0: '離機高度 h₀（m）',
+        openAlt: '自動開傘高度（m）',
+        autoOpen: '到達指定高度自動開傘',
+        wind: '橫向風速（m/s）',
+        shake: '鏡頭晃動（速度感）',
+        shakeHint: '遵從系統「減少動態效果」設定：若已開啟，鏡頭晃動會保持關閉。',
+        readings: '即時讀數',
+        'read.m': '質量 m',
+        'read.g': 'g',
+        'read.w': '重量 mg',
+        'read.r': '空氣阻力 R',
+        'read.net': '合力 ΣF',
+        'read.v': '速率 v',
+        'read.vt': '終端速度 vt',
+        'read.a': '加速度 a',
+        'read.t': '時間 t',
+        'read.state': '狀態',
+        formulaTitle: 'HKDSE 重點公式',
+        formulaNote: '到達終端速度時，R = mg，故 ΣF = 0、a = 0，速率幾乎保持不變。',
+        explainTitle: '為何重物與輕物的終端速度不同',
+        explainBody: '重量隨質量增大（mg），但空氣阻力取決於形狀與速率，而非質量本身。較重的跳傘者需要更大的空氣阻力才能與重量平衡，因此平衡時的終端速率較高。若沒有空氣阻力，不同質量均以相同的 g 加速下落。',
+        challengeTitle: '著陸挑戰',
+        challengeBody: '選擇「著陸挑戰」預設。適時打開降落傘，對抗橫向風，並以低於安全上限（5 m/s）的速率降落在目標圈內。',
+        assumptionsTitle: '模型假設',
+        assume1: '採用二次方空氣阻力；空氣密度 ρ 取常數 1.2 kg/m³',
+        assume2: '打開降落傘時，有效面積與阻力係數即時增大',
+        assume3: '橫向風在挑戰中視為恆定水平風速',
+        assume4: '忽略升力；以質點模型處理豎直與水平阻力',
+        stateReady: '準備就緒',
+        stateFalling: '加速中（ΣF > 0）',
+        stateNearVt: '接近終端速度',
+        stateChute: '傘已打開',
+        stateLanded: '已著陸',
+        toastChute: '降落傘已打開 — 空氣阻力急升',
+        toastLandOk: '已在目標圈內安全著陸！',
+        toastLandFast: '著陸速率過高 — 請提早開傘或增大傘面。',
+        toastLandMiss: '未落入目標圈 — 請因應橫向風調整。',
+        toastLandBoth: '著陸過快且未落入目標圈。',
+        challengeWin: '挑戰完成：速率安全且命中目標。',
+        challengeFail: '挑戰未完成。請重設後再試。'
+      }
+    };
+
+    function t(key) {
+      return (translations[currentLang] && translations[currentLang][key]) || (translations.en[key]) || key;
+    }
+
+    function getParams() {
+      const m = Number(controls.mass.value);
+      let area = Number(controls.area.value);
+      let cd = Number(controls.cd.value);
+      if (state.chuteOpen) {
+        area = CHUTE_AREA;
+        cd = CHUTE_CD;
+      }
+      const h0 = Number(controls.h0.value);
+      const openAlt = Number(controls.openAlt.value);
+      const wind = Number(controls.wind.value);
+      const weight = m * G;
+      const k = 0.5 * RHO * cd * area; // R = k v^2
+      const vt = k > 1e-9 ? Math.sqrt(weight / k) : Infinity;
+      return { m, area, cd, h0, openAlt, wind, weight, k, vt };
+    }
+
+    function dragForce(k, speed) {
+      return k * speed * speed;
+    }
+
+    function terminalVelocityLabel(vt) {
+      if (!Number.isFinite(vt)) return '∞';
+      return `${vt.toFixed(1)} m/s`;
+    }
+
+    function makeArrow(hex) {
+      return new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(), 1, hex, 0.6, 0.35);
+    }
+
+    function updateArrow(arrow, origin, dir, length, visibleMin = 0.2) {
+      const len = Math.max(length, 0.01);
+      arrow.position.copy(origin);
+      arrow.setDirection(dir.clone().normalize());
+      arrow.setLength(len, Math.min(0.7, len * 0.25), Math.min(0.4, len * 0.14));
+      arrow.visible = length > visibleMin;
+    }
+
+    function buildSkydiver() {
+      skydiverGroup = new THREE.Group();
+      const suit = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.55, metalness: 0.15 });
+      const skin = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.7 });
+
+      // Three.js r128 has no CapsuleGeometry — use a tapered cylinder for the torso.
+      bodyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 1.35, 14), suit);
+      bodyMesh.castShadow = true;
+      skydiverGroup.add(bodyMesh);
+
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), skin);
+      head.position.y = 0.95;
+      head.castShadow = true;
+      skydiverGroup.add(head);
+
+      const armGeo = new THREE.CylinderGeometry(0.08, 0.08, 1.1, 8);
+      const armL = new THREE.Mesh(armGeo, suit);
+      armL.rotation.z = Math.PI / 2.2;
+      armL.position.set(-0.7, 0.35, 0);
+      const armR = armL.clone();
+      armR.position.x = 0.7;
+      armR.rotation.z = -Math.PI / 2.2;
+      skydiverGroup.add(armL, armR);
+
+      const legGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.9, 8);
+      const legL = new THREE.Mesh(legGeo, suit);
+      legL.position.set(-0.18, -1.0, 0);
+      const legR = legL.clone();
+      legR.position.x = 0.18;
+      skydiverGroup.add(legL, legR);
+
+      // Parachute canopy (hidden until open)
+      chuteMesh = new THREE.Group();
+      const canopy = new THREE.Mesh(
+        new THREE.SphereGeometry(3.2, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshStandardMaterial({ color: 0xf43f5e, side: THREE.DoubleSide, roughness: 0.65, transparent: true, opacity: 0.92 })
+      );
+      canopy.position.y = 4.2;
+      chuteMesh.add(canopy);
+      for (let i = 0; i < 8; i += 1) {
+        const ang = (i / 8) * Math.PI * 2;
+        const points = [
+          new THREE.Vector3(0, 0.6, 0),
+          new THREE.Vector3(Math.cos(ang) * 2.6, 4.0, Math.sin(ang) * 2.6)
+        ];
+        const cord = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(points),
+          new THREE.LineBasicMaterial({ color: 0xe2e8f0 })
+        );
+        chuteMesh.add(cord);
+      }
+      chuteMesh.visible = false;
+      skydiverGroup.add(chuteMesh);
+
+      scene.add(skydiverGroup);
+    }
+
+    function buildEnvironment() {
+      groundMesh = new THREE.Mesh(
+        new THREE.CircleGeometry(220, 48),
+        new THREE.MeshStandardMaterial({ color: 0x3f6212, roughness: 0.95 })
+      );
+      groundMesh.rotation.x = -Math.PI / 2;
+      groundMesh.receiveShadow = true;
+      scene.add(groundMesh);
+
+      const field = new THREE.Mesh(
+        new THREE.PlaneGeometry(400, 400),
+        new THREE.MeshStandardMaterial({ color: 0x4d7c0f, roughness: 1 })
+      );
+      field.rotation.x = -Math.PI / 2;
+      field.position.y = -0.05;
+      scene.add(field);
+
+      targetRing = new THREE.Mesh(
+        new THREE.RingGeometry(TARGET_R * SCALE * 40, TARGET_R * SCALE * 40 + 1.2, 48),
+        new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide })
+      );
+      targetRing.rotation.x = -Math.PI / 2;
+      targetRing.position.y = 0.08;
+      scene.add(targetRing);
+
+      const inner = new THREE.Mesh(
+        new THREE.CircleGeometry(TARGET_R * SCALE * 40 * 0.35, 32),
+        new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.55 })
+      );
+      inner.rotation.x = -Math.PI / 2;
+      inner.position.y = 0.06;
+      scene.add(inner);
+
+      cloudGroup = new THREE.Group();
+      const cloudMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, roughness: 1 });
+      for (let i = 0; i < 14; i += 1) {
+        const c = new THREE.Group();
+        for (let j = 0; j < 3; j += 1) {
+          const puff = new THREE.Mesh(new THREE.SphereGeometry(2.2 + Math.random() * 1.5, 10, 8), cloudMat);
+          puff.position.set((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 3);
+          c.add(puff);
+        }
+        c.position.set((Math.random() - 0.5) * 80, 18 + Math.random() * 40, (Math.random() - 0.5) * 60);
+        cloudGroup.add(c);
+      }
+      scene.add(cloudGroup);
+
+      // Wind streak lines
+      for (let i = 0; i < 24; i += 1) {
+        const geo = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(0, -2.5, 0)
+        ]);
+        const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.35 }));
+        line.userData.offset = Math.random();
+        windLines.push(line);
+        scene.add(line);
+      }
+    }
+
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0ea5e9);
+      scene.fog = new THREE.Fog(0x7dd3fc, 40, 160);
+
+      const w = Math.max(container.clientWidth, 320);
+      const h = Math.max(container.clientHeight, 280);
+      camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 500);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(w, h);
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+      const sun = new THREE.DirectionalLight(0xfff7ed, 1.0);
+      sun.position.set(30, 50, 20);
+      sun.castShadow = true;
+      scene.add(sun);
+      const fill = new THREE.DirectionalLight(0x93c5fd, 0.4);
+      fill.position.set(-25, 20, -15);
+      scene.add(fill);
+
+      buildEnvironment();
+      buildSkydiver();
+
+      weightArrow = makeArrow(PHYSICS_COLORS.weight);
+      dragArrow = makeArrow(PHYSICS_COLORS.drag);
+      netArrow = makeArrow(PHYSICS_COLORS.net);
+      velArrow = makeArrow(PHYSICS_COLORS.velocity);
+      accArrow = makeArrow(PHYSICS_COLORS.accel);
+      scene.add(weightArrow, dragArrow, netArrow, velArrow, accArrow);
+
+      attachCameraControls();
+      resetCameraView();
+    }
+
+    function heightToSceneY(h) {
+      // Map physical height so jumper starts high and ground is y=0
+      return Math.max(h * SCALE, 0.9);
+    }
+
+    function setCameraFromState() {
+      const sy = heightToSceneY(state.h);
+      const sx = state.x * SCALE;
+      lookTarget.set(sx, sy, 0);
+      const sinPhi = Math.sin(cameraState.phi);
+      let shakeX = 0;
+      let shakeY = 0;
+      const allowShake = controls.shakeToggle.checked && !reduceMotion && state.running && !state.landed;
+      if (allowShake) {
+        const intensity = Math.min(state.vy / 60, 1) * 0.25;
+        shakeX = (Math.random() - 0.5) * intensity;
+        shakeY = (Math.random() - 0.5) * intensity;
+      }
+      camera.position.set(
+        lookTarget.x + cameraState.radius * sinPhi * Math.sin(cameraState.theta) + shakeX,
+        lookTarget.y + cameraState.radius * Math.cos(cameraState.phi) + shakeY,
+        lookTarget.z + cameraState.radius * sinPhi * Math.cos(cameraState.theta)
+      );
+      camera.lookAt(lookTarget);
+    }
+
+    function resetCameraView() {
+      Object.assign(cameraState, defaultCamera);
+      setCameraFromState();
+    }
+
+    function attachCameraControls() {
+      const dom = renderer.domElement;
+
+      dom.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        lastPointer.x = e.clientX;
+        lastPointer.y = e.clientY;
+      });
+      window.addEventListener('mouseup', () => { isDragging = false; });
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        cameraState.theta -= (e.clientX - lastPointer.x) * 0.0055;
+        cameraState.phi = THREE.MathUtils.clamp(
+          cameraState.phi + (e.clientY - lastPointer.y) * 0.0055,
+          0.25,
+          Math.PI - 0.25
+        );
+        lastPointer.x = e.clientX;
+        lastPointer.y = e.clientY;
+        setCameraFromState();
+      });
+
+      dom.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        cameraState.radius = THREE.MathUtils.clamp(cameraState.radius + e.deltaY * 0.035, 12, 80);
+        setCameraFromState();
+      }, { passive: false });
+
+      dom.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          isDragging = true;
+          lastPointer.x = e.touches[0].clientX;
+          lastPointer.y = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+          isDragging = false;
+          pinchDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+        }
+      }, { passive: true });
+
+      dom.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1 && isDragging) {
+          e.preventDefault();
+          cameraState.theta -= (e.touches[0].clientX - lastPointer.x) * 0.0055;
+          cameraState.phi = THREE.MathUtils.clamp(
+            cameraState.phi + (e.touches[0].clientY - lastPointer.y) * 0.0055,
+            0.25,
+            Math.PI - 0.25
+          );
+          lastPointer.x = e.touches[0].clientX;
+          lastPointer.y = e.touches[0].clientY;
+          setCameraFromState();
+        } else if (e.touches.length === 2) {
+          e.preventDefault();
+          const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          if (pinchDistance !== null) {
+            cameraState.radius = THREE.MathUtils.clamp(
+              cameraState.radius - (dist - pinchDistance) * 0.05,
+              12,
+              80
+            );
+            setCameraFromState();
+          }
+          pinchDistance = dist;
+        }
+      }, { passive: false });
+
+      dom.addEventListener('touchend', () => {
+        isDragging = false;
+        pinchDistance = null;
+      }, { passive: true });
+    }
+
+    function openParachute(manual) {
+      if (state.chuteOpen || state.landed) return;
+      state.chuteOpen = true;
+      chuteMesh.visible = true;
+      showToast(t('toastChute'));
+      // Opening canopy abruptly reduces speed — soft clamp for numerical stability
+      state.vy = Math.min(state.vy, 55);
+    }
+
+    function showToast(msg) {
+      outs.statusToast.textContent = msg;
+      outs.statusToast.classList.remove('hidden');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => outs.statusToast.classList.add('hidden'), 3200);
+    }
+
+    function motionStateLabel(p) {
+      if (state.landed) return t('stateLanded');
+      if (!state.running && state.t === 0) return t('stateReady');
+      if (state.chuteOpen) return t('stateChute');
+      if (Number.isFinite(p.vt) && state.vy > 0.92 * p.vt) return t('stateNearVt');
+      return t('stateFalling');
+    }
+
+    function stepPhysics(dt) {
+      if (!state.running || state.landed) return;
+      const p = getParams();
+
+      if (controls.autoOpen.checked && !state.chuteOpen && state.h <= p.openAlt) {
+        openParachute(false);
+      }
+
+      const params = getParams(); // refresh after possible chute open
+      const speed = Math.hypot(state.vx, state.vy);
+      // Relative horizontal velocity vs wind (wind blows in +x)
+      const vRelX = state.vx - params.wind;
+      const vRelY = state.vy; // air roughly still vertically
+      const vRel = Math.hypot(vRelX, vRelY);
+      const R = dragForce(params.k, vRel);
+      state.R = R;
+
+      // Drag opposes relative velocity
+      let ax = 0;
+      let ay = G;
+      if (vRel > 1e-6 && params.k > 0) {
+        const scale = R / (params.m * vRel);
+        ax = -vRelX * scale;
+        ay = G - vRelY * scale;
+      }
+
+      state.vx += ax * dt;
+      state.vy += ay * dt;
+      state.x += state.vx * dt;
+      state.h -= state.vy * dt;
+      state.a = ay;
+      state.net = params.m * ay;
+      state.t += dt;
+
+      if (state.history.length === 0 || state.t - state.history[state.history.length - 1].t > 0.05) {
+        state.history.push({ t: state.t, v: Math.hypot(state.vx, state.vy), a: state.a });
+        if (state.history.length > 600) state.history.shift();
+      }
+
+      if (state.h <= 0) {
+        state.h = 0;
+        state.landed = true;
+        state.running = false;
+        finishLanding();
+      }
+    }
+
+    function finishLanding() {
+      const speed = Math.hypot(state.vx, state.vy);
+      const dist = Math.abs(state.x);
+      const onTarget = dist <= TARGET_R;
+      const safe = speed <= SAFE_LAND_V;
+
+      if (!state.challenge) {
+        showToast(safe ? t('toastLandOk') : t('toastLandFast'));
+        outs.challengeResult.textContent = '';
+        return;
+      }
+
+      if (safe && onTarget) {
+        showToast(t('toastLandOk'));
+        outs.challengeResult.textContent = t('challengeWin');
+        outs.challengeResult.className = 'mt-2 text-sm font-semibold text-green-700';
+      } else {
+        let msg = t('toastLandBoth');
+        if (!safe && onTarget) msg = t('toastLandFast');
+        else if (safe && !onTarget) msg = t('toastLandMiss');
+        showToast(msg);
+        outs.challengeResult.textContent = t('challengeFail');
+        outs.challengeResult.className = 'mt-2 text-sm font-semibold text-red-600';
+      }
+    }
+
+    function updateSkydiverVisual() {
+      const sy = heightToSceneY(state.h);
+      const sx = state.x * SCALE;
+      skydiverGroup.position.set(sx, sy, 0);
+
+      // Posture: belly = arms out, head-down = more vertical pitch
+      const posture = controls.posture.value;
+      if (state.chuteOpen) {
+        skydiverGroup.rotation.x = 0.1;
+        skydiverGroup.rotation.z = 0;
+      } else if (posture === 'head') {
+        skydiverGroup.rotation.x = -1.1;
+        skydiverGroup.rotation.z = 0;
+      } else if (posture === 'sit') {
+        skydiverGroup.rotation.x = -0.35;
+        skydiverGroup.rotation.z = 0.15;
+      } else {
+        skydiverGroup.rotation.x = 0.15;
+        skydiverGroup.rotation.z = 0;
+      }
+
+      const origin = new THREE.Vector3(sx, sy, 0);
+      const p = getParams();
+      const fScale = 0.0045;
+      const vScale = 0.12;
+      const aScale = 0.55;
+
+      updateArrow(weightArrow, origin, new THREE.Vector3(0, -1, 0), p.weight * fScale);
+      updateArrow(dragArrow, origin.clone().add(new THREE.Vector3(0.35, 0, 0)), new THREE.Vector3(0, 1, 0), state.R * fScale);
+      const netLen = Math.abs(state.net) * fScale;
+      updateArrow(
+        netArrow,
+        origin.clone().add(new THREE.Vector3(-0.35, 0, 0)),
+        new THREE.Vector3(0, state.net >= 0 ? -1 : 1, 0),
+        netLen,
+        0.15
+      );
+      const speed = Math.hypot(state.vx, state.vy);
+      if (speed > 0.2) {
+        updateArrow(
+          velArrow,
+          origin.clone().add(new THREE.Vector3(0.7, 0, 0)),
+          new THREE.Vector3(state.vx, -state.vy, 0),
+          speed * vScale,
+          0.15
+        );
+      } else {
+        velArrow.visible = false;
+      }
+      updateArrow(
+        accArrow,
+        origin.clone().add(new THREE.Vector3(-0.7, 0, 0)),
+        new THREE.Vector3(0, state.a >= 0 ? -1 : 1, 0),
+        Math.abs(state.a) * aScale,
+        0.12
+      );
+
+      // Wind lines near jumper
+      windLines.forEach((line, i) => {
+        const phase = (state.t * (0.8 + state.vy * 0.02) + line.userData.offset * 10) % 8;
+        line.position.set(
+          sx + ((i % 6) - 2.5) * 2.2,
+          sy + 4 - phase * 1.4,
+          ((Math.floor(i / 6) - 1.5) * 2.5)
+        );
+        line.visible = state.running && !state.landed;
+        line.material.opacity = Math.min(0.15 + state.vy / 200, 0.55);
+      });
+
+      // Sky colour shifts as ground approaches
+      const frac = Math.min(state.h / Math.max(Number(controls.h0.value), 1), 1);
+      const sky = new THREE.Color().setHSL(0.55, 0.75, 0.35 + 0.25 * (1 - frac));
+      scene.background.copy(sky);
+      scene.fog.color.copy(sky);
+
+      targetRing.visible = state.challenge;
+      outs.challengeBadge.classList.toggle('hidden', !state.challenge);
+
+      setCameraFromState();
+    }
+
+    function resizeGraphCanvas(canvas) {
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = canvas.getBoundingClientRect();
+      const cssW = Math.max(rect.width, 240);
+      const cssH = Math.max(rect.height, 140);
+      canvas.width = Math.round(cssW * ratio);
+      canvas.height = Math.round(cssH * ratio);
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      return { width: cssW, height: cssH, ctx };
+    }
+
+    function drawGraph(canvas, seriesKey, color, yMaxHint, yLabel) {
+      const { width, height, ctx } = resizeGraphCanvas(canvas);
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, width, height);
+
+      const margin = { left: 44, right: 14, top: 16, bottom: 32 };
+      const plotW = width - margin.left - margin.right;
+      const plotH = height - margin.top - margin.bottom;
+      const hist = state.history;
+      const tMax = Math.max(hist.length ? hist[hist.length - 1].t : 1, 1);
+      let yMax = yMaxHint;
+      hist.forEach((pt) => { yMax = Math.max(yMax, pt[seriesKey]); });
+      yMax = Math.max(yMax * 1.15, seriesKey === 'a' ? 2 : 5);
+
+      const tx = (time) => margin.left + (time / tMax) * plotW;
+      const ty = (val) => margin.top + plotH - (Math.max(val, 0) / yMax) * plotH;
+
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(margin.left, margin.top);
+      ctx.lineTo(margin.left, margin.top + plotH);
+      ctx.lineTo(margin.left + plotW, margin.top + plotH);
+      ctx.stroke();
+
+      ctx.fillStyle = '#475569';
+      ctx.font = '11px Inter, sans-serif';
+      ctx.fillText('t (s)', width - margin.right - 24, height - 10);
+      ctx.fillText(yLabel, margin.left + 4, margin.top + 10);
+
+      // Terminal velocity guide on v–t
+      const p = getParams();
+      if (seriesKey === 'v' && Number.isFinite(p.vt) && p.vt < yMax * 3) {
+        ctx.strokeStyle = '#86efac';
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(margin.left, ty(p.vt));
+        ctx.lineTo(margin.left + plotW, ty(p.vt));
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#15803d';
+        ctx.fillText('vt', margin.left + plotW - 18, ty(p.vt) - 4);
+      }
+
+      if (hist.length > 1) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        hist.forEach((pt, i) => {
+          const x = tx(pt.t);
+          const y = ty(pt[seriesKey]);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        const last = hist[hist.length - 1];
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(tx(last.t), ty(last[seriesKey]), 4.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function syncSliderLabels() {
+      outs.massValue.textContent = Number(controls.mass.value).toFixed(0);
+      outs.areaValue.textContent = Number(controls.area.value).toFixed(2);
+      outs.cdValue.textContent = Number(controls.cd.value).toFixed(2);
+      outs.h0Value.textContent = Number(controls.h0.value).toFixed(0);
+      outs.openAltValue.textContent = Number(controls.openAlt.value).toFixed(0);
+      outs.windValue.textContent = Number(controls.wind.value).toFixed(1);
+    }
+
+    function updateOutputs() {
+      const p = getParams();
+      const speed = Math.hypot(state.vx, state.vy);
+      syncSliderLabels();
+
+      outs.cardV.textContent = `${speed.toFixed(2)} m/s`;
+      outs.cardA.textContent = `${state.a.toFixed(2)} m/s²`;
+      outs.cardNet.textContent = `${state.net.toFixed(1)} N`;
+      outs.cardH.textContent = `${state.h.toFixed(0)} m`;
+
+      outs.readM.textContent = `${p.m.toFixed(0)} kg`;
+      outs.readG.textContent = `${G.toFixed(2)} m/s²`;
+      outs.readW.textContent = `${p.weight.toFixed(0)} N`;
+      outs.readR.textContent = `${state.R.toFixed(0)} N`;
+      outs.readNet.textContent = `${state.net.toFixed(1)} N`;
+      outs.readV.textContent = `${speed.toFixed(2)} m/s`;
+      outs.readVt.textContent = terminalVelocityLabel(p.vt);
+      outs.readA.textContent = `${state.a.toFixed(2)} m/s²`;
+      outs.readT.textContent = `${state.t.toFixed(2)} s`;
+      outs.readState.textContent = motionStateLabel(p);
+
+      updateSkydiverVisual();
+      drawGraph(vtCanvas, 'v', '#16a34a', Number.isFinite(p.vt) ? p.vt : 50, 'v (m/s)');
+      drawGraph(atCanvas, 'a', '#9333ea', G, 'a (m/s²)');
+    }
+
+    function resetSim(keepParams) {
+      const p = getParams();
+      state.running = false;
+      state.landed = false;
+      state.chuteOpen = false;
+      state.t = 0;
+      state.h = keepParams ? Number(controls.h0.value) : p.h0;
+      state.x = 0;
+      state.vy = 0;
+      state.vx = 0;
+      state.a = G;
+      state.R = 0;
+      state.net = Number(controls.mass.value) * G;
+      state.history = [{ t: 0, v: 0, a: G }];
+      if (chuteMesh) chuteMesh.visible = false;
+      outs.challengeResult.textContent = '';
+      outs.statusToast.classList.add('hidden');
+      document.getElementById('pauseBtn').textContent = t('pause');
+      updateOutputs();
+    }
+
+    function applyPosture() {
+      const preset = POSTURE_PRESETS[controls.posture.value];
+      if (!preset) return;
+      controls.area.value = preset.area;
+      controls.cd.value = preset.cd;
+      syncSliderLabels();
+      if (!state.running) {
+        state.net = Number(controls.mass.value) * G;
+        state.a = G;
+      }
+      updateOutputs();
+    }
+
+    function applyTeachingPreset() {
+      const key = controls.preset.value;
+      state.challenge = key === 'challenge';
+      outs.challengeBadge.classList.toggle('hidden', !state.challenge);
+
+      if (key === 'nodrag') {
+        controls.mass.value = 75;
+        controls.posture.value = 'belly';
+        controls.area.value = 0.70;
+        controls.cd.value = 0;
+        controls.h0.value = 3000;
+        controls.openAlt.value = 100;
+        controls.autoOpen.checked = false;
+        controls.wind.value = 0;
+      } else if (key === 'belly') {
+        controls.mass.value = 75;
+        controls.posture.value = 'belly';
+        controls.area.value = 0.70;
+        controls.cd.value = 1.00;
+        controls.h0.value = 3000;
+        controls.openAlt.value = 200;
+        controls.autoOpen.checked = false;
+        controls.wind.value = 0;
+      } else if (key === 'chute') {
+        controls.mass.value = 80;
+        controls.posture.value = 'belly';
+        controls.area.value = 0.70;
+        controls.cd.value = 1.00;
+        controls.h0.value = 3000;
+        controls.openAlt.value = 900;
+        controls.autoOpen.checked = true;
+        controls.wind.value = 0;
+      } else if (key === 'challenge') {
+        controls.mass.value = 70;
+        controls.posture.value = 'belly';
+        controls.area.value = 0.65;
+        controls.cd.value = 1.00;
+        controls.h0.value = 2500;
+        controls.openAlt.value = 600;
+        controls.autoOpen.checked = false;
+        controls.wind.value = 8;
+      }
+      resetSim(true);
+    }
+
+    let lastFrame = 0;
+    function animate(ts) {
+      requestAnimationFrame(animate);
+      if (state.running) {
+        if (!lastFrame) lastFrame = ts;
+        const dt = Math.min((ts - lastFrame) / 1000, 0.05);
+        lastFrame = ts;
+        // Classroom pacing: slight time acceleration
+        const steps = 2;
+        for (let i = 0; i < steps; i += 1) stepPhysics(dt * 1.35 / steps);
+        updateOutputs();
+      } else {
+        lastFrame = 0;
+        if (renderer) {
+          updateSkydiverVisual();
+        }
+      }
+      if (renderer && scene && camera) renderer.render(scene, camera);
+    }
+
+    // Events
+    document.getElementById('playBtn').addEventListener('click', () => {
+      if (state.landed) resetSim(true);
+      state.running = true;
+      document.getElementById('pauseBtn').textContent = t('pause');
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', () => {
+      if (state.landed && !state.running) return;
+      if (!state.running && state.t === 0) return;
+      state.running = !state.running;
+      document.getElementById('pauseBtn').textContent = state.running ? t('pause') : t('resume');
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      resetSim(true);
+      resetCameraView();
+    });
+
+    document.getElementById('resetCamBtn').addEventListener('click', resetCameraView);
+    document.getElementById('openChuteBtn').addEventListener('click', () => openParachute(true));
+
+    controls.preset.addEventListener('change', applyTeachingPreset);
+    controls.posture.addEventListener('change', () => {
+      applyPosture();
+      if (controls.preset.value !== 'custom') controls.preset.value = 'custom';
+    });
+
+    ['mass', 'area', 'cd', 'h0', 'openAlt', 'wind'].forEach((id) => {
+      controls[id].addEventListener('input', () => {
+        if (controls.preset.value !== 'custom' && id !== 'openAlt') {
+          // keep preset label unless user clearly customises core params
+          if (id === 'mass' || id === 'area' || id === 'cd' || id === 'wind' || id === 'h0') {
+            controls.preset.value = 'custom';
+            state.challenge = false;
+          }
+        }
+        if (!state.running && state.t === 0) {
+          state.h = Number(controls.h0.value);
+          state.net = Number(controls.mass.value) * G;
+          state.a = G;
+        }
+        syncSliderLabels();
+        updateOutputs();
+      });
+    });
+
+    function syncOptionLabels() {
+      document.querySelectorAll('[data-i18n-option]').forEach((opt) => {
+        const key = opt.getAttribute('data-i18n-option');
+        const text = t(key);
+        if (text) opt.textContent = text;
+      });
+    }
+
+    function updateLanguage(lang) {
+      currentLang = window.PhysicsI18n ? PhysicsI18n.set(lang) : lang;
+      if (!window.PhysicsI18n) localStorage.setItem('preferred_language', lang);
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        const text = translations[lang] && translations[lang][key];
+        if (!text) return;
+        if (key.includes('Body') || key.includes('explain') || key.includes('challengeBody') || key.includes('formulaNote') || key.includes('assume')) {
+          el.textContent = text;
+        } else {
+          el.textContent = text;
+        }
+      });
+      syncOptionLabels();
+      document.documentElement.lang = window.PhysicsI18n ? PhysicsI18n.htmlLang(lang) : (lang === 'zh-hk' ? 'zh-HK' : 'en');
+      document.querySelectorAll('.lang-btn').forEach((btn) => {
+        const active = window.PhysicsI18n ? PhysicsI18n.matchButton(btn.dataset.lang, lang) : (btn.dataset.lang === lang);
+        btn.classList.toggle('bg-blue-600', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('text-slate-600', !active);
+      });
+      const pauseEl = document.getElementById('pauseBtn');
+      if (pauseEl) pauseEl.textContent = state.running ? t('pause') : (state.t > 0 && !state.landed ? t('resume') : t('pause'));
+      outs.readState.textContent = motionStateLabel(getParams());
+      if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+    }
+    window.updateLanguage = updateLanguage;
+
+    function onResize() {
+      if (!renderer || !camera) return;
+      const w = Math.max(container.clientWidth, 320);
+      const h = Math.max(container.clientHeight, 280);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      updateOutputs();
+    }
+    window.addEventListener('resize', onResize);
+
+    if (reduceMotion) {
+      controls.shakeToggle.checked = false;
+    }
+
+    initThree();
+    updateLanguage(currentLang);
+    resetSim(true);
+    requestAnimationFrame(animate);
+  </script>
+
+  <script src="practice_questions.js"></script>
+  <script src="practice_questions_data.js"></script>
+  <script>initPracticeQuestions('skydiving_terminal');</script>
+</body>
+</html>
