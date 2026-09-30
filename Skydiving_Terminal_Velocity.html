@@ -273,8 +273,9 @@
     const CHUTE_AREA = 28;
     const CHUTE_CD = 1.4;
     const SAFE_LAND_V = 5.0;
-    const TARGET_R = 25; // metres
-    const SCALE = 0.02; // metres → scene units for height display (camera follow uses relative)
+    const TARGET_R = 40; // metres — challenge landing radius
+    const SCALE_Y = 0.02; // metres → scene units (vertical compression for viewing)
+    const SCALE_X = 0.12; // metres → scene units (lateral amplified so the target is readable)
 
     const POSTURE_PRESETS = {
       belly: { area: 0.70, cd: 1.00 },
@@ -326,10 +327,11 @@
     const atCanvas = document.getElementById('atCanvas');
 
     let scene, camera, renderer;
+    let threeReady = false;
     let skydiverGroup, bodyMesh, chuteMesh, groundMesh, targetRing, cloudGroup;
     let weightArrow, dragArrow, netArrow, velArrow, accArrow;
     let windLines = [];
-    let lookTarget = new THREE.Vector3();
+    let lookTarget = new THREE.Vector3(0, 0, 0);
 
     const defaultCamera = { radius: 28, theta: 0.55, phi: 1.15 };
     const cameraState = { ...defaultCamera };
@@ -427,7 +429,7 @@
         explainTitle: 'Why heavy ≠ light at vt',
         explainBody: 'Weight grows with mass (mg), but air resistance depends on shape and speed, not mass. A heavier jumper needs a larger R to balance weight, so equilibrium occurs at a higher terminal speed. Without drag, all masses fall with the same g.',
         challengeTitle: 'Landing challenge',
-        challengeBody: 'Choose the challenge preset. Open the parachute in time, fight the crosswind, and land inside the target ring with speed below the safe limit (5 m/s).',
+        challengeBody: 'Choose the challenge preset. Open the parachute in time, fight the crosswind, and land inside the target ring (radius 40 m) with speed below the safe limit (5 m/s).',
         assumptionsTitle: 'Model assumptions',
         assume1: 'Quadratic drag; constant air density ρ = 1.2 kg/m³',
         assume2: 'Parachute instantly raises A and Cd when opened',
@@ -512,7 +514,7 @@
         explainTitle: '為何重物與輕物的終端速度不同',
         explainBody: '重量隨質量增大（mg），但空氣阻力取決於形狀與速率，而非質量本身。較重的跳傘者需要更大的空氣阻力才能與重量平衡，因此平衡時的終端速率較高。若沒有空氣阻力，不同質量均以相同的 g 加速下落。',
         challengeTitle: '著陸挑戰',
-        challengeBody: '選擇「著陸挑戰」預設。適時打開降落傘，對抗橫向風，並以低於安全上限（5 m/s）的速率降落在目標圈內。',
+        challengeBody: '選擇「著陸挑戰」預設。適時打開降落傘，對抗橫向風，並以低於安全上限（5 m/s）的速率降落在目標圈（半徑 40 m）內。',
         assumptionsTitle: '模型假設',
         assume1: '採用二次方空氣阻力；空氣密度 ρ 取常數 1.2 kg/m³',
         assume2: '打開降落傘時，有效面積與阻力係數即時增大',
@@ -649,8 +651,9 @@
       field.position.y = -0.05;
       scene.add(field);
 
+      const ringR = TARGET_R * SCALE_X;
       targetRing = new THREE.Mesh(
-        new THREE.RingGeometry(TARGET_R * SCALE * 40, TARGET_R * SCALE * 40 + 1.2, 48),
+        new THREE.RingGeometry(Math.max(ringR - 0.45, ringR * 0.85), ringR, 48),
         new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide })
       );
       targetRing.rotation.x = -Math.PI / 2;
@@ -658,7 +661,7 @@
       scene.add(targetRing);
 
       const inner = new THREE.Mesh(
-        new THREE.CircleGeometry(TARGET_R * SCALE * 40 * 0.35, 32),
+        new THREE.CircleGeometry(ringR * 0.35, 32),
         new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.55 })
       );
       inner.rotation.x = -Math.PI / 2;
@@ -693,50 +696,60 @@
     }
 
     function initThree() {
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0ea5e9);
-      scene.fog = new THREE.Fog(0x7dd3fc, 40, 160);
+      try {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0ea5e9);
+        scene.fog = new THREE.Fog(0x7dd3fc, 40, 160);
 
-      const w = Math.max(container.clientWidth, 320);
-      const h = Math.max(container.clientHeight, 280);
-      camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 500);
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-      renderer.setSize(w, h);
-      renderer.shadowMap.enabled = true;
-      container.appendChild(renderer.domElement);
+        const w = Math.max(container.clientWidth, 320);
+        const h = Math.max(container.clientHeight, 280);
+        camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 500);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        if (!renderer.getContext()) {
+          throw new Error('WebGL context unavailable');
+        }
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(w, h);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
 
-      scene.add(new THREE.AmbientLight(0xffffff, 0.65));
-      const sun = new THREE.DirectionalLight(0xfff7ed, 1.0);
-      sun.position.set(30, 50, 20);
-      sun.castShadow = true;
-      scene.add(sun);
-      const fill = new THREE.DirectionalLight(0x93c5fd, 0.4);
-      fill.position.set(-25, 20, -15);
-      scene.add(fill);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+        const sun = new THREE.DirectionalLight(0xfff7ed, 1.0);
+        sun.position.set(30, 50, 20);
+        sun.castShadow = true;
+        scene.add(sun);
+        const fill = new THREE.DirectionalLight(0x93c5fd, 0.4);
+        fill.position.set(-25, 20, -15);
+        scene.add(fill);
 
-      buildEnvironment();
-      buildSkydiver();
+        buildEnvironment();
+        buildSkydiver();
 
-      weightArrow = makeArrow(PHYSICS_COLORS.weight);
-      dragArrow = makeArrow(PHYSICS_COLORS.drag);
-      netArrow = makeArrow(PHYSICS_COLORS.net);
-      velArrow = makeArrow(PHYSICS_COLORS.velocity);
-      accArrow = makeArrow(PHYSICS_COLORS.accel);
-      scene.add(weightArrow, dragArrow, netArrow, velArrow, accArrow);
+        weightArrow = makeArrow(PHYSICS_COLORS.weight);
+        dragArrow = makeArrow(PHYSICS_COLORS.drag);
+        netArrow = makeArrow(PHYSICS_COLORS.net);
+        velArrow = makeArrow(PHYSICS_COLORS.velocity);
+        accArrow = makeArrow(PHYSICS_COLORS.accel);
+        scene.add(weightArrow, dragArrow, netArrow, velArrow, accArrow);
 
-      attachCameraControls();
-      resetCameraView();
+        attachCameraControls();
+        resetCameraView();
+        threeReady = true;
+      } catch (err) {
+        threeReady = false;
+        console.warn('[Skydiving] 3D unavailable; physics UI continues.', err);
+      }
     }
 
     function heightToSceneY(h) {
       // Map physical height so jumper starts high and ground is y=0
-      return Math.max(h * SCALE, 0.9);
+      return Math.max(h * SCALE_Y, 0.9);
     }
 
     function setCameraFromState() {
+      if (!threeReady || !camera) return;
       const sy = heightToSceneY(state.h);
-      const sx = state.x * SCALE;
+      const sx = state.x * SCALE_X;
       lookTarget.set(sx, sy, 0);
       const sinPhi = Math.sin(cameraState.phi);
       let shakeX = 0;
@@ -841,7 +854,7 @@
     function openParachute(manual) {
       if (state.chuteOpen || state.landed) return;
       state.chuteOpen = true;
-      chuteMesh.visible = true;
+      if (chuteMesh) chuteMesh.visible = true;
       showToast(t('toastChute'));
       // Opening canopy abruptly reduces speed — soft clamp for numerical stability
       state.vy = Math.min(state.vy, 55);
@@ -871,15 +884,17 @@
       }
 
       const params = getParams(); // refresh after possible chute open
-      const speed = Math.hypot(state.vx, state.vy);
-      // Relative horizontal velocity vs wind (wind blows in +x)
-      const vRelX = state.vx - params.wind;
-      const vRelY = state.vy; // air roughly still vertically
+      // Relative velocity vs wind (wind blows in +x).
+      // Freefall uses a reduced lateral coupling so classroom challenges stay solvable;
+      // under canopy the full horizontal drag engages (crosswind matters).
+      const lateralCoupling = state.chuteOpen ? 1.0 : 0.1;
+      const vRelX = (state.vx - params.wind) * lateralCoupling;
+      const vRelY = state.vy;
       const vRel = Math.hypot(vRelX, vRelY);
-      const R = dragForce(params.k, vRel);
+      const R = dragForce(params.k, Math.hypot((state.vx - params.wind) * lateralCoupling, state.vy));
       state.R = R;
 
-      // Drag opposes relative velocity
+      // Drag opposes relative velocity (vertical reading uses full R magnitude)
       let ax = 0;
       let ay = G;
       if (vRel > 1e-6 && params.k > 0) {
@@ -936,8 +951,9 @@
     }
 
     function updateSkydiverVisual() {
+      if (!threeReady || !skydiverGroup) return;
       const sy = heightToSceneY(state.h);
-      const sx = state.x * SCALE;
+      const sx = state.x * SCALE_X;
       skydiverGroup.position.set(sx, sy, 0);
 
       // Posture: belly = arms out, head-down = more vertical pitch
@@ -1141,7 +1157,7 @@
       state.R = 0;
       state.net = Number(controls.mass.value) * G;
       state.history = [{ t: 0, v: 0, a: G }];
-      if (chuteMesh) chuteMesh.visible = false;
+      if (threeReady && chuteMesh) chuteMesh.visible = false;
       outs.challengeResult.textContent = '';
       outs.statusToast.classList.add('hidden');
       document.getElementById('pauseBtn').textContent = t('pause');
@@ -1198,12 +1214,17 @@
         controls.posture.value = 'belly';
         controls.area.value = 0.65;
         controls.cd.value = 1.00;
-        controls.h0.value = 2500;
-        controls.openAlt.value = 600;
+        controls.h0.value = 1800;
+        controls.openAlt.value = 450;
         controls.autoOpen.checked = false;
-        controls.wind.value = 8;
+        controls.wind.value = 5;
       }
       resetSim(true);
+      if (key === 'challenge') {
+        // Start slightly upwind so opening the canopy at the right height is meaningful
+        state.x = -28;
+        updateOutputs();
+      }
     }
 
     let lastFrame = 0;
@@ -1219,11 +1240,9 @@
         updateOutputs();
       } else {
         lastFrame = 0;
-        if (renderer) {
-          updateSkydiverVisual();
-        }
+        updateSkydiverVisual();
       }
-      if (renderer && scene && camera) renderer.render(scene, camera);
+      if (threeReady && renderer && scene && camera) renderer.render(scene, camera);
     }
 
     // Events
@@ -1310,7 +1329,10 @@
     window.updateLanguage = updateLanguage;
 
     function onResize() {
-      if (!renderer || !camera) return;
+      if (!threeReady || !renderer || !camera) {
+        updateOutputs();
+        return;
+      }
       const w = Math.max(container.clientWidth, 320);
       const h = Math.max(container.clientHeight, 280);
       camera.aspect = w / h;
