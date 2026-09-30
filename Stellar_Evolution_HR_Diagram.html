@@ -105,6 +105,10 @@
             <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3" data-i18n="page.disclaimer">
                 Teaching simplification: the time axis is schematically compressed; tracks use mass–luminosity and Stefan–Boltzmann relations suitable for HKDSE, not detailed stellar-structure codes.
             </p>
+            <p class="text-sm text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 mt-3">
+                <span class="font-semibold" data-i18n="observe.label">Focus for observation:</span>
+                <span data-i18n="observe.tip"> Compare the evolutionary tracks and main-sequence lifetimes of stars with different masses on the H-R diagram — massive stars leave the main sequence sooner and pass through the supergiant region.</span>
+            </p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sim-shell">
@@ -259,7 +263,7 @@
             { id: 'sirius', nameKey: 'star.sirius', M: 2.1, T: 9940, L: 25, R: 1.7, stage: 'ms' },
             { id: 'vega', nameKey: 'star.vega', M: 2.1, T: 9600, L: 40, R: 2.4, stage: 'ms' },
             { id: 'proxima', nameKey: 'star.proxima', M: 0.12, T: 3050, L: 0.0017, R: 0.15, stage: 'ms' },
-            { id: 'betelgeuse', nameKey: 'star.betelgeuse', M: 15, T: 3500, L: 1.2e5, R: 900, stage: 'rg' },
+            { id: 'betelgeuse', nameKey: 'star.betelgeuse', M: 15, T: 3500, L: 1.2e5, R: 900, stage: 'sg' },
             { id: 'rigel', nameKey: 'star.rigel', M: 18, T: 12100, L: 1.2e5, R: 79, stage: 'sg' }
         ];
 
@@ -325,14 +329,14 @@
                 T = clamp(T, 2800, z.T);
                 stage = 'leave';
             } else if (p < 0.94) {
-                // Red giant (pulsating)
+                // Low/intermediate mass → red giant; massive (M ≥ 8 M☉) → red supergiant
                 const f = (p - 0.84) / 0.10;
                 const Lrg = z.L * (M < 2 ? 80 : 400) * Math.pow(M, 0.6);
                 const Rrg = z.R * (M < 2 ? 40 : 120) * Math.pow(M, 0.3);
                 L = Lrg * (1 + 0.15 * Math.sin(f * Math.PI));
                 R = Rrg * (1 + 0.08 * Math.sin(f * Math.PI * 2));
                 T = clamp(TSUN * Math.pow(L / (R * R), 0.25), 2800, 4200);
-                stage = 'rg';
+                stage = (M >= MASS_WD_LIMIT) ? 'sg' : 'rg';
             } else {
                 // End state
                 const f = (p - 0.94) / 0.06;
@@ -422,7 +426,7 @@
 
         function stageLabel(stage) {
             const map = {
-                ms: 'stage.ms', leave: 'stage.leave', rg: 'stage.rg',
+                ms: 'stage.ms', leave: 'stage.leave', rg: 'stage.rg', sg: 'stage.sg',
                 pn: 'stage.pn', wd: 'stage.wd', sn: 'stage.sn',
                 ns: 'stage.ns', bh: 'stage.bh'
             };
@@ -435,6 +439,7 @@
                 ms: 'bg-blue-50 border-blue-200 text-blue-700',
                 leave: 'bg-amber-50 border-amber-200 text-amber-700',
                 rg: 'bg-red-50 border-red-200 text-red-700',
+                sg: 'bg-rose-50 border-rose-300 text-rose-700',
                 pn: 'bg-violet-50 border-violet-200 text-violet-700',
                 wd: 'bg-slate-100 border-slate-300 text-slate-700',
                 sn: 'bg-orange-50 border-orange-300 text-orange-700',
@@ -443,6 +448,10 @@
             };
             el.className = 'p-3 rounded-lg border text-center font-bold tracking-wide ' + (styles[stage] || styles.ms);
             el.textContent = stageLabel(stage);
+        }
+
+        function isGiantLike(stage) {
+            return stage === 'rg' || stage === 'sg';
         }
 
         // ---------- Three.js ----------
@@ -612,9 +621,9 @@
                 starMesh.scale.setScalar(vr);
                 starMesh.material.color.copy(col);
                 starMesh.material.emissive.copy(col);
-                starMesh.material.emissiveIntensity = d.stage === 'sn' ? 3.5 : (d.stage === 'rg' ? 1.1 : 1.5);
+                starMesh.material.emissiveIntensity = d.stage === 'sn' ? 3.5 : (isGiantLike(d.stage) ? 1.1 : 1.5);
                 coronaMesh.visible = true;
-                coronaMesh.scale.setScalar(vr * (d.stage === 'rg' ? 1.55 : 1.35));
+                coronaMesh.scale.setScalar(vr * (isGiantLike(d.stage) ? 1.55 : 1.35));
                 coronaMesh.material.color.copy(col);
                 coronaMesh.material.opacity = d.stage === 'sn' ? 0.45 : 0.22;
             } else {
@@ -715,17 +724,25 @@
             hrCtx.fillStyle = '#ffffff';
             hrCtx.fillRect(0, 0, w, h);
 
-            // region bands
+            // region bands (giants vs supergiants separated for HKDSE labelling)
             const bands = [
-                { L0: 1e-3, L1: 30, T0: 2800, T1: 7500, c: 'rgba(59,130,246,0.06)', label: t('hr.bandMS') },
-                { L0: 30, L1: 1e5, T0: 2800, T1: 5500, c: 'rgba(220,38,38,0.06)', label: t('hr.bandRG') },
-                { L0: 1e-4, L1: 0.5, T0: 6000, T1: 40000, c: 'rgba(100,116,139,0.08)', label: t('hr.bandWD') }
+                { L0: 1e-3, L1: 30, T0: 2800, T1: 7500, c: 'rgba(59,130,246,0.06)', label: t('hr.bandMS'), lx: 0.55, ly: 0.55 },
+                { L0: 30, L1: 8e3, T0: 2800, T1: 5500, c: 'rgba(220,38,38,0.06)', label: t('hr.bandRG'), lx: 0.72, ly: 0.42 },
+                { L0: 8e3, L1: 1e6, T0: 2800, T1: 12000, c: 'rgba(225,29,72,0.08)', label: t('hr.bandSG'), lx: 0.62, ly: 0.18 },
+                { L0: 1e-4, L1: 0.5, T0: 6000, T1: 40000, c: 'rgba(100,116,139,0.08)', label: t('hr.bandWD'), lx: 0.22, ly: 0.82 }
             ];
             bands.forEach((b) => {
                 const x0 = hrX(b.T1, w), x1 = hrX(b.T0, w);
                 const y0 = hrY(b.L1, h), y1 = hrY(b.L0, h);
                 hrCtx.fillStyle = b.c;
                 hrCtx.fillRect(x0, y0, x1 - x0, y1 - y0);
+                // Region label on the H-R diagram
+                const lx = x0 + (x1 - x0) * (b.lx ?? 0.5);
+                const ly = y0 + (y1 - y0) * (b.ly ?? 0.5);
+                hrCtx.fillStyle = 'rgba(51,65,85,0.75)';
+                hrCtx.font = 'bold 11px Inter, sans-serif';
+                hrCtx.textAlign = 'center';
+                hrCtx.fillText(b.label, lx, ly);
             });
 
             // grid
@@ -971,7 +988,7 @@
                 pulsePhase += dt;
                 const d = state.display;
                 const baseR = visualRadius(d.R);
-                if (d.stage === 'rg' && starMesh.visible) {
+                if (isGiantLike(d.stage) && starMesh.visible) {
                     const puls = 1 + 0.03 * Math.sin(pulsePhase * 2.2);
                     starMesh.scale.setScalar(baseR * puls);
                     coronaMesh.scale.setScalar(baseR * 1.55 * puls);
@@ -989,7 +1006,7 @@
                 } else if (snFlash !== 0) {
                     snFlash = 0;
                 }
-                if (coronaMesh.visible && d.stage !== 'rg') {
+                if (coronaMesh.visible && !isGiantLike(d.stage)) {
                     coronaMesh.material.opacity = 0.18 + 0.06 * Math.sin(pulsePhase * 1.8);
                 }
             }
@@ -1045,11 +1062,14 @@
                 'stage.ms': 'MAIN SEQUENCE',
                 'stage.leave': 'LEAVING MAIN SEQUENCE',
                 'stage.rg': 'RED GIANT',
+                'stage.sg': 'SUPERGIANT',
                 'stage.pn': 'PLANETARY NEBULA',
                 'stage.wd': 'WHITE DWARF',
                 'stage.sn': 'SUPERNOVA',
                 'stage.ns': 'NEUTRON STAR',
                 'stage.bh': 'BLACK HOLE',
+                'observe.label': 'Focus for observation:',
+                'observe.tip': ' Compare the evolutionary tracks and main-sequence lifetimes of stars with different masses on the H-R diagram — massive stars leave the main sequence sooner and pass through the supergiant region.',
                 'formula.title': 'HKDSE relation',
                 'formula.L': 'luminosity (power radiated)',
                 'formula.R': 'stellar radius',
@@ -1066,7 +1086,8 @@
                 'hr.xlabel': 'Surface temperature T (K) → cooler',
                 'hr.ylabel': 'Luminosity L / L☉ (log)',
                 'hr.bandMS': 'Main sequence',
-                'hr.bandRG': 'Giants',
+                'hr.bandRG': 'Red giants',
+                'hr.bandSG': 'Supergiants',
                 'hr.bandWD': 'White dwarfs',
                 'star.sun': 'Sun',
                 'star.sirius': 'Sirius',
@@ -1075,10 +1096,10 @@
                 'star.betelgeuse': 'Betelgeuse',
                 'star.rigel': 'Rigel',
                 'ai.title': 'Physics note',
-                'ai.desc': 'Most stars lie on the <b>main sequence</b>, where hydrogen fuses to helium in the core. Higher-mass stars are hotter and more luminous, so they exhaust fuel sooner. After the main sequence a star expands into a <b>red giant</b>. Stars like the Sun end as <b>white dwarfs</b>; stars above about 8 solar masses explode as <b>supernovae</b>, leaving a neutron star or black hole.',
+                'ai.desc': 'Most stars lie on the <b>main sequence</b>, where hydrogen fuses to helium in the core. Higher-mass stars are hotter and more luminous, so they exhaust fuel sooner. After the main sequence a lower-mass star expands into a <b>red giant</b>, while a massive star becomes a <b>supergiant</b>. Stars like the Sun end as <b>white dwarfs</b>; stars above about 8 solar masses explode as <b>supernovae</b>, leaving a neutron star or black hole.',
                 'modal.open': 'Explain',
                 'modal.title': 'Stars & the H-R diagram — HKDSE E1',
-                'modal.body': '<p><b>Hertzsprung–Russell diagram:</b> plots luminosity against surface temperature (hotter stars to the left). The <b>main sequence</b> is a diagonal band of hydrogen-burning stars.</p><p><b>Stefan–Boltzmann law:</b> $L = 4\\pi R^{2}\\sigma T^{4}$. Luminosity depends strongly on temperature ($T^{4}$) and on surface area ($R^{2}$).</p><p><b>Mass decides destiny:</b> more massive main-sequence stars are brighter and shorter-lived ($\\tau \\propto M/L$). Below ~8 $M_\\odot$ the remnant is a white dwarf; above that, a supernova leaves a neutron star or black hole.</p><p><b>Assumptions in this page:</b> schematic time compression; $L\\propto M^{3.5}$ and $R\\propto M^{0.8}$ on the ZAMS; simplified giant and remnant tracks; known-star values are rounded teaching figures. Colour coding: <span class="text-amber-600 font-semibold">amber</span> = $T$, <span class="text-red-600 font-semibold">red</span> = $R$, <span class="text-green-600 font-semibold">green</span> = $L$.</p>'
+                'modal.body': '<p><b>Hertzsprung–Russell diagram:</b> plots luminosity against surface temperature (hotter stars to the left). The <b>main sequence</b> is a diagonal band of hydrogen-burning stars.</p><p><b>Stefan–Boltzmann law:</b> $L = 4\\pi R^{2}\\sigma T^{4}$. Luminosity depends strongly on temperature ($T^{4}$) and on surface area ($R^{2}$).</p><p><b>Mass decides destiny:</b> more massive main-sequence stars are brighter and shorter-lived ($\\tau \\propto M/L$). Lower-mass stars become red giants and leave white dwarfs; stars of about 8 $M_\\odot$ or more pass through the <b>supergiant</b> stage and end in a supernova (neutron star or black hole).</p><p><b>Assumptions in this page:</b> schematic time compression; $L\\propto M^{3.5}$ and $R\\propto M^{0.8}$ on the ZAMS; simplified giant / supergiant and remnant tracks; known-star values are rounded teaching figures. Colour coding: <span class="text-amber-600 font-semibold">amber</span> = $T$, <span class="text-red-600 font-semibold">red</span> = $R$, <span class="text-green-600 font-semibold">green</span> = $L$.</p>'
             },
             'zh-hk': {
                 'nav.back': '返回首頁',
@@ -1115,11 +1136,14 @@
                 'stage.ms': '主序帶',
                 'stage.leave': '離開主序帶',
                 'stage.rg': '紅巨星',
+                'stage.sg': '超巨星',
                 'stage.pn': '行星狀星雲',
                 'stage.wd': '白矮星',
                 'stage.sn': '超新星',
                 'stage.ns': '中子星',
                 'stage.bh': '黑洞',
+                'observe.label': '觀察重點：',
+                'observe.tip': ' 請比較不同質量恆星在赫羅圖上的演化路徑與主序壽命長短——質量較大的恆星較早離開主序帶，並經過超巨星階段。',
                 'formula.title': 'HKDSE 關係式',
                 'formula.L': '光度（輻射功率）',
                 'formula.R': '恆星半徑',
@@ -1136,7 +1160,8 @@
                 'hr.xlabel': '表面溫度 T (K) → 較冷',
                 'hr.ylabel': '光度 L / L☉（對數）',
                 'hr.bandMS': '主序帶',
-                'hr.bandRG': '巨星',
+                'hr.bandRG': '紅巨星',
+                'hr.bandSG': '超巨星',
                 'hr.bandWD': '白矮星',
                 'star.sun': '太陽',
                 'star.sirius': '天狼星',
@@ -1145,10 +1170,10 @@
                 'star.betelgeuse': '參宿四',
                 'star.rigel': '參宿七',
                 'ai.title': '物理說明',
-                'ai.desc': '大多數恆星位於<b>主序帶</b>，核心進行氫融合為氦。質量較大的主序星溫度較高、光度較大，燃料消耗亦較快。離開主序帶後，恆星膨脹成為<b>紅巨星</b>。類似太陽的恆星最終成為<b>白矮星</b>；質量約超過 8 個太陽質量的恆星則以<b>超新星</b>爆發告終，留下中子星或黑洞。',
+                'ai.desc': '大多數恆星位於<b>主序帶</b>，核心進行氫融合為氦。質量較大的主序星溫度較高、光度較大，燃料消耗亦較快。離開主序帶後，質量較低的恆星膨脹成為<b>紅巨星</b>，而大質量恆星則成為<b>超巨星</b>。類似太陽的恆星最終成為<b>白矮星</b>；質量約超過 8 個太陽質量的恆星則以<b>超新星</b>爆發告終，留下中子星或黑洞。',
                 'modal.open': '解釋',
                 'modal.title': '恆星與赫羅圖 — HKDSE 選修 1',
-                'modal.body': '<p><b>赫羅圖：</b>以光度對表面溫度作圖（較熱的恆星在左）。<b>主序帶</b>是進行氫燃燒的恆星所形成的對角線帶。</p><p><b>斯特藩－玻爾茲曼定律：</b>$L = 4\\pi R^{2}\\sigma T^{4}$。光度強烈依賴溫度（$T^{4}$）及表面面積（$R^{2}$）。</p><p><b>質量決定歸宿：</b>質量較大的主序星較光亮、壽命較短（$\\tau \\propto M/L$）。約低於 8 $M_\\odot$ 時遺骸為白矮星；更高質量則經超新星留下中子星或黑洞。</p><p><b>本頁假設：</b>時間軸為示意壓縮；零齡主序採用 $L\\propto M^{3.5}$、$R\\propto M^{0.8}$；巨星及遺骸軌跡已簡化；已知恆星數值為經四捨五入的教學數據。顏色編碼：<span class="text-amber-600 font-semibold">琥珀色</span>＝$T$，<span class="text-red-600 font-semibold">紅色</span>＝$R$，<span class="text-green-600 font-semibold">綠色</span>＝$L$。</p>'
+                'modal.body': '<p><b>赫羅圖：</b>以光度對表面溫度作圖（較熱的恆星在左）。<b>主序帶</b>是進行氫燃燒的恆星所形成的對角線帶。</p><p><b>斯特藩－玻爾茲曼定律：</b>$L = 4\\pi R^{2}\\sigma T^{4}$。光度強烈依賴溫度（$T^{4}$）及表面面積（$R^{2}$）。</p><p><b>質量決定歸宿：</b>質量較大的主序星較光亮、壽命較短（$\\tau \\propto M/L$）。質量較低者經紅巨星階段後留下白矮星；約 8 $M_\\odot$ 或以上則經過<b>超巨星</b>階段，並以超新星告終（中子星或黑洞）。</p><p><b>本頁假設：</b>時間軸為示意壓縮；零齡主序採用 $L\\propto M^{3.5}$、$R\\propto M^{0.8}$；巨星／超巨星及遺骸軌跡已簡化；已知恆星數值為經四捨五入的教學數據。顏色編碼：<span class="text-amber-600 font-semibold">琥珀色</span>＝$T$，<span class="text-red-600 font-semibold">紅色</span>＝$R$，<span class="text-green-600 font-semibold">綠色</span>＝$L$。</p>'
             }
         };
 
