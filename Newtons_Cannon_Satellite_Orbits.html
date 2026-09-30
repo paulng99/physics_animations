@@ -39,26 +39,51 @@
             -webkit-appearance: none;
             appearance: none;
             width: 100%;
+            height: 44px; /* ≥44px touch target on mobile */
+            border-radius: 4px;
+            background: transparent;
+            outline: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
             height: 8px;
             border-radius: 4px;
             background: #d1d5db;
-            outline: none;
+        }
+        input[type="range"]::-moz-range-track {
+            height: 8px;
+            border-radius: 4px;
+            background: #d1d5db;
         }
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
+            margin-top: -8px; /* centre on 8px track */
             border-radius: 50%;
             background: #2563eb;
             cursor: pointer;
             border: 2px solid white;
             box-shadow: 0 1px 3px rgba(0,0,0,0.15);
         }
-        input[type="range"].accent-green-600::-webkit-slider-thumb { background: #16a34a; }
-        input[type="range"].accent-red-600::-webkit-slider-thumb { background: #dc2626; }
-        input[type="range"].accent-amber-600::-webkit-slider-thumb { background: #d97706; }
-        input[type="range"].accent-purple-600::-webkit-slider-thumb { background: #9333ea; }
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        input[type="range"].accent-green-600::-webkit-slider-thumb,
+        input[type="range"].accent-green-600::-moz-range-thumb { background: #16a34a; }
+        input[type="range"].accent-red-600::-webkit-slider-thumb,
+        input[type="range"].accent-red-600::-moz-range-thumb { background: #dc2626; }
+        input[type="range"].accent-amber-600::-webkit-slider-thumb,
+        input[type="range"].accent-amber-600::-moz-range-thumb { background: #d97706; }
+        input[type="range"].accent-purple-600::-webkit-slider-thumb,
+        input[type="range"].accent-purple-600::-moz-range-thumb { background: #9333ea; }
         mjx-container { display: inline-block !important; }
         @media (prefers-reduced-motion: reduce) {
             .motion-safe-pulse { animation: none !important; }
@@ -769,12 +794,13 @@
             body.rMax = r;
             state.flying = true;
             state.paused = false;
-            document.getElementById('pause-btn').textContent = t('controls.pause');
-            clearTrail();
-            placeMountainAndCannon();
+            const pauseBtn = document.getElementById('pause-btn');
+            if (pauseBtn) pauseBtn.textContent = t('controls.pause');
+            try { clearTrail(); } catch (e) { /* renderer not ready */ }
+            try { placeMountainAndCannon(); } catch (e) { /* meshes not ready */ }
             updateChallenge('wait');
             updateReadouts();
-            syncVectors();
+            try { syncVectors(); } catch (e) { /* arrows not ready */ }
         }
 
         function accelAt(x, y, z) {
@@ -1223,17 +1249,19 @@
             const vc = vCircular(r) / 1000;
             state.vKms = Math.min(16, Math.max(1, +(vc * vFactor).toFixed(2)));
             // Zoom camera for GEO
-            if (hKm > 20000) {
+            if (camera && hKm > 20000) {
                 cameraState.radius = Math.min(80, 8 + (r / M_PER_UNIT) * 2.2);
-                updateCameraFromSpherical();
-            } else {
+                try { updateCameraFromSpherical(); } catch (e) { /* ignore */ }
+            } else if (camera) {
                 cameraState.radius = defaultCamera.radius;
-                updateCameraFromSpherical();
+                try { updateCameraFromSpherical(); } catch (e) { /* ignore */ }
             }
             syncSliders();
             relaunch();
-            if (opts.compare) setCompareMode(true);
-            else if (opts.compare === false) setCompareMode(false);
+            // Always sync compare mode from the preset intent
+            if (Object.prototype.hasOwnProperty.call(opts, 'compare')) {
+                setCompareMode(!!opts.compare);
+            }
         }
 
         document.getElementById('preset-crash').addEventListener('click', () => applyPreset(800, 0.55, { compare: false }));
@@ -1265,10 +1293,17 @@
 
         window.addEventListener('resize', resizeThree);
 
-        initThree();
+        try {
+            initThree();
+        } catch (err) {
+            console.error('[NewtonsCannon] Three.js init failed:', err);
+            // Keep UI controls usable even if WebGL is unavailable (e.g. headless CI).
+            syncSliders();
+            updateReadouts();
+        }
         syncSliders();
         setLanguage(currentLang === 'zh-hk' ? 'zh-hk' : 'en');
-        animate();
+        if (renderer) animate();
     </script>
 
     <script src="practice_questions.js"></script>
