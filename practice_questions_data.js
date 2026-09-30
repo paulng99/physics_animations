@@ -1103,4 +1103,31 @@
     ],
   };
 
+  B.stellar_evolution_hr = {
+    en: [
+      { q: "State the Stefan–Boltzmann relation for the luminosity \\(L\\) of a star of radius \\(R\\) and surface temperature \\(T\\). Hence explain why a cool red giant can be more luminous than a hotter main-sequence star.",
+        sol: "<p>\\[ L = 4\\pi R^{2}\\sigma T^{4}. \\]</p><p>Although a red giant has a lower \\(T\\), its radius is much larger. Because \\(L\\propto R^{2}T^{4}\\), a large increase in \\(R\\) can outweigh the drop in \\(T^{4}\\), so the giant radiates more power than a smaller, hotter star.</p>" },
+      { q: "Sketch a Hertzsprung–Russell diagram and mark the main sequence, the red-giant region and the white-dwarf region. Indicate the direction of increasing temperature on the horizontal axis.",
+        sol: "<p>Plot \\(\\log L\\) (vertical) against surface temperature (horizontal) with <b>hotter stars to the left</b> (temperature decreases to the right).</p><p>The <b>main sequence</b> is a diagonal band from hot luminous (upper left) to cool faint (lower right). <b>Red giants</b> lie above/right of the main sequence (high \\(L\\), low \\(T\\)). <b>White dwarfs</b> lie below (low \\(L\\), relatively high \\(T\\)).</p>" },
+      { q: "Why do more massive main-sequence stars have shorter lifetimes than less massive ones? Use the ideas of luminosity and available fuel.",
+        sol: "<p>A star's main-sequence lifetime scales roughly as fuel divided by burn rate: \\(\\tau \\propto M/L\\). On the main sequence luminosity rises steeply with mass (approximately \\(L\\propto M^{3.5}\\) in a simple teaching model), so more massive stars consume hydrogen much faster than the extra fuel mass can compensate. Hence high-mass stars leave the main sequence sooner.</p>" },
+      { q: "Outline the late evolution of (a) a star of about one solar mass and (b) a star of about 15 solar masses, naming the final remnant in each case.",
+        sol: "<p>(a) After the main sequence the star expands into a red giant, sheds its outer envelope (planetary nebula) and the core cools as a <b>white dwarf</b>.</p><p>(b) The massive star becomes a red (super)giant, then its core collapses; the envelope is ejected in a <b>supernova</b>. The remnant is a <b>neutron star</b> or, for still higher mass, a <b>black hole</b>.</p>" },
+      { q: "The Sun has surface temperature about \\(5800\\,\\text{K}\\) and luminosity \\(L_\\odot\\). A star has the same temperature but luminosity \\(100\\,L_\\odot\\). Find the ratio of its radius to the Sun's radius.",
+        sol: "<p>From \\(L = 4\\pi R^{2}\\sigma T^{4}\\), at fixed \\(T\\), \\(L\\propto R^{2}\\).</p><p>\\[ \\frac{R}{R_\\odot} = \\sqrt{\\frac{L}{L_\\odot}} = \\sqrt{100} = 10. \\]</p><p>The star's radius is 10 times the solar radius.</p>" },
+    ],
+    zh: [
+      { q: "寫出半徑 \\(R\\)、表面溫度 \\(T\\) 的恆星光度 \\(L\\) 的斯特藩－玻爾茲曼關係式。並解釋為何較冷的紅巨星光度可以高於較熱的主序星。",
+        sol: "<p>\\[ L = 4\\pi R^{2}\\sigma T^{4}. \\]</p><p>紅巨星雖然 \\(T\\) 較低，但半徑大得多。由於 \\(L\\propto R^{2}T^{4}\\)，\\(R\\) 大幅增加可抵消 \\(T^{4}\\) 的下降，使巨星輻射功率高於較小、較熱的恆星。</p>" },
+      { q: "繪出赫羅圖，標示主序帶、紅巨星區及白矮星區，並指出橫軸溫度增加的方向。",
+        sol: "<p>縱軸為 \\(\\log L\\)，橫軸為表面溫度，且<b>較熱的恆星在左</b>（溫度向右遞減）。</p><p><b>主序帶</b>是由左上（熱而光）至右下（冷而暗）的對角線帶。<b>紅巨星</b>位於主序帶上方／右方（高 \\(L\\)、低 \\(T\\)）。<b>白矮星</b>位於下方（低 \\(L\\)、相對較高 \\(T\\)）。</p>" },
+      { q: "為何質量較大的主序星壽命較質量較小者為短？試以光度及可用燃料解釋。",
+        sol: "<p>主序壽命大致正比於燃料除以消耗率：\\(\\tau \\propto M/L\\)。主序上光度隨質量急升（教學模型中約 \\(L\\propto M^{3.5}\\)），故大質量恆星消耗氫的速率遠高於其額外質量所能補償，因而較早離開主序帶。</p>" },
+      { q: "概述 (a) 約一個太陽質量及 (b) 約 15 個太陽質量恆星的晚期演化，並分別寫出最終遺骸。",
+        sol: "<p>(a) 離開主序帶後膨脹為紅巨星，拋出外層（行星狀星雲），核心冷卻成為<b>白矮星</b>。</p><p>(b) 大質量恆星成為紅（超）巨星後，核心塌縮，外層以<b>超新星</b>爆發拋出；遺骸為<b>中子星</b>，質量更高者則為<b>黑洞</b>。</p>" },
+      { q: "太陽表面溫度約 \\(5800\\,\\text{K}\\)、光度為 \\(L_\\odot\\)。某恆星溫度相同但光度為 \\(100\\,L_\\odot\\)。求其半徑與太陽半徑之比。",
+        sol: "<p>由 \\(L = 4\\pi R^{2}\\sigma T^{4}\\)，在 \\(T\\) 固定時 \\(L\\propto R^{2}\\)。</p><p>\\[ \\frac{R}{R_\\odot} = \\sqrt{\\frac{L}{L_\\odot}} = \\sqrt{100} = 10. \\]</p><p>該恆星半徑為太陽半徑的 10 倍。</p>" },
+    ],
+  };
+
 })();

@@ -12,6 +12,7 @@
     { id: 'electricity' },
     { id: 'thermal' },
     { id: 'energy' },
+    { id: 'astronomy' },
     { id: 'atomic' }
   ];
 
