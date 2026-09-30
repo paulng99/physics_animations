@@ -391,6 +391,33 @@
     ],
   };
 
+  B.skydiving_terminal = {
+    en: [
+      { q: "A skydiver of mass \\(m\\) falls through air. Write expressions for the weight and the quadratic air resistance, and state the condition for terminal velocity \\(v_t\\).",
+        sol: "<p>Weight: \\(W = mg\\) (downward).</p><p>Air resistance (quadratic model): \\(R = \\tfrac12\\rho C_d A v^2\\) (upward, opposite to velocity).</p><p>At terminal velocity the resultant force is zero: \\(R = mg\\), so</p><p>\\[ v_t = \\sqrt{\\dfrac{2mg}{\\rho C_d A}}. \\]</p>" },
+      { q: "Explain, using Newton's laws, why a skydiver's acceleration decreases during freefall even though gravity is constant.",
+        sol: "<p>Gravity (weight) is approximately constant near Earth. As speed increases, air resistance \\(R\\propto v^2\\) grows. The downward resultant \\(\\Sigma F = mg - R\\) therefore shrinks, so acceleration \\(a = \\Sigma F/m\\) falls from nearly \\(g\\) toward zero as \\(R\\to mg\\).</p>" },
+      { q: "Two skydivers have the same body shape (same \\(C_d\\) and \\(A\\)) but different masses. Who has the larger terminal speed, and why?",
+        sol: "<p>The <b>heavier</b> skydiver has the larger \\(v_t\\).</p><p>From \\(v_t = \\sqrt{2mg/(\\rho C_d A)}\\), \\(v_t\\propto\\sqrt{m}\\). A larger weight must be balanced by a larger drag, which requires a higher speed. Shape factors cancel when they are identical.</p>" },
+      { q: "A 75 kg skydiver in a belly-to-earth posture has \\(C_d = 1.0\\), \\(A = 0.70\\,\\text{m}^2\\) and \\(\\rho = 1.2\\,\\text{kg m}^{-3}\\). Estimate \\(v_t\\). Take \\(g = 9.81\\,\\text{m s}^{-2}\\).",
+        sol: "<p>\\[ v_t = \\sqrt{\\frac{2(75)(9.81)}{1.2\\times 1.0\\times 0.70}} = \\sqrt{\\frac{1471.5}{0.84}} = \\sqrt{1751.8} \\approx 42\\,\\text{m s}^{-1}. \\]</p>" },
+      { q: "When a parachute opens, speed falls quickly toward a much smaller terminal velocity. Explain in terms of resultant force and acceleration.",
+        sol: "<p>Opening the canopy greatly increases \\(A\\) (and usually \\(C_d\\)), so drag suddenly exceeds weight: \\(R > mg\\). The resultant is upward (against the velocity), producing an upward acceleration that reduces the downward speed until a new, much smaller \\(v_t\\) is reached where \\(R = mg\\) again.</p>" },
+    ],
+    zh: [
+      { q: "質量 \\(m\\) 的跳傘者在空氣中下落。寫出重量與二次方空氣阻力的表達式，並說明終端速度 \\(v_t\\) 的條件。",
+        sol: "<p>重量：\\(W = mg\\)（向下）。</p><p>空氣阻力：\\(R = \\tfrac12\\rho C_d A v^2\\)（與速度相反）。</p><p>終端速度時合力為零：\\(R = mg\\)，故</p><p>\\[ v_t = \\sqrt{\\dfrac{2mg}{\\rho C_d A}}. \\]</p>" },
+      { q: "利用牛頓定律解釋：重力近似恆定時，為何跳傘者在自由落體階段的加速度會逐漸減小？",
+        sol: "<p>近地重力（重量）近似不變。速率增大時，空氣阻力 \\(R\\propto v^2\\) 增大，向下合力 \\(\\Sigma F = mg - R\\) 因而減小，故加速度 \\(a = \\Sigma F/m\\) 由接近 \\(g\\) 逐漸降至零（當 \\(R\\to mg\\)）。</p>" },
+      { q: "兩名跳傘者體形相同（相同 \\(C_d\\)、\\(A\\)）但質量不同。誰的終端速率較大？為甚麼？",
+        sol: "<p><b>較重者</b>的 \\(v_t\\) 較大。</p><p>由 \\(v_t = \\sqrt{2mg/(\\rho C_d A)}\\) 可知 \\(v_t\\propto\\sqrt{m}\\)。較大的重量須由較大的空氣阻力平衡，因而需要較高的速率。</p>" },
+      { q: "75 kg 跳傘者以大字形下降，\\(C_d = 1.0\\)、\\(A = 0.70\\,\\text{m}^2\\)、\\(\\rho = 1.2\\,\\text{kg m}^{-3}\\)。估算 \\(v_t\\)（取 \\(g = 9.81\\)）。",
+        sol: "<p>\\[ v_t = \\sqrt{\\frac{2(75)(9.81)}{1.2\\times 1.0\\times 0.70}} \\approx 42\\,\\text{m s}^{-1}. \\]</p>" },
+      { q: "打開降落傘後，速率迅速降至較低的終端速度。試以合力與加速度解釋。",
+        sol: "<p>開傘使 \\(A\\)（及通常的 \\(C_d\\)）大幅增加，空氣阻力瞬間大於重量（\\(R > mg\\)），合力與速度相反，產生使向下速率減小的加速度，直至到達新的、較小的 \\(v_t\\)（再次滿足 \\(R = mg\\)）。</p>" },
+    ],
+  };
+
   /* ===== WAVES ============================================================= */
 
   B.standing_waves = {
