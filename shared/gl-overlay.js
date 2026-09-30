@@ -55,6 +55,7 @@
     'Work_Energy_Power_Analyzer.html': 'mechanics',
     'Impulse_Force_Time_Graph.html': 'mechanics',
     'Newtons_Cannon_Satellite_Orbits.html': 'mechanics',
+    'Skydiving_Terminal_Velocity.html': 'mechanics',
     'Youngs_Double-Slit_Experiment.html': 'optics',
     'Diffraction_Grating.html': 'optics',
     'Rayleigh_Criterion_3D.html': 'optics',
