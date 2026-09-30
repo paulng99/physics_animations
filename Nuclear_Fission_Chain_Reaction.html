@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nuclear Fission Chain Reaction &amp; Reactor (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="window.__THREE_CDN_FAILED=true"></script>
+  <link rel="stylesheet" href="shared/sim-shell.css">
+  <script src="shared/i18n.js"></script>
+  <script src="shared/gl-overlay.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, svg: { fontCache: 'global' } };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+    #three-container { width: 100%; height: 480px; cursor: grab; border-radius: 12px; overflow: hidden; background: #0f172a; }
+    #three-container:active { cursor: grabbing; }
+    .status-sub { color: #16a34a; }
+    .status-crit { color: #2563eb; }
+    .status-super { color: #dc2626; }
+    .crit-pill {
+      opacity: 0.45;
+      border: 1px solid transparent;
+      transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .crit-pill.is-active { opacity: 1; border-color: currentColor; box-shadow: 0 0 0 1px currentColor inset; }
+    .crit-pill.is-active[data-state="sub"] { background: rgba(22, 163, 74, 0.25); }
+    .crit-pill.is-active[data-state="crit"] { background: rgba(37, 99, 235, 0.28); }
+    .crit-pill.is-active[data-state="super"] { background: rgba(220, 38, 38, 0.28); }
+    .crit-pill.is-active[data-state="idle"] { background: rgba(148, 163, 184, 0.28); color: #e2e8f0; }
+    #overheatBanner { display: none; }
+    #overheatBanner.show { display: flex; }
+    @media (prefers-reduced-motion: reduce) {
+      #overheatBanner { animation: none !important; }
+      .crit-pill { transition: none; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800 antialiased">
+  <nav class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex justify-between items-center">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600"><span>←</span><span data-i18n="nav.back">Back</span></a>
+      <div class="flex gap-2">
+        <button type="button" onclick="setLanguage('zh-hk')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-100" data-lang="zh-hk">繁</button>
+        <button type="button" onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-lg text-sm font-medium bg-blue-600 text-white" data-lang="en">EN</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <section class="bg-white/85 backdrop-blur rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <p class="text-sm uppercase tracking-wide font-semibold text-blue-600" data-i18n="tag">3D HKDSE · Radioactivity &amp; Nuclear Energy</p>
+      <h1 class="mt-1 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">Nuclear Fission Chain Reaction &amp; Reactor</h1>
+      <p class="mt-2 text-slate-600" data-i18n="subtitle">Fire a neutron into uranium-235, tune density, moderator and control rods, and watch subcritical, critical or supercritical chain reactions in a reactor cross-section.</p>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sim-shell">
+      <aside class="sim-controls lg:col-span-4 space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+          <div class="flex justify-between items-center">
+            <h2 class="font-semibold" data-i18n="controls.title">Controls</h2>
+            <button type="button" id="resetBtn" class="text-xs font-bold text-blue-600 hover:underline min-h-[44px] px-2" data-i18n="btn.reset">Reset</button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="fireBtn" class="px-3 py-2.5 min-h-[44px] rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all" data-i18n="btn.fire">Fire neutron</button>
+            <button type="button" id="pauseBtn" class="px-3 py-2.5 min-h-[44px] rounded-xl bg-slate-700 text-white font-semibold hover:bg-slate-800 transition-all" data-i18n="btn.pause">Pause</button>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="controls.density">U-235 density</span><span id="densityVal" class="font-semibold text-blue-600">80</span></div>
+            <input id="densitySlider" type="range" min="20" max="140" value="80" class="w-full accent-blue-600" />
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="controls.moderator">Moderator</span><span id="modVal" class="font-semibold text-cyan-600">70%</span></div>
+            <input id="modSlider" type="range" min="0" max="100" value="70" class="w-full accent-cyan-600" />
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="controls.rods">Control rod insertion</span><span id="rodVal" class="font-semibold text-slate-600">40%</span></div>
+            <input id="rodSlider" type="range" min="0" max="100" value="40" class="w-full accent-slate-600" />
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1"><span data-i18n="controls.speed">Anim. speed</span><span id="speedVal" class="font-semibold text-purple-600">1.5×</span></div>
+            <input id="speedSlider" type="range" min="0.5" max="3" step="0.1" value="1.5" class="w-full accent-purple-600" />
+          </div>
+          <label class="flex items-center gap-2 text-sm min-h-[44px]"><input type="checkbox" id="showTrails" checked class="accent-blue-600" /><span data-i18n="controls.trails">Show neutron trails</span></label>
+
+          <div>
+            <p class="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide" data-i18n="presets.title">Presets</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="presetSingle" class="py-2.5 min-h-[44px] rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700" data-i18n="preset.single">Single fission</button>
+              <button type="button" id="presetReactor" class="py-2.5 min-h-[44px] rounded-xl bg-blue-50 hover:bg-blue-100 text-xs font-bold text-blue-800" data-i18n="preset.reactor">Controlled reactor</button>
+              <button type="button" id="presetRunaway" class="py-2.5 min-h-[44px] rounded-xl bg-amber-50 hover:bg-amber-100 text-xs font-bold text-amber-800" data-i18n="preset.runaway">Runaway</button>
+              <button type="button" id="presetBomb" class="py-2.5 min-h-[44px] rounded-xl bg-red-50 hover:bg-red-100 text-xs font-bold text-red-800" data-i18n="preset.bomb">Uncontrolled chain reaction (schematic)</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-blue-200 bg-blue-50/90 p-4 text-sm text-blue-950 shadow-sm">
+          <p class="text-xs font-bold uppercase tracking-wide text-blue-700 mb-1" data-i18n="observe.label">Focus</p>
+          <p class="leading-relaxed" data-i18n="observe.tip">Watch how inserting control rods or increasing the moderator changes the multiplication factor k and the number of neutrons in each generation.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm text-sm space-y-3">
+          <h2 class="font-semibold" data-i18n="stats.title">Live data</h2>
+          <div id="statePanel" class="rounded-xl border-2 border-slate-200 bg-slate-50 p-3 space-y-2" aria-live="polite">
+            <div class="flex justify-between items-baseline gap-2">
+              <span class="text-xs font-semibold uppercase tracking-wide text-slate-500" data-i18n="stats.state">Reactor state</span>
+              <span id="statState" class="text-sm font-bold status-sub" data-i18n="state.idle">Idle</span>
+            </div>
+            <div class="grid grid-cols-1 gap-1.5">
+              <div class="crit-pill rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-green-700 bg-green-50" data-state="sub" data-crit-pill="sub" data-i18n="state.sub">Subcritical (k &lt; 1)</div>
+              <div class="crit-pill rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-blue-700 bg-blue-50" data-state="crit" data-crit-pill="crit" data-i18n="state.crit">Critical (k ≈ 1)</div>
+              <div class="crit-pill rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-red-700 bg-red-50" data-state="super" data-crit-pill="super" data-i18n="state.super">Supercritical (k &gt; 1)</div>
+            </div>
+            <div class="flex justify-between text-xs pt-1 border-t border-slate-200">
+              <span class="text-slate-500" data-i18n="stats.k">Est. multiplication k</span>
+              <span id="statK" class="font-bold text-purple-600">—</span>
+            </div>
+          </div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.neutrons">Free neutrons</span><span id="statN" class="font-bold text-green-600">0</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.fuel">Intact U-235</span><span id="statFuel" class="font-bold text-blue-600">80</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.fissions">Fissions</span><span id="statFiss" class="font-bold text-red-600">0</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.energy">Energy released</span><span id="statE" class="font-bold text-amber-600">0 MeV</span></div>
+          <div class="flex justify-between"><span class="text-slate-500" data-i18n="stats.generation">Generation</span><span id="statGen" class="font-bold text-slate-700">0</span></div>
+        </div>
+
+        <div class="bg-slate-900 text-white rounded-2xl p-5 text-sm space-y-2">
+          <h2 class="text-xs font-bold text-slate-400 uppercase mb-2" data-i18n="formula.title">Key ideas</h2>
+          <ul class="space-y-1 text-slate-200">
+            <li data-i18n="formula.fission">\(^{235}\mathrm{U} + n \rightarrow\) fragments \(+ 2\text{–}3\,n + \sim 200\,\mathrm{MeV}\)</li>
+            <li data-i18n="formula.emc">Mass defect: \(E = mc^{2}\)</li>
+            <li data-i18n="formula.k">\(k &lt; 1\) subcritical · \(k \approx 1\) critical · \(k &gt; 1\) supercritical</li>
+          </ul>
+        </div>
+      </aside>
+
+      <section class="sim-viewport lg:col-span-8 space-y-3">
+        <div id="three-container" data-gl-host class="relative border-2 border-slate-700 shadow-lg">
+          <div class="absolute top-4 left-4 flex flex-wrap gap-2 pointer-events-none z-10 max-w-[70%]">
+            <span class="bg-black/50 backdrop-blur text-blue-300 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.u235">U-235 nucleus</span>
+            <span class="bg-black/50 backdrop-blur text-green-400 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.neutron">Neutron (v)</span>
+            <span class="bg-black/50 backdrop-blur text-red-400 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.fragment">Fission fragment</span>
+            <span class="bg-black/50 backdrop-blur text-amber-300 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.energy">Energy flash</span>
+            <span class="bg-black/50 backdrop-blur text-slate-200 px-3 py-1 rounded-full text-[10px] font-bold" data-i18n="legend.rod">Control rod</span>
+          </div>
+          <div id="critBanner" class="absolute bottom-14 left-4 right-4 md:right-auto md:min-w-[280px] z-20 pointer-events-none">
+            <div class="bg-black/70 backdrop-blur-md rounded-2xl border border-white/15 px-3 py-2.5 shadow-lg space-y-2">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-[10px] font-bold uppercase tracking-wide text-slate-300" data-i18n="crit.title">Criticality</span>
+                <span id="critBannerK" class="text-xs font-bold text-purple-300">k = —</span>
+              </div>
+              <div id="critBannerState" class="text-sm font-extrabold status-sub" data-i18n="state.idle">Idle</div>
+              <div class="grid grid-cols-3 gap-1.5">
+                <div class="crit-pill rounded-md px-1.5 py-1 text-center text-[9px] sm:text-[10px] font-bold text-green-300" data-state="sub" data-crit-pill="sub" data-i18n="state.subShort">k &lt; 1</div>
+                <div class="crit-pill rounded-md px-1.5 py-1 text-center text-[9px] sm:text-[10px] font-bold text-blue-300" data-state="crit" data-crit-pill="crit" data-i18n="state.critShort">k ≈ 1</div>
+                <div class="crit-pill rounded-md px-1.5 py-1 text-center text-[9px] sm:text-[10px] font-bold text-red-300" data-state="super" data-crit-pill="super" data-i18n="state.superShort">k &gt; 1</div>
+              </div>
+            </div>
+          </div>
+          <div id="overheatBanner" class="absolute top-4 right-4 left-4 md:left-auto md:max-w-xs z-20 items-center gap-2 bg-amber-500/95 text-amber-950 px-4 py-3 rounded-xl text-xs font-bold shadow-lg pointer-events-none">
+            <span aria-hidden="true">⚠</span>
+            <span data-i18n="warn.overheat">Abstract overheating warning — energy rising rapidly (supercritical). Not a realistic blast scene.</span>
+          </div>
+          <div class="absolute bottom-4 right-4 bg-gray-900/80 text-white px-4 py-2 rounded-full text-xs pointer-events-none" data-i18n="hint">Drag • Wheel • Pinch</div>
+        </div>
+        <div class="bg-white rounded-xl border-2 border-slate-200 p-3">
+          <div class="flex flex-wrap justify-between gap-2 text-xs text-slate-500 mb-1">
+            <span data-i18n="chart.title">Neutrons per generation &amp; cumulative energy</span>
+            <span><span class="text-green-600 font-semibold" data-i18n="chart.n">Neutrons</span> · <span class="text-amber-600 font-semibold" data-i18n="chart.e">Energy</span></span>
+          </div>
+          <canvas id="chartCanvas" width="1260" height="200" class="w-full h-[160px] md:h-[200px]"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <section class="bg-white rounded-2xl border border-slate-200 p-6 text-sm text-slate-600 space-y-3">
+      <h3 class="font-semibold text-slate-900" data-i18n="info.title">Physics notes (for teachers &amp; students)</h3>
+      <p data-i18n="info.p1">A thermal neutron can be captured by \(^{235}\mathrm{U}\), splitting it into two fission fragments and releasing typically 2–3 neutrons plus about 200 MeV, mainly as kinetic energy of the fragments (mass defect → \(E=mc^{2}\)).</p>
+      <p data-i18n="info.p2">A moderator (e.g. water or graphite) slows fast fission neutrons so they are more likely to cause further fissions. Control rods absorb neutrons and keep the multiplication factor \(k\) near 1 in a power plant.</p>
+      <p data-i18n="info.p3">This model is highly simplified: nuclei and neutrons are not to scale; escape, absorption and fission probabilities are tuned for classroom visibility; the uncontrolled-chain preset only shows abstract supercritical growth — no blast or casualty imagery.</p>
+    </section>
+  </main>
+
+  <script>
+    const PHYSICS_COLORS = {
+      force: 0xdc2626, velocity: 0x16a34a, accel: 0x9333ea,
+      bField: 0xd97706, displacement: 0x475569, fuel: 0x2563eb, energy: 0xfbbf24
+    };
+
+    const MAX_NEUTRONS = 100;
+    const MAX_FRAGMENTS = 60;
+    const MAX_FLASHES = 40;
+    const MAX_TRAIL_PER = 18;
+    const ENERGY_PER_FISSION_MEV = 200;
+    const VESSEL_R = 5.2;
+    const VESSEL_H = 7.5;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const translations = {
+      en: {
+        'nav.back': 'Back',
+        tag: '3D HKDSE · Radioactivity & Nuclear Energy',
+        title: 'Nuclear Fission Chain Reaction & Reactor',
+        subtitle: 'Fire a neutron into uranium-235, tune density, moderator and control rods, and watch subcritical, critical or supercritical chain reactions in a reactor cross-section.',
+        'controls.title': 'Controls',
+        'btn.reset': 'Reset',
+        'btn.fire': 'Fire neutron',
+        'btn.pause': 'Pause',
+        'btn.resume': 'Resume',
+        'controls.density': 'U-235 density',
+        'controls.moderator': 'Moderator',
+        'controls.rods': 'Control rod insertion',
+        'controls.speed': 'Anim. speed',
+        'controls.trails': 'Show neutron trails',
+        'presets.title': 'Presets',
+        'preset.single': 'Single fission',
+        'preset.reactor': 'Controlled reactor',
+        'preset.runaway': 'Runaway',
+        'preset.bomb': 'Uncontrolled chain reaction (schematic)',
+        'observe.label': 'Focus',
+        'observe.tip': 'Watch how inserting control rods or increasing the moderator changes the multiplication factor k and the number of neutrons in each generation.',
+        'stats.title': 'Live data',
+        'stats.neutrons': 'Free neutrons',
+        'stats.fuel': 'Intact U-235',
+        'stats.fissions': 'Fissions',
+        'stats.energy': 'Energy released',
+        'stats.k': 'Est. multiplication k',
+        'stats.state': 'Reactor state',
+        'stats.generation': 'Generation',
+        'crit.title': 'Criticality',
+        'state.idle': 'Idle',
+        'state.sub': 'Subcritical (k < 1)',
+        'state.crit': 'Critical (k ≈ 1)',
+        'state.super': 'Supercritical (k > 1)',
+        'state.subShort': 'k < 1',
+        'state.critShort': 'k ≈ 1',
+        'state.superShort': 'k > 1',
+        'formula.title': 'Key ideas',
+        'formula.fission': '²³⁵U + n → fragments + 2–3 n + ~200 MeV',
+        'formula.emc': 'Mass defect: E = mc²',
+        'formula.k': 'k < 1 subcritical · k ≈ 1 critical · k > 1 supercritical',
+        'legend.u235': 'U-235 nucleus',
+        'legend.neutron': 'Neutron (v)',
+        'legend.fragment': 'Fission fragment',
+        'legend.energy': 'Energy flash',
+        'legend.rod': 'Control rod',
+        'warn.overheat': 'Abstract overheating warning — energy rising rapidly (supercritical). Not a realistic blast scene.',
+        hint: 'Drag • Wheel • Pinch',
+        'chart.title': 'Neutrons per generation & cumulative energy',
+        'chart.n': 'Neutrons',
+        'chart.e': 'Energy',
+        'info.title': 'Physics notes (for teachers & students)',
+        'info.p1': 'A thermal neutron can be captured by ²³⁵U, splitting it into two fission fragments and releasing typically 2–3 neutrons plus about 200 MeV, mainly as kinetic energy of the fragments (mass defect → E = mc²).',
+        'info.p2': 'A moderator (e.g. water or graphite) slows fast fission neutrons so they are more likely to cause further fissions. Control rods absorb neutrons and keep the multiplication factor k near 1 in a power plant.',
+        'info.p3': 'This model is highly simplified: nuclei and neutrons are not to scale; escape, absorption and fission probabilities are tuned for classroom visibility; the uncontrolled-chain preset only shows abstract supercritical growth — no blast or casualty imagery.'
+      },
+      'zh-hk': {
+        'nav.back': '返回',
+        tag: '3D HKDSE · 放射現象與核能',
+        title: '核裂變連鎖反應與反應堆',
+        subtitle: '向鈾-235 發射一顆中子，調節鈾核密度、慢化劑與控制棒插入程度，在反應堆截面視圖中觀察次臨界、臨界或超臨界連鎖反應。',
+        'controls.title': '控制面板',
+        'btn.reset': '重設',
+        'btn.fire': '發射中子',
+        'btn.pause': '暫停',
+        'btn.resume': '繼續',
+        'controls.density': '鈾-235 密度',
+        'controls.moderator': '慢化劑',
+        'controls.rods': '控制棒插入程度',
+        'controls.speed': '動畫速度',
+        'controls.trails': '顯示中子拖尾',
+        'presets.title': '預設情境',
+        'preset.single': '單次裂變',
+        'preset.reactor': '可控反應堆',
+        'preset.runaway': '失控',
+        'preset.bomb': '失控連鎖反應（示意）',
+        'observe.label': '觀察重點',
+        'observe.tip': '請觀察插入控制棒或增加慢化劑時，倍增因數 k 與每代中子數如何改變。',
+        'stats.title': '即時數據',
+        'stats.neutrons': '自由中子數',
+        'stats.fuel': '完整鈾-235',
+        'stats.fissions': '裂變次數',
+        'stats.energy': '累計釋放能量',
+        'stats.k': '估計倍增因數 k',
+        'stats.state': '反應堆狀態',
+        'stats.generation': '中子代數',
+        'crit.title': '臨界狀態',
+        'state.idle': '待命',
+        'state.sub': '次臨界（k < 1）',
+        'state.crit': '臨界（k ≈ 1）',
+        'state.super': '超臨界（k > 1）',
+        'state.subShort': 'k < 1',
+        'state.critShort': 'k ≈ 1',
+        'state.superShort': 'k > 1',
+        'formula.title': '重點概念',
+        'formula.fission': '²³⁵U + n → 裂變碎片 + 2–3 顆中子 + 約 200 MeV',
+        'formula.emc': '質量虧損：E = mc²',
+        'formula.k': 'k < 1 次臨界 · k ≈ 1 臨界 · k > 1 超臨界',
+        'legend.u235': '鈾-235 原子核',
+        'legend.neutron': '中子（速度 v）',
+        'legend.fragment': '裂變碎片',
+        'legend.energy': '能量閃光',
+        'legend.rod': '控制棒',
+        'warn.overheat': '抽象過熱警示——能量急速上升（超臨界）。並非真實爆炸場面。',
+        hint: '拖曳 • 滾輪 • 雙指縮放',
+        'chart.title': '每代中子數與累計能量',
+        'chart.n': '中子',
+        'chart.e': '能量',
+        'info.title': '物理說明（供教師與學生參考）',
+        'info.p1': '熱中子可被鈾-235 俘獲，使之分裂為兩顆裂變碎片，並釋出通常 2 至 3 顆中子及約 200 MeV 能量，主要以碎片動能形式出現（質量虧損 → E = mc²）。',
+        'info.p2': '慢化劑（例如水或石墨）使快中子減速，提高引發進一步裂變的機會。控制棒吸收中子，使核電廠中的倍增因數 k 維持接近 1。',
+        'info.p3': '本模型高度簡化：原子核與中子並非按比例；逃逸、吸收與裂變機率為課堂可視性而調校；「失控連鎖反應（示意）」僅顯示抽象超臨界增長——不含爆炸或傷亡畫面。'
+      }
+    };
+    if (window.PhysicsI18n) PhysicsI18n.aliasKeys(translations);
+
+    let currentLang = window.PhysicsI18n
+      ? PhysicsI18n.get()
+      : ((localStorage.getItem('preferred_language') === 'zh-hk' || localStorage.getItem('preferred_language') === 'zh') ? 'zh-hk' : 'en');
+
+    function t(key) {
+      const bundle = window.PhysicsI18n ? PhysicsI18n.resolve(translations, currentLang) : (translations[currentLang] || translations.en);
+      return bundle[key] ?? translations.en[key] ?? key;
+    }
+
+    function setLanguage(lang) {
+      currentLang = window.PhysicsI18n ? PhysicsI18n.set(lang) : lang;
+      try { localStorage.setItem('preferred_language', currentLang); } catch (e) { /* ignore */ }
+      document.documentElement.lang = window.PhysicsI18n ? PhysicsI18n.htmlLang(currentLang) : (currentLang === 'zh-hk' ? 'zh-HK' : 'en');
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const k = el.getAttribute('data-i18n');
+        const val = t(k);
+        if (!val) return;
+        if (k.startsWith('formula.') || k.startsWith('info.')) el.innerHTML = val;
+        else el.textContent = val;
+      });
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        const a = window.PhysicsI18n ? PhysicsI18n.matchButton(btn.dataset.lang, currentLang) : (btn.dataset.lang === currentLang);
+        btn.classList.toggle('bg-blue-600', a);
+        btn.classList.toggle('text-white', a);
+      });
+      updatePauseLabel();
+      updateStatsUI();
+      if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+    }
+
+    function setCritPills(activeKey) {
+      document.querySelectorAll('[data-crit-pill]').forEach(el => {
+        const on = el.getAttribute('data-crit-pill') === activeKey;
+        el.classList.toggle('is-active', on);
+      });
+    }
+
+    const container = document.getElementById('three-container');
+    const chartCanvas = document.getElementById('chartCanvas');
+    const gCtx = chartCanvas.getContext('2d');
+
+    let scene, camera, renderer;
+    let fuelMesh, fuelAlive = [];
+    let fuelPositions = [];
+    let neutrons = [];
+    let fragments = [];
+    let flashes = [];
+    let trailGroup;
+    let rodMeshes = [];
+    let moderatorMist;
+    let vesselGroup;
+    let camTheta = 0.85, camPhi = 1.05, camRadius = 16;
+    const defaultCam = { theta: 0.85, phi: 1.05, radius: 16 };
+    let isCameraDrag = false, startCamX, startCamY;
+    let paused = false;
+    let lastTs = performance.now();
+    let dummy = new THREE.Object3D();
+
+    const state = {
+      density: 80,
+      moderator: 70,
+      rods: 40,
+      speed: 1.5,
+      fissions: 0,
+      energyMeV: 0,
+      generation: 0,
+      genNeutronCounts: [0],
+      energyHistory: [0],
+      recentBorn: 0,
+      recentLost: 0,
+      kEst: null,
+      overheat: false,
+      genTimer: 0,
+      genWindow: 1.2
+    };
+
+    function syncSliderLabels() {
+      document.getElementById('densityVal').textContent = state.density;
+      document.getElementById('modVal').textContent = state.moderator + '%';
+      document.getElementById('rodVal').textContent = state.rods + '%';
+      document.getElementById('speedVal').textContent = state.speed.toFixed(1) + '×';
+    }
+
+    function updatePauseLabel() {
+      const btn = document.getElementById('pauseBtn');
+      btn.setAttribute('data-i18n', paused ? 'btn.resume' : 'btn.pause');
+      btn.textContent = t(paused ? 'btn.resume' : 'btn.pause');
+    }
+
+    function reactorStateKey() {
+      // Classroom bands aligned with k < 1 / k ≈ 1 / k > 1
+      if (neutrons.length === 0 && state.fissions === 0) return 'idle';
+      if (state.kEst == null) return neutrons.length > 0 ? 'sub' : 'idle';
+      if (state.kEst < 0.9) return 'sub';
+      if (state.kEst <= 1.1) return 'crit';
+      return 'super';
+    }
+
+    function updateStatsUI() {
+      document.getElementById('statN').textContent = neutrons.length;
+      document.getElementById('statFuel').textContent = fuelAlive.filter(Boolean).length;
+      document.getElementById('statFiss').textContent = state.fissions;
+      document.getElementById('statE').textContent = Math.round(state.energyMeV) + ' MeV';
+      const kText = state.kEst == null ? '—' : state.kEst.toFixed(2);
+      document.getElementById('statK').textContent = kText;
+      document.getElementById('statGen').textContent = state.generation;
+      const key = reactorStateKey();
+      const statusClass = key === 'super' ? 'status-super' : key === 'crit' ? 'status-crit' : 'status-sub';
+      const el = document.getElementById('statState');
+      el.textContent = t('state.' + key);
+      el.className = 'text-sm font-bold ' + statusClass;
+      const bannerState = document.getElementById('critBannerState');
+      if (bannerState) {
+        bannerState.textContent = t('state.' + key);
+        bannerState.className = 'text-sm font-extrabold ' + statusClass;
+      }
+      const bannerK = document.getElementById('critBannerK');
+      if (bannerK) bannerK.textContent = 'k = ' + kText;
+      // Highlight sub / crit / super pills (idle highlights none of the three bands)
+      setCritPills(key === 'idle' ? '' : key);
+      const panel = document.getElementById('statePanel');
+      if (panel) {
+        panel.classList.toggle('border-green-400', key === 'sub');
+        panel.classList.toggle('border-blue-400', key === 'crit');
+        panel.classList.toggle('border-red-400', key === 'super');
+        panel.classList.toggle('border-slate-200', key === 'idle');
+      }
+      document.getElementById('overheatBanner').classList.toggle('show', state.overheat);
+    }
+
+    function updateCameraFromSpherical() {
+      camera.position.set(
+        camRadius * Math.sin(camPhi) * Math.sin(camTheta),
+        camRadius * Math.cos(camPhi),
+        camRadius * Math.sin(camPhi) * Math.cos(camTheta)
+      );
+      camera.lookAt(0, 0, 0);
+    }
+
+    function setupCameraControls() {
+      container.addEventListener('mousedown', e => {
+        if (e.target.closest('input,button')) return;
+        isCameraDrag = true; startCamX = e.clientX; startCamY = e.clientY;
+      });
+      window.addEventListener('mouseup', () => { isCameraDrag = false; });
+      window.addEventListener('mousemove', e => {
+        if (!isCameraDrag) return;
+        camTheta -= (e.clientX - startCamX) * 0.005;
+        camPhi -= (e.clientY - startCamY) * 0.005;
+        camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi));
+        startCamX = e.clientX; startCamY = e.clientY;
+        updateCameraFromSpherical();
+      });
+      container.addEventListener('wheel', e => {
+        e.preventDefault();
+        camRadius = Math.max(8, Math.min(36, camRadius + e.deltaY * 0.03));
+        updateCameraFromSpherical();
+      }, { passive: false });
+
+      let ltd = null, ltx = null, lty = null;
+      container.addEventListener('touchstart', e => {
+        e.preventDefault();
+        if (e.touches.length === 1) { ltx = e.touches[0].clientX; lty = e.touches[0].clientY; }
+        else if (e.touches.length === 2) {
+          ltd = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        }
+      }, { passive: false });
+      container.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (e.touches.length === 1 && ltx !== null) {
+          camTheta -= (e.touches[0].clientX - ltx) * 0.008;
+          camPhi -= (e.touches[0].clientY - lty) * 0.008;
+          camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi));
+          ltx = e.touches[0].clientX; lty = e.touches[0].clientY;
+          updateCameraFromSpherical();
+        } else if (e.touches.length === 2 && ltd !== null) {
+          const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          camRadius = Math.max(8, Math.min(36, camRadius + (ltd - d) * 0.1));
+          ltd = d;
+          updateCameraFromSpherical();
+        }
+      }, { passive: false });
+      container.addEventListener('touchend', () => { ltx = lty = ltd = null; });
+    }
+
+    function randomFuelPosition() {
+      // Fill half-cylinder cross-section (x >= -0.2) for cutaway view
+      for (let tries = 0; tries < 40; tries++) {
+        const a = (Math.random() - 0.5) * Math.PI * 0.95;
+        const r = Math.sqrt(Math.random()) * (VESSEL_R - 0.6);
+        const x = Math.cos(a) * r;
+        const z = Math.sin(a) * r;
+        const y = (Math.random() - 0.5) * (VESSEL_H - 1.2);
+        if (x > -0.15) return new THREE.Vector3(x, y, z);
+      }
+      return new THREE.Vector3(Math.random() * 3, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 3);
+    }
+
+    function rebuildFuel() {
+      if (fuelMesh) {
+        scene.remove(fuelMesh);
+        fuelMesh.geometry.dispose();
+        fuelMesh.material.dispose();
+      }
+      const n = state.density;
+      const geo = new THREE.SphereGeometry(0.18, 12, 12);
+      const mat = new THREE.MeshStandardMaterial({
+        color: PHYSICS_COLORS.fuel, emissive: 0x1e3a8a, emissiveIntensity: 0.35, metalness: 0.25, roughness: 0.35
+      });
+      fuelMesh = new THREE.InstancedMesh(geo, mat, n);
+      fuelMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      fuelPositions = [];
+      fuelAlive = [];
+      for (let i = 0; i < n; i++) {
+        const p = randomFuelPosition();
+        fuelPositions.push(p);
+        fuelAlive.push(true);
+        dummy.position.copy(p);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        fuelMesh.setMatrixAt(i, dummy.matrix);
+      }
+      fuelMesh.instanceMatrix.needsUpdate = true;
+      scene.add(fuelMesh);
+    }
+
+    function setFuelVisible(i, alive) {
+      fuelAlive[i] = alive;
+      dummy.position.copy(fuelPositions[i]);
+      dummy.scale.setScalar(alive ? 1 : 0.001);
+      dummy.updateMatrix();
+      fuelMesh.setMatrixAt(i, dummy.matrix);
+      fuelMesh.instanceMatrix.needsUpdate = true;
+    }
+
+    function updateRods() {
+      const insert = state.rods / 100;
+      rodMeshes.forEach((rod, idx) => {
+        const fullY = VESSEL_H * 0.55;
+        const yTop = VESSEL_H * 0.55;
+        // insertion 0 = fully withdrawn (up), 1 = fully in
+        rod.position.y = yTop - insert * fullY + (idx % 2) * 0.05;
+      });
+    }
+
+    function updateModeratorVisual() {
+      if (!moderatorMist) return;
+      const m = state.moderator / 100;
+      moderatorMist.material.opacity = 0.04 + m * 0.12;
+      moderatorMist.scale.set(1, 1, 1);
+    }
+
+    function spawnNeutron(pos, vel, generation) {
+      if (neutrons.length >= MAX_NEUTRONS) {
+        // Drop oldest escaped-looking neutron
+        const old = neutrons.shift();
+        if (old) {
+          old.trail.forEach(t => trailGroup.remove(t));
+          scene.remove(old.mesh);
+          state.recentLost++;
+        }
+      }
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1, 10, 10),
+        new THREE.MeshStandardMaterial({
+          color: PHYSICS_COLORS.velocity, emissive: 0x14532d, emissiveIntensity: 0.7, metalness: 0.1, roughness: 0.3
+        })
+      );
+      mesh.position.copy(pos);
+      scene.add(mesh);
+      neutrons.push({
+        mesh,
+        pos: pos.clone(),
+        vel: vel.clone(),
+        gen: generation,
+        thermal: vel.length() < 0.55,
+        trail: [],
+        age: 0
+      });
+      state.recentBorn++;
+    }
+
+    function fireNeutron() {
+      // Inject near the cutaway face, aimed into the fuel cloud
+      const start = new THREE.Vector3(-0.5, (Math.random() - 0.5) * 2.2, (Math.random() - 0.5) * 2.2);
+      const aim = new THREE.Vector3(1.8, (Math.random() - 0.5) * 1.5, (Math.random() - 0.5) * 1.5);
+      const speed = state.moderator > 40 ? 0.85 : 1.25;
+      const vel = aim.clone().sub(start).normalize().multiplyScalar(speed);
+      spawnNeutron(start, vel, state.generation);
+      updateStatsUI();
+    }
+
+    function spawnFlash(pos) {
+      if (flashes.length >= MAX_FLASHES) {
+        const f = flashes.shift();
+        scene.remove(f.mesh);
+      }
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.35, 10, 10),
+        new THREE.MeshBasicMaterial({ color: PHYSICS_COLORS.energy, transparent: true, opacity: reduceMotion ? 0.35 : 0.85 })
+      );
+      mesh.position.copy(pos);
+      scene.add(mesh);
+      flashes.push({ mesh, age: 0 });
+    }
+
+    function spawnFragments(pos) {
+      const count = 2;
+      for (let i = 0; i < count; i++) {
+        if (fragments.length >= MAX_FRAGMENTS) {
+          const f = fragments.shift();
+          scene.remove(f.mesh);
+        }
+        const mesh = new THREE.Mesh(
+          new THREE.SphereGeometry(0.14, 8, 8),
+          new THREE.MeshStandardMaterial({ color: PHYSICS_COLORS.force, emissive: 0x7f1d1d, emissiveIntensity: 0.5 })
+        );
+        mesh.position.copy(pos);
+        scene.add(mesh);
+        const dir = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+        fragments.push({ mesh, pos: pos.clone(), vel: dir.multiplyScalar(0.6 + Math.random() * 0.5), age: 0 });
+      }
+    }
+
+    function doFission(fuelIndex, neutron) {
+      const pos = fuelPositions[fuelIndex].clone();
+      setFuelVisible(fuelIndex, false);
+      state.fissions++;
+      state.energyMeV += ENERGY_PER_FISSION_MEV;
+      spawnFlash(pos);
+      spawnFragments(pos);
+
+      // Average ~2.5 neutrons; use 2 or 3
+      const nOut = Math.random() < 0.5 ? 2 : 3;
+      const nextGen = neutron.gen + 1;
+      for (let i = 0; i < nOut; i++) {
+        const dir = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+        // Fast fission neutrons
+        spawnNeutron(pos.clone().addScaledVector(dir, 0.25), dir.multiplyScalar(1.35 + Math.random() * 0.4), nextGen);
+      }
+      if (nextGen > state.generation) state.generation = nextGen;
+    }
+
+    function rodAbsorbs(pos) {
+      const insert = state.rods / 100;
+      if (insert < 0.05) return false;
+      // Rods at x ≈ ±1.6, z ≈ 0 and x ≈ 0, z ≈ ±1.4
+      const rods = [
+        { x: 1.6, z: 0 }, { x: -0.2, z: 1.5 }, { x: 1.2, z: -1.3 }
+      ];
+      const rodBottom = VESSEL_H * 0.55 - insert * VESSEL_H * 0.55 - VESSEL_H * 0.35;
+      const rodTop = VESSEL_H * 0.55;
+      if (pos.y < rodBottom || pos.y > rodTop) return false;
+      for (const r of rods) {
+        const dx = pos.x - r.x, dz = pos.z - r.z;
+        if (dx * dx + dz * dz < 0.28 * 0.28) {
+          // Higher insertion → higher absorb chance
+          return Math.random() < (0.35 + 0.55 * insert);
+        }
+      }
+      return false;
+    }
+
+    function outsideVessel(pos) {
+      const r2 = pos.x * pos.x + pos.z * pos.z;
+      return r2 > VESSEL_R * VESSEL_R || Math.abs(pos.y) > VESSEL_H * 0.52;
+    }
+
+    function findFuelHit(pos) {
+      // Classroom-tuned capture radius (not nuclear scale)
+      const hitR2 = 0.45 * 0.45;
+      let best = -1, bestD = hitR2;
+      for (let i = 0; i < fuelPositions.length; i++) {
+        if (!fuelAlive[i]) continue;
+        const p = fuelPositions[i];
+        const dx = pos.x - p.x, dy = pos.y - p.y, dz = pos.z - p.z;
+        const d = dx * dx + dy * dy + dz * dz;
+        if (d < bestD) { bestD = d; best = i; }
+      }
+      return best;
+    }
+
+    function fissionProbability(thermal) {
+      const dens = state.density / 140;
+      const mod = state.moderator / 100;
+      if (thermal) return Math.min(0.92, 0.55 + 0.25 * dens + 0.15 * mod);
+      // Fast fission: low unless high density (uncontrolled-chain preset) or weak moderation
+      return Math.min(0.85, 0.06 + 0.55 * dens * dens + (1 - mod) * 0.18 * dens);
+    }
+
+    function removeNeutron(idx) {
+      const n = neutrons[idx];
+      n.trail.forEach(t => trailGroup.remove(t));
+      scene.remove(n.mesh);
+      neutrons.splice(idx, 1);
+      state.recentLost++;
+    }
+
+    function stepPhysics(dt) {
+      const mod = state.moderator / 100;
+      const showTrails = document.getElementById('showTrails').checked && !reduceMotion;
+      const spd = state.speed;
+      const substeps = 3;
+      const h = dt / substeps;
+
+      for (let i = neutrons.length - 1; i >= 0; i--) {
+        const n = neutrons[i];
+        n.age += dt;
+        let removed = false;
+
+        for (let s = 0; s < substeps && !removed; s++) {
+          // Moderator slows neutrons (thermalisation)
+          if (mod > 0.01 && n.vel.length() > 0.32) {
+            const damp = 1 - (0.85 * mod * h * spd);
+            n.vel.multiplyScalar(Math.max(0.88, damp));
+            if (n.vel.length() < 0.5) n.thermal = true;
+          }
+
+          n.pos.addScaledVector(n.vel, h * spd * 2.0);
+          n.mesh.position.copy(n.pos);
+
+          if (rodAbsorbs(n.pos)) {
+            removeNeutron(i);
+            removed = true;
+            break;
+          }
+          if (outsideVessel(n.pos) || n.age > 14) {
+            removeNeutron(i);
+            removed = true;
+            break;
+          }
+
+          const fi = findFuelHit(n.pos);
+          if (fi >= 0) {
+            const pFiss = fissionProbability(n.thermal);
+            if (Math.random() < pFiss) {
+              removeNeutron(i);
+              doFission(fi, n);
+              removed = true;
+              break;
+            }
+            // Elastic-like scatter without fission
+            n.vel.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(Math.max(0.35, n.vel.length() * 0.85));
+            n.pos.addScaledVector(n.vel, 0.2);
+          }
+        }
+
+        if (removed) continue;
+
+        n.mesh.material.emissiveIntensity = n.thermal ? 0.95 : 0.45;
+
+        if (showTrails && Math.random() < 0.35) {
+          const tMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(0.035, 4, 4),
+            new THREE.MeshBasicMaterial({ color: 0x4ade80, transparent: true, opacity: 0.45 })
+          );
+          tMesh.position.copy(n.pos);
+          trailGroup.add(tMesh);
+          n.trail.push(tMesh);
+          if (n.trail.length > MAX_TRAIL_PER) trailGroup.remove(n.trail.shift());
+        }
+      }
+
+      for (let i = fragments.length - 1; i >= 0; i--) {
+        const f = fragments[i];
+        f.age += dt;
+        f.pos.addScaledVector(f.vel, dt * spd * 1.5);
+        f.vel.multiplyScalar(0.98);
+        f.mesh.position.copy(f.pos);
+        f.mesh.material.opacity = Math.max(0, 1 - f.age * 0.7);
+        f.mesh.material.transparent = true;
+        if (f.age > 1.4 || outsideVessel(f.pos)) {
+          scene.remove(f.mesh);
+          fragments.splice(i, 1);
+        }
+      }
+
+      for (let i = flashes.length - 1; i >= 0; i--) {
+        const f = flashes[i];
+        f.age += dt;
+        const s = 1 + f.age * (reduceMotion ? 1.2 : 2.5);
+        f.mesh.scale.setScalar(s);
+        f.mesh.material.opacity = Math.max(0, (reduceMotion ? 0.35 : 0.85) - f.age * 1.8);
+        if (f.age > 0.55) {
+          scene.remove(f.mesh);
+          flashes.splice(i, 1);
+        }
+      }
+
+      // Generation window for k estimate & chart
+      state.genTimer += dt;
+      if (state.genTimer >= state.genWindow) {
+        state.genTimer = 0;
+        const nNow = neutrons.length;
+        state.genNeutronCounts.push(nNow);
+        state.energyHistory.push(state.energyMeV);
+        if (state.genNeutronCounts.length > 40) {
+          state.genNeutronCounts.shift();
+          state.energyHistory.shift();
+        }
+        if (state.recentLost + state.recentBorn > 0 && state.recentLost > 0) {
+          // k ≈ neutrons produced / neutrons removed in window (simplified)
+          const produced = state.recentBorn;
+          const removed = Math.max(1, state.recentLost);
+          // Blend with population trend
+          const prev = state.genNeutronCounts[state.genNeutronCounts.length - 2] || 1;
+          const trend = nNow / Math.max(1, prev);
+          state.kEst = 0.55 * (produced / removed) + 0.45 * trend;
+          state.kEst = Math.max(0, Math.min(4, state.kEst));
+        } else if (nNow === 0 && state.fissions > 0) {
+          state.kEst = 0;
+        }
+        state.recentBorn = 0;
+        state.recentLost = 0;
+
+        // Overheat: abstract supercritical warning (classroom-visible thresholds)
+        state.overheat = (state.kEst != null && state.kEst > 1.2 && nNow >= 8)
+          || state.energyMeV > 2500
+          || (nNow >= 20 && state.rods < 20);
+      }
+
+      updateStatsUI();
+    }
+
+    function drawChart() {
+      const w = chartCanvas.width, h = chartCanvas.height;
+      gCtx.clearRect(0, 0, w, h);
+      gCtx.fillStyle = '#ffffff';
+      gCtx.fillRect(0, 0, w, h);
+      const m = 44, plotW = w - m * 2, plotH = h - m * 2;
+      const ns = state.genNeutronCounts;
+      const es = state.energyHistory;
+      const nMax = Math.max(8, ...ns);
+      const eMax = Math.max(200, ...es);
+      const toX = i => m + (i / Math.max(1, ns.length - 1)) * plotW;
+      const toYn = v => h - m - (v / nMax) * plotH;
+      const toYe = v => h - m - (v / eMax) * plotH;
+
+      gCtx.strokeStyle = '#94a3b8'; gCtx.lineWidth = 1.5;
+      gCtx.beginPath(); gCtx.moveTo(m, m); gCtx.lineTo(m, h - m); gCtx.lineTo(w - m, h - m); gCtx.stroke();
+
+      // Energy area (amber)
+      gCtx.fillStyle = 'rgba(217, 119, 6, 0.12)';
+      gCtx.beginPath();
+      es.forEach((v, i) => { const x = toX(i), y = toYe(v); if (i === 0) gCtx.moveTo(x, y); else gCtx.lineTo(x, y); });
+      gCtx.lineTo(toX(es.length - 1), h - m); gCtx.lineTo(m, h - m); gCtx.closePath(); gCtx.fill();
+      gCtx.strokeStyle = '#d97706'; gCtx.lineWidth = 2;
+      gCtx.beginPath();
+      es.forEach((v, i) => { const x = toX(i), y = toYe(v); if (i === 0) gCtx.moveTo(x, y); else gCtx.lineTo(x, y); });
+      gCtx.stroke();
+
+      // Neutrons (green)
+      gCtx.strokeStyle = '#16a34a'; gCtx.lineWidth = 2.2;
+      gCtx.beginPath();
+      ns.forEach((v, i) => { const x = toX(i), y = toYn(v); if (i === 0) gCtx.moveTo(x, y); else gCtx.lineTo(x, y); });
+      gCtx.stroke();
+
+      gCtx.fillStyle = '#334155'; gCtx.font = '12px Inter, sans-serif';
+      gCtx.fillText('gen →', w - m - 36, h - m + 16);
+      gCtx.fillStyle = '#16a34a'; gCtx.fillText('N', m + 6, m + 12);
+      gCtx.fillStyle = '#d97706'; gCtx.fillText('E', m + 28, m + 12);
+    }
+
+    function clearDynamic() {
+      neutrons.forEach(n => { n.trail.forEach(t => trailGroup.remove(t)); scene.remove(n.mesh); });
+      neutrons = [];
+      fragments.forEach(f => scene.remove(f.mesh)); fragments = [];
+      flashes.forEach(f => scene.remove(f.mesh)); flashes = [];
+      while (trailGroup.children.length) trailGroup.remove(trailGroup.children[0]);
+    }
+
+    function resetSim(keepSliders) {
+      if (!keepSliders) {
+        document.getElementById('densitySlider').value = 80;
+        document.getElementById('modSlider').value = 70;
+        document.getElementById('rodSlider').value = 40;
+        document.getElementById('speedSlider').value = 1.5;
+        state.density = 80; state.moderator = 70; state.rods = 40; state.speed = 1.5;
+      }
+      state.density = +document.getElementById('densitySlider').value;
+      state.moderator = +document.getElementById('modSlider').value;
+      state.rods = +document.getElementById('rodSlider').value;
+      state.speed = +document.getElementById('speedSlider').value;
+      syncSliderLabels();
+      clearDynamic();
+      state.fissions = 0;
+      state.energyMeV = 0;
+      state.generation = 0;
+      state.genNeutronCounts = [0];
+      state.energyHistory = [0];
+      state.recentBorn = 0;
+      state.recentLost = 0;
+      state.kEst = null;
+      state.overheat = false;
+      state.genTimer = 0;
+      paused = false;
+      updatePauseLabel();
+      rebuildFuel();
+      updateRods();
+      updateModeratorVisual();
+      camTheta = defaultCam.theta; camPhi = defaultCam.phi; camRadius = defaultCam.radius;
+      updateCameraFromSpherical();
+      updateStatsUI();
+    }
+
+    function applyPreset(name) {
+      const presets = {
+        single: { density: 40, moderator: 85, rods: 90, speed: 1.2, autoFire: true },
+        reactor: { density: 95, moderator: 80, rods: 45, speed: 1.3, autoFire: true, burst: 2 },
+        runaway: { density: 125, moderator: 90, rods: 5, speed: 1.7, autoFire: true, burst: 3 },
+        bomb: { density: 140, moderator: 0, rods: 0, speed: 2.0, autoFire: true, burst: 6 }
+      };
+      const p = presets[name];
+      document.getElementById('densitySlider').value = p.density;
+      document.getElementById('modSlider').value = p.moderator;
+      document.getElementById('rodSlider').value = p.rods;
+      document.getElementById('speedSlider').value = p.speed;
+      resetSim(true);
+      if (p.autoFire) {
+        fireNeutron();
+        if (p.burst) {
+          for (let i = 1; i < p.burst; i++) setTimeout(fireNeutron, i * 120);
+        }
+      }
+    }
+
+    function buildVessel() {
+      vesselGroup = new THREE.Group();
+      // Cutaway half-cylinder shell
+      const shellGeo = new THREE.CylinderGeometry(VESSEL_R, VESSEL_R, VESSEL_H, 48, 1, true, -Math.PI * 0.15, Math.PI * 1.15);
+      const shellMat = new THREE.MeshStandardMaterial({
+        color: 0x334155, transparent: true, opacity: 0.22, side: THREE.DoubleSide, metalness: 0.4, roughness: 0.5
+      });
+      const shell = new THREE.Mesh(shellGeo, shellMat);
+      vesselGroup.add(shell);
+
+      const rim = new THREE.Mesh(
+        new THREE.TorusGeometry(VESSEL_R, 0.08, 8, 48, Math.PI * 1.15),
+        new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.6 })
+      );
+      rim.rotation.x = Math.PI / 2;
+      rim.rotation.z = -Math.PI * 0.15;
+      rim.position.y = VESSEL_H / 2;
+      vesselGroup.add(rim);
+
+      const floor = new THREE.Mesh(
+        new THREE.CircleGeometry(VESSEL_R, 48, -Math.PI * 0.15, Math.PI * 1.15),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, transparent: true, opacity: 0.5, side: THREE.DoubleSide })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -VESSEL_H / 2;
+      vesselGroup.add(floor);
+
+      moderatorMist = new THREE.Mesh(
+        new THREE.CylinderGeometry(VESSEL_R - 0.3, VESSEL_R - 0.3, VESSEL_H - 0.5, 32, 1, true, -Math.PI * 0.1, Math.PI * 1.05),
+        new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.1, side: THREE.DoubleSide })
+      );
+      vesselGroup.add(moderatorMist);
+
+      // Control rods
+      const rodGeo = new THREE.CylinderGeometry(0.18, 0.18, VESSEL_H * 0.7, 10);
+      const rodMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.7, roughness: 0.25 });
+      const rodDefs = [{ x: 1.6, z: 0 }, { x: -0.2, z: 1.5 }, { x: 1.2, z: -1.3 }];
+      rodMeshes = [];
+      rodDefs.forEach(d => {
+        const rod = new THREE.Mesh(rodGeo, rodMat.clone());
+        rod.position.set(d.x, 0, d.z);
+        vesselGroup.add(rod);
+        rodMeshes.push(rod);
+      });
+
+      const grid = new THREE.GridHelper(22, 22, 0x334155, 0x1e293b);
+      grid.position.y = -VESSEL_H / 2 - 0.02;
+      vesselGroup.add(grid);
+
+      scene.add(vesselGroup);
+    }
+
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0f172a);
+      camera = new THREE.PerspectiveCamera(45, container.offsetWidth / Math.max(container.offsetHeight, 1), 0.1, 300);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+      const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+      sun.position.set(8, 14, 10);
+      scene.add(sun);
+      const fill = new THREE.DirectionalLight(0x93c5fd, 0.35);
+      fill.position.set(-10, 4, -8);
+      scene.add(fill);
+
+      trailGroup = new THREE.Group();
+      scene.add(trailGroup);
+      buildVessel();
+      rebuildFuel();
+      updateRods();
+      updateModeratorVisual();
+      setupCameraControls();
+      updateCameraFromSpherical();
+      animate(performance.now());
+    }
+
+    function animate(ts) {
+      requestAnimationFrame(animate);
+      const dt = Math.min(0.05, (ts - lastTs) / 1000);
+      lastTs = ts;
+      if (!paused) stepPhysics(dt);
+      else updateStatsUI();
+
+      // Gentle idle motion on fuel glow
+      if (fuelMesh && !reduceMotion) {
+        fuelMesh.material.emissiveIntensity = 0.3 + 0.08 * Math.sin(ts * 0.002);
+      }
+      drawChart();
+      renderer.render(scene, camera);
+    }
+
+    // Bind controls
+    document.getElementById('densitySlider').addEventListener('input', e => {
+      state.density = +e.target.value;
+      syncSliderLabels();
+      // Live rebuild fuel count without clearing stats entirely — soft reset fuel packing
+      const keepStats = { fissions: state.fissions, energyMeV: state.energyMeV, generation: state.generation, kEst: state.kEst };
+      clearDynamic();
+      rebuildFuel();
+      Object.assign(state, keepStats);
+      updateStatsUI();
+    });
+    document.getElementById('modSlider').addEventListener('input', e => {
+      state.moderator = +e.target.value;
+      syncSliderLabels();
+      updateModeratorVisual();
+      updateStatsUI();
+    });
+    document.getElementById('rodSlider').addEventListener('input', e => {
+      state.rods = +e.target.value;
+      syncSliderLabels();
+      updateRods();
+      updateStatsUI();
+    });
+    document.getElementById('speedSlider').addEventListener('input', e => {
+      state.speed = +e.target.value;
+      syncSliderLabels();
+    });
+
+    document.getElementById('fireBtn').addEventListener('click', fireNeutron);
+    document.getElementById('pauseBtn').addEventListener('click', () => {
+      paused = !paused;
+      updatePauseLabel();
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => resetSim(false));
+    document.getElementById('presetSingle').addEventListener('click', () => applyPreset('single'));
+    document.getElementById('presetReactor').addEventListener('click', () => applyPreset('reactor'));
+    document.getElementById('presetRunaway').addEventListener('click', () => applyPreset('runaway'));
+    document.getElementById('presetBomb').addEventListener('click', () => applyPreset('bomb'));
+
+    window.addEventListener('resize', () => {
+      if (!camera) return;
+      camera.aspect = container.offsetWidth / Math.max(container.offsetHeight, 1);
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
+
+    setLanguage(currentLang);
+    syncSliderLabels();
+    initThree();
+    updateStatsUI();
+
+    // Optional deep-link for demos / teacher links: #preset=runaway|reactor|single|bomb
+    // Aliases: uncontrolled → bomb (neutral “uncontrolled chain reaction” preset)
+    (function applyHashPreset() {
+      const m = (location.hash || '').match(/preset=([a-z]+)/i);
+      if (!m) return;
+      let name = m[1].toLowerCase();
+      if (name === 'uncontrolled') name = 'bomb';
+      if (['single', 'reactor', 'runaway', 'bomb'].includes(name)) {
+        setTimeout(() => applyPreset(name), 400);
+      }
+    })();
+  </script>
+
+  <script src="practice_questions.js"></script>
+  <script src="practice_questions_data.js"></script>
+  <script>initPracticeQuestions('nuclear_fission');</script>
+</body>
+</html>

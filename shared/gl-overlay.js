@@ -83,7 +83,8 @@
     'Bohr_Model.html': 'atomic',
     'Radioactive_Source_Range_and_Penetration.html': 'atomic',
     'Radioactive_Decay_Half_Life.html': 'atomic',
-    'Random_Nature_Radioactive_Decay.html': 'atomic'
+    'Random_Nature_Radioactive_Decay.html': 'atomic',
+    'Nuclear_Fission_Chain_Reaction.html': 'atomic'
   };
 
   var state = {

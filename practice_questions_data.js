@@ -1047,6 +1047,33 @@
     ],
   };
 
+  B.nuclear_fission = {
+    en: [
+      { q: "Describe what happens when a thermal neutron is captured by a \\(^{235}\\mathrm{U}\\) nucleus.",
+        sol: "<p>The nucleus becomes highly excited and splits into two (occasionally three) <b>fission fragments</b>, typically releasing <b>2–3 neutrons</b> and about <b>200 MeV</b> of energy. Most of the energy appears as kinetic energy of the fragments. The mass of the products is slightly less than the mass of the reactants — this <b>mass defect</b> appears as energy via \\(E = mc^{2}\\).</p>" },
+      { q: "Explain the roles of the <b>moderator</b> and <b>control rods</b> in a nuclear power reactor.",
+        sol: "<p><b>Moderator</b> (e.g. water or graphite): slows fast fission neutrons by elastic collisions so they become <b>thermal neutrons</b>, which have a much higher probability of causing further \\(^{235}\\mathrm{U}\\) fissions.</p><p><b>Control rods</b> (e.g. boron or cadmium): absorb neutrons. Inserting rods lowers the multiplication factor \\(k\\); withdrawing them raises \\(k\\). Operators keep \\(k \\approx 1\\) for steady power.</p>" },
+      { q: "Define the neutron multiplication factor \\(k\\) and state the meaning of subcritical, critical and supercritical.",
+        sol: "<p>\\(k\\) is the average number of neutrons in one generation that cause fission leading to the next generation (neutrons produced ÷ neutrons lost/absorbed/escaped), in simple classroom language.</p><ul class='list-disc pl-5'><li><b>Subcritical</b> \\(k &lt; 1\\): chain reaction dies out.</li><li><b>Critical</b> \\(k \\approx 1\\): steady power (reactor target).</li><li><b>Supercritical</b> \\(k &gt; 1\\): neutron population and power grow — dangerous if uncontrolled.</li></ul>" },
+      { q: "What is meant by <b>critical mass</b>? Why does a power reactor need careful geometry and enrichment control?",
+        sol: "<p><b>Critical mass</b> is the smallest amount of fissile material (in a given shape, density and surroundings) for which \\(k = 1\\) can be achieved — enough neutrons cause further fissions to sustain the chain.</p><p>Too little fuel, wrong shape (large surface losses), or strong absorption makes the assembly subcritical. Reactors use moderated thermal neutrons, controlled enrichment and geometry so that \\(k\\) can be held near 1 safely with control rods.</p>" },
+      { q: "A fission releases 200 MeV. Estimate the energy from \\(3.0\\times10^{19}\\) fissions in joules. (\\(1\\,\\mathrm{eV} = 1.6\\times10^{-19}\\,\\mathrm{J}\\))",
+        sol: "<p>One fission: \\(200\\times10^{6}\\times 1.6\\times10^{-19} = 3.2\\times10^{-11}\\,\\mathrm{J}\\).</p><p>\\[ E = 3.0\\times10^{19} \\times 3.2\\times10^{-11} = 9.6\\times10^{8}\\,\\mathrm{J} \\approx 960\\,\\mathrm{MJ}. \\]</p>" },
+    ],
+    zh: [
+      { q: "描述熱中子被鈾-235 核俘獲後發生甚麼。",
+        sol: "<p>原子核高度激發後分裂為兩顆（偶爾三顆）<b>裂變碎片</b>，通常釋出 <b>2 至 3 顆中子</b>及約 <b>200 MeV</b> 能量。能量主要以碎片動能形式出現。產物質量略小於反應物——此<b>質量虧損</b>按 \\(E = mc^{2}\\) 轉為能量。</p>" },
+      { q: "解釋核電廠反應堆中<b>慢化劑</b>與<b>控制棒</b>的作用。",
+        sol: "<p><b>慢化劑</b>（例如水或石墨）：以彈性碰撞使快中子減速成為<b>熱中子</b>，大幅提高引發鈾-235 進一步裂變的機率。</p><p><b>控制棒</b>（例如硼或鎘）：吸收中子。插入棒使倍增因數 \\(k\\) 下降；抽出則使 \\(k\\) 上升。操作員維持 \\(k \\approx 1\\) 以輸出穩定功率。</p>" },
+      { q: "定義中子倍增因數 \\(k\\)，並說明次臨界、臨界與超臨界的意義。",
+        sol: "<p>課堂簡化定義：\\(k\\) 為一代中子平均能引發下一代裂變的數目（產生的中子 ÷ 失去／吸收／逃逸的中子）。</p><ul class='list-disc pl-5'><li><b>次臨界</b> \\(k &lt; 1\\)：連鎖反應逐漸熄滅。</li><li><b>臨界</b> \\(k \\approx 1\\)：功率穩定（反應堆目標）。</li><li><b>超臨界</b> \\(k &gt; 1\\)：中子數目與功率增長——失控時危險。</li></ul>" },
+      { q: "何謂<b>臨界質量</b>？為何核電廠須謹慎控制幾何形狀與濃縮度？",
+        sol: "<p><b>臨界質量</b>是在特定形狀、密度及環境下，能使 \\(k = 1\\) 的最少可裂變物質量——即有足夠中子持續引發裂變以維持連鎖反應。</p><p>燃料過少、形狀不當（表面逃逸大）或吸收過強都會使系統次臨界。反應堆利用慢化熱中子、受控濃縮度與幾何形狀，並以控制棒把 \\(k\\) 安全維持在接近 1。</p>" },
+      { q: "每次裂變釋放 200 MeV。估算 \\(3.0\\times10^{19}\\) 次裂變的總能量（焦耳）。（\\(1\\,\\mathrm{eV} = 1.6\\times10^{-19}\\,\\mathrm{J}\\)）",
+        sol: "<p>一次裂變：\\(200\\times10^{6}\\times 1.6\\times10^{-19} = 3.2\\times10^{-11}\\,\\mathrm{J}\\)。</p><p>\\[ E = 3.0\\times10^{19} \\times 3.2\\times10^{-11} = 9.6\\times10^{8}\\,\\mathrm{J} \\approx 960\\,\\mathrm{MJ}. \\]</p>" },
+    ],
+  };
+
   B.random_decay = {
     en: [
       { q: "Why is radioactive decay described as a <b>random</b> process?",
