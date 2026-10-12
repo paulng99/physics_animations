@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doppler Effect · 多普勒效應 (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="shared/sim-shell.css">
+  <script src="shared/i18n.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+    .glass { background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(10px); }
+    canvas.graph-canvas { display: block; width: 100%; height: 150px; touch-action: none; }
+    @media (min-width: 768px) {
+      canvas.graph-canvas { height: 170px; }
+    }
+    #waveCanvas { display: block; width: 100%; height: 240px; touch-action: none; }
+    @media (min-width: 768px) {
+      #waveCanvas { height: 280px; }
+    }
+    input[type="range"] {
+      min-height: 44px;
+      accent-color: #2563eb;
+    }
+    .dir-btn[aria-pressed="true"] {
+      background: #2563eb;
+      color: #fff;
+    }
+    .app-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f1f5f9;
+      border-radius: inherit;
+      text-align: center;
+      padding: 1.25rem;
+    }
+    .app-overlay[hidden] { display: none !important; }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 32px;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-pill::before {
+      content: '';
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 9999px;
+      background: currentColor;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+  <header class="max-w-7xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between gap-3">
+      <a href="index.html#waves" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 min-h-[44px]">
+        <span>←</span>
+        <span data-i18n="back">返回波動</span>
+      </a>
+      <div class="flex gap-2">
+        <button type="button" class="lang-btn px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100 min-h-[44px]" onclick="updateLanguage('en')" data-lang="en">EN</button>
+        <button type="button" class="lang-btn px-3 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white min-h-[44px]" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 pb-12">
+    <section class="glass rounded-3xl border border-white/70 p-5 md:p-7 shadow-xl shadow-blue-100/40">
+      <p class="text-blue-600 font-semibold text-sm uppercase tracking-wide" data-i18n="tag">HKDSE 波動 · 多普勒效應</p>
+      <h1 class="mt-1 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">多普勒效應：波源與觀察者</h1>
+      <p class="mt-2 text-slate-600 leading-relaxed" data-i18n="observe">
+        觀察重點：波源趨近時波前擠密、聽得較高音；遠離時波前疏開、聽得較低音。觀測頻率 $f' = f\,(v \pm v_o)/(v \mp v_s)$（非相對論）。
+      </p>
+
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <span id="statusPill" class="status-pill bg-slate-100 text-slate-600" data-state="loading">
+          <span id="statusLabel" data-i18n="state.loading">載入中…</span>
+        </span>
+        <p id="rangeHint" class="hidden text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2" role="status"></p>
+      </div>
+
+      <div class="mt-5 grid lg:grid-cols-12 gap-4 sim-shell">
+        <article class="sim-viewport lg:col-span-7 space-y-3">
+          <div class="relative rounded-2xl border-2 border-slate-200 overflow-hidden bg-white" id="waveHost" data-gl-host data-gl-topic="waves">
+            <canvas id="waveCanvas" width="900" height="280" aria-label="Doppler wavefronts"></canvas>
+            <div class="absolute top-3 left-3 flex flex-wrap gap-2 pointer-events-none text-[11px]">
+              <span class="bg-white/90 text-blue-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.source">S 波源</span>
+              <span class="bg-white/90 text-amber-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.observer">O 觀察者</span>
+              <span class="bg-white/90 text-slate-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.wave">波前</span>
+              <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.v">v 波速</span>
+            </div>
+            <div id="appOverlay" class="app-overlay" role="status" aria-live="polite">
+              <div id="overlayLoading" class="text-center">
+                <div class="pgl-dots" aria-hidden="true">
+                  <span class="pgl-dot"></span><span class="pgl-dot"></span><span class="pgl-dot"></span>
+                </div>
+                <p class="text-sm font-semibold text-slate-600 mt-2" data-i18n="state.loading">載入中…</p>
+              </div>
+              <div id="overlayFail" class="hidden text-center px-4">
+                <p class="text-sm font-semibold text-slate-700 mb-3" data-i18n="state.fail">模擬無法載入。請檢查瀏覽器後重試。</p>
+                <button type="button" id="retryBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="retry">重新載入</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" id="playBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all shadow-sm min-h-[44px] min-w-[96px]" data-i18n="play">播放</button>
+            <button type="button" id="pauseBtn" class="px-5 py-2.5 rounded-xl bg-slate-700 text-white font-semibold hover:bg-slate-800 transition-all min-h-[44px] min-w-[96px]" data-i18n="pause" disabled>暫停</button>
+            <button type="button" id="resetBtn" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-red-50 hover:text-red-600 transition-all min-h-[44px]" data-i18n="reset">重設</button>
+            <button type="button" id="toneBtn" class="px-5 py-2.5 rounded-xl bg-green-50 text-green-700 border border-green-200 font-semibold hover:bg-green-100 transition-all min-h-[44px]" aria-pressed="false" data-i18n="tone">音調提示：關</button>
+          </div>
+        </article>
+
+        <aside class="sim-controls lg:col-span-5 space-y-3">
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <h2 class="font-semibold text-slate-900 mb-3" data-i18n="dirTitle">運動方向（符號約定）</h2>
+            <p class="text-xs text-slate-500 mb-2" data-i18n="dirHint">「趨近」取正號：波源趨近 → $v_s$ 使分母減小；觀察者趨近 → $v_o$ 使分子增大。</p>
+            <div class="grid grid-cols-2 gap-2 mb-3" role="group" aria-label="Source direction">
+              <button type="button" id="srcToward" class="dir-btn px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold min-h-[44px]" aria-pressed="true" data-i18n="src.toward">波源趨近</button>
+              <button type="button" id="srcAway" class="dir-btn px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 min-h-[44px]" aria-pressed="false" data-i18n="src.away">波源遠離</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mb-4" role="group" aria-label="Observer direction">
+              <button type="button" id="obsToward" class="dir-btn px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold min-h-[44px]" aria-pressed="false" data-i18n="obs.toward">觀察者趨近</button>
+              <button type="button" id="obsAway" class="dir-btn px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 min-h-[44px]" aria-pressed="true" data-i18n="obs.away">觀察者靜止／遠離</button>
+            </div>
+
+            <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">主要參數</h2>
+
+            <label class="block text-sm font-medium text-slate-700" for="freq">
+              <span data-i18n="freq">波源頻率 f (Hz)</span>：
+              <span id="fValue" class="text-blue-600 font-semibold">4.0</span>
+            </label>
+            <input id="freq" type="range" min="1" max="12" step="0.1" value="4" class="w-full mb-3" />
+
+            <label class="block text-sm font-medium text-slate-700" for="waveSpeed">
+              <span data-i18n="waveSpeed">波速 v (m/s)</span>：
+              <span id="vValue" class="text-green-600 font-semibold">60</span>
+            </label>
+            <input id="waveSpeed" type="range" min="30" max="120" step="1" value="60" class="w-full mb-3" />
+
+            <label class="block text-sm font-medium text-slate-700" for="vsSpeed">
+              <span data-i18n="vsSpeed">波源速率 v<sub>s</sub> (m/s)</span>：
+              <span id="vsValue" class="text-blue-600 font-semibold">20</span>
+            </label>
+            <input id="vsSpeed" type="range" min="0" max="50" step="1" value="20" class="w-full mb-3" />
+
+            <label class="block text-sm font-medium text-slate-700" for="voSpeed">
+              <span data-i18n="voSpeed">觀察者速率 v<sub>o</sub> (m/s)</span>：
+              <span id="voValue" class="text-amber-600 font-semibold">0</span>
+            </label>
+            <input id="voSpeed" type="range" min="0" max="40" step="1" value="0" class="w-full" />
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readingsQuick">觀測頻率</h2>
+            <div class="rounded-xl bg-blue-50 border border-blue-200 px-3 py-3 mb-3">
+              <div class="text-xs text-blue-700 font-semibold mb-1" data-i18n="formulaLive">即時公式</div>
+              <div id="formulaOut" class="font-mono text-sm text-blue-900 leading-relaxed">f′ = f (v + vₒ) / (v − vₛ)</div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+              <div class="rounded-lg bg-slate-50 border border-slate-200 px-2 py-1.5">
+                <div class="text-slate-700 font-semibold">f</div>
+                <div id="fOut" class="font-bold text-slate-700">4.00 Hz</div>
+              </div>
+              <div class="rounded-lg bg-blue-50 border border-blue-200 px-2 py-1.5">
+                <div class="text-blue-700 font-semibold">f′</div>
+                <div id="fpOut" class="font-bold text-blue-700">—</div>
+              </div>
+              <div class="rounded-lg bg-green-50 border border-green-200 px-2 py-1.5">
+                <div class="text-green-700 font-semibold">Δf</div>
+                <div id="dfOut" class="font-bold text-green-700">—</div>
+              </div>
+              <div class="rounded-lg bg-amber-50 border border-amber-200 px-2 py-1.5">
+                <div class="text-amber-700 font-semibold">λ′ / λ</div>
+                <div id="lamOut" class="font-bold text-amber-700">—</div>
+              </div>
+            </div>
+            <p class="mt-2 text-xs text-slate-500" id="signNote" data-i18n="sign.toward">目前：波源趨近觀察者（分母 v − vₛ）</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="mt-5 grid md:grid-cols-2 gap-4">
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <h2 class="font-semibold text-slate-900 mb-2">
+          <span class="text-blue-600">f′–t</span>
+          <span class="text-slate-500 text-sm font-medium" data-i18n="ftHint">觀測頻率（對比 f）</span>
+        </h2>
+        <canvas id="ftCanvas" class="graph-canvas rounded-xl bg-slate-50 border border-slate-200" width="560" height="170"></canvas>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <h2 class="font-semibold text-slate-900 mb-2" data-i18n="compareTitle">頻率對比棒圖</h2>
+        <canvas id="barCanvas" class="graph-canvas rounded-xl bg-slate-50 border border-slate-200" width="560" height="170"></canvas>
+      </div>
+    </section>
+
+    <details class="mt-5 glass rounded-2xl border border-white/70 p-4 md:p-5 group">
+      <summary class="cursor-pointer list-none flex items-center justify-between gap-3 min-h-[44px] font-semibold text-slate-900">
+        <span data-i18n="moreTitle">公式、讀數與學習提示</span>
+        <span class="text-blue-600 text-sm font-medium group-open:rotate-180 transition-transform" aria-hidden="true">▾</span>
+      </summary>
+      <div class="mt-4 grid md:grid-cols-2 gap-4 text-sm">
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE 公式焦點</h3>
+          <ul class="space-y-1.5 text-slate-700 font-mono text-[13px]">
+            <li>$f' = f\dfrac{v \pm v_o}{v \mp v_s}$</li>
+            <li data-i18n="formula.srcToward">波源趨近：$f' = f\,v/(v-v_s)$（較高）</li>
+            <li data-i18n="formula.srcAway">波源遠離：$f' = f\,v/(v+v_s)$（較低）</li>
+            <li data-i18n="formula.obsToward">觀察者趨近：$f' = f\,(v+v_o)/v$</li>
+            <li data-i18n="formula.obsAway">觀察者遠離：$f' = f\,(v-v_o)/v$</li>
+            <li>$\lambda = v/f$（波源靜止時）</li>
+          </ul>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="font-semibold text-slate-900 mb-2" data-i18n="readings">即時讀數</h3>
+          <div class="space-y-1.5">
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="lamLabel">源波長 λ</span><span id="lamDetail" class="font-semibold text-slate-700">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="periodLabel">源週期 T</span><span id="periodOut" class="font-semibold text-blue-600">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">t</span><span id="tOut" class="font-semibold text-slate-700">0.00 s</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="crestsLabel">已發射波前</span><span id="crestOut" class="font-semibold text-slate-700">0</span></div>
+          </div>
+          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="tip">
+            提示：波前圓心留在發射時刻的波源位置，並以波速 v 擴張；趨近側圓距較密，對應較高 f′。音調提示僅供定性比較，非真實錄音。
+          </p>
+        </div>
+      </div>
+    </details>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const COLORS = {
+        source: '#2563EB',
+        observer: '#D97706',
+        wave: '#64748B',
+        waveFront: '#94A3B8',
+        v: '#16A34A',
+        f: '#475569',
+        fp: '#2563EB',
+        cursor: '#2563EB',
+        axis: '#94A3B8',
+        grid: '#E2E8F0',
+        track: '#CBD5E1'
+      };
+
+      // Classroom-scaled 1D track (metres). Visual f is low so wavefronts stay readable.
+      const WORLD = {
+        length: 100,
+        srcStart: 22,
+        obsStart: 78,
+        maxCrests: 48
+      };
+
+      const PARAM = {
+        fMin: 1, fMax: 12,
+        vMin: 30, vMax: 120,
+        vsMin: 0, vsMax: 50,
+        voMin: 0, voMax: 40,
+        // Warn when |vs| gets close to v (Mach-like blow-up of school formula)
+        vsRatioWarn: 0.75,
+        voRatioWarn: 0.75
+      };
+
+      const translations = {
+        en: {
+          back: 'Back to Wave Motion',
+          tag: 'HKDSE Waves · Doppler effect',
+          title: 'Doppler Effect: Source & Observer',
+          observe: 'Focus: wavefronts bunch when the source approaches (higher pitch) and spread when it recedes (lower pitch). Observed frequency $f\' = f\\,(v \\pm v_o)/(v \\mp v_s)$ (non-relativistic).',
+          controls: 'Primary parameters',
+          dirTitle: 'Motion direction (sign convention)',
+          dirHint: '“Toward” takes the plus convention: source toward → smaller denominator; observer toward → larger numerator.',
+          'src.toward': 'Source toward',
+          'src.away': 'Source away',
+          'obs.toward': 'Observer toward',
+          'obs.away': 'Observer still / away',
+          freq: 'Source frequency f (Hz)',
+          waveSpeed: 'Wave speed v (m/s)',
+          vsSpeed: 'Source speed vs (m/s)',
+          voSpeed: 'Observer speed vo (m/s)',
+          play: 'Play',
+          pause: 'Pause',
+          reset: 'Reset',
+          retry: 'Retry',
+          tone: 'Tone cue: Off',
+          'tone.on': 'Tone cue: On',
+          'tone.off': 'Tone cue: Off',
+          readingsQuick: 'Observed frequency',
+          formulaLive: 'Live formula',
+          ftHint: 'observed frequency (vs f)',
+          compareTitle: 'Frequency comparison',
+          moreTitle: 'Formulas, readings & teaching tips',
+          formulaTitle: 'HKDSE formula focus',
+          'formula.srcToward': 'Source toward: $f\' = f\\,v/(v-v_s)$ (higher)',
+          'formula.srcAway': 'Source away: $f\' = f\\,v/(v+v_s)$ (lower)',
+          'formula.obsToward': 'Observer toward: $f\' = f\\,(v+v_o)/v$',
+          'formula.obsAway': 'Observer away: $f\' = f\\,(v-v_o)/v$',
+          readings: 'Live readings',
+          lamLabel: 'Source wavelength λ',
+          periodLabel: 'Source period T',
+          crestsLabel: 'Wavefronts emitted',
+          tip: 'Tip: each circle is centred where the source was at emission and expands at speed v. Closer crest spacing ahead means higher f′. The tone cue is a qualitative pitch only, not a recording.',
+          'legend.source': 'S source',
+          'legend.observer': 'O observer',
+          'legend.wave': 'wavefront',
+          'legend.v': 'v wave speed',
+          'sign.toward': 'Now: source approaching (denominator v − vs)',
+          'sign.away': 'Now: source receding (denominator v + vs)',
+          'sign.obsToward': ' · observer approaching (numerator v + vo)',
+          'sign.obsAway': ' · observer still/receding (numerator v − vo or v)',
+          'state.loading': 'Loading…',
+          'state.ready': 'Ready — adjust f, v, vs, vo',
+          'state.playing': 'Playing',
+          'state.fail': 'Simulation failed to load. Check your browser, then retry.',
+          'hint.vsFast': 'vs is close to v — school formula blows up. Reduce vs or raise v.',
+          'hint.voFast': 'vo is large compared with v — try a smaller observer speed.',
+          'hint.supersonic': 'vs ≥ v is outside the school (subsonic) model. Reduce vs.'
+        },
+        'zh-hk': {
+          back: '返回波動',
+          tag: 'HKDSE 波動 · 多普勒效應',
+          title: '多普勒效應：波源與觀察者',
+          observe: '觀察重點：波源趨近時波前擠密、聽得較高音；遠離時波前疏開、聽得較低音。觀測頻率 $f\' = f\\,(v \\pm v_o)/(v \\mp v_s)$（非相對論）。',
+          controls: '主要參數',
+          dirTitle: '運動方向（符號約定）',
+          dirHint: '「趨近」取正號：波源趨近 → vs 使分母減小；觀察者趨近 → vo 使分子增大。',
+          'src.toward': '波源趨近',
+          'src.away': '波源遠離',
+          'obs.toward': '觀察者趨近',
+          'obs.away': '觀察者靜止／遠離',
+          freq: '波源頻率 f (Hz)',
+          waveSpeed: '波速 v (m/s)',
+          vsSpeed: '波源速率 vs (m/s)',
+          voSpeed: '觀察者速率 vo (m/s)',
+          play: '播放',
+          pause: '暫停',
+          reset: '重設',
+          retry: '重新載入',
+          tone: '音調提示：關',
+          'tone.on': '音調提示：開',
+          'tone.off': '音調提示：關',
+          readingsQuick: '觀測頻率',
+          formulaLive: '即時公式',
+          ftHint: '觀測頻率（對比 f）',
+          compareTitle: '頻率對比棒圖',
+          moreTitle: '公式、讀數與學習提示',
+          formulaTitle: 'HKDSE 公式焦點',
+          'formula.srcToward': '波源趨近：$f\' = f\\,v/(v-v_s)$（較高）',
+          'formula.srcAway': '波源遠離：$f\' = f\\,v/(v+v_s)$（較低）',
+          'formula.obsToward': '觀察者趨近：$f\' = f\\,(v+v_o)/v$',
+          'formula.obsAway': '觀察者遠離：$f\' = f\\,(v-v_o)/v$',
+          readings: '即時讀數',
+          lamLabel: '源波長 λ',
+          periodLabel: '源週期 T',
+          crestsLabel: '已發射波前',
+          tip: '提示：波前圓心留在發射時刻的波源位置，並以波速 v 擴張；趨近側圓距較密，對應較高 f′。音調提示僅供定性比較，非真實錄音。',
+          'legend.source': 'S 波源',
+          'legend.observer': 'O 觀察者',
+          'legend.wave': '波前',
+          'legend.v': 'v 波速',
+          'sign.toward': '目前：波源趨近觀察者（分母 v − vs）',
+          'sign.away': '目前：波源遠離觀察者（分母 v + vs）',
+          'sign.obsToward': ' · 觀察者趨近（分子 v + vo）',
+          'sign.obsAway': ' · 觀察者靜止／遠離（分子 v 或 v − vo）',
+          'state.loading': '載入中…',
+          'state.ready': '就緒 — 可調校 f、v、vs、vo',
+          'state.playing': '播放中',
+          'state.fail': '模擬無法載入。請檢查瀏覽器後重試。',
+          'hint.vsFast': 'vs 接近 v，學校公式會急升。請減小 vs 或增大 v。',
+          'hint.voFast': 'vo 相對 v 偏大，建議減小觀察者速率。',
+          'hint.supersonic': 'vs ≥ v 超出學校（亞音速）模型。請減小 vs。'
+        }
+      };
+
+      let currentLang = window.PhysicsI18n
+        ? PhysicsI18n.get()
+        : (localStorage.getItem('preferred_language') || 'zh-hk');
+      if (window.PhysicsI18n) currentLang = PhysicsI18n.normalize(currentLang);
+      if (currentLang !== 'en' && currentLang !== 'zh-hk') currentLang = 'zh-hk';
+
+      function t(key) {
+        return (translations[currentLang] && translations[currentLang][key])
+          || (translations.en && translations.en[key])
+          || key;
+      }
+
+      const els = {
+        freq: document.getElementById('freq'),
+        waveSpeed: document.getElementById('waveSpeed'),
+        vsSpeed: document.getElementById('vsSpeed'),
+        voSpeed: document.getElementById('voSpeed'),
+        fValue: document.getElementById('fValue'),
+        vValue: document.getElementById('vValue'),
+        vsValue: document.getElementById('vsValue'),
+        voValue: document.getElementById('voValue'),
+        srcToward: document.getElementById('srcToward'),
+        srcAway: document.getElementById('srcAway'),
+        obsToward: document.getElementById('obsToward'),
+        obsAway: document.getElementById('obsAway'),
+        playBtn: document.getElementById('playBtn'),
+        pauseBtn: document.getElementById('pauseBtn'),
+        resetBtn: document.getElementById('resetBtn'),
+        retryBtn: document.getElementById('retryBtn'),
+        toneBtn: document.getElementById('toneBtn'),
+        statusPill: document.getElementById('statusPill'),
+        statusLabel: document.getElementById('statusLabel'),
+        rangeHint: document.getElementById('rangeHint'),
+        appOverlay: document.getElementById('appOverlay'),
+        overlayLoading: document.getElementById('overlayLoading'),
+        overlayFail: document.getElementById('overlayFail'),
+        formulaOut: document.getElementById('formulaOut'),
+        fOut: document.getElementById('fOut'),
+        fpOut: document.getElementById('fpOut'),
+        dfOut: document.getElementById('dfOut'),
+        lamOut: document.getElementById('lamOut'),
+        signNote: document.getElementById('signNote'),
+        lamDetail: document.getElementById('lamDetail'),
+        periodOut: document.getElementById('periodOut'),
+        tOut: document.getElementById('tOut'),
+        crestOut: document.getElementById('crestOut')
+      };
+
+      const waveCanvas = document.getElementById('waveCanvas');
+      const ftCanvas = document.getElementById('ftCanvas');
+      const barCanvas = document.getElementById('barCanvas');
+
+      let waveCtx, ftCtx, barCtx;
+      let appState = 'loading'; // loading | ready | playing | fail
+      let srcToward = true;
+      let obsToward = false;
+      let tSim = 0;
+      let lastFrame = 0;
+      let rafId = 0;
+      let xs = WORLD.srcStart;
+      let xo = WORLD.obsStart;
+      let crests = []; // { x0, t0 }
+      let nextEmit = 0;
+      let toneOn = false;
+      let audioCtx = null;
+      let oscillator = null;
+      let gainNode = null;
+
+      /**
+       * School (non-relativistic) Doppler for sound / mechanical waves along a line.
+       * Sign: vsSign = +1 source toward observer; voSign = +1 observer toward source.
+       * f' = f (v + voSign·vo) / (v − vsSign·vs)
+       */
+      function getParams() {
+        const f = parseFloat(els.freq.value);
+        const v = parseFloat(els.waveSpeed.value);
+        const vs = parseFloat(els.vsSpeed.value);
+        const vo = parseFloat(els.voSpeed.value);
+        const vsSign = srcToward ? 1 : -1;
+        const voSign = obsToward ? 1 : -1;
+        const denom = v - vsSign * vs;
+        const numer = v + voSign * vo;
+        let fp = null;
+        let valid = denom > 1e-6 && numer > 0;
+        if (valid) fp = f * numer / denom;
+        const lambda = v / f;
+        const T = 1 / f;
+        // Source-side crest-spacing factor: λ'/λ = (v ∓ vs)/v (vo does not change λ)
+        const lamRatio = valid ? denom / v : null;
+        return { f, v, vs, vo, vsSign, voSign, denom, numer, fp, valid, lambda, T, lamRatio };
+      }
+
+      function velocityOfSource(p) {
+        // Toward observer: move right if source is left of observer, else left.
+        const towardObs = (xo >= xs) ? 1 : -1;
+        return (srcToward ? towardObs : -towardObs) * p.vs;
+      }
+
+      function velocityOfObserver(p) {
+        if (p.vo <= 0) return 0;
+        const towardSrc = (xs >= xo) ? 1 : -1;
+        return (obsToward ? towardSrc : -towardSrc) * p.vo;
+      }
+
+      function setAppState(next) {
+        appState = next;
+        const pill = els.statusPill;
+        const label = els.statusLabel;
+        pill.classList.remove('bg-slate-100', 'text-slate-600', 'bg-blue-50', 'text-blue-700', 'bg-green-50', 'text-green-700', 'bg-red-50', 'text-red-700');
+        if (next === 'loading') {
+          pill.classList.add('bg-slate-100', 'text-slate-600');
+          label.textContent = t('state.loading');
+          els.playBtn.disabled = true;
+          els.pauseBtn.disabled = true;
+        } else if (next === 'ready') {
+          pill.classList.add('bg-blue-50', 'text-blue-700');
+          label.textContent = t('state.ready');
+          els.playBtn.disabled = false;
+          els.pauseBtn.disabled = true;
+          hideOverlay();
+        } else if (next === 'playing') {
+          pill.classList.add('bg-green-50', 'text-green-700');
+          label.textContent = t('state.playing');
+          els.playBtn.disabled = true;
+          els.pauseBtn.disabled = false;
+          hideOverlay();
+        } else if (next === 'fail') {
+          pill.classList.add('bg-red-50', 'text-red-700');
+          label.textContent = t('state.fail');
+          els.playBtn.disabled = true;
+          els.pauseBtn.disabled = true;
+          showFailOverlay();
+        }
+        pill.dataset.state = next;
+      }
+
+      function hideOverlay() {
+        els.appOverlay.hidden = true;
+      }
+
+      function showLoadingOverlay() {
+        els.appOverlay.hidden = false;
+        els.overlayLoading.classList.remove('hidden');
+        els.overlayFail.classList.add('hidden');
+      }
+
+      function showFailOverlay() {
+        els.appOverlay.hidden = false;
+        els.overlayLoading.classList.add('hidden');
+        els.overlayFail.classList.remove('hidden');
+      }
+
+      function updateRangeHint(p) {
+        const hint = els.rangeHint;
+        if (p.vs >= p.v) {
+          hint.textContent = t('hint.supersonic');
+          hint.classList.remove('hidden');
+        } else if (p.vs / p.v >= PARAM.vsRatioWarn) {
+          hint.textContent = t('hint.vsFast');
+          hint.classList.remove('hidden');
+        } else if (p.vo / p.v >= PARAM.voRatioWarn) {
+          hint.textContent = t('hint.voFast');
+          hint.classList.remove('hidden');
+        } else {
+          hint.textContent = '';
+          hint.classList.add('hidden');
+        }
+      }
+
+      function updateDirButtons() {
+        els.srcToward.setAttribute('aria-pressed', srcToward ? 'true' : 'false');
+        els.srcAway.setAttribute('aria-pressed', srcToward ? 'false' : 'true');
+        els.obsToward.setAttribute('aria-pressed', obsToward ? 'true' : 'false');
+        els.obsAway.setAttribute('aria-pressed', obsToward ? 'false' : 'true');
+        els.srcToward.classList.toggle('text-slate-700', !srcToward);
+        els.srcAway.classList.toggle('text-slate-700', srcToward);
+        els.obsToward.classList.toggle('text-slate-700', !obsToward);
+        els.obsAway.classList.toggle('text-slate-700', obsToward);
+      }
+
+      function fitCanvas(canvas, ctx) {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const rect = canvas.getBoundingClientRect();
+        const w = Math.max(rect.width, 280);
+        const h = Math.max(rect.height, 120);
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { w, h };
+      }
+
+      function worldToX(xWorld, padL, plotW) {
+        return padL + (xWorld / WORLD.length) * plotW;
+      }
+
+      function emitCrests(p) {
+        while (nextEmit <= tSim) {
+          crests.push({ x0: xs, t0: nextEmit });
+          nextEmit += p.T;
+          if (crests.length > WORLD.maxCrests) crests.shift();
+        }
+      }
+
+      function drawScene(p) {
+        const { w, h } = fitCanvas(waveCanvas, waveCtx);
+        waveCtx.clearRect(0, 0, w, h);
+        const padL = 28;
+        const padR = 28;
+        const plotW = w - padL - padR;
+        const cy = h * 0.52;
+
+        // Soft sky band
+        const grad = waveCtx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#F8FAFC');
+        grad.addColorStop(1, '#EFF6FF');
+        waveCtx.fillStyle = grad;
+        waveCtx.fillRect(0, 0, w, h);
+
+        // Track
+        waveCtx.strokeStyle = COLORS.track;
+        waveCtx.lineWidth = 3;
+        waveCtx.beginPath();
+        waveCtx.moveTo(padL, cy + 36);
+        waveCtx.lineTo(w - padR, cy + 36);
+        waveCtx.stroke();
+
+        // Wavefront circles (clipped lightly by alpha with age)
+        for (let i = 0; i < crests.length; i++) {
+          const c = crests[i];
+          const age = tSim - c.t0;
+          if (age < 0) continue;
+          const rWorld = p.v * age;
+          const rPx = (rWorld / WORLD.length) * plotW;
+          if (rPx < 2 || rPx > plotW * 1.4) continue;
+          const cx = worldToX(c.x0, padL, plotW);
+          const alpha = Math.max(0.12, 0.55 - age * 0.04);
+          waveCtx.strokeStyle = 'rgba(100, 116, 139, ' + alpha + ')';
+          waveCtx.lineWidth = 1.6;
+          waveCtx.beginPath();
+          waveCtx.arc(cx, cy, rPx, 0, Math.PI * 2);
+          waveCtx.stroke();
+        }
+
+        // Source
+        const sx = worldToX(xs, padL, plotW);
+        waveCtx.fillStyle = COLORS.source;
+        waveCtx.beginPath();
+        waveCtx.arc(sx, cy, 14, 0, Math.PI * 2);
+        waveCtx.fill();
+        waveCtx.fillStyle = '#fff';
+        waveCtx.font = 'bold 12px Inter, sans-serif';
+        waveCtx.textAlign = 'center';
+        waveCtx.fillText('S', sx, cy + 4);
+
+        // Source velocity arrow
+        const vSrc = velocityOfSource(p);
+        if (Math.abs(vSrc) > 0.5) {
+          const dir = vSrc > 0 ? 1 : -1;
+          const ax = sx + dir * 22;
+          waveCtx.strokeStyle = COLORS.v;
+          waveCtx.fillStyle = COLORS.v;
+          waveCtx.lineWidth = 2.5;
+          waveCtx.beginPath();
+          waveCtx.moveTo(sx + dir * 16, cy - 28);
+          waveCtx.lineTo(ax + dir * 18, cy - 28);
+          waveCtx.stroke();
+          waveCtx.beginPath();
+          waveCtx.moveTo(ax + dir * 18, cy - 28);
+          waveCtx.lineTo(ax + dir * 10, cy - 33);
+          waveCtx.lineTo(ax + dir * 10, cy - 23);
+          waveCtx.closePath();
+          waveCtx.fill();
+          waveCtx.font = '10px Inter, sans-serif';
+          waveCtx.fillText('vs', sx + dir * 28, cy - 36);
+        }
+
+        // Observer
+        const ox = worldToX(xo, padL, plotW);
+        waveCtx.fillStyle = COLORS.observer;
+        waveCtx.beginPath();
+        waveCtx.moveTo(ox, cy - 16);
+        waveCtx.lineTo(ox + 12, cy + 14);
+        waveCtx.lineTo(ox - 12, cy + 14);
+        waveCtx.closePath();
+        waveCtx.fill();
+        waveCtx.fillStyle = '#fff';
+        waveCtx.font = 'bold 11px Inter, sans-serif';
+        waveCtx.fillText('O', ox, cy + 6);
+
+        const vObs = velocityOfObserver(p);
+        if (Math.abs(vObs) > 0.5) {
+          const dir = vObs > 0 ? 1 : -1;
+          waveCtx.strokeStyle = COLORS.observer;
+          waveCtx.fillStyle = COLORS.observer;
+          waveCtx.lineWidth = 2.5;
+          waveCtx.beginPath();
+          waveCtx.moveTo(ox, cy + 28);
+          waveCtx.lineTo(ox + dir * 28, cy + 28);
+          waveCtx.stroke();
+          waveCtx.beginPath();
+          waveCtx.moveTo(ox + dir * 28, cy + 28);
+          waveCtx.lineTo(ox + dir * 20, cy + 23);
+          waveCtx.lineTo(ox + dir * 20, cy + 33);
+          waveCtx.closePath();
+          waveCtx.fill();
+          waveCtx.font = '10px Inter, sans-serif';
+          waveCtx.fillText('vo', ox + dir * 8, cy + 42);
+        }
+
+        waveCtx.textAlign = 'left';
+        waveCtx.fillStyle = '#64748B';
+        waveCtx.font = '11px Inter, sans-serif';
+        waveCtx.fillText('x', w - padR - 8, cy + 54);
+      }
+
+      function drawFtGraph(p) {
+        const { w, h } = fitCanvas(ftCanvas, ftCtx);
+        ftCtx.clearRect(0, 0, w, h);
+        const pad = { l: 40, r: 12, t: 16, b: 24 };
+        const plotW = w - pad.l - pad.r;
+        const plotH = h - pad.t - pad.b;
+        const windowT = Math.max(8, p.T * 12);
+        const fMax = Math.max(p.f, p.valid ? p.fp : p.f, 1) * 1.35;
+
+        // Axes
+        ftCtx.strokeStyle = COLORS.grid;
+        ftCtx.lineWidth = 1;
+        ftCtx.beginPath();
+        ftCtx.moveTo(pad.l, pad.t);
+        ftCtx.lineTo(pad.l, h - pad.b);
+        ftCtx.lineTo(w - pad.r, h - pad.b);
+        ftCtx.stroke();
+
+        function yOf(freq) {
+          return h - pad.b - (freq / fMax) * plotH;
+        }
+
+        // Reference f
+        ftCtx.strokeStyle = COLORS.f;
+        ftCtx.lineWidth = 2;
+        ftCtx.setLineDash([5, 4]);
+        ftCtx.beginPath();
+        ftCtx.moveTo(pad.l, yOf(p.f));
+        ftCtx.lineTo(w - pad.r, yOf(p.f));
+        ftCtx.stroke();
+        ftCtx.setLineDash([]);
+
+        // f' (constant while speeds constant)
+        if (p.valid) {
+          ftCtx.strokeStyle = COLORS.fp;
+          ftCtx.lineWidth = 2.5;
+          ftCtx.beginPath();
+          ftCtx.moveTo(pad.l, yOf(p.fp));
+          ftCtx.lineTo(w - pad.r, yOf(p.fp));
+          ftCtx.stroke();
+        }
+
+        const tMod = ((tSim % windowT) + windowT) % windowT;
+        const cx = pad.l + (tMod / windowT) * plotW;
+        ftCtx.strokeStyle = COLORS.cursor;
+        ftCtx.lineWidth = 1.5;
+        ftCtx.setLineDash([4, 3]);
+        ftCtx.beginPath();
+        ftCtx.moveTo(cx, pad.t);
+        ftCtx.lineTo(cx, h - pad.b);
+        ftCtx.stroke();
+        ftCtx.setLineDash([]);
+
+        ftCtx.font = '11px Inter, sans-serif';
+        ftCtx.fillStyle = COLORS.f;
+        ftCtx.fillText('f', pad.l + 4, yOf(p.f) - 4);
+        if (p.valid) {
+          ftCtx.fillStyle = COLORS.fp;
+          ftCtx.fillText("f'", pad.l + 4, yOf(p.fp) - 4);
+        }
+        ftCtx.fillStyle = '#64748B';
+        ftCtx.fillText('t', w - pad.r - 10, h - pad.b + 16);
+      }
+
+      function drawBarCompare(p) {
+        const { w, h } = fitCanvas(barCanvas, barCtx);
+        barCtx.clearRect(0, 0, w, h);
+        const pad = { l: 48, r: 20, t: 20, b: 36 };
+        const plotH = h - pad.t - pad.b;
+        const fMax = Math.max(p.f, p.valid ? p.fp : p.f, 1) * 1.25;
+        const barW = 56;
+        const gap = 80;
+        const x0 = w / 2 - gap / 2 - barW;
+        const x1 = w / 2 + gap / 2;
+
+        function bar(x, val, color, label) {
+          const bh = (val / fMax) * plotH;
+          const y = h - pad.b - bh;
+          barCtx.fillStyle = color;
+          barCtx.fillRect(x, y, barW, bh);
+          barCtx.fillStyle = '#334155';
+          barCtx.font = 'bold 12px Inter, sans-serif';
+          barCtx.textAlign = 'center';
+          barCtx.fillText(label, x + barW / 2, h - pad.b + 16);
+          barCtx.fillText(val.toFixed(2) + ' Hz', x + barW / 2, y - 8);
+        }
+
+        bar(x0, p.f, COLORS.f, 'f');
+        if (p.valid) bar(x1, p.fp, COLORS.fp, "f'");
+        else {
+          barCtx.fillStyle = '#94A3B8';
+          barCtx.font = '12px Inter, sans-serif';
+          barCtx.textAlign = 'center';
+          barCtx.fillText('—', x1 + barW / 2, h / 2);
+        }
+        barCtx.textAlign = 'left';
+      }
+
+      function formulaText(p) {
+        const num = p.voSign > 0 ? 'v + vₒ' : (p.vo > 0 ? 'v − vₒ' : 'v');
+        const den = p.vsSign > 0 ? 'v − vₛ' : (p.vs > 0 ? 'v + vₛ' : 'v');
+        return "f′ = f (" + num + ") / (" + den + ")";
+      }
+
+      function updateSignNote() {
+        let note = srcToward ? t('sign.toward') : t('sign.away');
+        note += obsToward ? t('sign.obsToward') : t('sign.obsAway');
+        els.signNote.textContent = note;
+      }
+
+      function updateTone(p) {
+        if (!toneOn || !oscillator || !p.valid) return;
+        // Map classroom f' (few Hz) into an audible band ~220–880 Hz
+        const audible = Math.min(880, Math.max(180, 110 * p.fp));
+        try {
+          oscillator.frequency.setTargetAtTime(audible, audioCtx.currentTime, 0.03);
+        } catch (e) { /* ignore */ }
+      }
+
+      function ensureAudio() {
+        if (audioCtx) return;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+        gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0;
+        gainNode.connect(audioCtx.destination);
+        oscillator = audioCtx.createOscillator();
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 440;
+        oscillator.connect(gainNode);
+        oscillator.start();
+      }
+
+      function setTone(on) {
+        toneOn = on;
+        els.toneBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        els.toneBtn.textContent = on ? t('tone.on') : t('tone.off');
+        els.toneBtn.classList.toggle('bg-green-600', on);
+        els.toneBtn.classList.toggle('text-white', on);
+        els.toneBtn.classList.toggle('bg-green-50', !on);
+        els.toneBtn.classList.toggle('text-green-700', !on);
+        if (on) {
+          ensureAudio();
+          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+          if (gainNode) gainNode.gain.setTargetAtTime(0.08, audioCtx.currentTime, 0.02);
+          updateTone(getParams());
+        } else if (gainNode && audioCtx) {
+          gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.02);
+        }
+      }
+
+      function updateReadouts(p) {
+        els.fValue.textContent = p.f.toFixed(1);
+        els.vValue.textContent = String(Math.round(p.v));
+        els.vsValue.textContent = String(Math.round(p.vs));
+        els.voValue.textContent = String(Math.round(p.vo));
+        els.formulaOut.textContent = formulaText(p);
+        els.fOut.textContent = p.f.toFixed(2) + ' Hz';
+        if (p.valid) {
+          els.fpOut.textContent = p.fp.toFixed(2) + ' Hz';
+          const df = p.fp - p.f;
+          els.dfOut.textContent = (df >= 0 ? '+' : '') + df.toFixed(2) + ' Hz';
+          els.lamOut.textContent = p.lamRatio != null ? p.lamRatio.toFixed(3) : '—';
+        } else {
+          els.fpOut.textContent = '—';
+          els.dfOut.textContent = '—';
+          els.lamOut.textContent = '—';
+        }
+        els.lamDetail.textContent = p.lambda.toFixed(2) + ' m';
+        els.periodOut.textContent = p.T.toFixed(3) + ' s';
+        els.tOut.textContent = tSim.toFixed(2) + ' s';
+        els.crestOut.textContent = String(crests.length);
+        updateSignNote();
+        updateRangeHint(p);
+        updateTone(p);
+      }
+
+      function clampBodies(p) {
+        const margin = 6;
+        const minGap = 8;
+        xs = Math.max(margin, Math.min(WORLD.length - margin, xs));
+        xo = Math.max(margin, Math.min(WORLD.length - margin, xo));
+        // Soft bounce when too close
+        if (Math.abs(xo - xs) < minGap) {
+          if (xs < xo) {
+            xs = xo - minGap;
+          } else {
+            xs = xo + minGap;
+          }
+          // Flip direction sense by swapping start sides on reset-like bounce
+          if (xs < margin || xs > WORLD.length - margin) xs = WORLD.srcStart;
+        }
+      }
+
+      function stepPhysics(dt, p) {
+        const vSrc = velocityOfSource(p);
+        const vObs = velocityOfObserver(p);
+        xs += vSrc * dt;
+        xo += vObs * dt;
+        clampBodies(p);
+        emitCrests(p);
+      }
+
+      function render() {
+        if (appState === 'fail' || appState === 'loading') return;
+        const p = getParams();
+        drawScene(p);
+        drawFtGraph(p);
+        drawBarCompare(p);
+        updateReadouts(p);
+      }
+
+      function tick(ts) {
+        if (appState === 'playing') {
+          if (!lastFrame) lastFrame = ts;
+          const dt = Math.min((ts - lastFrame) / 1000, 0.05);
+          lastFrame = ts;
+          tSim += dt;
+          stepPhysics(dt, getParams());
+          render();
+          rafId = requestAnimationFrame(tick);
+        }
+      }
+
+      function play() {
+        if (appState === 'fail' || appState === 'loading') return;
+        setAppState('playing');
+        lastFrame = 0;
+        if (toneOn) {
+          ensureAudio();
+          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        rafId = requestAnimationFrame(tick);
+      }
+
+      function pause() {
+        if (appState !== 'playing') return;
+        cancelAnimationFrame(rafId);
+        setAppState('ready');
+        render();
+      }
+
+      function resetSim(keepPlaying) {
+        els.freq.value = '4';
+        els.waveSpeed.value = '60';
+        els.vsSpeed.value = '20';
+        els.voSpeed.value = '0';
+        srcToward = true;
+        obsToward = false;
+        updateDirButtons();
+        tSim = 0;
+        lastFrame = 0;
+        xs = WORLD.srcStart;
+        xo = WORLD.obsStart;
+        crests = [];
+        nextEmit = 0;
+        if (!keepPlaying && appState === 'playing') {
+          cancelAnimationFrame(rafId);
+          setAppState('ready');
+        }
+        if (appState === 'ready' || appState === 'playing') render();
+      }
+
+      function onParamInput() {
+        if (appState === 'ready' || appState === 'playing') {
+          // Re-sync emit phase so frequency slider feels immediate
+          const p = getParams();
+          if (nextEmit - tSim > p.T) nextEmit = tSim;
+          render();
+        }
+      }
+
+      function initCanvases() {
+        showLoadingOverlay();
+        setAppState('loading');
+        try {
+          waveCtx = waveCanvas.getContext('2d');
+          ftCtx = ftCanvas.getContext('2d');
+          barCtx = barCanvas.getContext('2d');
+          if (!waveCtx || !ftCtx || !barCtx) {
+            throw new Error('2D canvas context unavailable');
+          }
+          xs = WORLD.srcStart;
+          xo = WORLD.obsStart;
+          crests = [];
+          nextEmit = 0;
+          tSim = 0;
+          setTimeout(function () {
+            setAppState('ready');
+            render();
+            if (window.MathJax && MathJax.typesetPromise) {
+              MathJax.typesetPromise().catch(function () {});
+            }
+          }, 180);
+        } catch (err) {
+          console.error(err);
+          setAppState('fail');
+        }
+      }
+
+      function updateLanguage(lang) {
+        currentLang = window.PhysicsI18n ? PhysicsI18n.set(lang) : lang;
+        if (!window.PhysicsI18n) {
+          try { localStorage.setItem('preferred_language', lang); } catch (e) { /* ignore */ }
+        }
+        document.querySelectorAll('[data-i18n]').forEach(function (el) {
+          const key = el.getAttribute('data-i18n');
+          const text = translations[lang] && translations[lang][key];
+          if (text) el.textContent = text;
+        });
+        document.documentElement.lang = window.PhysicsI18n
+          ? PhysicsI18n.htmlLang(lang)
+          : (lang === 'zh-hk' ? 'zh-HK' : 'en');
+        document.querySelectorAll('.lang-btn').forEach(function (btn) {
+          const active = window.PhysicsI18n
+            ? PhysicsI18n.matchButton(btn.dataset.lang, lang)
+            : (btn.dataset.lang === lang);
+          btn.classList.toggle('bg-blue-600', active);
+          btn.classList.toggle('text-white', active);
+          btn.classList.toggle('text-slate-600', !active);
+          btn.classList.toggle('hover:bg-blue-100', !active);
+        });
+        els.toneBtn.textContent = toneOn ? t('tone.on') : t('tone.off');
+        if (appState === 'loading') els.statusLabel.textContent = t('state.loading');
+        else if (appState === 'ready') els.statusLabel.textContent = t('state.ready');
+        else if (appState === 'playing') els.statusLabel.textContent = t('state.playing');
+        else if (appState === 'fail') els.statusLabel.textContent = t('state.fail');
+        if (appState === 'ready' || appState === 'playing') {
+          updateSignNote();
+          updateRangeHint(getParams());
+        }
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise().catch(function () {});
+        }
+      }
+
+      window.updateLanguage = updateLanguage;
+
+      els.playBtn.addEventListener('click', play);
+      els.pauseBtn.addEventListener('click', pause);
+      els.resetBtn.addEventListener('click', function () { resetSim(false); });
+      els.retryBtn.addEventListener('click', function () {
+        cancelAnimationFrame(rafId);
+        tSim = 0;
+        initCanvases();
+      });
+      els.toneBtn.addEventListener('click', function () {
+        setTone(!toneOn);
+      });
+
+      els.srcToward.addEventListener('click', function () {
+        srcToward = true;
+        updateDirButtons();
+        onParamInput();
+      });
+      els.srcAway.addEventListener('click', function () {
+        srcToward = false;
+        updateDirButtons();
+        onParamInput();
+      });
+      els.obsToward.addEventListener('click', function () {
+        obsToward = true;
+        updateDirButtons();
+        onParamInput();
+      });
+      els.obsAway.addEventListener('click', function () {
+        obsToward = false;
+        updateDirButtons();
+        onParamInput();
+      });
+
+      [els.freq, els.waveSpeed, els.vsSpeed, els.voSpeed].forEach(function (input) {
+        input.addEventListener('input', onParamInput);
+      });
+
+      window.addEventListener('resize', function () {
+        if (appState === 'ready' || appState === 'playing') render();
+      });
+
+      updateDirButtons();
+      updateLanguage(currentLang);
+      initCanvases();
+    })();
+  </script>
+</body>
+</html>
