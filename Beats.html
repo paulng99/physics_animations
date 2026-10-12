@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beats · 拍 / 拍頻 (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="shared/sim-shell.css">
+  <script src="shared/i18n.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+    .glass { background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(10px); }
+    canvas.graph-canvas { display: block; width: 100%; height: 150px; touch-action: none; }
+    @media (min-width: 768px) {
+      canvas.graph-canvas { height: 170px; }
+    }
+    #waveCanvas { display: block; width: 100%; height: 240px; touch-action: none; }
+    @media (min-width: 768px) {
+      #waveCanvas { height: 300px; }
+    }
+    input[type="range"] {
+      min-height: 44px;
+      accent-color: #2563eb;
+    }
+    .app-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f1f5f9;
+      border-radius: inherit;
+      text-align: center;
+      padding: 1.25rem;
+    }
+    .app-overlay[hidden] { display: none !important; }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 32px;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-pill::before {
+      content: '';
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 9999px;
+      background: currentColor;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+  <header class="max-w-7xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between gap-3">
+      <a href="index.html#waves" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 min-h-[44px]">
+        <span>←</span>
+        <span data-i18n="back">返回波動</span>
+      </a>
+      <div class="flex gap-2">
+        <button type="button" class="lang-btn px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100 min-h-[44px]" onclick="updateLanguage('en')" data-lang="en">EN</button>
+        <button type="button" class="lang-btn px-3 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white min-h-[44px]" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 pb-12">
+    <section class="glass rounded-3xl border border-white/70 p-5 md:p-7 shadow-xl shadow-blue-100/40">
+      <p class="text-blue-600 font-semibold text-sm uppercase tracking-wide" data-i18n="tag">HKDSE 波動 · 拍 / 拍頻</p>
+      <h1 class="mt-1 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">拍：兩列相近頻率的相干波</h1>
+      <p class="mt-2 text-slate-600 leading-relaxed" data-i18n="observe">
+        觀察重點：兩列頻率相近的相干波疊加後，響度（振幅）會週期性強弱交替，稱為拍。拍頻 $f_b = |f_1 - f_2|$。
+      </p>
+
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <span id="statusPill" class="status-pill bg-slate-100 text-slate-600" data-state="loading">
+          <span id="statusLabel" data-i18n="state.loading">載入中…</span>
+        </span>
+        <p id="rangeHint" class="hidden text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2" role="status"></p>
+      </div>
+
+      <div class="mt-5 grid lg:grid-cols-12 gap-4 sim-shell">
+        <article class="sim-viewport lg:col-span-7 space-y-3">
+          <div class="relative rounded-2xl border-2 border-slate-200 overflow-hidden bg-white" id="waveHost" data-gl-host data-gl-topic="waves">
+            <canvas id="waveCanvas" width="900" height="300" aria-label="Beats wave overlay"></canvas>
+            <div class="absolute top-3 left-3 flex flex-wrap gap-2 pointer-events-none text-[11px]">
+              <span class="bg-white/90 text-blue-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.w1">波 1</span>
+              <span class="bg-white/90 text-amber-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.w2">波 2</span>
+              <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.sum">合成波</span>
+              <span class="bg-white/90 text-purple-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.env">包絡</span>
+            </div>
+            <div id="appOverlay" class="app-overlay" role="status" aria-live="polite">
+              <div id="overlayLoading" class="text-center">
+                <div class="pgl-dots" aria-hidden="true">
+                  <span class="pgl-dot"></span><span class="pgl-dot"></span><span class="pgl-dot"></span>
+                </div>
+                <p class="text-sm font-semibold text-slate-600 mt-2" data-i18n="state.loading">載入中…</p>
+              </div>
+              <div id="overlayFail" class="hidden text-center px-4">
+                <p class="text-sm font-semibold text-slate-700 mb-3" data-i18n="state.fail">模擬無法載入。請檢查瀏覽器後重試。</p>
+                <button type="button" id="retryBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="retry">重新載入</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" id="playBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all shadow-sm min-h-[44px] min-w-[96px]" data-i18n="play">播放</button>
+            <button type="button" id="pauseBtn" class="px-5 py-2.5 rounded-xl bg-slate-700 text-white font-semibold hover:bg-slate-800 transition-all min-h-[44px] min-w-[96px]" data-i18n="pause" disabled>暫停</button>
+            <button type="button" id="resetBtn" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-red-50 hover:text-red-600 transition-all min-h-[44px]" data-i18n="reset">重設</button>
+            <button type="button" id="toneBtn" class="px-5 py-2.5 rounded-xl bg-green-50 text-green-700 border border-green-200 font-semibold hover:bg-green-100 transition-all min-h-[44px]" aria-pressed="false" data-i18n="tone">音調提示：關</button>
+          </div>
+        </article>
+
+        <aside class="sim-controls lg:col-span-5 space-y-3">
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">主要參數</h2>
+
+            <label class="block text-sm font-medium text-slate-700" for="f1">
+              <span data-i18n="f1">頻率 f<sub>1</sub> (Hz)</span>：
+              <span id="f1Value" class="text-blue-600 font-semibold">5.0</span>
+            </label>
+            <input id="f1" type="range" min="2" max="12" step="0.1" value="5" class="w-full mb-3" />
+
+            <label class="block text-sm font-medium text-slate-700" for="f2">
+              <span data-i18n="f2">頻率 f<sub>2</sub> (Hz)</span>：
+              <span id="f2Value" class="text-amber-600 font-semibold">4.5</span>
+            </label>
+            <input id="f2" type="range" min="2" max="12" step="0.1" value="4.5" class="w-full mb-3" />
+
+            <label class="block text-sm font-medium text-slate-700" for="a1">
+              <span data-i18n="a1">振幅 A<sub>1</sub></span>：
+              <span id="a1Value" class="text-blue-600 font-semibold">1.0</span>
+            </label>
+            <input id="a1" type="range" min="0.2" max="1.5" step="0.05" value="1" class="w-full mb-3" />
+
+            <label class="block text-sm font-medium text-slate-700" for="a2">
+              <span data-i18n="a2">振幅 A<sub>2</sub></span>：
+              <span id="a2Value" class="text-amber-600 font-semibold">1.0</span>
+            </label>
+            <input id="a2" type="range" min="0.2" max="1.5" step="0.05" value="1" class="w-full" />
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readingsQuick">拍頻</h2>
+            <div class="rounded-xl bg-blue-50 border border-blue-200 px-3 py-3 mb-3">
+              <div class="text-xs text-blue-700 font-semibold mb-1" data-i18n="formulaLive">即時公式</div>
+              <div id="formulaOut" class="font-mono text-sm text-blue-900 leading-relaxed">f<sub>b</sub> = |f<sub>1</sub> − f<sub>2</sub>|</div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+              <div class="rounded-lg bg-blue-50 border border-blue-200 px-2 py-1.5">
+                <div class="text-blue-700 font-semibold">f<sub>1</sub></div>
+                <div id="f1Out" class="font-bold text-blue-700">5.00 Hz</div>
+              </div>
+              <div class="rounded-lg bg-amber-50 border border-amber-200 px-2 py-1.5">
+                <div class="text-amber-700 font-semibold">f<sub>2</sub></div>
+                <div id="f2Out" class="font-bold text-amber-700">4.50 Hz</div>
+              </div>
+              <div class="rounded-lg bg-purple-50 border border-purple-200 px-2 py-1.5">
+                <div class="text-purple-700 font-semibold">f<sub>b</sub></div>
+                <div id="fbOut" class="font-bold text-purple-700">0.50 Hz</div>
+              </div>
+              <div class="rounded-lg bg-green-50 border border-green-200 px-2 py-1.5">
+                <div class="text-green-700 font-semibold">T<sub>b</sub></div>
+                <div id="tbOut" class="font-bold text-green-700">2.00 s</div>
+              </div>
+            </div>
+            <p class="mt-2 text-xs text-slate-500" id="beatNote" data-i18n="beat.note">每秒聽到的強弱次數 = 拍頻 f<sub>b</sub></p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="mt-5 grid md:grid-cols-2 gap-4">
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <h2 class="font-semibold text-slate-900 mb-2">
+          <span class="text-green-600">A–t</span>
+          <span class="text-slate-500 text-sm font-medium" data-i18n="atHint">合成振幅（包絡）對時間</span>
+        </h2>
+        <canvas id="atCanvas" class="graph-canvas rounded-xl bg-slate-50 border border-slate-200" width="560" height="170"></canvas>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <h2 class="font-semibold text-slate-900 mb-2" data-i18n="compareTitle">頻率對比</h2>
+        <canvas id="barCanvas" class="graph-canvas rounded-xl bg-slate-50 border border-slate-200" width="560" height="170"></canvas>
+      </div>
+    </section>
+
+    <details class="mt-5 glass rounded-2xl border border-white/70 p-4 md:p-5 group">
+      <summary class="cursor-pointer list-none flex items-center justify-between gap-3 min-h-[44px] font-semibold text-slate-900">
+        <span data-i18n="moreTitle">公式、讀數與學習提示</span>
+        <span class="text-blue-600 text-sm font-medium group-open:rotate-180 transition-transform" aria-hidden="true">▾</span>
+      </summary>
+      <div class="mt-4 grid md:grid-cols-2 gap-4 text-sm">
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE 公式焦點</h3>
+          <ul class="space-y-1.5 text-slate-700 font-mono text-[13px]">
+            <li>$y_1 = A_1\sin(2\pi f_1 t)$</li>
+            <li>$y_2 = A_2\sin(2\pi f_2 t)$</li>
+            <li>$y = y_1 + y_2$（相干疊加）</li>
+            <li>$f_b = |f_1 - f_2|$（拍頻）</li>
+            <li data-i18n="formula.equal">當 $A_1 \approx A_2$：包絡清晰，響度強弱交替最明顯</li>
+            <li>$T_b = 1/f_b$（拍週期）</li>
+          </ul>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="font-semibold text-slate-900 mb-2" data-i18n="readings">即時讀數</h3>
+          <div class="space-y-1.5">
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="favgLabel">平均頻率 (f₁+f₂)/2</span><span id="favgOut" class="font-semibold text-slate-700">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="amaxLabel">最大合成振幅</span><span id="amaxOut" class="font-semibold text-green-600">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="aminLabel">最小合成振幅</span><span id="aminOut" class="font-semibold text-slate-600">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">t</span><span id="tOut" class="font-semibold text-slate-700">0.00 s</span></div>
+          </div>
+          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="tip">
+            提示：紫色虛線是振幅包絡；兩波頻率差愈小，拍愈慢。音調提示用可聽頻率重現拍的強弱脈動，預設關閉。
+          </p>
+        </div>
+      </div>
+    </details>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const COLORS = {
+        w1: '#2563EB',
+        w2: '#D97706',
+        sum: '#16A34A',
+        env: '#9333EA',
+        axis: '#94A3B8',
+        grid: '#E2E8F0',
+        cursor: '#2563EB',
+        fb: '#9333EA'
+      };
+
+      // Classroom-scaled visual frequencies (Hz). Audio maps into an audible band.
+      const PARAM = {
+        fMin: 2, fMax: 12,
+        aMin: 0.2, aMax: 1.5,
+        // Warn when |f1−f2| is large (beats hard to see) or nearly zero
+        dfWarnLarge: 3,
+        dfWarnTiny: 0.15,
+        audioBase: 220,
+        audioScale: 28
+      };
+
+      const translations = {
+        en: {
+          back: 'Back to Wave Motion',
+          tag: 'HKDSE Waves · Beats',
+          title: 'Beats: two coherent waves of close frequency',
+          observe: 'Focus: when two coherent waves with nearly equal frequencies superpose, loudness (amplitude) rises and falls periodically — beats. Beat frequency $f_b = |f_1 - f_2|$.',
+          controls: 'Primary parameters',
+          f1: 'Frequency f₁ (Hz)',
+          f2: 'Frequency f₂ (Hz)',
+          a1: 'Amplitude A₁',
+          a2: 'Amplitude A₂',
+          play: 'Play',
+          pause: 'Pause',
+          reset: 'Reset',
+          retry: 'Retry',
+          tone: 'Tone cue: Off',
+          'tone.on': 'Tone cue: On',
+          'tone.off': 'Tone cue: Off',
+          readingsQuick: 'Beat frequency',
+          formulaLive: 'Live formula',
+          atHint: 'resultant amplitude (envelope) vs time',
+          compareTitle: 'Frequency comparison',
+          moreTitle: 'Formulas, readings & teaching tips',
+          formulaTitle: 'HKDSE formula focus',
+          'formula.equal': 'When $A_1 \\approx A_2$: clear envelope; loudness contrast is strongest',
+          readings: 'Live readings',
+          favgLabel: 'Mean frequency (f₁+f₂)/2',
+          amaxLabel: 'Max resultant amplitude',
+          aminLabel: 'Min resultant amplitude',
+          tip: 'Tip: the purple dashed curves are the amplitude envelope. Smaller |f₁−f₂| → slower beats. The tone cue maps classroom frequencies into an audible band so you can hear the throb; it starts off.',
+          'legend.w1': 'wave 1',
+          'legend.w2': 'wave 2',
+          'legend.sum': 'resultant',
+          'legend.env': 'envelope',
+          'beat.note': 'Loudness pulses per second = beat frequency fb',
+          'state.loading': 'Loading…',
+          'state.ready': 'Ready — adjust f₁, f₂, A₁, A₂',
+          'state.playing': 'Playing',
+          'state.fail': 'Simulation failed to load. Check your browser, then retry.',
+          'hint.dfLarge': '|f₁−f₂| is large — beats are very fast. Try closer frequencies.',
+          'hint.dfTiny': '|f₁−f₂| is tiny — beat period is long. Raise the difference a little to see clear maxima.',
+          'hint.unequal': 'A₁ ≠ A₂ — envelope still forms, but minima do not reach zero.'
+        },
+        'zh-hk': {
+          back: '返回波動',
+          tag: 'HKDSE 波動 · 拍 / 拍頻',
+          title: '拍：兩列相近頻率的相干波',
+          observe: '觀察重點：兩列頻率相近的相干波疊加後，響度（振幅）會週期性強弱交替，稱為拍。拍頻 $f_b = |f_1 - f_2|$。',
+          controls: '主要參數',
+          f1: '頻率 f₁ (Hz)',
+          f2: '頻率 f₂ (Hz)',
+          a1: '振幅 A₁',
+          a2: '振幅 A₂',
+          play: '播放',
+          pause: '暫停',
+          reset: '重設',
+          retry: '重新載入',
+          tone: '音調提示：關',
+          'tone.on': '音調提示：開',
+          'tone.off': '音調提示：關',
+          readingsQuick: '拍頻',
+          formulaLive: '即時公式',
+          atHint: '合成振幅（包絡）對時間',
+          compareTitle: '頻率對比',
+          moreTitle: '公式、讀數與學習提示',
+          formulaTitle: 'HKDSE 公式焦點',
+          'formula.equal': '當 $A_1 \\approx A_2$：包絡清晰，響度強弱交替最明顯',
+          readings: '即時讀數',
+          favgLabel: '平均頻率 (f₁+f₂)/2',
+          amaxLabel: '最大合成振幅',
+          aminLabel: '最小合成振幅',
+          tip: '提示：紫色虛線是振幅包絡；兩波頻率差愈小，拍愈慢。音調提示用可聽頻率重現拍的強弱脈動，預設關閉。',
+          'legend.w1': '波 1',
+          'legend.w2': '波 2',
+          'legend.sum': '合成波',
+          'legend.env': '包絡',
+          'beat.note': '每秒聽到的強弱次數 = 拍頻 fb',
+          'state.loading': '載入中…',
+          'state.ready': '就緒 — 可調校 f₁、f₂、A₁、A₂',
+          'state.playing': '播放中',
+          'state.fail': '模擬無法載入。請檢查瀏覽器後重試。',
+          'hint.dfLarge': '|f₁−f₂| 偏大，拍太快。請把兩頻率調近一點。',
+          'hint.dfTiny': '|f₁−f₂| 太小，拍週期很長。稍微加大差值以見清晰極大值。',
+          'hint.unequal': 'A₁ ≠ A₂ — 仍有包絡，但極小值不會到零。'
+        }
+      };
+
+      let currentLang = window.PhysicsI18n
+        ? PhysicsI18n.get()
+        : (localStorage.getItem('preferred_language') || 'zh-hk');
+      if (window.PhysicsI18n) currentLang = PhysicsI18n.normalize(currentLang);
+      if (currentLang !== 'en' && currentLang !== 'zh-hk') currentLang = 'zh-hk';
+
+      function t(key) {
+        return (translations[currentLang] && translations[currentLang][key])
+          || (translations.en && translations.en[key])
+          || key;
+      }
+
+      const els = {
+        f1: document.getElementById('f1'),
+        f2: document.getElementById('f2'),
+        a1: document.getElementById('a1'),
+        a2: document.getElementById('a2'),
+        f1Value: document.getElementById('f1Value'),
+        f2Value: document.getElementById('f2Value'),
+        a1Value: document.getElementById('a1Value'),
+        a2Value: document.getElementById('a2Value'),
+        playBtn: document.getElementById('playBtn'),
+        pauseBtn: document.getElementById('pauseBtn'),
+        resetBtn: document.getElementById('resetBtn'),
+        retryBtn: document.getElementById('retryBtn'),
+        toneBtn: document.getElementById('toneBtn'),
+        statusPill: document.getElementById('statusPill'),
+        statusLabel: document.getElementById('statusLabel'),
+        rangeHint: document.getElementById('rangeHint'),
+        appOverlay: document.getElementById('appOverlay'),
+        overlayLoading: document.getElementById('overlayLoading'),
+        overlayFail: document.getElementById('overlayFail'),
+        formulaOut: document.getElementById('formulaOut'),
+        f1Out: document.getElementById('f1Out'),
+        f2Out: document.getElementById('f2Out'),
+        fbOut: document.getElementById('fbOut'),
+        tbOut: document.getElementById('tbOut'),
+        beatNote: document.getElementById('beatNote'),
+        favgOut: document.getElementById('favgOut'),
+        amaxOut: document.getElementById('amaxOut'),
+        aminOut: document.getElementById('aminOut'),
+        tOut: document.getElementById('tOut')
+      };
+
+      const waveCanvas = document.getElementById('waveCanvas');
+      const atCanvas = document.getElementById('atCanvas');
+      const barCanvas = document.getElementById('barCanvas');
+
+      let waveCtx, atCtx, barCtx;
+      let appState = 'loading'; // loading | ready | playing | fail
+      let tSim = 0;
+      let lastFrame = 0;
+      let rafId = 0;
+      let toneOn = false;
+      let audioCtx = null;
+      let osc1 = null;
+      let osc2 = null;
+      let gainNode = null;
+
+      /**
+       * School beats: y = A1 sin(2π f1 t) + A2 sin(2π f2 t)
+       * Beat frequency fb = |f1 − f2|; beat period Tb = 1/fb.
+       * Envelope extrema: Amax = A1+A2, Amin = |A1−A2|.
+       */
+      function getParams() {
+        const f1 = parseFloat(els.f1.value);
+        const f2 = parseFloat(els.f2.value);
+        const A1 = parseFloat(els.a1.value);
+        const A2 = parseFloat(els.a2.value);
+        const fb = Math.abs(f1 - f2);
+        const Tb = fb > 1e-9 ? 1 / fb : Infinity;
+        const favg = 0.5 * (f1 + f2);
+        const Amax = A1 + A2;
+        const Amin = Math.abs(A1 - A2);
+        return { f1, f2, A1, A2, fb, Tb, favg, Amax, Amin };
+      }
+
+      function y1(p, t) {
+        return p.A1 * Math.sin(2 * Math.PI * p.f1 * t);
+      }
+
+      function y2(p, t) {
+        return p.A2 * Math.sin(2 * Math.PI * p.f2 * t);
+      }
+
+      function ySum(p, t) {
+        return y1(p, t) + y2(p, t);
+      }
+
+      /**
+       * Analytic envelope for equal-phase sines (school form when A1≈A2):
+       * |2 A cos(π (f1−f2) t)| with carrier at (f1+f2)/2.
+       * For unequal A: use |A1+A2| / |A1−A2| bounds with beat modulation
+       * env(t) ≈ sqrt(A1² + A2² + 2 A1 A2 cos(2π fb t))
+       */
+      function envelope(p, t) {
+        const phase = 2 * Math.PI * p.fb * t;
+        return Math.sqrt(p.A1 * p.A1 + p.A2 * p.A2 + 2 * p.A1 * p.A2 * Math.cos(phase));
+      }
+
+      function setAppState(next) {
+        appState = next;
+        const pill = els.statusPill;
+        const label = els.statusLabel;
+        pill.classList.remove('bg-slate-100', 'text-slate-600', 'bg-blue-50', 'text-blue-700', 'bg-green-50', 'text-green-700', 'bg-red-50', 'text-red-700');
+        if (next === 'loading') {
+          pill.classList.add('bg-slate-100', 'text-slate-600');
+          label.textContent = t('state.loading');
+          els.playBtn.disabled = true;
+          els.pauseBtn.disabled = true;
+        } else if (next === 'ready') {
+          pill.classList.add('bg-blue-50', 'text-blue-700');
+          label.textContent = t('state.ready');
+          els.playBtn.disabled = false;
+          els.pauseBtn.disabled = true;
+          hideOverlay();
+        } else if (next === 'playing') {
+          pill.classList.add('bg-green-50', 'text-green-700');
+          label.textContent = t('state.playing');
+          els.playBtn.disabled = true;
+          els.pauseBtn.disabled = false;
+          hideOverlay();
+        } else if (next === 'fail') {
+          pill.classList.add('bg-red-50', 'text-red-700');
+          label.textContent = t('state.fail');
+          els.playBtn.disabled = true;
+          els.pauseBtn.disabled = true;
+          showFailOverlay();
+        }
+        pill.dataset.state = next;
+      }
+
+      function hideOverlay() {
+        els.appOverlay.hidden = true;
+      }
+
+      function showLoadingOverlay() {
+        els.appOverlay.hidden = false;
+        els.overlayLoading.classList.remove('hidden');
+        els.overlayFail.classList.add('hidden');
+      }
+
+      function showFailOverlay() {
+        els.appOverlay.hidden = false;
+        els.overlayLoading.classList.add('hidden');
+        els.overlayFail.classList.remove('hidden');
+      }
+
+      function updateRangeHint(p) {
+        const hint = els.rangeHint;
+        const unequal = Math.abs(p.A1 - p.A2) > 0.08;
+        if (p.fb >= PARAM.dfWarnLarge) {
+          hint.textContent = t('hint.dfLarge');
+          hint.classList.remove('hidden');
+        } else if (p.fb > 0 && p.fb < PARAM.dfWarnTiny) {
+          hint.textContent = t('hint.dfTiny');
+          hint.classList.remove('hidden');
+        } else if (unequal) {
+          hint.textContent = t('hint.unequal');
+          hint.classList.remove('hidden');
+        } else {
+          hint.textContent = '';
+          hint.classList.add('hidden');
+        }
+      }
+
+      function fitCanvas(canvas, ctx) {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const rect = canvas.getBoundingClientRect();
+        const w = Math.max(rect.width, 280);
+        const h = Math.max(rect.height, 120);
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { w, h };
+      }
+
+      function drawWaveOverlay(p) {
+        const { w, h } = fitCanvas(waveCanvas, waveCtx);
+        waveCtx.clearRect(0, 0, w, h);
+
+        const pad = { l: 36, r: 16, t: 20, b: 28 };
+        const plotW = w - pad.l - pad.r;
+        const plotH = h - pad.t - pad.b;
+        const cy = pad.t + plotH / 2;
+        const yScale = (plotH * 0.42) / Math.max(p.Amax, 0.5);
+        // Show ~2–3 beat periods (or ~3 s if fb≈0)
+        const windowT = p.fb > 1e-6
+          ? Math.max(2.2 / p.fb, 1.5)
+          : 3;
+        const t0 = Math.max(0, tSim - windowT * 0.15);
+        const samples = Math.min(900, Math.max(320, Math.floor(plotW * 1.5)));
+
+        const grad = waveCtx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#F8FAFC');
+        grad.addColorStop(1, '#EFF6FF');
+        waveCtx.fillStyle = grad;
+        waveCtx.fillRect(0, 0, w, h);
+
+        // Grid / axis
+        waveCtx.strokeStyle = COLORS.grid;
+        waveCtx.lineWidth = 1;
+        waveCtx.beginPath();
+        waveCtx.moveTo(pad.l, pad.t);
+        waveCtx.lineTo(pad.l, h - pad.b);
+        waveCtx.lineTo(w - pad.r, h - pad.b);
+        waveCtx.stroke();
+
+        waveCtx.strokeStyle = COLORS.axis;
+        waveCtx.setLineDash([4, 3]);
+        waveCtx.beginPath();
+        waveCtx.moveTo(pad.l, cy);
+        waveCtx.lineTo(w - pad.r, cy);
+        waveCtx.stroke();
+        waveCtx.setLineDash([]);
+
+        function xOf(tt) {
+          return pad.l + ((tt - t0) / windowT) * plotW;
+        }
+        function yOf(val) {
+          return cy - val * yScale;
+        }
+
+        function strokeSeries(fn, color, width, alpha) {
+          waveCtx.strokeStyle = color;
+          waveCtx.globalAlpha = alpha == null ? 1 : alpha;
+          waveCtx.lineWidth = width;
+          waveCtx.beginPath();
+          for (let i = 0; i <= samples; i++) {
+            const tt = t0 + (i / samples) * windowT;
+            const x = xOf(tt);
+            const y = yOf(fn(tt));
+            if (i === 0) waveCtx.moveTo(x, y);
+            else waveCtx.lineTo(x, y);
+          }
+          waveCtx.stroke();
+          waveCtx.globalAlpha = 1;
+        }
+
+        // Component waves (lighter), then resultant, then envelope
+        strokeSeries(function (tt) { return y1(p, tt); }, COLORS.w1, 1.4, 0.45);
+        strokeSeries(function (tt) { return y2(p, tt); }, COLORS.w2, 1.4, 0.45);
+        strokeSeries(function (tt) { return ySum(p, tt); }, COLORS.sum, 2.4, 1);
+
+        // Envelope ±env(t)
+        waveCtx.strokeStyle = COLORS.env;
+        waveCtx.lineWidth = 2;
+        waveCtx.setLineDash([6, 4]);
+        waveCtx.beginPath();
+        for (let i = 0; i <= samples; i++) {
+          const tt = t0 + (i / samples) * windowT;
+          const x = xOf(tt);
+          const y = yOf(envelope(p, tt));
+          if (i === 0) waveCtx.moveTo(x, y);
+          else waveCtx.lineTo(x, y);
+        }
+        waveCtx.stroke();
+        waveCtx.beginPath();
+        for (let i = 0; i <= samples; i++) {
+          const tt = t0 + (i / samples) * windowT;
+          const x = xOf(tt);
+          const y = yOf(-envelope(p, tt));
+          if (i === 0) waveCtx.moveTo(x, y);
+          else waveCtx.lineTo(x, y);
+        }
+        waveCtx.stroke();
+        waveCtx.setLineDash([]);
+
+        // Live cursor at tSim
+        const cx = xOf(tSim);
+        if (cx >= pad.l && cx <= w - pad.r) {
+          waveCtx.strokeStyle = COLORS.cursor;
+          waveCtx.lineWidth = 1.5;
+          waveCtx.setLineDash([4, 3]);
+          waveCtx.beginPath();
+          waveCtx.moveTo(cx, pad.t);
+          waveCtx.lineTo(cx, h - pad.b);
+          waveCtx.stroke();
+          waveCtx.setLineDash([]);
+
+          const yNow = ySum(p, tSim);
+          waveCtx.fillStyle = COLORS.sum;
+          waveCtx.beginPath();
+          waveCtx.arc(cx, yOf(yNow), 5, 0, Math.PI * 2);
+          waveCtx.fill();
+        }
+
+        waveCtx.fillStyle = '#64748B';
+        waveCtx.font = '11px Inter, sans-serif';
+        waveCtx.fillText('t', w - pad.r - 10, h - pad.b + 16);
+        waveCtx.fillText('y', pad.l - 18, pad.t + 10);
+      }
+
+      function drawAtGraph(p) {
+        const { w, h } = fitCanvas(atCanvas, atCtx);
+        atCtx.clearRect(0, 0, w, h);
+        const pad = { l: 40, r: 12, t: 16, b: 24 };
+        const plotW = w - pad.l - pad.r;
+        const plotH = h - pad.t - pad.b;
+        const windowT = p.fb > 1e-6
+          ? Math.max(2.5 / p.fb, 2)
+          : 4;
+        const t0 = Math.max(0, tSim - windowT * 0.1);
+        const aMax = Math.max(p.Amax, 0.5) * 1.15;
+        const samples = Math.min(600, Math.max(240, Math.floor(plotW)));
+
+        atCtx.strokeStyle = COLORS.grid;
+        atCtx.lineWidth = 1;
+        atCtx.beginPath();
+        atCtx.moveTo(pad.l, pad.t);
+        atCtx.lineTo(pad.l, h - pad.b);
+        atCtx.lineTo(w - pad.r, h - pad.b);
+        atCtx.stroke();
+
+        function xOf(tt) {
+          return pad.l + ((tt - t0) / windowT) * plotW;
+        }
+        function yOf(a) {
+          return h - pad.b - (a / aMax) * plotH;
+        }
+
+        // Amin / Amax guides
+        atCtx.strokeStyle = COLORS.axis;
+        atCtx.setLineDash([4, 3]);
+        atCtx.beginPath();
+        atCtx.moveTo(pad.l, yOf(p.Amax));
+        atCtx.lineTo(w - pad.r, yOf(p.Amax));
+        atCtx.moveTo(pad.l, yOf(p.Amin));
+        atCtx.lineTo(w - pad.r, yOf(p.Amin));
+        atCtx.stroke();
+        atCtx.setLineDash([]);
+
+        atCtx.strokeStyle = COLORS.env;
+        atCtx.lineWidth = 2.4;
+        atCtx.beginPath();
+        for (let i = 0; i <= samples; i++) {
+          const tt = t0 + (i / samples) * windowT;
+          const x = xOf(tt);
+          const y = yOf(envelope(p, tt));
+          if (i === 0) atCtx.moveTo(x, y);
+          else atCtx.lineTo(x, y);
+        }
+        atCtx.stroke();
+
+        const cx = xOf(tSim);
+        if (cx >= pad.l && cx <= w - pad.r) {
+          atCtx.strokeStyle = COLORS.cursor;
+          atCtx.lineWidth = 1.5;
+          atCtx.setLineDash([4, 3]);
+          atCtx.beginPath();
+          atCtx.moveTo(cx, pad.t);
+          atCtx.lineTo(cx, h - pad.b);
+          atCtx.stroke();
+          atCtx.setLineDash([]);
+          atCtx.fillStyle = COLORS.env;
+          atCtx.beginPath();
+          atCtx.arc(cx, yOf(envelope(p, tSim)), 4.5, 0, Math.PI * 2);
+          atCtx.fill();
+        }
+
+        atCtx.font = '11px Inter, sans-serif';
+        atCtx.fillStyle = COLORS.env;
+        atCtx.fillText('A', pad.l + 4, pad.t + 12);
+        atCtx.fillStyle = '#64748B';
+        atCtx.fillText('t', w - pad.r - 10, h - pad.b + 16);
+      }
+
+      function drawBarCompare(p) {
+        const { w, h } = fitCanvas(barCanvas, barCtx);
+        barCtx.clearRect(0, 0, w, h);
+        const pad = { l: 40, r: 16, t: 20, b: 36 };
+        const plotH = h - pad.t - pad.b;
+        const fMax = Math.max(p.f1, p.f2, p.fb, 1) * 1.25;
+        const barW = 48;
+        const gap = 36;
+        const total = 3 * barW + 2 * gap;
+        const xStart = (w - total) / 2;
+
+        function bar(x, val, color, label) {
+          const bh = (val / fMax) * plotH;
+          const y = h - pad.b - bh;
+          barCtx.fillStyle = color;
+          barCtx.fillRect(x, y, barW, Math.max(bh, 1));
+          barCtx.fillStyle = '#334155';
+          barCtx.font = 'bold 12px Inter, sans-serif';
+          barCtx.textAlign = 'center';
+          barCtx.fillText(label, x + barW / 2, h - pad.b + 16);
+          barCtx.fillText(val.toFixed(2), x + barW / 2, y - 8);
+        }
+
+        bar(xStart, p.f1, COLORS.w1, 'f₁');
+        bar(xStart + barW + gap, p.f2, COLORS.w2, 'f₂');
+        bar(xStart + 2 * (barW + gap), p.fb, COLORS.fb, 'fb');
+        barCtx.textAlign = 'left';
+        barCtx.fillStyle = '#64748B';
+        barCtx.font = '11px Inter, sans-serif';
+        barCtx.fillText('Hz', pad.l, pad.t + 4);
+      }
+
+      function audibleFreq(f) {
+        return Math.min(880, Math.max(160, PARAM.audioBase + f * PARAM.audioScale));
+      }
+
+      function updateTone(p) {
+        if (!toneOn || !osc1 || !osc2 || !audioCtx) return;
+        try {
+          const now = audioCtx.currentTime;
+          osc1.frequency.setTargetAtTime(audibleFreq(p.f1), now, 0.03);
+          osc2.frequency.setTargetAtTime(audibleFreq(p.f2), now, 0.03);
+          // Soft gain pulse following envelope (normalised)
+          const envNow = envelope(p, tSim);
+          const g = 0.04 + 0.07 * (envNow / Math.max(p.Amax, 1e-6));
+          gainNode.gain.setTargetAtTime(g, now, 0.04);
+        } catch (e) { /* ignore */ }
+      }
+
+      function ensureAudio() {
+        if (audioCtx) return;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+        gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0;
+        gainNode.connect(audioCtx.destination);
+        osc1 = audioCtx.createOscillator();
+        osc2 = audioCtx.createOscillator();
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+        osc1.frequency.value = audibleFreq(5);
+        osc2.frequency.value = audibleFreq(4.5);
+        osc1.connect(gainNode);
+        osc2.connect(gainNode);
+        osc1.start();
+        osc2.start();
+      }
+
+      function setTone(on) {
+        toneOn = on;
+        els.toneBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        els.toneBtn.textContent = on ? t('tone.on') : t('tone.off');
+        els.toneBtn.classList.toggle('bg-green-600', on);
+        els.toneBtn.classList.toggle('text-white', on);
+        els.toneBtn.classList.toggle('bg-green-50', !on);
+        els.toneBtn.classList.toggle('text-green-700', !on);
+        if (on) {
+          ensureAudio();
+          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+          updateTone(getParams());
+        } else if (gainNode && audioCtx) {
+          gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.02);
+        }
+      }
+
+      function updateReadouts(p) {
+        els.f1Value.textContent = p.f1.toFixed(1);
+        els.f2Value.textContent = p.f2.toFixed(1);
+        els.a1Value.textContent = p.A1.toFixed(2);
+        els.a2Value.textContent = p.A2.toFixed(2);
+        els.formulaOut.innerHTML = 'f<sub>b</sub> = |' + p.f1.toFixed(1) + ' − ' + p.f2.toFixed(1) + '| = ' + p.fb.toFixed(2) + ' Hz';
+        els.f1Out.textContent = p.f1.toFixed(2) + ' Hz';
+        els.f2Out.textContent = p.f2.toFixed(2) + ' Hz';
+        els.fbOut.textContent = p.fb.toFixed(2) + ' Hz';
+        els.tbOut.textContent = (p.Tb === Infinity) ? '∞' : (p.Tb.toFixed(2) + ' s');
+        els.favgOut.textContent = p.favg.toFixed(2) + ' Hz';
+        els.amaxOut.textContent = p.Amax.toFixed(2);
+        els.aminOut.textContent = p.Amin.toFixed(2);
+        els.tOut.textContent = tSim.toFixed(2) + ' s';
+        els.beatNote.textContent = t('beat.note');
+        updateRangeHint(p);
+        updateTone(p);
+      }
+
+      function render() {
+        if (appState === 'fail' || appState === 'loading') return;
+        const p = getParams();
+        drawWaveOverlay(p);
+        drawAtGraph(p);
+        drawBarCompare(p);
+        updateReadouts(p);
+      }
+
+      function tick(ts) {
+        if (appState === 'playing') {
+          if (!lastFrame) lastFrame = ts;
+          const dt = Math.min((ts - lastFrame) / 1000, 0.05);
+          lastFrame = ts;
+          tSim += dt;
+          render();
+          rafId = requestAnimationFrame(tick);
+        }
+      }
+
+      function play() {
+        if (appState === 'fail' || appState === 'loading') return;
+        setAppState('playing');
+        lastFrame = 0;
+        if (toneOn) {
+          ensureAudio();
+          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        rafId = requestAnimationFrame(tick);
+      }
+
+      function pause() {
+        if (appState !== 'playing') return;
+        cancelAnimationFrame(rafId);
+        setAppState('ready');
+        render();
+      }
+
+      function resetSim() {
+        els.f1.value = '5';
+        els.f2.value = '4.5';
+        els.a1.value = '1';
+        els.a2.value = '1';
+        tSim = 0;
+        lastFrame = 0;
+        if (appState === 'playing') {
+          cancelAnimationFrame(rafId);
+          setAppState('ready');
+        }
+        if (appState === 'ready' || appState === 'playing') render();
+      }
+
+      function onParamInput() {
+        if (appState === 'ready' || appState === 'playing') render();
+      }
+
+      function initCanvases() {
+        showLoadingOverlay();
+        setAppState('loading');
+        try {
+          waveCtx = waveCanvas.getContext('2d');
+          atCtx = atCanvas.getContext('2d');
+          barCtx = barCanvas.getContext('2d');
+          if (!waveCtx || !atCtx || !barCtx) {
+            throw new Error('2D canvas context unavailable');
+          }
+          tSim = 0;
+          setTimeout(function () {
+            setAppState('ready');
+            render();
+            if (window.MathJax && MathJax.typesetPromise) {
+              MathJax.typesetPromise().catch(function () {});
+            }
+          }, 180);
+        } catch (err) {
+          console.error(err);
+          setAppState('fail');
+        }
+      }
+
+      function updateLanguage(lang) {
+        currentLang = window.PhysicsI18n ? PhysicsI18n.set(lang) : lang;
+        if (!window.PhysicsI18n) {
+          try { localStorage.setItem('preferred_language', lang); } catch (e) { /* ignore */ }
+        }
+        document.querySelectorAll('[data-i18n]').forEach(function (el) {
+          const key = el.getAttribute('data-i18n');
+          const text = translations[lang] && translations[lang][key];
+          if (text) el.textContent = text;
+        });
+        document.documentElement.lang = window.PhysicsI18n
+          ? PhysicsI18n.htmlLang(lang)
+          : (lang === 'zh-hk' ? 'zh-HK' : 'en');
+        document.querySelectorAll('.lang-btn').forEach(function (btn) {
+          const active = window.PhysicsI18n
+            ? PhysicsI18n.matchButton(btn.dataset.lang, lang)
+            : (btn.dataset.lang === lang);
+          btn.classList.toggle('bg-blue-600', active);
+          btn.classList.toggle('text-white', active);
+          btn.classList.toggle('text-slate-600', !active);
+          btn.classList.toggle('hover:bg-blue-100', !active);
+        });
+        els.toneBtn.textContent = toneOn ? t('tone.on') : t('tone.off');
+        if (appState === 'loading') els.statusLabel.textContent = t('state.loading');
+        else if (appState === 'ready') els.statusLabel.textContent = t('state.ready');
+        else if (appState === 'playing') els.statusLabel.textContent = t('state.playing');
+        else if (appState === 'fail') els.statusLabel.textContent = t('state.fail');
+        if (appState === 'ready' || appState === 'playing') {
+          updateRangeHint(getParams());
+          els.beatNote.textContent = t('beat.note');
+        }
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise().catch(function () {});
+        }
+      }
+
+      window.updateLanguage = updateLanguage;
+
+      els.playBtn.addEventListener('click', play);
+      els.pauseBtn.addEventListener('click', pause);
+      els.resetBtn.addEventListener('click', resetSim);
+      els.retryBtn.addEventListener('click', function () {
+        cancelAnimationFrame(rafId);
+        tSim = 0;
+        initCanvases();
+      });
+      els.toneBtn.addEventListener('click', function () {
+        setTone(!toneOn);
+      });
+
+      [els.f1, els.f2, els.a1, els.a2].forEach(function (input) {
+        input.addEventListener('input', onParamInput);
+      });
+
+      window.addEventListener('resize', function () {
+        if (appState === 'ready' || appState === 'playing') render();
+      });
+
+      updateLanguage(currentLang);
+      initCanvases();
+    })();
+  </script>
+</body>
+</html>

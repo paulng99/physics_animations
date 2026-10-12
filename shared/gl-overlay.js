@@ -66,6 +66,7 @@
     'Standing_Waves_Resonance.html': 'waves',
     'Ripple_Tank.html': 'waves',
     'Doppler_Effect.html': 'waves',
+    'Beats.html': 'waves',
     'Refraction_Critical_Angle_TIR.html': 'electricity',
     'Magnetic_Field_Visualizer.html': 'electricity',
     'Magnetic_Effect_Current.html': 'electricity',
