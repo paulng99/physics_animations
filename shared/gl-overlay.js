@@ -75,6 +75,7 @@
     'Lorentz_Force_3D.html': 'electricity',
     'CRO_Wave_Simulation.html': 'electricity',
     'DC_Circuit_Internal_Resistance.html': 'electricity',
+    'RC_Circuit.html': 'electricity',
     'Electrostatics_Field_Explorer.html': 'electricity',
     'Transformer_Power_Transmission.html': 'electricity',
     'Domestic_Electricity_Safety_Board.html': 'electricity',
