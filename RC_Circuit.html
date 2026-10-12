@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RC Circuit Charging &amp; Discharging · RC 電路充放電 (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="shared/sim-shell.css">
+  <script src="shared/i18n.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+    .glass { background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(10px); }
+    canvas.graph-canvas { display: block; width: 100%; height: 150px; touch-action: none; }
+    @media (min-width: 768px) {
+      canvas.graph-canvas { height: 170px; }
+    }
+    #circuitCanvas { display: block; width: 100%; height: 220px; touch-action: none; }
+    @media (min-width: 768px) {
+      #circuitCanvas { height: 260px; }
+    }
+    input[type="range"] {
+      min-height: 44px;
+      accent-color: #2563eb;
+    }
+    .mode-btn[aria-pressed="true"] {
+      background: #2563eb;
+      color: #fff;
+    }
+    .app-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f1f5f9;
+      border-radius: inherit;
+      text-align: center;
+      padding: 1.25rem;
+    }
+    .app-overlay[hidden] { display: none !important; }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 32px;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-pill::before {
+      content: '';
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 9999px;
+      background: currentColor;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+  <header class="max-w-7xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between gap-3">
+      <a href="index.html#electricity" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 min-h-[44px]">
+        <span>←</span>
+        <span data-i18n="back">返回電磁學</span>
+      </a>
+      <div class="flex gap-2">
+        <button type="button" class="lang-btn px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100 min-h-[44px]" onclick="updateLanguage('en')" data-lang="en">EN</button>
+        <button type="button" class="lang-btn px-3 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white min-h-[44px]" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 pb-12">
+    <section class="glass rounded-3xl border border-white/70 p-5 md:p-7 shadow-xl shadow-blue-100/40">
+      <p class="text-blue-600 font-semibold text-sm uppercase tracking-wide" data-i18n="tag">HKDSE 電與磁 · RC 電路</p>
+      <h1 class="mt-1 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">RC 電路：充電與放電</h1>
+      <p class="mt-2 text-slate-600 leading-relaxed" data-i18n="observe">
+        觀察重點：電容電壓 $V_C$ 與電流 $I$ 依時間常數 $\tau=RC$ 指數變化；充電時 $t=\tau$ 約達 63% 電源電壓，放電時約剩 37%。
+      </p>
+
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <span id="statusPill" class="status-pill bg-slate-100 text-slate-600" data-state="loading">
+          <span id="statusLabel" data-i18n="state.loading">載入中…</span>
+        </span>
+        <p id="rangeHint" class="hidden text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2" role="status"></p>
+      </div>
+
+      <div class="mt-5 grid lg:grid-cols-12 gap-4 sim-shell">
+        <article class="sim-viewport lg:col-span-7 space-y-3">
+          <div class="relative rounded-2xl border-2 border-slate-200 overflow-hidden bg-white" id="circuitHost" data-gl-host data-gl-topic="electricity">
+            <canvas id="circuitCanvas" width="900" height="260" aria-label="RC series circuit"></canvas>
+            <div class="absolute top-3 left-3 flex flex-wrap gap-2 pointer-events-none text-[11px]">
+              <span class="bg-white/90 text-blue-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.vc">Vc 電容電壓</span>
+              <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.i">I 電流</span>
+              <span class="bg-white/90 text-amber-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.tau">τ = RC</span>
+            </div>
+            <div id="appOverlay" class="app-overlay" role="status" aria-live="polite">
+              <div id="overlayLoading" class="text-center">
+                <div class="pgl-dots" aria-hidden="true">
+                  <span class="pgl-dot"></span><span class="pgl-dot"></span><span class="pgl-dot"></span>
+                </div>
+                <p class="text-sm font-semibold text-slate-600 mt-2" data-i18n="state.loading">載入中…</p>
+              </div>
+              <div id="overlayFail" class="hidden text-center px-4">
+                <p class="text-sm font-semibold text-slate-700 mb-3" data-i18n="state.fail">模擬無法載入。請檢查瀏覽器後重試。</p>
+                <button type="button" id="retryBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="retry">重新載入</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" id="playBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all shadow-sm min-h-[44px] min-w-[96px]" data-i18n="play">播放</button>
+            <button type="button" id="pauseBtn" class="px-5 py-2.5 rounded-xl bg-slate-700 text-white font-semibold hover:bg-slate-800 transition-all min-h-[44px] min-w-[96px]" data-i18n="pause" disabled>暫停</button>
+            <button type="button" id="resetBtn" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-red-50 hover:text-red-600 transition-all min-h-[44px]" data-i18n="reset">重設</button>
+          </div>
+        </article>
+
+        <aside class="sim-controls lg:col-span-5 space-y-3">
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <h2 class="font-semibold text-slate-900 mb-3" data-i18n="modeTitle">模式</h2>
+            <div class="grid grid-cols-2 gap-2 mb-4" role="group" aria-label="Charge or discharge">
+              <button type="button" id="modeCharge" class="mode-btn px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold min-h-[44px]" aria-pressed="true" data-i18n="mode.charge">充電</button>
+              <button type="button" id="modeDischarge" class="mode-btn px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 min-h-[44px]" aria-pressed="false" data-i18n="mode.discharge">放電</button>
+            </div>
+
+            <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">主要參數</h2>
+
+            <label class="block text-sm font-medium text-slate-700" for="resistance">
+              <span data-i18n="resistance">電阻 R (kΩ)</span>：
+              <span id="rValue" class="text-blue-600 font-semibold">10.0</span>
+            </label>
+            <input id="resistance" type="range" min="1" max="100" step="0.5" value="10" class="w-full mb-3" />
+
+            <label class="block text-sm font-medium text-slate-700" for="capacitance">
+              <span data-i18n="capacitance">電容 C (μF)</span>：
+              <span id="cValue" class="text-blue-600 font-semibold">100</span>
+            </label>
+            <input id="capacitance" type="range" min="10" max="1000" step="10" value="100" class="w-full mb-3" />
+
+            <label class="block text-sm font-medium text-slate-700" for="voltage">
+              <span data-i18n="voltage">電源電壓 V (V)</span>：
+              <span id="vValue" class="text-blue-600 font-semibold">6.0</span>
+            </label>
+            <input id="voltage" type="range" min="1" max="12" step="0.1" value="6" class="w-full" />
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readingsQuick">關鍵讀數</h2>
+            <div class="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+              <div class="rounded-lg bg-amber-50 border border-amber-200 px-2 py-1.5">
+                <div class="text-amber-700 font-semibold">τ = RC</div>
+                <div id="tauOut" class="font-bold text-amber-700">1.00 s</div>
+              </div>
+              <div class="rounded-lg bg-slate-50 border border-slate-200 px-2 py-1.5">
+                <div class="text-slate-700 font-semibold">t</div>
+                <div id="tOut" class="font-bold text-slate-700">0.00 s</div>
+              </div>
+              <div class="rounded-lg bg-blue-50 border border-blue-200 px-2 py-1.5">
+                <div class="text-blue-700 font-semibold">V<sub>C</sub></div>
+                <div id="vcOut" class="font-bold text-blue-700">0.00 V</div>
+              </div>
+              <div class="rounded-lg bg-green-50 border border-green-200 px-2 py-1.5">
+                <div class="text-green-700 font-semibold">I</div>
+                <div id="iOut" class="font-bold text-green-700">0.00 mA</div>
+              </div>
+            </div>
+            <p class="mt-2 text-xs text-slate-500" id="markerNote" data-i18n="marker.charge">充電標記：t = τ 時 Vc ≈ 0.63 V</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Synchronized graphs share one timebase / cursor -->
+    <section class="mt-5 grid md:grid-cols-2 gap-4">
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <h2 class="font-semibold text-slate-900 mb-2">
+          <span class="text-blue-600">V<sub>C</sub>–t</span>
+          <span class="text-slate-500 text-sm font-medium" data-i18n="vctHint">電容電壓</span>
+        </h2>
+        <canvas id="vcCanvas" class="graph-canvas rounded-xl bg-slate-50 border border-slate-200" width="560" height="170"></canvas>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <h2 class="font-semibold text-slate-900 mb-2">
+          <span class="text-green-600">I–t</span>
+          <span class="text-slate-500 text-sm font-medium" data-i18n="itHint">電流</span>
+        </h2>
+        <canvas id="iCanvas" class="graph-canvas rounded-xl bg-slate-50 border border-slate-200" width="560" height="170"></canvas>
+      </div>
+    </section>
+
+    <details class="mt-5 glass rounded-2xl border border-white/70 p-4 md:p-5 group">
+      <summary class="cursor-pointer list-none flex items-center justify-between gap-3 min-h-[44px] font-semibold text-slate-900">
+        <span data-i18n="moreTitle">公式、讀數與學習提示</span>
+        <span class="text-blue-600 text-sm font-medium group-open:rotate-180 transition-transform" aria-hidden="true">▾</span>
+      </summary>
+      <div class="mt-4 grid md:grid-cols-2 gap-4 text-sm">
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE 公式焦點</h3>
+          <ul class="space-y-1.5 text-slate-700 font-mono text-[13px]">
+            <li>$\tau = RC$</li>
+            <li data-i18n="formula.chargeVc">充電：$V_C = V(1-e^{-t/RC})$</li>
+            <li data-i18n="formula.chargeI">充電：$I = (V/R)\,e^{-t/RC}$</li>
+            <li data-i18n="formula.dischargeVc">放電：$V_C = V_0 e^{-t/RC}$</li>
+            <li data-i18n="formula.dischargeI">放電：$I = -(V_0/R)\,e^{-t/RC}$</li>
+            <li>$I = C\,\mathrm{d}V_C/\mathrm{d}t$</li>
+            <li>$Q = C V_C$</li>
+          </ul>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="font-semibold text-slate-900 mb-2" data-i18n="readings">即時讀數</h3>
+          <div class="space-y-1.5">
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="tauLabel">時間常數 τ</span><span id="tauDetail" class="font-semibold text-amber-600">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="i0Label">初始電流 |I₀|</span><span id="i0Out" class="font-semibold text-green-600">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="qLabel">電荷 Q</span><span id="qOut" class="font-semibold text-slate-700">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="pctLabel">相對目標</span><span id="pctOut" class="font-semibold text-blue-600">—</span></div>
+          </div>
+          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="tip">
+            提示：約 5τ 後可視為充／放電完成（≈99%）。圖上虛線標示 t = τ 與 63%／37% 水平。
+          </p>
+        </div>
+      </div>
+    </details>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const COLORS = {
+        vc: '#2563EB',
+        i: '#16A34A',
+        tau: '#D97706',
+        cursor: '#2563EB',
+        axis: '#94A3B8',
+        grid: '#E2E8F0',
+        wire: '#334155',
+        batt: '#DC2626',
+        plate: '#0EA5E9',
+        fill: '#93C5FD'
+      };
+
+      const PARAM = {
+        rMin: 1, rMax: 100,       // kΩ
+        cMin: 10, cMax: 1000,     // μF
+        vMin: 1, vMax: 12,        // V
+        // τ = R(kΩ)·C(μF)·1e-3 s → with defaults τ=1 s
+        tauMinWarn: 0.25,
+        tauMaxWarn: 8
+      };
+
+      const translations = {
+        en: {
+          back: 'Back to Electromagnetism',
+          tag: 'HKDSE Electricity · RC circuit',
+          title: 'RC Circuit: Charging & Discharging',
+          observe: 'Focus: capacitor voltage Vc and current I change exponentially with time constant τ = RC. At t = τ, charging reaches ~63% of supply V; discharging falls to ~37% of V₀.',
+          controls: 'Primary parameters',
+          modeTitle: 'Mode',
+          'mode.charge': 'Charging',
+          'mode.discharge': 'Discharging',
+          resistance: 'Resistance R (kΩ)',
+          capacitance: 'Capacitance C (μF)',
+          voltage: 'Supply voltage V (V)',
+          play: 'Play',
+          pause: 'Pause',
+          reset: 'Reset',
+          retry: 'Retry',
+          readingsQuick: 'Key readings',
+          vctHint: 'capacitor voltage',
+          itHint: 'current',
+          moreTitle: 'Formulas, readings & teaching tips',
+          formulaTitle: 'HKDSE formula focus',
+          'formula.chargeVc': 'Charge: $V_C = V(1-e^{-t/RC})$',
+          'formula.chargeI': 'Charge: $I = (V/R)\\,e^{-t/RC}$',
+          'formula.dischargeVc': 'Discharge: $V_C = V_0 e^{-t/RC}$',
+          'formula.dischargeI': 'Discharge: $I = -(V_0/R)\\,e^{-t/RC}$',
+          readings: 'Live readings',
+          tauLabel: 'Time constant τ',
+          i0Label: 'Initial |I₀|',
+          qLabel: 'Charge Q',
+          pctLabel: 'Relative to target',
+          tip: 'Tip: After about 5τ the process is ~99% complete. Dashed lines mark t = τ and the 63% / 37% levels.',
+          'legend.vc': 'Vc capacitor voltage',
+          'legend.i': 'I current',
+          'legend.tau': 'τ = RC',
+          'marker.charge': 'Charge marker: at t = τ, Vc ≈ 0.63 V',
+          'marker.discharge': 'Discharge marker: at t = τ, Vc ≈ 0.37 V₀',
+          'state.loading': 'Loading…',
+          'state.ready': 'Ready — adjust R, C, V or mode',
+          'state.playing': 'Playing',
+          'state.fail': 'Simulation failed to load. Check your browser, then retry.',
+          'hint.fast': 'τ is very short — curves look steep. Try larger R or C.',
+          'hint.slow': 'τ is very long — motion looks nearly static. Try smaller R or C.'
+        },
+        'zh-hk': {
+          back: '返回電磁學',
+          tag: 'HKDSE 電與磁 · RC 電路',
+          title: 'RC 電路：充電與放電',
+          observe: '觀察重點：電容電壓 Vc 與電流 I 依時間常數 τ = RC 指數變化；充電時 t = τ 約達 63% 電源電壓，放電時約剩 37%。',
+          controls: '主要參數',
+          modeTitle: '模式',
+          'mode.charge': '充電',
+          'mode.discharge': '放電',
+          resistance: '電阻 R (kΩ)',
+          capacitance: '電容 C (μF)',
+          voltage: '電源電壓 V (V)',
+          play: '播放',
+          pause: '暫停',
+          reset: '重設',
+          retry: '重新載入',
+          readingsQuick: '關鍵讀數',
+          vctHint: '電容電壓',
+          itHint: '電流',
+          moreTitle: '公式、讀數與學習提示',
+          formulaTitle: 'HKDSE 公式焦點',
+          'formula.chargeVc': '充電：$V_C = V(1-e^{-t/RC})$',
+          'formula.chargeI': '充電：$I = (V/R)\\,e^{-t/RC}$',
+          'formula.dischargeVc': '放電：$V_C = V_0 e^{-t/RC}$',
+          'formula.dischargeI': '放電：$I = -(V_0/R)\\,e^{-t/RC}$',
+          readings: '即時讀數',
+          tauLabel: '時間常數 τ',
+          i0Label: '初始電流 |I₀|',
+          qLabel: '電荷 Q',
+          pctLabel: '相對目標',
+          tip: '提示：約 5τ 後可視為充／放電完成（≈99%）。圖上虛線標示 t = τ 與 63%／37% 水平。',
+          'legend.vc': 'Vc 電容電壓',
+          'legend.i': 'I 電流',
+          'legend.tau': 'τ = RC',
+          'marker.charge': '充電標記：t = τ 時 Vc ≈ 0.63 V',
+          'marker.discharge': '放電標記：t = τ 時 Vc ≈ 0.37 V₀',
+          'state.loading': '載入中…',
+          'state.ready': '就緒 — 可調校 R、C、V 或模式',
+          'state.playing': '播放中',
+          'state.fail': '模擬無法載入。請檢查瀏覽器後重試。',
+          'hint.fast': 'τ 過短，曲線過於陡峭。請增大 R 或 C。',
+          'hint.slow': 'τ 過長，變化幾乎靜止。請減小 R 或 C。'
+        }
+      };
+
+      let currentLang = window.PhysicsI18n
+        ? PhysicsI18n.get()
+        : (localStorage.getItem('preferred_language') || 'zh-hk');
+      if (window.PhysicsI18n) currentLang = PhysicsI18n.normalize(currentLang);
+      if (currentLang !== 'en' && currentLang !== 'zh-hk') currentLang = 'zh-hk';
+
+      function t(key) {
+        return (translations[currentLang] && translations[currentLang][key])
+          || (translations.en && translations.en[key])
+          || key;
+      }
+
+      const els = {
+        resistance: document.getElementById('resistance'),
+        capacitance: document.getElementById('capacitance'),
+        voltage: document.getElementById('voltage'),
+        rValue: document.getElementById('rValue'),
+        cValue: document.getElementById('cValue'),
+        vValue: document.getElementById('vValue'),
+        modeCharge: document.getElementById('modeCharge'),
+        modeDischarge: document.getElementById('modeDischarge'),
+        playBtn: document.getElementById('playBtn'),
+        pauseBtn: document.getElementById('pauseBtn'),
+        resetBtn: document.getElementById('resetBtn'),
+        retryBtn: document.getElementById('retryBtn'),
+        statusPill: document.getElementById('statusPill'),
+        statusLabel: document.getElementById('statusLabel'),
+        rangeHint: document.getElementById('rangeHint'),
+        appOverlay: document.getElementById('appOverlay'),
+        overlayLoading: document.getElementById('overlayLoading'),
+        overlayFail: document.getElementById('overlayFail'),
+        tauOut: document.getElementById('tauOut'),
+        tOut: document.getElementById('tOut'),
+        vcOut: document.getElementById('vcOut'),
+        iOut: document.getElementById('iOut'),
+        markerNote: document.getElementById('markerNote'),
+        tauDetail: document.getElementById('tauDetail'),
+        i0Out: document.getElementById('i0Out'),
+        qOut: document.getElementById('qOut'),
+        pctOut: document.getElementById('pctOut')
+      };
+
+      const circuitCanvas = document.getElementById('circuitCanvas');
+      const vcCanvas = document.getElementById('vcCanvas');
+      const iCanvas = document.getElementById('iCanvas');
+
+      let circuitCtx, vcCtx, iCtx;
+      let appState = 'loading'; // loading | ready | playing | fail
+      let mode = 'charge'; // charge | discharge
+      let tSim = 0;
+      let lastFrame = 0;
+      let rafId = 0;
+
+      /**
+       * SI params: R in Ω, C in F, V in V, tau in s.
+       * Slider units: R_kOhm, C_uF → tau = R_kOhm * C_uF * 1e-3.
+       */
+      function getParams() {
+        const Rk = parseFloat(els.resistance.value);
+        const Cu = parseFloat(els.capacitance.value);
+        const V = parseFloat(els.voltage.value);
+        const R = Rk * 1e3;
+        const C = Cu * 1e-6;
+        const tau = R * C;
+        const I0 = V / R;
+        return { Rk, Cu, V, R, C, tau, I0, mode };
+      }
+
+      /** Ideal series RC; discharge assumes V0 = supply V (fully charged). */
+      function sampleAt(p, t) {
+        const exp = Math.exp(-t / p.tau);
+        let Vc, I;
+        if (p.mode === 'charge') {
+          // Vc = V(1 − e^{−t/RC}); I = C dVc/dt = (V/R) e^{−t/RC}
+          Vc = p.V * (1 - exp);
+          I = p.I0 * exp;
+        } else {
+          // Vc = V0 e^{−t/RC}; I = C dVc/dt = −(V0/R) e^{−t/RC}
+          Vc = p.V * exp;
+          I = -p.I0 * exp;
+        }
+        const Q = p.C * Vc;
+        return { Vc, I, Q, exp };
+      }
+
+      function setMode(next) {
+        mode = next;
+        els.modeCharge.setAttribute('aria-pressed', next === 'charge' ? 'true' : 'false');
+        els.modeDischarge.setAttribute('aria-pressed', next === 'discharge' ? 'true' : 'false');
+        els.modeCharge.classList.toggle('text-slate-700', next !== 'charge');
+        els.modeDischarge.classList.toggle('text-slate-700', next !== 'discharge');
+        els.markerNote.textContent = next === 'charge' ? t('marker.charge') : t('marker.discharge');
+        tSim = 0;
+        lastFrame = 0;
+        if (appState === 'ready' || appState === 'playing') render();
+      }
+
+      function setAppState(next) {
+        appState = next;
+        const pill = els.statusPill;
+        const label = els.statusLabel;
+        pill.classList.remove('bg-slate-100', 'text-slate-600', 'bg-blue-50', 'text-blue-700', 'bg-green-50', 'text-green-700', 'bg-red-50', 'text-red-700');
+        if (next === 'loading') {
+          pill.classList.add('bg-slate-100', 'text-slate-600');
+          label.textContent = t('state.loading');
+          els.playBtn.disabled = true;
+          els.pauseBtn.disabled = true;
+        } else if (next === 'ready') {
+          pill.classList.add('bg-blue-50', 'text-blue-700');
+          label.textContent = t('state.ready');
+          els.playBtn.disabled = false;
+          els.pauseBtn.disabled = true;
+          hideOverlay();
+        } else if (next === 'playing') {
+          pill.classList.add('bg-green-50', 'text-green-700');
+          label.textContent = t('state.playing');
+          els.playBtn.disabled = true;
+          els.pauseBtn.disabled = false;
+          hideOverlay();
+        } else if (next === 'fail') {
+          pill.classList.add('bg-red-50', 'text-red-700');
+          label.textContent = t('state.fail');
+          els.playBtn.disabled = true;
+          els.pauseBtn.disabled = true;
+          showFailOverlay();
+        }
+        pill.dataset.state = next;
+      }
+
+      function hideOverlay() {
+        els.appOverlay.hidden = true;
+      }
+
+      function showLoadingOverlay() {
+        els.appOverlay.hidden = false;
+        els.overlayLoading.classList.remove('hidden');
+        els.overlayFail.classList.add('hidden');
+      }
+
+      function showFailOverlay() {
+        els.appOverlay.hidden = false;
+        els.overlayLoading.classList.add('hidden');
+        els.overlayFail.classList.remove('hidden');
+      }
+
+      function updateRangeHint(p) {
+        const hint = els.rangeHint;
+        if (p.tau < PARAM.tauMinWarn) {
+          hint.textContent = t('hint.fast');
+          hint.classList.remove('hidden');
+        } else if (p.tau > PARAM.tauMaxWarn) {
+          hint.textContent = t('hint.slow');
+          hint.classList.remove('hidden');
+        } else {
+          hint.textContent = '';
+          hint.classList.add('hidden');
+        }
+      }
+
+      function fitCanvas(canvas, ctx) {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const rect = canvas.getBoundingClientRect();
+        const w = Math.max(rect.width, 280);
+        const h = Math.max(rect.height, 120);
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { w, h };
+      }
+
+      function drawAxes(ctx, w, h, pad, zeroY) {
+        ctx.strokeStyle = COLORS.grid;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad.l, zeroY);
+        ctx.lineTo(w - pad.r, zeroY);
+        ctx.moveTo(pad.l, pad.t);
+        ctx.lineTo(pad.l, h - pad.b);
+        ctx.stroke();
+        ctx.strokeStyle = COLORS.axis;
+        ctx.beginPath();
+        ctx.moveTo(pad.l, zeroY);
+        ctx.lineTo(w - pad.r, zeroY);
+        ctx.stroke();
+      }
+
+      function drawTimeCursor(ctx, w, h, pad, tNorm) {
+        const x = pad.l + tNorm * (w - pad.l - pad.r);
+        ctx.strokeStyle = COLORS.cursor;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, pad.t);
+        ctx.lineTo(x, h - pad.b);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = COLORS.cursor;
+        ctx.beginPath();
+        ctx.arc(x, pad.t + 4, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        return x;
+      }
+
+      function windowT(p) {
+        return Math.max(p.tau * 5.2, 1.2);
+      }
+
+      function drawVcGraph(p, tNow) {
+        const { w, h } = fitCanvas(vcCanvas, vcCtx);
+        vcCtx.clearRect(0, 0, w, h);
+        const pad = { l: 40, r: 14, t: 16, b: 24 };
+        const plotW = w - pad.l - pad.r;
+        const plotH = h - pad.t - pad.b;
+        const zeroY = h - pad.b;
+        const Vmax = Math.max(p.V, 1e-9);
+        const win = windowT(p);
+
+        drawAxes(vcCtx, w, h, pad, zeroY);
+
+        // 63% / 37% horizontal markers
+        const level = p.mode === 'charge' ? 0.632 * p.V : 0.368 * p.V;
+        const levelY = zeroY - (level / Vmax) * (plotH * 0.88);
+        vcCtx.strokeStyle = COLORS.tau;
+        vcCtx.lineWidth = 1;
+        vcCtx.setLineDash([3, 3]);
+        vcCtx.beginPath();
+        vcCtx.moveTo(pad.l, levelY);
+        vcCtx.lineTo(w - pad.r, levelY);
+        vcCtx.stroke();
+
+        // t = τ vertical
+        if (p.tau < win) {
+          const tauX = pad.l + (p.tau / win) * plotW;
+          vcCtx.beginPath();
+          vcCtx.moveTo(tauX, pad.t);
+          vcCtx.lineTo(tauX, h - pad.b);
+          vcCtx.stroke();
+          vcCtx.setLineDash([]);
+          vcCtx.fillStyle = COLORS.tau;
+          vcCtx.font = '10px Inter, sans-serif';
+          vcCtx.fillText('τ', tauX + 3, pad.t + 10);
+          vcCtx.fillText(p.mode === 'charge' ? '63%' : '37%', pad.l + 4, levelY - 4);
+        } else {
+          vcCtx.setLineDash([]);
+        }
+
+        vcCtx.strokeStyle = COLORS.vc;
+        vcCtx.lineWidth = 2.2;
+        vcCtx.beginPath();
+        const N = 240;
+        for (let i = 0; i <= N; i++) {
+          const tt = (i / N) * win;
+          const y = sampleAt(p, tt).Vc;
+          const px = pad.l + (tt / win) * plotW;
+          const py = zeroY - (y / Vmax) * (plotH * 0.88);
+          if (i === 0) vcCtx.moveTo(px, py);
+          else vcCtx.lineTo(px, py);
+        }
+        vcCtx.stroke();
+
+        const tClamp = Math.min(tNow, win);
+        const cx = drawTimeCursor(vcCtx, w, h, pad, tClamp / win);
+        const s = sampleAt(p, tNow);
+        const cy = zeroY - (s.Vc / Vmax) * (plotH * 0.88);
+        vcCtx.fillStyle = COLORS.vc;
+        vcCtx.beginPath();
+        vcCtx.arc(cx, cy, 5, 0, Math.PI * 2);
+        vcCtx.fill();
+        vcCtx.strokeStyle = '#fff';
+        vcCtx.lineWidth = 1.5;
+        vcCtx.stroke();
+
+        vcCtx.fillStyle = '#64748B';
+        vcCtx.font = '11px Inter, sans-serif';
+        vcCtx.fillText('Vc', pad.l + 4, pad.t + 10);
+        vcCtx.fillText('t', w - pad.r - 10, zeroY + 14);
+      }
+
+      function drawIGraph(p, tNow) {
+        const { w, h } = fitCanvas(iCanvas, iCtx);
+        iCtx.clearRect(0, 0, w, h);
+        const pad = { l: 40, r: 14, t: 16, b: 24 };
+        const plotW = w - pad.l - pad.r;
+        const plotH = h - pad.t - pad.b;
+        const midY = h / 2;
+        const Imax = Math.max(p.I0, 1e-12);
+        const win = windowT(p);
+
+        drawAxes(iCtx, w, h, pad, midY);
+
+        // t = τ vertical + ~37% |I| marker
+        if (p.tau < win) {
+          const tauX = pad.l + (p.tau / win) * plotW;
+          iCtx.strokeStyle = COLORS.tau;
+          iCtx.lineWidth = 1;
+          iCtx.setLineDash([3, 3]);
+          iCtx.beginPath();
+          iCtx.moveTo(tauX, pad.t);
+          iCtx.lineTo(tauX, h - pad.b);
+          iCtx.stroke();
+          const iTau = (p.mode === 'charge' ? 1 : -1) * 0.368 * p.I0;
+          const iTauY = midY - (iTau / Imax) * (plotH * 0.42);
+          iCtx.beginPath();
+          iCtx.moveTo(pad.l, iTauY);
+          iCtx.lineTo(w - pad.r, iTauY);
+          iCtx.stroke();
+          iCtx.setLineDash([]);
+          iCtx.fillStyle = COLORS.tau;
+          iCtx.font = '10px Inter, sans-serif';
+          iCtx.fillText('τ', tauX + 3, pad.t + 10);
+          iCtx.fillText('37%', pad.l + 4, iTauY + (p.mode === 'charge' ? -4 : 12));
+        }
+
+        iCtx.strokeStyle = COLORS.i;
+        iCtx.lineWidth = 2.2;
+        iCtx.beginPath();
+        const N = 240;
+        for (let i = 0; i <= N; i++) {
+          const tt = (i / N) * win;
+          const y = sampleAt(p, tt).I;
+          const px = pad.l + (tt / win) * plotW;
+          const py = midY - (y / Imax) * (plotH * 0.42);
+          if (i === 0) iCtx.moveTo(px, py);
+          else iCtx.lineTo(px, py);
+        }
+        iCtx.stroke();
+
+        const tClamp = Math.min(tNow, win);
+        const cx = drawTimeCursor(iCtx, w, h, pad, tClamp / win);
+        const s = sampleAt(p, tNow);
+        const cy = midY - (s.I / Imax) * (plotH * 0.42);
+        iCtx.fillStyle = COLORS.i;
+        iCtx.beginPath();
+        iCtx.arc(cx, cy, 5, 0, Math.PI * 2);
+        iCtx.fill();
+        iCtx.strokeStyle = '#fff';
+        iCtx.lineWidth = 1.5;
+        iCtx.stroke();
+
+        iCtx.fillStyle = '#64748B';
+        iCtx.font = '11px Inter, sans-serif';
+        iCtx.fillText('I', pad.l + 4, pad.t + 10);
+        iCtx.fillText('t', w - pad.r - 10, midY + 14);
+      }
+
+      function drawCircuit(p, s) {
+        const { w, h } = fitCanvas(circuitCanvas, circuitCtx);
+        circuitCtx.clearRect(0, 0, w, h);
+
+        const cy = h * 0.52;
+        const left = 36;
+        const right = w - 36;
+        const mid = (left + right) / 2;
+
+        // Outer loop wires
+        circuitCtx.strokeStyle = COLORS.wire;
+        circuitCtx.lineWidth = 2.5;
+        circuitCtx.beginPath();
+        circuitCtx.moveTo(left + 40, cy - 40);
+        circuitCtx.lineTo(right - 70, cy - 40);
+        circuitCtx.lineTo(right - 70, cy + 40);
+        circuitCtx.lineTo(left + 40, cy + 40);
+        circuitCtx.lineTo(left + 40, cy - 40);
+        circuitCtx.stroke();
+
+        // Battery (left)
+        const bx = left + 40;
+        circuitCtx.strokeStyle = COLORS.batt;
+        circuitCtx.lineWidth = 3;
+        circuitCtx.beginPath();
+        circuitCtx.moveTo(bx - 10, cy - 22);
+        circuitCtx.lineTo(bx - 10, cy + 22);
+        circuitCtx.moveTo(bx + 4, cy - 12);
+        circuitCtx.lineTo(bx + 4, cy + 12);
+        circuitCtx.stroke();
+        circuitCtx.fillStyle = COLORS.batt;
+        circuitCtx.font = 'bold 11px Inter, sans-serif';
+        circuitCtx.fillText('+', bx - 6, cy - 28);
+        circuitCtx.fillText('−', bx - 4, cy + 36);
+        circuitCtx.fillStyle = '#64748B';
+        circuitCtx.font = '11px Inter, sans-serif';
+        circuitCtx.fillText('V', bx - 28, cy + 4);
+
+        // Switch (top, open for visual "mode" cue — closed when playing/ready after t>0)
+        const sx = mid - 70;
+        const closed = appState === 'playing' || tSim > 0.001;
+        circuitCtx.strokeStyle = COLORS.wire;
+        circuitCtx.lineWidth = 2.5;
+        circuitCtx.beginPath();
+        circuitCtx.moveTo(sx - 28, cy - 40);
+        circuitCtx.lineTo(sx - 8, cy - 40);
+        if (closed) {
+          circuitCtx.lineTo(sx + 28, cy - 40);
+        } else {
+          circuitCtx.lineTo(sx + 22, cy - 58);
+        }
+        circuitCtx.moveTo(sx + 28, cy - 40);
+        circuitCtx.lineTo(sx + 48, cy - 40);
+        circuitCtx.stroke();
+        circuitCtx.fillStyle = '#64748B';
+        circuitCtx.font = '10px Inter, sans-serif';
+        circuitCtx.fillText(p.mode === 'charge' ? 'S' : 'S′', sx + 4, cy - 64);
+
+        // Resistor zigzag
+        const rx = mid + 30;
+        circuitCtx.strokeStyle = '#D97706';
+        circuitCtx.lineWidth = 2.5;
+        circuitCtx.beginPath();
+        circuitCtx.moveTo(rx - 36, cy - 40);
+        let zx = rx - 36;
+        for (let i = 0; i < 6; i++) {
+          zx += 8;
+          circuitCtx.lineTo(zx, cy - 40 + (i % 2 === 0 ? -12 : 12));
+        }
+        circuitCtx.lineTo(rx + 20, cy - 40);
+        circuitCtx.stroke();
+        circuitCtx.fillStyle = '#D97706';
+        circuitCtx.font = '11px Inter, sans-serif';
+        circuitCtx.fillText('R', rx - 8, cy - 56);
+
+        // Capacitor plates (right)
+        const cx = right - 70;
+        const plateGap = 14;
+        const fillFrac = Math.min(Math.max(s.Vc / Math.max(p.V, 1e-9), 0), 1);
+        circuitCtx.fillStyle = COLORS.fill;
+        circuitCtx.globalAlpha = 0.35 + 0.55 * fillFrac;
+        circuitCtx.fillRect(cx - plateGap - 6, cy - 28, 6, 56);
+        circuitCtx.fillRect(cx + plateGap, cy - 28, 6, 56);
+        circuitCtx.globalAlpha = 1;
+        circuitCtx.fillStyle = COLORS.plate;
+        circuitCtx.fillRect(cx - plateGap - 6, cy - 28, 6, 56);
+        circuitCtx.fillRect(cx + plateGap, cy - 28, 6, 56);
+        circuitCtx.fillStyle = COLORS.vc;
+        circuitCtx.font = '11px Inter, sans-serif';
+        circuitCtx.fillText('C', cx - 4, cy + 52);
+        circuitCtx.fillText(s.Vc.toFixed(2) + ' V', cx - 22, cy + 68);
+
+        // Current arrow on bottom wire
+        const iMag = Math.abs(s.I) / Math.max(p.I0, 1e-12);
+        if (iMag > 0.02) {
+          const dir = s.I >= 0 ? 1 : -1; // +I: clockwise charge into C from top
+          const ay = cy + 40;
+          const ax = mid;
+          circuitCtx.strokeStyle = COLORS.i;
+          circuitCtx.fillStyle = COLORS.i;
+          circuitCtx.lineWidth = 2.5;
+          const len = 36 * Math.min(iMag, 1);
+          circuitCtx.beginPath();
+          circuitCtx.moveTo(ax - dir * len, ay);
+          circuitCtx.lineTo(ax + dir * len, ay);
+          circuitCtx.stroke();
+          circuitCtx.beginPath();
+          circuitCtx.moveTo(ax + dir * len, ay);
+          circuitCtx.lineTo(ax + dir * len - dir * 10, ay - 5);
+          circuitCtx.lineTo(ax + dir * len - dir * 10, ay + 5);
+          circuitCtx.closePath();
+          circuitCtx.fill();
+          circuitCtx.font = '11px Inter, sans-serif';
+          circuitCtx.fillText('I', ax - 4, ay + 18);
+        }
+
+        // Mode badge
+        circuitCtx.fillStyle = p.mode === 'charge' ? '#DBEAFE' : '#FEF3C7';
+        circuitCtx.strokeStyle = p.mode === 'charge' ? '#2563EB' : '#D97706';
+        circuitCtx.lineWidth = 1.5;
+        const label = p.mode === 'charge' ? t('mode.charge') : t('mode.discharge');
+        circuitCtx.font = 'bold 12px Inter, sans-serif';
+        const tw = circuitCtx.measureText(label).width + 16;
+        circuitCtx.beginPath();
+        circuitCtx.roundRect(w / 2 - tw / 2, 12, tw, 26, 8);
+        circuitCtx.fill();
+        circuitCtx.stroke();
+        circuitCtx.fillStyle = p.mode === 'charge' ? '#1D4ED8' : '#B45309';
+        circuitCtx.fillText(label, w / 2 - tw / 2 + 8, 30);
+      }
+
+      function formatCurrent(I) {
+        const mA = I * 1e3;
+        if (Math.abs(mA) >= 0.1) return mA.toFixed(2) + ' mA';
+        return (I * 1e6).toFixed(1) + ' μA';
+      }
+
+      function updateReadouts(p, s) {
+        els.rValue.textContent = p.Rk.toFixed(1);
+        els.cValue.textContent = String(Math.round(p.Cu));
+        els.vValue.textContent = p.V.toFixed(1);
+        els.tauOut.textContent = p.tau.toFixed(2) + ' s';
+        els.tauDetail.textContent = p.tau.toFixed(3) + ' s';
+        els.tOut.textContent = tSim.toFixed(2) + ' s';
+        els.vcOut.textContent = s.Vc.toFixed(2) + ' V';
+        els.iOut.textContent = formatCurrent(s.I);
+        els.i0Out.textContent = formatCurrent(p.I0);
+        const qMicro = s.Q * 1e6;
+        els.qOut.textContent = qMicro.toFixed(2) + ' μC';
+        if (p.mode === 'charge') {
+          els.pctOut.textContent = ((s.Vc / p.V) * 100).toFixed(1) + '% of V';
+        } else {
+          els.pctOut.textContent = ((s.Vc / p.V) * 100).toFixed(1) + '% of V₀';
+        }
+        els.markerNote.textContent = p.mode === 'charge' ? t('marker.charge') : t('marker.discharge');
+        updateRangeHint(p);
+      }
+
+      function render() {
+        if (appState === 'fail' || appState === 'loading') return;
+        const p = getParams();
+        const s = sampleAt(p, tSim);
+        drawCircuit(p, s);
+        drawVcGraph(p, tSim);
+        drawIGraph(p, tSim);
+        updateReadouts(p, s);
+      }
+
+      function tick(ts) {
+        if (appState === 'playing') {
+          if (!lastFrame) lastFrame = ts;
+          const dt = Math.min((ts - lastFrame) / 1000, 0.05);
+          lastFrame = ts;
+          tSim += dt;
+          // Soft stop near ~5τ so students see completion
+          const p = getParams();
+          if (tSim > p.tau * 5.5) {
+            tSim = p.tau * 5.5;
+            render();
+            cancelAnimationFrame(rafId);
+            setAppState('ready');
+            return;
+          }
+          render();
+          rafId = requestAnimationFrame(tick);
+        }
+      }
+
+      function play() {
+        if (appState === 'fail' || appState === 'loading') return;
+        const p = getParams();
+        if (tSim >= p.tau * 5.5) tSim = 0;
+        setAppState('playing');
+        lastFrame = 0;
+        rafId = requestAnimationFrame(tick);
+      }
+
+      function pause() {
+        if (appState !== 'playing') return;
+        cancelAnimationFrame(rafId);
+        setAppState('ready');
+        render();
+      }
+
+      function resetParams() {
+        els.resistance.value = '10';
+        els.capacitance.value = '100';
+        els.voltage.value = '6';
+        tSim = 0;
+        lastFrame = 0;
+        if (appState === 'playing') {
+          cancelAnimationFrame(rafId);
+          setAppState('ready');
+        }
+        if (appState === 'ready' || appState === 'playing') render();
+      }
+
+      function onParamInput() {
+        if (appState === 'ready' || appState === 'playing') render();
+      }
+
+      function initCanvases() {
+        showLoadingOverlay();
+        setAppState('loading');
+        try {
+          circuitCtx = circuitCanvas.getContext('2d');
+          vcCtx = vcCanvas.getContext('2d');
+          iCtx = iCanvas.getContext('2d');
+          if (!circuitCtx || !vcCtx || !iCtx) {
+            throw new Error('2D canvas context unavailable');
+          }
+          // Polyfill roundRect for older Chrome if needed
+          if (!circuitCtx.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+              const radius = typeof r === 'number' ? r : 8;
+              this.moveTo(x + radius, y);
+              this.arcTo(x + w, y, x + w, y + h, radius);
+              this.arcTo(x + w, y + h, x, y + h, radius);
+              this.arcTo(x, y + h, x, y, radius);
+              this.arcTo(x, y, x + w, y, radius);
+              this.closePath();
+            };
+          }
+          setTimeout(function () {
+            setAppState('ready');
+            render();
+            if (window.MathJax && MathJax.typesetPromise) {
+              MathJax.typesetPromise().catch(function () {});
+            }
+          }, 180);
+        } catch (err) {
+          console.error(err);
+          setAppState('fail');
+        }
+      }
+
+      function updateLanguage(lang) {
+        currentLang = window.PhysicsI18n ? PhysicsI18n.set(lang) : lang;
+        if (!window.PhysicsI18n) {
+          try { localStorage.setItem('preferred_language', lang); } catch (e) { /* ignore */ }
+        }
+        document.querySelectorAll('[data-i18n]').forEach(function (el) {
+          const key = el.getAttribute('data-i18n');
+          const text = translations[lang] && translations[lang][key];
+          if (text) el.textContent = text;
+        });
+        document.documentElement.lang = window.PhysicsI18n
+          ? PhysicsI18n.htmlLang(lang)
+          : (lang === 'zh-hk' ? 'zh-HK' : 'en');
+        document.querySelectorAll('.lang-btn').forEach(function (btn) {
+          const active = window.PhysicsI18n
+            ? PhysicsI18n.matchButton(btn.dataset.lang, lang)
+            : (btn.dataset.lang === lang);
+          btn.classList.toggle('bg-blue-600', active);
+          btn.classList.toggle('text-white', active);
+          btn.classList.toggle('text-slate-600', !active);
+          btn.classList.toggle('hover:bg-blue-100', !active);
+        });
+        if (appState === 'loading') els.statusLabel.textContent = t('state.loading');
+        else if (appState === 'ready') els.statusLabel.textContent = t('state.ready');
+        else if (appState === 'playing') els.statusLabel.textContent = t('state.playing');
+        else if (appState === 'fail') els.statusLabel.textContent = t('state.fail');
+        if (appState === 'ready' || appState === 'playing') {
+          updateRangeHint(getParams());
+          els.markerNote.textContent = mode === 'charge' ? t('marker.charge') : t('marker.discharge');
+          render();
+        }
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise().catch(function () {});
+        }
+      }
+
+      window.updateLanguage = updateLanguage;
+
+      els.playBtn.addEventListener('click', play);
+      els.pauseBtn.addEventListener('click', pause);
+      els.resetBtn.addEventListener('click', resetParams);
+      els.retryBtn.addEventListener('click', function () {
+        cancelAnimationFrame(rafId);
+        tSim = 0;
+        initCanvases();
+      });
+      els.modeCharge.addEventListener('click', function () { setMode('charge'); });
+      els.modeDischarge.addEventListener('click', function () { setMode('discharge'); });
+
+      [els.resistance, els.capacitance, els.voltage].forEach(function (input) {
+        input.addEventListener('input', onParamInput);
+      });
+
+      window.addEventListener('resize', function () {
+        if (appState === 'ready' || appState === 'playing') render();
+      });
+
+      updateLanguage(currentLang);
+      initCanvases();
+    })();
+  </script>
+</body>
+</html>
