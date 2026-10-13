@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AC Generator · 交流發電機 (HKDSE)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="shared/sim-shell.css">
+  <script src="shared/i18n.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    mjx-container { display: inline-block !important; }
+    .glass { background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(10px); }
+    canvas.graph-canvas { display: block; width: 100%; height: 150px; touch-action: none; }
+    @media (min-width: 768px) {
+      canvas.graph-canvas { height: 170px; }
+    }
+    #genCanvas { display: block; width: 100%; height: 240px; touch-action: none; }
+    @media (min-width: 768px) {
+      #genCanvas { height: 300px; }
+    }
+    input[type="range"] {
+      min-height: 44px;
+      accent-color: #2563eb;
+    }
+    .mode-btn[aria-pressed="true"] {
+      background: #2563eb;
+      color: #fff;
+    }
+    .app-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f1f5f9;
+      border-radius: inherit;
+      text-align: center;
+      padding: 1.25rem;
+    }
+    .app-overlay[hidden] { display: none !important; }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 32px;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-pill::before {
+      content: '';
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 9999px;
+      background: currentColor;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-800">
+  <header class="max-w-7xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between gap-3">
+      <a href="index.html#electricity" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 min-h-[44px]">
+        <span>←</span>
+        <span data-i18n="back">返回電磁學</span>
+      </a>
+      <div class="flex gap-2">
+        <button type="button" class="lang-btn px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-blue-100 min-h-[44px]" onclick="updateLanguage('en')" data-lang="en">EN</button>
+        <button type="button" class="lang-btn px-3 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white min-h-[44px]" onclick="updateLanguage('zh-hk')" data-lang="zh-hk">繁</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 pb-12">
+    <section class="glass rounded-3xl border border-white/70 p-5 md:p-7 shadow-xl shadow-blue-100/40">
+      <p class="text-blue-600 font-semibold text-sm uppercase tracking-wide" data-i18n="tag">HKDSE 電與磁 · 交流發電機</p>
+      <h1 class="mt-1 text-2xl md:text-4xl font-extrabold text-slate-900" data-i18n="title">交流發電機：旋轉線圈感應電動勢</h1>
+      <p class="mt-2 text-slate-600 leading-relaxed" data-i18n="observe">
+        觀察重點：線圈在均勻磁場中以角速度 $\omega$ 旋轉時，感應電動勢 $\varepsilon = NBA\omega\sin(\omega t)$，峰值 $\varepsilon_0 = NBA\omega$。
+      </p>
+
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <span id="statusPill" class="status-pill bg-slate-100 text-slate-600" data-state="loading">
+          <span id="statusLabel" data-i18n="state.loading">載入中…</span>
+        </span>
+        <p id="rangeHint" class="hidden text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2" role="status"></p>
+      </div>
+
+      <div class="mt-5 grid lg:grid-cols-12 gap-4 sim-shell">
+        <article class="sim-viewport lg:col-span-7 space-y-3">
+          <div class="relative rounded-2xl border-2 border-slate-200 overflow-hidden bg-white" id="genHost" data-gl-host data-gl-topic="electricity">
+            <canvas id="genCanvas" width="900" height="300" aria-label="AC generator schematic"></canvas>
+            <div class="absolute top-3 left-3 flex flex-wrap gap-2 pointer-events-none text-[11px]">
+              <span class="bg-white/90 text-amber-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.b">B 磁場</span>
+              <span class="bg-white/90 text-red-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.emf">ε 感應電動勢</span>
+              <span class="bg-white/90 text-blue-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.coil">線圈</span>
+              <span class="bg-white/90 text-green-600 px-2 py-1 rounded-full font-semibold" data-i18n="legend.omega">ω 角速度</span>
+            </div>
+            <div id="appOverlay" class="app-overlay" role="status" aria-live="polite">
+              <div id="overlayLoading" class="text-center">
+                <div class="pgl-dots" aria-hidden="true">
+                  <span class="pgl-dot"></span><span class="pgl-dot"></span><span class="pgl-dot"></span>
+                </div>
+                <p class="text-sm font-semibold text-slate-600 mt-2" data-i18n="state.loading">載入中…</p>
+              </div>
+              <div id="overlayFail" class="hidden text-center px-4">
+                <p class="text-sm font-semibold text-slate-700 mb-3" data-i18n="state.fail">模擬無法載入。請檢查瀏覽器後重試。</p>
+                <button type="button" id="retryBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all min-h-[44px]" data-i18n="retry">重新載入</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" id="playBtn" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 hover:-translate-y-0.5 transition-all shadow-sm min-h-[44px] min-w-[96px]" data-i18n="play">播放</button>
+            <button type="button" id="pauseBtn" class="px-5 py-2.5 rounded-xl bg-slate-700 text-white font-semibold hover:bg-slate-800 transition-all min-h-[44px] min-w-[96px]" data-i18n="pause" disabled>暫停</button>
+            <button type="button" id="resetBtn" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-red-50 hover:text-red-600 transition-all min-h-[44px]" data-i18n="reset">重設</button>
+          </div>
+        </article>
+
+        <aside class="sim-controls lg:col-span-5 space-y-3">
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <h2 class="font-semibold text-slate-900 mb-3" data-i18n="controls">主要參數</h2>
+
+            <label class="block text-sm font-medium text-slate-700" for="turns">
+              <span data-i18n="turns">匝數 N</span>：
+              <span id="nValue" class="text-blue-600 font-semibold">50</span>
+            </label>
+            <input id="turns" type="range" min="10" max="200" step="1" value="50" class="w-full mb-3" />
+
+            <label class="block text-sm font-medium text-slate-700" for="field">
+              <span data-i18n="field">磁場 B (T)</span>：
+              <span id="bValue" class="text-amber-600 font-semibold">0.50</span>
+            </label>
+            <input id="field" type="range" min="0.10" max="1.50" step="0.05" value="0.50" class="w-full mb-3" />
+
+            <label class="block text-sm font-medium text-slate-700" for="area">
+              <span data-i18n="area">面積 A (cm²)</span>：
+              <span id="aValue" class="text-slate-700 font-semibold">100</span>
+            </label>
+            <input id="area" type="range" min="20" max="400" step="5" value="100" class="w-full mb-3" />
+
+            <label class="block text-sm font-medium text-slate-700" for="omega">
+              <span data-i18n="omega">角速度 ω (rad/s)</span>：
+              <span id="wValue" class="text-green-600 font-semibold">4.0</span>
+            </label>
+            <input id="omega" type="range" min="0.5" max="12" step="0.1" value="4" class="w-full" />
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <h2 class="font-semibold text-slate-900 mb-2" data-i18n="readingsQuick">關鍵讀數</h2>
+            <div class="rounded-xl bg-blue-50 border border-blue-200 px-3 py-3 mb-3">
+              <div class="text-xs text-blue-700 font-semibold mb-1" data-i18n="formulaLive">即時公式</div>
+              <div id="formulaOut" class="font-mono text-sm text-blue-900 leading-relaxed">ε = NBAω sin(ωt)</div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+              <div class="rounded-lg bg-red-50 border border-red-200 px-2 py-1.5">
+                <div class="text-red-700 font-semibold">ε<sub>0</sub></div>
+                <div id="e0Out" class="font-bold text-red-700">—</div>
+              </div>
+              <div class="rounded-lg bg-red-50 border border-red-200 px-2 py-1.5">
+                <div class="text-red-700 font-semibold">ε(t)</div>
+                <div id="eOut" class="font-bold text-red-700">—</div>
+              </div>
+              <div class="rounded-lg bg-green-50 border border-green-200 px-2 py-1.5">
+                <div class="text-green-700 font-semibold">f</div>
+                <div id="fOut" class="font-bold text-green-700">—</div>
+              </div>
+              <div class="rounded-lg bg-slate-50 border border-slate-200 px-2 py-1.5">
+                <div class="text-slate-700 font-semibold">θ = ωt</div>
+                <div id="thetaOut" class="font-bold text-slate-700">—</div>
+              </div>
+            </div>
+            <p class="mt-2 text-xs text-slate-500" data-i18n="peakNote">峰值 ε<sub>0</sub> = NBAω；滑環輸出為正弦交流。</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="mt-5 grid md:grid-cols-1 gap-4">
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <h2 class="font-semibold text-slate-900 mb-2">
+          <span class="text-red-600">ε–t</span>
+          <span class="text-slate-500 text-sm font-medium" data-i18n="etHint">感應電動勢對時間（正弦波）</span>
+        </h2>
+        <canvas id="etCanvas" class="graph-canvas rounded-xl bg-slate-50 border border-slate-200" width="900" height="170"></canvas>
+      </div>
+    </section>
+
+    <details class="mt-5 glass rounded-2xl border border-white/70 p-4 md:p-5 group">
+      <summary class="cursor-pointer list-none flex items-center justify-between gap-3 min-h-[44px] font-semibold text-slate-900">
+        <span data-i18n="moreTitle">公式、讀數與學習提示</span>
+        <span class="text-blue-600 text-sm font-medium group-open:rotate-180 transition-transform" aria-hidden="true">▾</span>
+      </summary>
+      <div class="mt-4 grid md:grid-cols-2 gap-4 text-sm">
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="font-semibold text-slate-900 mb-2" data-i18n="formulaTitle">HKDSE 公式焦點</h3>
+          <ul class="space-y-1.5 text-slate-700 font-mono text-[13px]">
+            <li>$\Phi = NBA\cos(\omega t)$</li>
+            <li>$\varepsilon = -\dfrac{d\Phi}{dt} = NBA\omega\sin(\omega t)$</li>
+            <li>$\varepsilon_0 = NBA\omega$</li>
+            <li>$\omega = 2\pi f$</li>
+            <li data-i18n="formula.max">當線圈平面平行磁場（$\theta=90^\circ$）時 $|\varepsilon|$ 最大</li>
+          </ul>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="font-semibold text-slate-900 mb-2" data-i18n="readings">即時讀數</h3>
+          <div class="space-y-1.5">
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="nLabel">匝數 N</span><span id="nDetail" class="font-semibold text-blue-600">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="bLabel">磁場 B</span><span id="bDetail" class="font-semibold text-amber-600">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="aLabel">面積 A</span><span id="aDetail" class="font-semibold text-slate-700">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="wLabel">角速度 ω</span><span id="wDetail" class="font-semibold text-green-600">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-600" data-i18n="tLabel">時間 t</span><span id="tDetail" class="font-semibold text-slate-700">—</span></div>
+          </div>
+          <p class="mt-3 text-slate-600 leading-relaxed" data-i18n="tip">
+            提示：增大 N、B、A 或 ω 都會提高峰值 ε₀。演示用較慢 ω 以便觀察；市電約 50 Hz。
+          </p>
+        </div>
+      </div>
+    </details>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const COLORS = {
+        emf: '#DC2626',
+        b: '#D97706',
+        coil: '#2563EB',
+        omega: '#16A34A',
+        cursor: '#2563EB',
+        axis: '#94A3B8',
+        grid: '#E2E8F0',
+        magN: '#DC2626',
+        magS: '#2563EB',
+        shaft: '#64748B',
+        ring: '#0EA5E9'
+      };
+
+      const PARAM = {
+        // Soft teaching hints for extreme slider combos
+        e0MinWarn: 0.05,
+        e0MaxWarn: 80
+      };
+
+      const translations = {
+        en: {
+          back: 'Back to Electromagnetism',
+          tag: 'HKDSE Electricity · AC generator',
+          title: 'AC Generator: Induced EMF in a Rotating Coil',
+          observe: 'Focus: a coil rotating at angular speed ω in a uniform magnetic field induces emf ε = NBAω sin(ωt), with peak ε₀ = NBAω.',
+          controls: 'Primary parameters',
+          turns: 'Turns N',
+          field: 'Magnetic field B (T)',
+          area: 'Area A (cm²)',
+          omega: 'Angular speed ω (rad/s)',
+          play: 'Play',
+          pause: 'Pause',
+          reset: 'Reset',
+          retry: 'Retry',
+          readingsQuick: 'Key readings',
+          formulaLive: 'Live formula',
+          etHint: 'induced emf vs time (sine wave)',
+          moreTitle: 'Formulas, readings & teaching tips',
+          formulaTitle: 'HKDSE formula focus',
+          'formula.max': 'Peak |ε| when coil plane is parallel to B (θ = 90°)',
+          readings: 'Live readings',
+          nLabel: 'Turns N',
+          bLabel: 'Field B',
+          aLabel: 'Area A',
+          wLabel: 'Angular speed ω',
+          tLabel: 'Time t',
+          tip: 'Tip: Raising N, B, A or ω increases peak ε₀. Demo uses slow ω for visibility; mains AC is about 50 Hz.',
+          peakNote: 'Peak ε₀ = NBAω; slip rings give sinusoidal AC.',
+          'legend.b': 'B field',
+          'legend.emf': 'ε induced emf',
+          'legend.coil': 'Coil',
+          'legend.omega': 'ω angular speed',
+          'state.loading': 'Loading…',
+          'state.ready': 'Ready — adjust N, B, A or ω',
+          'state.playing': 'Playing',
+          'state.fail': 'Simulation failed to load. Check your browser, then retry.',
+          'hint.small': 'Peak ε₀ is very small — try larger N, B, A or ω.',
+          'hint.large': 'Peak ε₀ is large — graph scale auto-adjusts; try smaller parameters if needed.'
+        },
+        'zh-hk': {
+          back: '返回電磁學',
+          tag: 'HKDSE 電與磁 · 交流發電機',
+          title: '交流發電機：旋轉線圈感應電動勢',
+          observe: '觀察重點：線圈在均勻磁場中以角速度 ω 旋轉時，感應電動勢 ε = NBAω sin(ωt)，峰值 ε₀ = NBAω。',
+          controls: '主要參數',
+          turns: '匝數 N',
+          field: '磁場 B (T)',
+          area: '面積 A (cm²)',
+          omega: '角速度 ω (rad/s)',
+          play: '播放',
+          pause: '暫停',
+          reset: '重設',
+          retry: '重新載入',
+          readingsQuick: '關鍵讀數',
+          formulaLive: '即時公式',
+          etHint: '感應電動勢對時間（正弦波）',
+          moreTitle: '公式、讀數與學習提示',
+          formulaTitle: 'HKDSE 公式焦點',
+          'formula.max': '當線圈平面平行磁場（θ = 90°）時 |ε| 最大',
+          readings: '即時讀數',
+          nLabel: '匝數 N',
+          bLabel: '磁場 B',
+          aLabel: '面積 A',
+          wLabel: '角速度 ω',
+          tLabel: '時間 t',
+          tip: '提示：增大 N、B、A 或 ω 都會提高峰值 ε₀。演示用較慢 ω 以便觀察；市電約 50 Hz。',
+          peakNote: '峰值 ε₀ = NBAω；滑環輸出為正弦交流。',
+          'legend.b': 'B 磁場',
+          'legend.emf': 'ε 感應電動勢',
+          'legend.coil': '線圈',
+          'legend.omega': 'ω 角速度',
+          'state.loading': '載入中…',
+          'state.ready': '就緒 — 可調校 N、B、A 或 ω',
+          'state.playing': '播放中',
+          'state.fail': '模擬無法載入。請檢查瀏覽器後重試。',
+          'hint.small': '峰值 ε₀ 很小 — 請增大 N、B、A 或 ω。',
+          'hint.large': '峰值 ε₀ 很大 — 圖表會自動縮放；如需可減小參數。'
+        }
+      };
+
+      let currentLang = window.PhysicsI18n
+        ? PhysicsI18n.get()
+        : (localStorage.getItem('preferred_language') || 'zh-hk');
+      if (window.PhysicsI18n) currentLang = PhysicsI18n.normalize(currentLang);
+      if (currentLang !== 'en' && currentLang !== 'zh-hk') currentLang = 'zh-hk';
+
+      function t(key) {
+        return (translations[currentLang] && translations[currentLang][key])
+          || (translations.en && translations.en[key])
+          || key;
+      }
+
+      const els = {
+        turns: document.getElementById('turns'),
+        field: document.getElementById('field'),
+        area: document.getElementById('area'),
+        omega: document.getElementById('omega'),
+        nValue: document.getElementById('nValue'),
+        bValue: document.getElementById('bValue'),
+        aValue: document.getElementById('aValue'),
+        wValue: document.getElementById('wValue'),
+        playBtn: document.getElementById('playBtn'),
+        pauseBtn: document.getElementById('pauseBtn'),
+        resetBtn: document.getElementById('resetBtn'),
+        retryBtn: document.getElementById('retryBtn'),
+        statusPill: document.getElementById('statusPill'),
+        statusLabel: document.getElementById('statusLabel'),
+        rangeHint: document.getElementById('rangeHint'),
+        appOverlay: document.getElementById('appOverlay'),
+        overlayLoading: document.getElementById('overlayLoading'),
+        overlayFail: document.getElementById('overlayFail'),
+        formulaOut: document.getElementById('formulaOut'),
+        e0Out: document.getElementById('e0Out'),
+        eOut: document.getElementById('eOut'),
+        fOut: document.getElementById('fOut'),
+        thetaOut: document.getElementById('thetaOut'),
+        nDetail: document.getElementById('nDetail'),
+        bDetail: document.getElementById('bDetail'),
+        aDetail: document.getElementById('aDetail'),
+        wDetail: document.getElementById('wDetail'),
+        tDetail: document.getElementById('tDetail')
+      };
+
+      const genCanvas = document.getElementById('genCanvas');
+      const etCanvas = document.getElementById('etCanvas');
+
+      let genCtx, etCtx;
+      let appState = 'loading'; // loading | ready | playing | fail
+      let tSim = 0;
+      let lastFrame = 0;
+      let rafId = 0;
+
+      /**
+       * School form: Φ = NBA cos(ωt), ε = −dΦ/dt = NBA ω sin(ωt), ε₀ = NBA ω.
+       * Area slider in cm² → A_m2 = A_cm2 × 1e-4.
+       */
+      function getParams() {
+        const N = parseFloat(els.turns.value);
+        const B = parseFloat(els.field.value);
+        const Acm2 = parseFloat(els.area.value);
+        const omega = parseFloat(els.omega.value);
+        const A = Acm2 * 1e-4; // m²
+        const e0 = N * B * A * omega;
+        const f = omega / (2 * Math.PI);
+        return { N, B, Acm2, A, omega, e0, f };
+      }
+
+      function sampleAt(p, t) {
+        const theta = p.omega * t;
+        const emf = p.e0 * Math.sin(theta);
+        return { theta, emf };
+      }
+
+      function setAppState(next) {
+        appState = next;
+        const pill = els.statusPill;
+        const label = els.statusLabel;
+        pill.classList.remove('bg-slate-100', 'text-slate-600', 'bg-blue-50', 'text-blue-700', 'bg-green-50', 'text-green-700', 'bg-red-50', 'text-red-700');
+        if (next === 'loading') {
+          pill.classList.add('bg-slate-100', 'text-slate-600');
+          label.textContent = t('state.loading');
+          els.playBtn.disabled = true;
+          els.pauseBtn.disabled = true;
+        } else if (next === 'ready') {
+          pill.classList.add('bg-blue-50', 'text-blue-700');
+          label.textContent = t('state.ready');
+          els.playBtn.disabled = false;
+          els.pauseBtn.disabled = true;
+          hideOverlay();
+        } else if (next === 'playing') {
+          pill.classList.add('bg-green-50', 'text-green-700');
+          label.textContent = t('state.playing');
+          els.playBtn.disabled = true;
+          els.pauseBtn.disabled = false;
+          hideOverlay();
+        } else if (next === 'fail') {
+          pill.classList.add('bg-red-50', 'text-red-700');
+          label.textContent = t('state.fail');
+          els.playBtn.disabled = true;
+          els.pauseBtn.disabled = true;
+          showFailOverlay();
+        }
+        pill.dataset.state = next;
+      }
+
+      function hideOverlay() {
+        els.appOverlay.hidden = true;
+      }
+
+      function showLoadingOverlay() {
+        els.appOverlay.hidden = false;
+        els.overlayLoading.classList.remove('hidden');
+        els.overlayFail.classList.add('hidden');
+      }
+
+      function showFailOverlay() {
+        els.appOverlay.hidden = false;
+        els.overlayLoading.classList.add('hidden');
+        els.overlayFail.classList.remove('hidden');
+      }
+
+      function updateRangeHint(p) {
+        const hint = els.rangeHint;
+        if (p.e0 < PARAM.e0MinWarn) {
+          hint.textContent = t('hint.small');
+          hint.classList.remove('hidden');
+        } else if (p.e0 > PARAM.e0MaxWarn) {
+          hint.textContent = t('hint.large');
+          hint.classList.remove('hidden');
+        } else {
+          hint.textContent = '';
+          hint.classList.add('hidden');
+        }
+      }
+
+      function fitCanvas(canvas, ctx) {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const rect = canvas.getBoundingClientRect();
+        const w = Math.max(rect.width, 280);
+        const h = Math.max(rect.height, 120);
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { w, h };
+      }
+
+      function drawAxes(ctx, w, h, pad, zeroY) {
+        ctx.strokeStyle = COLORS.grid;
+        ctx.lineWidth = 1;
+        for (let i = 1; i < 4; i++) {
+          const y = pad.t + (i / 4) * (h - pad.t - pad.b);
+          ctx.beginPath();
+          ctx.moveTo(pad.l, y);
+          ctx.lineTo(w - pad.r, y);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = COLORS.axis;
+        ctx.beginPath();
+        ctx.moveTo(pad.l, zeroY);
+        ctx.lineTo(w - pad.r, zeroY);
+        ctx.moveTo(pad.l, pad.t);
+        ctx.lineTo(pad.l, h - pad.b);
+        ctx.stroke();
+      }
+
+      function drawTimeCursor(ctx, w, h, pad, tNorm) {
+        const x = pad.l + tNorm * (w - pad.l - pad.r);
+        ctx.strokeStyle = COLORS.cursor;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, pad.t);
+        ctx.lineTo(x, h - pad.b);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = COLORS.cursor;
+        ctx.beginPath();
+        ctx.arc(x, pad.t + 4, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        return x;
+      }
+
+      function windowT(p) {
+        // Show about 2 periods for a clear sine shape
+        const T = (2 * Math.PI) / Math.max(p.omega, 0.2);
+        return Math.max(T * 2.2, 1.2);
+      }
+
+      function formatEmf(v) {
+        const a = Math.abs(v);
+        if (a < 1e-6) return '0.00 V';
+        if (a >= 100) return v.toFixed(0) + ' V';
+        if (a >= 10) return v.toFixed(1) + ' V';
+        if (a >= 0.1) return v.toFixed(2) + ' V';
+        return (v * 1000).toFixed(1) + ' mV';
+      }
+
+      function drawEtGraph(p, tNow) {
+        const { w, h } = fitCanvas(etCanvas, etCtx);
+        etCtx.clearRect(0, 0, w, h);
+        const pad = { l: 44, r: 14, t: 16, b: 24 };
+        const plotW = w - pad.l - pad.r;
+        const plotH = h - pad.t - pad.b;
+        const midY = h / 2;
+        const eMax = Math.max(p.e0, 1e-9);
+        const win = windowT(p);
+
+        drawAxes(etCtx, w, h, pad, midY);
+
+        // ±ε₀ guides
+        etCtx.strokeStyle = '#FECACA';
+        etCtx.lineWidth = 1;
+        etCtx.setLineDash([3, 3]);
+        const yPlus = midY - (plotH * 0.42);
+        const yMinus = midY + (plotH * 0.42);
+        etCtx.beginPath();
+        etCtx.moveTo(pad.l, yPlus);
+        etCtx.lineTo(w - pad.r, yPlus);
+        etCtx.moveTo(pad.l, yMinus);
+        etCtx.lineTo(w - pad.r, yMinus);
+        etCtx.stroke();
+        etCtx.setLineDash([]);
+        etCtx.fillStyle = COLORS.emf;
+        etCtx.font = '10px Inter, sans-serif';
+        etCtx.fillText('+ε₀', pad.l + 4, yPlus - 3);
+        etCtx.fillText('−ε₀', pad.l + 4, yMinus + 11);
+
+        etCtx.strokeStyle = COLORS.emf;
+        etCtx.lineWidth = 2.2;
+        etCtx.beginPath();
+        const N = 280;
+        for (let i = 0; i <= N; i++) {
+          const tt = (i / N) * win;
+          const y = sampleAt(p, tt).emf;
+          const px = pad.l + (tt / win) * plotW;
+          const py = midY - (y / eMax) * (plotH * 0.42);
+          if (i === 0) etCtx.moveTo(px, py);
+          else etCtx.lineTo(px, py);
+        }
+        etCtx.stroke();
+
+        // Cursor wraps within window for continuous play
+        const tMod = ((tNow % win) + win) % win;
+        const cx = drawTimeCursor(etCtx, w, h, pad, tMod / win);
+        const s = sampleAt(p, tNow);
+        const cy = midY - (s.emf / eMax) * (plotH * 0.42);
+        etCtx.fillStyle = COLORS.emf;
+        etCtx.beginPath();
+        etCtx.arc(cx, cy, 5, 0, Math.PI * 2);
+        etCtx.fill();
+        etCtx.strokeStyle = '#fff';
+        etCtx.lineWidth = 1.5;
+        etCtx.stroke();
+
+        etCtx.fillStyle = '#64748B';
+        etCtx.font = '11px Inter, sans-serif';
+        etCtx.fillText('ε', pad.l + 4, pad.t + 10);
+        etCtx.fillText('t', w - pad.r - 10, midY + 14);
+      }
+
+      function drawGenerator(p, s) {
+        const { w, h } = fitCanvas(genCanvas, genCtx);
+        genCtx.clearRect(0, 0, w, h);
+
+        const cx = w * 0.48;
+        const cy = h * 0.55;
+        const scale = Math.min(w, h) / 320;
+        const coilW = 70 * scale;
+        const coilH = 42 * scale;
+        const magGap = 118 * scale;
+
+        // Soft field region
+        const grad = genCtx.createLinearGradient(cx - magGap, cy, cx + magGap, cy);
+        grad.addColorStop(0, 'rgba(220, 38, 38, 0.08)');
+        grad.addColorStop(0.5, 'rgba(217, 119, 6, 0.06)');
+        grad.addColorStop(1, 'rgba(37, 99, 235, 0.08)');
+        genCtx.fillStyle = grad;
+        genCtx.fillRect(cx - magGap - 10, cy - 70 * scale, magGap * 2 + 20, 140 * scale);
+
+        // Magnets
+        const magW = 36 * scale;
+        const magH = 100 * scale;
+        // N (left)
+        genCtx.fillStyle = COLORS.magN;
+        roundRectFill(genCtx, cx - magGap - magW, cy - magH / 2, magW, magH, 8);
+        genCtx.fillStyle = '#fff';
+        genCtx.font = 'bold ' + Math.round(18 * scale) + 'px Inter, sans-serif';
+        genCtx.textAlign = 'center';
+        genCtx.fillText('N', cx - magGap - magW / 2, cy + 6 * scale);
+        // S (right)
+        genCtx.fillStyle = COLORS.magS;
+        roundRectFill(genCtx, cx + magGap, cy - magH / 2, magW, magH, 8);
+        genCtx.fillStyle = '#fff';
+        genCtx.fillText('S', cx + magGap + magW / 2, cy + 6 * scale);
+
+        // B field arrows (amber)
+        genCtx.strokeStyle = COLORS.b;
+        genCtx.fillStyle = COLORS.b;
+        genCtx.lineWidth = 2;
+        const arrowYs = [-28, 0, 28].map(function (dy) { return cy + dy * scale; });
+        arrowYs.forEach(function (ay) {
+          const x0 = cx - magGap + 8;
+          const x1 = cx + magGap - 8;
+          genCtx.beginPath();
+          genCtx.moveTo(x0, ay);
+          genCtx.lineTo(x1, ay);
+          genCtx.stroke();
+          genCtx.beginPath();
+          genCtx.moveTo(x1, ay);
+          genCtx.lineTo(x1 - 10 * scale, ay - 4 * scale);
+          genCtx.lineTo(x1 - 10 * scale, ay + 4 * scale);
+          genCtx.closePath();
+          genCtx.fill();
+        });
+        genCtx.font = 'bold ' + Math.round(12 * scale) + 'px Inter, sans-serif';
+        genCtx.textAlign = 'left';
+        genCtx.fillText('B', cx + magGap - 28 * scale, cy - 48 * scale);
+
+        // Rotating coil (perspective: width foreshortens with cos)
+        // θ = ωt; school: flux max at θ=0 (coil face ⊥ B / area // B)
+        const theta = s.theta;
+        const cosT = Math.cos(theta);
+        const sinT = Math.sin(theta);
+        const halfW = coilW * Math.abs(cosT);
+        const depth = 18 * scale * sinT; // slight 3D cue via vertical shear of ends
+
+        // Shaft
+        genCtx.strokeStyle = COLORS.shaft;
+        genCtx.lineWidth = 3 * scale;
+        genCtx.beginPath();
+        genCtx.moveTo(cx - coilW - 18 * scale, cy);
+        genCtx.lineTo(cx + coilW + 55 * scale, cy);
+        genCtx.stroke();
+
+        // Coil rectangle (projected)
+        const xL = cx - halfW;
+        const xR = cx + halfW;
+        const yT = cy - coilH + depth * 0.15;
+        const yB = cy + coilH + depth * 0.15;
+        genCtx.strokeStyle = COLORS.coil;
+        genCtx.lineWidth = 3.2 * scale;
+        genCtx.beginPath();
+        genCtx.moveTo(xL, yT);
+        genCtx.lineTo(xR, yT);
+        genCtx.lineTo(xR, yB);
+        genCtx.lineTo(xL, yB);
+        genCtx.closePath();
+        genCtx.stroke();
+        // Extra turns hint
+        genCtx.globalAlpha = 0.35;
+        genCtx.beginPath();
+        genCtx.moveTo(xL + 3 * scale, yT + 4 * scale);
+        genCtx.lineTo(xR - 3 * scale, yT + 4 * scale);
+        genCtx.lineTo(xR - 3 * scale, yB - 4 * scale);
+        genCtx.lineTo(xL + 3 * scale, yB - 4 * scale);
+        genCtx.closePath();
+        genCtx.stroke();
+        genCtx.globalAlpha = 1;
+
+        // Area normal arrow (green/ω cue) — shows orientation
+        const nx = Math.sin(theta); // normal in plane of screen x
+        const ny = -Math.cos(theta) * 0.15;
+        const nLen = 36 * scale;
+        genCtx.strokeStyle = COLORS.omega;
+        genCtx.fillStyle = COLORS.omega;
+        genCtx.lineWidth = 2 * scale;
+        genCtx.beginPath();
+        genCtx.moveTo(cx, cy);
+        genCtx.lineTo(cx + nx * nLen, cy + ny * nLen);
+        genCtx.stroke();
+        genCtx.beginPath();
+        genCtx.arc(cx + nx * nLen, cy + ny * nLen, 3.5 * scale, 0, Math.PI * 2);
+        genCtx.fill();
+
+        // Slip rings (right of shaft)
+        const rx = cx + coilW + 38 * scale;
+        genCtx.fillStyle = COLORS.ring;
+        genCtx.beginPath();
+        genCtx.ellipse(rx, cy - 8 * scale, 10 * scale, 6 * scale, 0, 0, Math.PI * 2);
+        genCtx.fill();
+        genCtx.beginPath();
+        genCtx.ellipse(rx, cy + 8 * scale, 10 * scale, 6 * scale, 0, 0, Math.PI * 2);
+        genCtx.fill();
+        genCtx.strokeStyle = COLORS.emf;
+        genCtx.lineWidth = 2;
+        genCtx.beginPath();
+        genCtx.moveTo(rx + 10 * scale, cy - 8 * scale);
+        genCtx.lineTo(rx + 28 * scale, cy - 8 * scale);
+        genCtx.moveTo(rx + 10 * scale, cy + 8 * scale);
+        genCtx.lineTo(rx + 28 * scale, cy + 8 * scale);
+        genCtx.stroke();
+        // External load symbol
+        genCtx.beginPath();
+        genCtx.arc(rx + 38 * scale, cy, 10 * scale, 0, Math.PI * 2);
+        genCtx.stroke();
+        genCtx.fillStyle = COLORS.emf;
+        genCtx.font = 'bold ' + Math.round(11 * scale) + 'px Inter, sans-serif';
+        genCtx.textAlign = 'center';
+        genCtx.fillText('ε', rx + 38 * scale, cy + 4 * scale);
+
+        // Angle badge
+        const deg = ((theta * 180 / Math.PI) % 360 + 360) % 360;
+        genCtx.fillStyle = 'rgba(255,255,255,0.92)';
+        genCtx.strokeStyle = COLORS.coil;
+        genCtx.lineWidth = 1.5;
+        const badge = 'θ = ' + deg.toFixed(0) + '°';
+        genCtx.font = 'bold 12px Inter, sans-serif';
+        genCtx.textAlign = 'left';
+        const tw = genCtx.measureText(badge).width + 16;
+        roundRectPath(genCtx, 12, h - 36, tw, 26, 8);
+        genCtx.fill();
+        genCtx.stroke();
+        genCtx.fillStyle = COLORS.coil;
+        genCtx.fillText(badge, 20, h - 18);
+
+        // Live emf badge
+        const emfLabel = 'ε = ' + formatEmf(s.emf);
+        genCtx.fillStyle = 'rgba(254, 242, 242, 0.95)';
+        genCtx.strokeStyle = COLORS.emf;
+        const tw2 = genCtx.measureText(emfLabel).width + 16;
+        roundRectPath(genCtx, w - tw2 - 12, h - 36, tw2, 26, 8);
+        genCtx.fill();
+        genCtx.stroke();
+        genCtx.fillStyle = COLORS.emf;
+        genCtx.fillText(emfLabel, w - tw2 - 4, h - 18);
+
+        genCtx.textAlign = 'start';
+      }
+
+      function roundRectPath(ctx, x, y, w, h, r) {
+        const radius = typeof r === 'number' ? r : 8;
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(x, y, w, h, radius);
+        } else {
+          ctx.moveTo(x + radius, y);
+          ctx.arcTo(x + w, y, x + w, y + h, radius);
+          ctx.arcTo(x + w, y + h, x, y + h, radius);
+          ctx.arcTo(x, y + h, x, y, radius);
+          ctx.arcTo(x, y, x + w, y, radius);
+          ctx.closePath();
+        }
+      }
+
+      function roundRectFill(ctx, x, y, w, h, r) {
+        roundRectPath(ctx, x, y, w, h, r);
+        ctx.fill();
+      }
+
+      function updateReadouts(p, s) {
+        els.nValue.textContent = String(Math.round(p.N));
+        els.bValue.textContent = p.B.toFixed(2);
+        els.aValue.textContent = String(Math.round(p.Acm2));
+        els.wValue.textContent = p.omega.toFixed(1);
+        els.e0Out.textContent = formatEmf(p.e0);
+        els.eOut.textContent = formatEmf(s.emf);
+        els.fOut.textContent = p.f.toFixed(2) + ' Hz';
+        const deg = ((s.theta * 180 / Math.PI) % 360 + 360) % 360;
+        els.thetaOut.textContent = deg.toFixed(0) + '°';
+        els.formulaOut.innerHTML = 'ε = ' + p.N + '×' + p.B.toFixed(2) + '×' + p.A.toExponential(2) + '×' + p.omega.toFixed(1) + ' sin(ωt)';
+        els.nDetail.textContent = Math.round(p.N) + '';
+        els.bDetail.textContent = p.B.toFixed(2) + ' T';
+        els.aDetail.textContent = Math.round(p.Acm2) + ' cm² (' + p.A.toExponential(2) + ' m²)';
+        els.wDetail.textContent = p.omega.toFixed(2) + ' rad/s';
+        els.tDetail.textContent = tSim.toFixed(2) + ' s';
+        updateRangeHint(p);
+      }
+
+      function render() {
+        if (appState === 'fail' || appState === 'loading') return;
+        const p = getParams();
+        const s = sampleAt(p, tSim);
+        drawGenerator(p, s);
+        drawEtGraph(p, tSim);
+        updateReadouts(p, s);
+      }
+
+      function tick(ts) {
+        if (appState === 'playing') {
+          if (!lastFrame) lastFrame = ts;
+          const dt = Math.min((ts - lastFrame) / 1000, 0.05);
+          lastFrame = ts;
+          tSim += dt;
+          render();
+          rafId = requestAnimationFrame(tick);
+        }
+      }
+
+      function play() {
+        if (appState === 'fail' || appState === 'loading') return;
+        setAppState('playing');
+        lastFrame = 0;
+        rafId = requestAnimationFrame(tick);
+      }
+
+      function pause() {
+        if (appState !== 'playing') return;
+        cancelAnimationFrame(rafId);
+        setAppState('ready');
+        render();
+      }
+
+      function resetParams() {
+        els.turns.value = '50';
+        els.field.value = '0.50';
+        els.area.value = '100';
+        els.omega.value = '4';
+        tSim = 0;
+        lastFrame = 0;
+        if (appState === 'playing') {
+          cancelAnimationFrame(rafId);
+          setAppState('ready');
+        }
+        if (appState === 'ready' || appState === 'playing') render();
+      }
+
+      function onParamInput() {
+        if (appState === 'ready' || appState === 'playing') render();
+      }
+
+      function initCanvases() {
+        showLoadingOverlay();
+        setAppState('loading');
+        try {
+          genCtx = genCanvas.getContext('2d');
+          etCtx = etCanvas.getContext('2d');
+          if (!genCtx || !etCtx) {
+            throw new Error('2D canvas context unavailable');
+          }
+          setTimeout(function () {
+            setAppState('ready');
+            render();
+            if (window.MathJax && MathJax.typesetPromise) {
+              MathJax.typesetPromise().catch(function () {});
+            }
+          }, 180);
+        } catch (err) {
+          console.error(err);
+          setAppState('fail');
+        }
+      }
+
+      function updateLanguage(lang) {
+        currentLang = window.PhysicsI18n ? PhysicsI18n.set(lang) : lang;
+        if (!window.PhysicsI18n) {
+          try { localStorage.setItem('preferred_language', lang); } catch (e) { /* ignore */ }
+        }
+        document.querySelectorAll('[data-i18n]').forEach(function (el) {
+          const key = el.getAttribute('data-i18n');
+          const text = translations[lang] && translations[lang][key];
+          if (text) el.textContent = text;
+        });
+        document.documentElement.lang = window.PhysicsI18n
+          ? PhysicsI18n.htmlLang(lang)
+          : (lang === 'zh-hk' ? 'zh-HK' : 'en');
+        document.querySelectorAll('.lang-btn').forEach(function (btn) {
+          const active = window.PhysicsI18n
+            ? PhysicsI18n.matchButton(btn.dataset.lang, lang)
+            : (btn.dataset.lang === lang);
+          btn.classList.toggle('bg-blue-600', active);
+          btn.classList.toggle('text-white', active);
+          btn.classList.toggle('text-slate-600', !active);
+          btn.classList.toggle('hover:bg-blue-100', !active);
+        });
+        if (appState === 'loading') els.statusLabel.textContent = t('state.loading');
+        else if (appState === 'ready') els.statusLabel.textContent = t('state.ready');
+        else if (appState === 'playing') els.statusLabel.textContent = t('state.playing');
+        else if (appState === 'fail') els.statusLabel.textContent = t('state.fail');
+        if (appState === 'ready' || appState === 'playing') {
+          updateRangeHint(getParams());
+          render();
+        }
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise().catch(function () {});
+        }
+      }
+
+      window.updateLanguage = updateLanguage;
+
+      els.playBtn.addEventListener('click', play);
+      els.pauseBtn.addEventListener('click', pause);
+      els.resetBtn.addEventListener('click', resetParams);
+      els.retryBtn.addEventListener('click', function () {
+        cancelAnimationFrame(rafId);
+        tSim = 0;
+        initCanvases();
+      });
+
+      [els.turns, els.field, els.area, els.omega].forEach(function (input) {
+        input.addEventListener('input', onParamInput);
+      });
+
+      window.addEventListener('resize', function () {
+        if (appState === 'ready' || appState === 'playing') render();
+      });
+
+      updateLanguage(currentLang);
+      initCanvases();
+    })();
+  </script>
+</body>
+</html>
